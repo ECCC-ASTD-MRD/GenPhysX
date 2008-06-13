@@ -852,8 +852,8 @@ proc GenX::DNECFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
       eval ogrlayer read NTSLAYER${Res}K $nts_layer
    }
 
-   #----- Pour les 250k : /data/cmod8/afseeer/DNEC/045/h/045h/045h_0100_deme.dem +west
-   #----- Pour les 50k  : /data/cmod8/afseeer/DNEC/031/h/031h01/031h01_0101_deme.dem +west
+   #----- Pour les 250k : /data/cmod8/afseeer/DNEC/045/h/045h/045h_0100_deme.tif +west
+   #----- Pour les 50k  : /data/cmod8/afseeer/DNEC/031/h/031h01/031h01_0101_deme.tif +west
    set files { }
    foreach id [ogrlayer pick NTSLAYER${Res}K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
       set feuillet [ogrlayer define NTSLAYER${Res}K -feature $id snrc]
@@ -867,10 +867,10 @@ proc GenX::DNECFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
          set path $Path(DNEC)/$s250/$sl/$s250$sl
       }
 
-      if { [llength [set lst [glob -nocomplain $path/*e.dem]]] } {
+      if { [llength [set lst [glob -nocomplain $path/*e.tif]]] } {
          lappend files $lst
       }
-      if { [llength [set lst [glob -nocomplain $path/*w.dem]]] } {
+      if { [llength [set lst [glob -nocomplain $path/*w.tif]]] } {
          lappend files $lst
       }
    }
