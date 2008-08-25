@@ -56,8 +56,6 @@ fstdfile open GPXSECFILE write $GenX::Path(OutFile)_sec.fst
 set grid [lindex [set grids [GenX::GridGet]] 0]
 GenX::GetNML $GenX::Path(NameFile)
 
-#----- Process averaged fields
-
 #----- TOPOGRAPHY
    #----- Standard topograhy averaging method
    GeoPhysX::AverageTopo       $grids

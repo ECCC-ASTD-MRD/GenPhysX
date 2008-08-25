@@ -557,19 +557,10 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
          vexpr EOSDMASK EOSDMASK<<0
 
          #----- Burn NTS limits and mask EOSD
-         set nts [file tail $file]
-         set nts [string range $nts 0 2]/[string tolower [string index $nts 3]]
-         foreach path [glob $GenX::Path(CANVEC)/$nts/*] {
-            if { [file isdirectory $path] && [llength [set file [glob $path/*LI_1210009*.shp]]] } {
-               GenX::Trace "      Burning NTS Limit $path" 2
-               ogrfile open NTSLIM read $file
-               eval ogrlayer read NTSLIM50K NTSLIM 0
-               gdalband gridinterp EOSDMASK NTSLIM50K FAST 1
-               ogrlayer free NTSLIM50K
-               ogrfile close NTSLIM
-            }
-         }
-         GenX::Trace "      Applying NTS Limit mask" 2
+         set nts [string range [file tail $file] 0 3]
+         GenX::Trace "      Applying NTS($nts) Limit mask" 2
+         ogrlayer define NTSLAYER250K -featureselect [list [list SNRC == $nts]]
+         gdalband gridinterp EOSDMASK NTSLAYER250K FAST 1
          vexpr EOSDTILE ifelse(EOSDMASK,EOSDTILE,0)
 
          #----- Burn COASTAL Waters mask EOSD to Salt water
@@ -587,6 +578,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
       }
       gdalband free EOSDTILE
       vector free FROMEOSD TORPN
+      ogrlayer define NTSLAYER250K -featureselect {}
 #      ogrlayer free COASTAL
 #      ogrfile close COASTALFILE
 
