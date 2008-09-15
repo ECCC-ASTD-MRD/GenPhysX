@@ -826,7 +826,7 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 # Name     : <GenX::DNECFindFiles>
 # Creation : Novembre 2007 - Alexandre Leroux - CMC/CMOE
 #
-# Goal     : Get the SRTM data filenames covering an area.
+# Goal     : Get the DNEC data filenames covering an area.
 #
 # Parameters :
 #  <Lat0>    : Lower left corner latitude
@@ -881,7 +881,7 @@ proc GenX::DNECFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
 # Name     : <GenX::EOSDFindFiles>
 # Creation : Novembre 2007 - Alexandre Leroux - CMC/CMOE
 #
-# Goal     : Get the SRTM data filenames covering an area.
+# Goal     : Get the EOSD data filenames covering an area.
 #
 # Parameters :
 #  <Lat0>    : Lower left corner latitude
