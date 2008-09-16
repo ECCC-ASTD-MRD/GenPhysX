@@ -570,9 +570,9 @@ proc GenX::GridGetFromGEM { File } {
    }
 
    #----- Erase tape1 and gfilemap.txt since gemgrid won't run if they already exist
-   file delete -force tape1 gfilemap.txt
+   catch { file delete -force tape1 gfilemap.txt }
    catch { exec $grid }
-   file rename -force gfilemap.txt ${Path(OutFile)}_gfilemap.txt
+   catch { file rename -force gfilemap.txt ${Path(OutFile)}_gfilemap.txt }
 
    fstdfile open GPXGRIDFILE read tape1
 
@@ -814,8 +814,8 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 
    for { set lat [expr int(ceil(24-((60.0 + $Lat1)/5)))]} { $lat<=$latmax } { incr lat } {
       for { set lon [expr int(ceil((180.0 + $Lon0)/5))] } { $lon<=$lonmax } { incr lon } {
-         if { [file exists $Path(SRTM)/\Z_$lon\_$lat\.TIF] } {
-            lappend files $Path(SRTM)/\Z_$lon\_$lat\.TIF
+         if { [file exists $Path(SRTM)/Z_${lon}_${lat}.TIF] } {
+            lappend files $Path(SRTM)/Z_${lon}_${lat}.TIF
          }
       }
    }
