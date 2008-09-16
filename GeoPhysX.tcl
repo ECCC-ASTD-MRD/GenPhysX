@@ -132,7 +132,18 @@ proc GeoPhysX::AverageTopo { Grids } {
 # Return:
 #
 # Remarks :
-#
+#     NVAR     IP3      Desc
+#     ASP0     0        Average aspect
+#     ASP      0        Average aspect of north quadrant
+#     ASP      90       Average aspect of east quadrant
+#     ASP      180      Average aspect of south quadrant
+#     ASP      270      Average aspect of west quadrant
+
+#     PEN0     0        Average slope
+#     PEN      0        Average slope with aspect north quadrant oriented
+#     PEN      90       Average slope with aspect east quadrant oriented
+#     PEN      180      Average slope with aspect south quadrant oriented
+#     PEN      270      Average slope with aspect west quadrant oriented
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoDEM { Grid { SRTM 0 } { DNEC 0 } { Aspect True } } {
    variable Data
@@ -269,23 +280,29 @@ proc GeoPhysX::AverageTopoDEM { Grid { SRTM 0 } { DNEC 0 } { Aspect True } } {
       fstdfield gridinterp GPXSLOPES - NOP True
       fstdfield gridinterp GPXSLOPEW - NOP True
 
+      vexpr GPXSLOPE  max(GPXSLOPE,0);
       vexpr GPXSLOPEN max(GPXSLOPEN,0);
       vexpr GPXSLOPEE max(GPXSLOPEE,0);
       vexpr GPXSLOPES max(GPXSLOPES,0);
       vexpr GPXSLOPEW max(GPXSLOPEW,0);
 
-      #----- Save everything
-      fstdfield define GPXASPEC  -NOMVAR ASP0 -IP1 0
-      fstdfield define GPXASPECN -NOMVAR ASP  -IP1 0
-      fstdfield define GPXASPECE -NOMVAR ASP  -IP1 90
-      fstdfield define GPXASPECS -NOMVAR ASP  -IP1 180
-      fstdfield define GPXASPECW -NOMVAR ASP  -IP1 270
+      vexpr GPXASPECN max(GPXASPECN,0);
+      vexpr GPXASPECE max(GPXASPECE,0);
+      vexpr GPXASPECS max(GPXASPECS,0);
+      vexpr GPXASPECW max(GPXASPECW,0);
 
-      fstdfield define GPXSLOPE  -NOMVAR SLP0 -IP1 0
-      fstdfield define GPXSLOPEN -NOMVAR SLP  -IP1 0
-      fstdfield define GPXSLOPEE -NOMVAR SLP  -IP1 90
-      fstdfield define GPXSLOPES -NOMVAR SLP  -IP1 180
-      fstdfield define GPXSLOPEW -NOMVAR SLP  -IP1 270
+      #----- Save everything
+      fstdfield define GPXASPEC  -NOMVAR ASP0 -IP3 0
+      fstdfield define GPXASPECN -NOMVAR ASP  -IP3 0
+      fstdfield define GPXASPECE -NOMVAR ASP  -IP3 90
+      fstdfield define GPXASPECS -NOMVAR ASP  -IP3 180
+      fstdfield define GPXASPECW -NOMVAR ASP  -IP3 270
+
+      fstdfield define GPXSLOPE  -NOMVAR PEN0 -IP3 0
+      fstdfield define GPXSLOPEN -NOMVAR PEN  -IP3 0
+      fstdfield define GPXSLOPEE -NOMVAR PEN  -IP3 90
+      fstdfield define GPXSLOPES -NOMVAR PEN  -IP3 180
+      fstdfield define GPXSLOPEW -NOMVAR PEN  -IP3 270
 
       fstdfield write GPXASPEC  GPXSECFILE -24 True
       fstdfield write GPXASPECN GPXSECFILE -24 True
@@ -576,6 +593,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
          gdalband free EOSDTILE EOSDMASK
          gdalfile close EOSDFILE
       }
+
       gdalband free EOSDTILE
       vector free FROMEOSD TORPN
       ogrlayer define NTSLAYER250K -featureselect {}
