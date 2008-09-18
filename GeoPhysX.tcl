@@ -134,10 +134,10 @@ proc GeoPhysX::AverageTopo { Grids } {
 # Remarks :
 #     NVAR     IP3      Desc
 #     ASP0     0        Average aspect
-#     ASP      0        Average aspect of north quadrant
-#     ASP      90       Average aspect of east quadrant
-#     ASP      180      Average aspect of south quadrant
-#     ASP      270      Average aspect of west quadrant
+#     ASP      0        Fraction of aspect north quadrant oriented
+#     ASP      90       Fraction of aspect east quadrant oriented
+#     ASP      180      Fraction of aspect south quadrant oriented
+#     ASP      270      Fraction of aspect west quadrant oriented
 
 #     PEN0     0        Average slope
 #     PEN      0        Average slope with aspect north quadrant oriented
@@ -937,10 +937,10 @@ proc GeoPhysX::AverageAspect { Grid Band } {
    vexpr ASPECTILE daspect($Band)
 
    #----- Define aspect ranges
-   vexpr ASPECN ifelse(ASPECTILE>315 || ASPECTILE<=45,SLOPETILE!=0.0,-1)
-   vexpr ASPECE ifelse(ASPECTILE>45 && ASPECTILE<=135,SLOPETILE!=0.0,-1)
-   vexpr ASPECS ifelse(ASPECTILE>135 && ASPECTILE<=225,SLOPETILE!=0.0,-1)
-   vexpr ASPECW ifelse(ASPECTILE>225 && ASPECTILE<=315,SLOPETILE!=0.0,-1)
+   vexpr ASPECN ifelse((ASPECTILE>315 || ASPECTILE<=45)  && SLOPETILE!=0.0,1,-1)
+   vexpr ASPECE ifelse((ASPECTILE>45 && ASPECTILE<=135)  && SLOPETILE!=0.0,1,-1)
+   vexpr ASPECS ifelse((ASPECTILE>135 && ASPECTILE<=225) && SLOPETILE!=0.0,1,-1)
+   vexpr ASPECW ifelse((ASPECTILE>225 && ASPECTILE<=315) && SLOPETILE!=0.0,1,-1)
 
    #----- Set slope mask on the aspect ranges
    vexpr SLOPEN  ifelse(ASPECN!=-1,SLOPETILE,-1)
