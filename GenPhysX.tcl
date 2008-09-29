@@ -1,6 +1,6 @@
 #!/bin/sh
 # the next line restarts using tclsh \
-exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4}/tclsh "$0" "$@"
+exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 #============================================================================
 # Environnement Canada
 # Centre Meteorologique Canadien
