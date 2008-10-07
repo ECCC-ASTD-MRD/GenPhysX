@@ -814,8 +814,8 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 
    for { set lat [expr int(ceil(24-((60.0 + $Lat1)/5)))]} { $lat<=$latmax } { incr lat } {
       for { set lon [expr int(ceil((180.0 + $Lon0)/5))] } { $lon<=$lonmax } { incr lon } {
-         if { [file exists $Path(SRTM)/Z_${lon}_${lat}.TIF] } {
-            lappend files $Path(SRTM)/Z_${lon}_${lat}.TIF
+         if { [file exists $Path(SRTM)/srtm_${lon}_${lat}.TIF] } {
+            lappend files $Path(SRTM)/srtm_${lon}_${lat}.TIF
          }
       }
    }
