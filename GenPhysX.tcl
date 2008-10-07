@@ -57,18 +57,23 @@ set grid [lindex [set grids [GenX::GridGet]] 0]
 GenX::GetNML $GenX::Path(NameFile)
 
 #----- TOPOGRAPHY
+#      Use only one of the available method
+
    #----- Standard topograhy averaging method
    GeoPhysX::AverageTopo       $grids
 
    #----- Low and High resolution topograhy averaging method (For scale separation)
+   #      This is based on scale separation of the above standard database and
+   #      needed for the launching height calculation
    GeoPhysX::AverageTopoLD     $grid L
    GeoPhysX::AverageTopoLD     $grid D
 
    #----- High resolution topography averaging (WORLD=STRMv3 90m, CANADA=DNEC 20m/90m)
-   #----- Parameters are grid, srtm(0 or 1) dnec(0,50 or 250) Aspect (True ou False)
+   #      Parameters are grid, srtm(0 or 1) dnec(0,50 or 250) Aspect (True ou False)
 #   GeoPhysX::AverageTopoDEM    $grid 0 250 False
 
 #----- MASK
+
    #----- Standard mask averaging method
    GeoPhysX::AverageMask       $grid
 
@@ -76,16 +81,19 @@ GenX::GetNML $GenX::Path(NameFile)
 #   GeoPhysX::AverageMaskCANVEC $grid
 
 #----- VEGETATION
+#      Use only one of the available method
+
    #----- Standard vege averaging method
    GeoPhysX::AverageVege       $grid
 
    #----- EOSD over Canada only vege averaging method
-#   GeoPhysX::AverageVegeEOSD   $grid
+   GeoPhysX::AverageVegeEOSD   $grid
 
    #----- CORINE over Europe only vege averaging method
 #   GeoPhysX::AverageVegeCORINE $grid
 
 #----- SOIL
+
    #----- Standard sand averaging method
    GeoPhysX::AverageSand       $grid
 
@@ -96,6 +104,7 @@ GenX::GetNML $GenX::Path(NameFile)
    GeoPhysX::AverageGradient   $grid
 
 #----- POST_PROCESS
+
    GeoPhysX::PostCheckConsistency
    GeoPhysX::PostCorrectionFactor
    GeoPhysX::PostTopoFilter
