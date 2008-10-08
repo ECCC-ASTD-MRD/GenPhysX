@@ -86,7 +86,7 @@ namespace eval GenX { } {
    set Path(TopoD) data_hres
    set Path(Gxy)   data_grad
 
-   set Path(SRTM)    /data/cmod8/afseeer/SRTM
+   set Path(SRTM)    /data/cmod8/afseeer/SRTMv4
    set Path(DNEC)    /data/cmod8/afseeer/DNEC
    set Path(EOSD)    /data/cmod8/afseeer/EOSD
    set Path(NTS)     /data/cmod8/afseeer/NTS
@@ -814,8 +814,8 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 
    for { set lat [expr int(ceil(24-((60.0 + $Lat1)/5)))]} { $lat<=$latmax } { incr lat } {
       for { set lon [expr int(ceil((180.0 + $Lon0)/5))] } { $lon<=$lonmax } { incr lon } {
-         if { [file exists $Path(SRTM)/srtm_${lon}_${lat}.TIF] } {
-            lappend files $Path(SRTM)/srtm_${lon}_${lat}.TIF
+         if { [file exists [set path [format "$Path(SRTM)/srtm_%02i_%02i.TIF" $lon $lat]]] } {
+            lappend files $path
          }
       }
    }
@@ -906,8 +906,8 @@ proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    foreach id [ogrlayer pick NTSLAYER250K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
       set feuillet [ogrlayer define NTSLAYER250K -feature $id snrc]
       set s250 [string range $feuillet 0 3]
-      if { [file exists $Path(EOSD)/${s250}_lc_1/${s250}_lc_1.tif] } {
-         lappend files $Path(EOSD)/${s250}_lc_1/${s250}_lc_1.tif
+      if { [file exists [set path $Path(EOSD)/${s250}_lc_1/${s250}_lc_1.tif]] } {
+         lappend files $path
       }
    }
    return $files
