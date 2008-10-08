@@ -87,7 +87,7 @@ GenX::GetNML $GenX::Path(NameFile)
    GeoPhysX::AverageVege       $grid
 
    #----- EOSD over Canada only vege averaging method
-   GeoPhysX::AverageVegeEOSD   $grid
+#   GeoPhysX::AverageVegeEOSD   $grid
 
    #----- CORINE over Europe only vege averaging method
 #   GeoPhysX::AverageVegeCORINE $grid
