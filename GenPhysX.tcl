@@ -60,7 +60,7 @@ GenX::GetNML $GenX::Path(NameFile)
 #      Use only one of the available method
 
    #----- Standard topograhy averaging method
-#   GeoPhysX::AverageTopo       $grids
+   GeoPhysX::AverageTopo       $grids
 
    #----- Low and High resolution topograhy averaging method (For scale separation)
    #      This is based on scale separation of the above standard database and
@@ -68,10 +68,10 @@ GenX::GetNML $GenX::Path(NameFile)
    GeoPhysX::AverageTopoLD     $grid L
    GeoPhysX::AverageTopoLD     $grid D
 
-   #----- High resolution topography averaging (WORLD=STRMv3 90m, CANADA=DNEC 20m/90m)
+   #----- High resolution topography averaging (WORLD=STRMv3 90m, CANADA=DNEC 1:50000(20m) / 1:250000(90m))
    #      Parameters are grid, srtm(0 or 1) dnec(0,50 or 250) Aspect (True ou False)
-    GeoPhysX::AverageTopoDEM    $grid 1 0 False
-exit
+#    GeoPhysX::AverageTopoDEM    $grid 1 0 False
+
 #----- MASK
 
    #----- Standard mask averaging method
