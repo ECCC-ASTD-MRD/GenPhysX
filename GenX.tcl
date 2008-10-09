@@ -58,17 +58,17 @@ namespace eval GenX { } {
    set Data(CacheMax)  20                    ;#Input data cache max
    set Data(Procs)     {}                    ;#Procedure registration list
 
-   set Data(Vege)      DEFAULT               ;#Method selected
-   set Data(Soil)      DEFAULT               ;#Method selected
-   set Data(Topo)      DEFAULT               ;#Method selected
-   set Data(Mask)      DEFAULT               ;#Method selected
-   set Data(Post)      True                  ;#Method selected
-   set Data(Aspect)    False                 ;#Method selected
+   set Data(Vege)      USGS                  ;#Vegetation data selected
+   set Data(Soil)      USDA                  ;#Soit type data selected
+   set Data(Topo)      USGS                  ;#Topography data selected
+   set Data(Mask)      USGS                  ;#Mask data selected
+   set Data(Post)      True                  ;#Post selected
+   set Data(Aspect)    False                 ;#Slope and aspect selected
 
-   set Data(Topos)     { NONE DEFAULT SRTM DNEC50 DNEC250 }
-   set Data(Veges)     { NONE DEFAULT EOSD CORINE }
-   set Data(Soils)     { NONE DEFAULT }
-   set Data(Masks)     { NONE DEFAULT CANVEC }
+   set Data(Topos)     { NONE USGS SRTM DNEC50 DNEC250 }
+   set Data(Veges)     { NONE USGS EOSD CORINE }
+   set Data(Soils)     { NONE USDA }
+   set Data(Masks)     { NONE USGS CANVEC }
 
    set Path(Work)        ""                    ;#Working directory
    set Path(Grid)        gemgrid               ;#GEM grid generator application
@@ -316,14 +316,14 @@ proc GenX::CommandLine { } {
    puts stderr "
    Information parameters:
       \[-help\]     [format "%-30s : This information" ""]
-      \[-version\]  [format "%-30s : Generator version" ""]
+      \[-version\]  [format "%-30s : GenPhysX version" ""]
 
    Input parameters:
       \[-verbose\]  [format "%-30s : Trace level (0 none,1 some ,2 more)" ($Data(Verbose))]
-      \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]
-      \[-gridfile\] [format "%-30s : Standard file to get the grid from" ($Path(GridFile))]
-      \[-workdir\]  [format "%-30s : Working directory" ($Path(Work))]
       \[-nml\]      [format "%-30s : GEM namelist definition file" ($Path(NameFile))]
+      \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Path(GridFile))]
+      \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]
+      \[-workdir\]  [format "%-30s : Working directory" ($Path(Work))]
       \[-target\]   [format "%-30s : Model target (GEM, GEM-MACH, ...)" ($Path(ModelTarget))]
 
    Processing parameters:
@@ -331,10 +331,10 @@ proc GenX::CommandLine { } {
       \[-mask\]     [format "%-30s : Mask method {$Data(Masks)}" ($Data(Mask))]
       \[-vege\]     [format "%-30s : Vegetation method {$Data(Veges)}" ($Data(Vege))]
       \[-soil\]     [format "%-30s : Soil method {$Data(Soils)}" ($Data(Soil))]
-      \[-aspect\]   [format "%-30s : Activate aspect and slope" ""]
+      \[-aspect\]   [format "%-30s : Calculates aspect and slope" ""]
 
    Batch mode parameters:
-      \[-batch\]    [format "%-30s : Launch in batch mode or not (0,1)" ""]
+      \[-batch\]    [format "%-30s : Launch in batch mode" ""]
       \[-mail\]     [format "%-30s : EMail address to send completion mail" ($Batch(Mail))]
       \[-mach\]     [format "%-30s : Machine to run on in batch mode" ($Batch(Host))]
       \[-t\]        [format "%-30s : Reserved CPU time (s)" ($Batch(Time))]
