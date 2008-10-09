@@ -49,7 +49,7 @@ namespace eval GenX { } {
    variable Data
    variable Batch
 
-   set Data(Version)   0.15                  ;#Application version
+   set Data(Version)   0.16                  ;#Application version
 
    set Data(Verbose)   1                     ;#Level of verbose
    set Data(Compress)  False                 ;#Compress standard file output
@@ -58,13 +58,26 @@ namespace eval GenX { } {
    set Data(CacheMax)  20                    ;#Input data cache max
    set Data(Procs)     {}                    ;#Procedure registration list
 
-   set Path(Work)      ""                    ;#Working directory
-   set Path(Grid)      gemgrid               ;#GEM grid generator application
-   set Path(OutFile)   genphysx              ;#Output file prefix
-   set Path(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
-   set Path(NameFile)  ""                    ;#Namelist to use
+   set Data(Vege)      DEFAULT               ;#Method selected
+   set Data(Soil)      DEFAULT               ;#Method selected
+   set Data(Topo)      DEFAULT               ;#Method selected
+   set Data(Mask)      DEFAULT               ;#Method selected
+   set Data(Post)      True                  ;#Method selected
+   set Data(Aspect)    False                 ;#Method selected
 
-   set Batch(On)       0                     ;#Activate batch mode (soumet)
+   set Data(Topos)     { NONE DEFAULT SRTM DNEC50 DNEC250 }
+   set Data(Veges)     { NONE DEFAULT EOSD CORINE }
+   set Data(Soils)     { NONE DEFAULT }
+   set Data(Masks)     { NONE DEFAULT CANVEC }
+
+   set Path(Work)        ""                    ;#Working directory
+   set Path(Grid)        gemgrid               ;#GEM grid generator application
+   set Path(OutFile)     genphysx              ;#Output file prefix
+   set Path(GridFile)    ""                    ;#Grid definition file to use (standard file with >> ^^)
+   set Path(NameFile)    ""                    ;#Namelist to use
+   set Path(ModelTarget) ""                    ;#Model cible
+
+   set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     [info hostname]       ;#Host onto which to submit the job
    set Batch(Mem)      500                   ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
@@ -77,6 +90,7 @@ namespace eval GenX { } {
    } else {
       set Path(DBase) /data/dormrb04/genphysx/data
    }
+
    set Path(Topo)  db/me_usgs2002
    set Path(Vege)  db/vg_usgs2002
    set Path(Mask)  db/mg_usgs2002
@@ -235,8 +249,9 @@ proc GenX::MetaData { { Header "" } { Extra "" } } {
 #   <Argv>   : Liste des arguments
 #   <Argc>   : Nombre d'arguments
 #   <No>     : Index dans la liste complete des arguments
-#   <Multi>  : Est-ce que ce type d'argument peut etre gerer de facon multiple par Cmd
-#   <Cmd>    : Commande a effectuer sur le ou les arguments
+#   <Multi>  : Multiplicite des valeurs (0=True,1=1 valeur,2=Multiples valeurs)
+#   <Var>    : Variable a a assigner les arguments
+#   <Values> : Valid values accepted
 #
 # Return:
 #   <Idx>    : Index apres les arguments traites.
@@ -244,31 +259,37 @@ proc GenX::MetaData { { Header "" } { Extra "" } } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::ParseArgs { Argv Argc No Multi Cmd } {
+proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
 
-   #----- Garder l'index de depart
+   upvar #0 $Var var
 
-   set idx [incr No]
-   set files ""
+   if { !$Multi } {
+      set var True
+   } else {
 
-   #----- Parcourir les arguments du token specifie
+      #----- Garder l'index de depart
+      set idx [incr No]
 
-   while { ([string is double [lindex $Argv $No]] || [string index [lindex $Argv $No] 0]!="-")  && $No < $Argc } {
-      if { $Cmd!="" } {
-         if { $Multi } {
-            lappend files [lindex $Argv $No]
-         } else {
-            eval $Cmd [lindex $Argv $No]
+      #----- Parcourir les arguments du token specifie
+      while { ([string is double [lindex $Argv $No]] || [string index [lindex $Argv $No] 0]!="-") && $No<$Argc } {
+         #----- Check for argument validity
+         set v [lindex $Argv $No]
+         if { [llength $Values] && [lsearch -exact $Values $v]==-1 } {
+            puts stderr "(Error) Invalid value for parameter [lindex $Argv [expr $No-1]], must be one of { $Values }"
+            exit 1;
+
          }
+         if { $Multi==1 } {
+            set var $v
+         } else {
+            lappend var $v
+         }
+         incr No
       }
-      incr No
-   }
-   if { $Cmd!="" && $Multi } {
-      eval $Cmd \$files
-   }
 
-   if { $No != $idx } {
-      incr No -1
+      if { $No!=$idx } {
+         incr No -1
+      }
    }
    return $No
 }
@@ -287,27 +308,41 @@ proc GenX::ParseArgs { Argv Argc No Multi Cmd } {
 #
 #----------------------------------------------------------------------------
 proc GenX::CommandLine { } {
+   variable Data
+   variable Path
+   variable Batch
 
    puts stderr "Arguments must be:"
    puts stderr "
-      \[-version\]                        : Generator version
-      \[-verbose\]                        : Trace level (0 none,1 some ,2 more)
-      \[-result\]                         : Result filename
-      \[-dbase\]                          : Database base path
-      \[-gridfile\]                       : Standard file to get the grid from
-      \[-workdir\]                        : Working directory
-      \[-nml\]                            : GEM namelist definition file
-      \[-target\]                         : Model target (GEM, GEM-MACH, ...)
+   Information parameters:
+      \[-help\]     [format "%-30s : This information" ""]
+      \[-version\]  [format "%-30s : Generator version" ""]
 
-      \[-batch\]                          : Launch in batch mode or not (0,1)
-      \[-mail\]                           : EMail address to send completion mail
-      \[-mach\]                           : Machine to run on in batch mode
-      \[-t\]                              : Reserved CPU time (s)
-      \[-cm\]                             : Reserved RAM (MB)
+   Input parameters:
+      \[-verbose\]  [format "%-30s : Trace level (0 none,1 some ,2 more)" ($Data(Verbose))]
+      \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]
+      \[-gridfile\] [format "%-30s : Standard file to get the grid from" ($Path(GridFile))]
+      \[-workdir\]  [format "%-30s : Working directory" ($Path(Work))]
+      \[-nml\]      [format "%-30s : GEM namelist definition file" ($Path(NameFile))]
+      \[-target\]   [format "%-30s : Model target (GEM, GEM-MACH, ...)" ($Path(ModelTarget))]
 
-      If you have questions or problems:
+   Processing parameters:
+      \[-topo\]     [format "%-30s : Topography method {$Data(Topos)}" ($Data(Topo))]
+      \[-mask\]     [format "%-30s : Mask method {$Data(Masks)}" ($Data(Mask))]
+      \[-vege\]     [format "%-30s : Vegetation method {$Data(Veges)}" ($Data(Vege))]
+      \[-soil\]     [format "%-30s : Soil method {$Data(Soils)}" ($Data(Soil))]
+      \[-aspect\]   [format "%-30s : Activate aspect and slope" ""]
 
-         genphysx@internallists.ec.gc.ca\n"
+   Batch mode parameters:
+      \[-batch\]    [format "%-30s : Launch in batch mode or not (0,1)" ""]
+      \[-mail\]     [format "%-30s : EMail address to send completion mail" ($Batch(Mail))]
+      \[-mach\]     [format "%-30s : Machine to run on in batch mode" ($Batch(Host))]
+      \[-t\]        [format "%-30s : Reserved CPU time (s)" ($Batch(Time))]
+      \[-cm\]       [format "%-30s : Reserved RAM (MB)" ($Batch(Mem))]
+
+   If you have questions, suggestions or problems, send them to:
+
+      genphysx@internallists.ec.gc.ca\n"
 }
 
 #----------------------------------------------------------------------------
@@ -340,18 +375,24 @@ proc GenX::ParseCommandLine { } {
    for { set i 0 } { $i < $gargc } { incr i } {
       switch -exact [string trimleft [lindex $gargv $i] "-"] {
          "version"   { puts "$Data(Version)"; exit 0 }
-         "verbose"   { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Data(Verbose)"] }
-         "result"    { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Path(OutFile)"] }
-         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Path(ModelTarget)"] }
-         "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Path(GridFile)"] }
-         "workdir"   { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Path(Work)"] }
-         "nml"       { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Path(NameFile)"] }
-         "dbase"     { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Path(DBase)"] }
-         "batch"     { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Batch(On)"] }
-         "mach"      { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Batch(Host)"] }
-         "t"         { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Batch(Time)"] }
-         "cm"        { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Batch(Mem)"] }
-         "mail"      { set i [GenX::ParseArgs $gargv $gargc $i 0 "set GenX::Batch(Mail)"] }
+         "verbose"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Verbose)] }
+         "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(OutFile)] }
+         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(ModelTarget)] }
+         "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(GridFile)] }
+         "workdir"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(Work)] }
+         "nml"       { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(NameFile)] }
+         "dbase"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(DBase)] }
+         "batch"     { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Batch(On)] }
+         "mach"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Host)] }
+         "t"         { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Time)] }
+         "cm"        { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mem)] }
+         "mail"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mail)] }
+         "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Topo) $GenX::Data(Topos)] }
+         "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Mask) $GenX::Data(Masks)] }
+         "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Vege) $GenX::Data(Veges)] }
+         "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Soil) $GenX::Data(Soils)] }
+         "post"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Post)] }
+         "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Aspect)] }
          default     { GenX::CommandLine ; exit 1 }
       }
    }

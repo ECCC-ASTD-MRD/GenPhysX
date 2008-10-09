@@ -56,61 +56,54 @@ fstdfile open GPXSECFILE write $GenX::Path(OutFile)_sec.fst
 set grid [lindex [set grids [GenX::GridGet]] 0]
 GenX::GetNML $GenX::Path(NameFile)
 
-#----- TOPOGRAPHY
-#      Use only one of the available method
-
-   #----- Standard topograhy averaging method
-   GeoPhysX::AverageTopo       $grids
-
+if { $GenX::Data(Topo)!="NONE" } {
    #----- Low and High resolution topograhy averaging method (For scale separation)
    #      This is based on scale separation of the above standard database and
    #      needed for the launching height calculation
    GeoPhysX::AverageTopoLD     $grid L
    GeoPhysX::AverageTopoLD     $grid D
 
-   #----- High resolution topography averaging (WORLD=STRMv3 90m, CANADA=DNEC 1:50000(20m) / 1:250000(90m))
-   #      Parameters are grid, srtm(0 or 1) dnec(0,50 or 250) Aspect (True ou False)
-#    GeoPhysX::AverageTopoDEM    $grid 1 0 False
-
-#----- MASK
-
-   #----- Standard mask averaging method
-   GeoPhysX::AverageMask       $grid
-
-   #-----High resolution mask averaging over Canada only using CANVEC vectorial data a 1:50000 (Might take long)
-#   GeoPhysX::AverageMaskCANVEC $grid
-
-#----- VEGETATION
-#      Use only one of the available method
-
-   #----- Standard vege averaging method
-   GeoPhysX::AverageVege       $grid
-
-   #----- EOSD over Canada only vege averaging method
-#   GeoPhysX::AverageVegeEOSD   $grid
-
-   #----- CORINE over Europe only vege averaging method
-#   GeoPhysX::AverageVegeCORINE $grid
-
-#----- SOIL
-
-   #----- Standard sand averaging method
-   GeoPhysX::AverageSand       $grid
-
-   #----- Standard clay averaging method
-   GeoPhysX::AverageClay       $grid
-
    #-----Standard gradient averaging method
    GeoPhysX::AverageGradient   $grid
+}
+
+#----- TOPOGRAPHY
+switch $GenX::Data(Topo) {
+   "DEFAULT" { GeoPhysX::AverageTopo $grids                            ;#----- Standard topograhy averaging method  }
+   "SRTM"    { GeoPhysX::AverageTopoDEM $grid 1 0 $GenX::Data(Aspect)  ;#----- High resolution topography averaging (WORLD=STRMv4 90m, CANADA=DNEC 1:50000(20m) / 1:250000(90m)) }
+   "DNEC50"  { GeoPhysX::AverageTopoDEM $grid 0 50 $GenX::Data(Aspect) }
+   "DNEC250" { GeoPhysX::AverageTopoDEM $grid 0 250 $GenX::Data(Aspect) }
+}
+
+#----- MASK
+switch $GenX::Data(Mask) {
+   "DEFAULT" { GeoPhysX::AverageMask $grid        ;#----- Standard mask averaging method}
+   "CANVEC"  { GeoPhysX::AverageMaskCANVEC $grid  ;#----- High resolution mask averaging over Canada only using CANVEC vectorial data a 1:50000 (Might take long) }
+}
+
+#----- VEGETATION
+switch $GenX::Data(Vege) {
+   "DEFAULT" { GeoPhysX::AverageVege $grid        ;#----- Standard vege averaging method }
+   "EOSD"    { GeoPhysX::AverageVegeEOSD $grid    ;#----- EOSD over Canada only vege averaging method }
+   "CORINE"  { GeoPhysX::AverageVegeCORINE $grid  ;#----- CORINE over Europe only vege averaging method }
+}
+
+#----- SOIL
+switch $GenX::Data(Soil) {
+   "DEFAULT" { GeoPhysX::AverageSand       $grid  ;#----- Standard sand and clay averaging method
+               GeoPhysX::AverageClay       $grid
+             }
+}
 
 #----- POST_PROCESS
-
+if { $GenX::Data(Post) } {
    GeoPhysX::PostCheckConsistency
    GeoPhysX::PostCorrectionFactor
    GeoPhysX::PostTopoFilter
    GeoPhysX::PostLaunchingHeight
    GeoPhysX::PostY789
    GeoPhysX::PostRoughnessLength
+}
 
 GenX::MetaData
 fstdfile close GPXOUTFILE
