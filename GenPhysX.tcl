@@ -14,21 +14,34 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 #
 # Parametres   :
 #
-#      -version        : Generator version
-#      -verbose        : Trace level (0 none,1 some ,2 more)
-#      -result         : Result filename
-#      -dbase          : Database base path
-#      -gridfile       : Standard file to get the grid from
-#      -workdir        : Working directory
-#      -update         : Update results, dot not erase the file if they already exist
-#      -nml            : GEM namelist definition file
-#      -target         : Model target (GEM, GEM-MACH, ...)
+#   Information parameters:
+#      [-help]                                    : This information
+#      [-version]                                 : GenPhysX version
 #
-#      -batch          : Launch in batch mode or not
-#      -mail           : EMail address to send completion mail
-#      -mach           : Machine to run on in batch mode
-#      -t              : Reserved CPU time (s)
-#      -cm             : Reserved RAM (MB)
+#   Input parameters:
+#      [-verbose]  (2)                            : Trace level (0 none,1 some ,2 more)
+#      [-nml]      (gem_settings)                 : GEM namelist definition file
+#      [-gridfile] ()                             : FSTD file to get the grid from if no GEM namelist
+#      [-result]   (genphysx)                     : Result filename
+#      [-workdir]  ()                             : Working directory
+#      [-target]   ()                             : Model target (GEM, GEM-MACH, ...)
+#
+#   Processing parameters:
+#      Specify databases in order of processing joined by + ex: STRM+USGS
+#
+#      [-topo]     (DNEC250 SRTM USGS)            : Topography method { NONE USGS SRTM DNEC250 DNEC50 }
+#      [-mask]     (NONE)                         : Mask method { NONE USGS CANVEC }
+#      [-vege]     (NONE)                         : Vegetation method { NONE USGS EOSD CORINE }
+#      [-soil]     (NONE)                         : Soil method { NONE USDA }
+#      [-aspect]   (NONE)                         : Calculates aspect and slope { NONE SRTM DNEC250 DNEC50 }
+#      [-check]                                   : Do consistency checks
+#
+#   Batch mode parameters:
+#      [-batch]                                   : Launch in batch mode
+#      [-mail]     ()                             : EMail address to send completion mail
+#      [-mach]     (goodenough.cmc.ec.gc.ca)      : Machine to run on in batch mode
+#      [-t]        (7200)                         : Reserved CPU time (s)
+#      [-cm]       (500)                          : Reserved RAM (MB)
 #
 # Retour:
 #
@@ -49,55 +62,50 @@ source $dir/GeoPhysX.tcl
 GenX::ParseCommandLine
 
 fstdfile open GPXOUTFILE write $GenX::Path(OutFile).fst
-fstdfile open GPXSECFILE write $GenX::Path(OutFile)_sec.fst
+fstdfile open GPXAUXFILE write $GenX::Path(OutFile)_aux.fst
 
 #----- Get the grid definition
 
 set grid [lindex [set grids [GenX::GridGet]] 0]
 GenX::GetNML $GenX::Path(NameFile)
 
+#----- Topography
 if { $GenX::Data(Topo)!="NONE" } {
-   #----- Low and High resolution topograhy averaging method (For scale separation)
-   #      This is based on scale separation of the above standard database and
-   #      needed for the launching height calculation
-   GeoPhysX::AverageTopoLD     $grid L
-   GeoPhysX::AverageTopoLD     $grid D
-
-   #-----Standard gradient averaging method
-   GeoPhysX::AverageGradient   $grid
+   GeoPhysX::AverageTopo     $grids
+   GeoPhysX::AverageTopoLow  $grid
+   GeoPhysX::AverageGradient $grid
 }
 
-#----- TOPOGRAPHY
-switch $GenX::Data(Topo) {
-   "USGS"    { GeoPhysX::AverageTopo $grids                            ;#----- Standard topograhy averaging method  }
-   "SRTM"    { GeoPhysX::AverageTopoDEM $grid 1 0 $GenX::Data(Aspect)  ;#----- High resolution topography averaging (WORLD=STRMv4 90m, CANADA=DNEC 1:50000(20m) / 1:250000(90m)) }
-   "DNEC50"  { GeoPhysX::AverageTopoDEM $grid 0 50 $GenX::Data(Aspect) }
-   "DNEC250" { GeoPhysX::AverageTopoDEM $grid 0 250 $GenX::Data(Aspect) }
+#----- Slope and Aspect
+if { $GenX::Data(Aspect)!="NONE" } {
+   GeoPhysX::AverageAspect $grid
 }
 
-#----- MASK
+#----- Mask
 switch $GenX::Data(Mask) {
-   "USGS"    { GeoPhysX::AverageMask $grid        ;#----- Standard mask averaging method}
-   "CANVEC"  { GeoPhysX::AverageMaskCANVEC $grid  ;#----- High resolution mask averaging over Canada only using CANVEC vectorial data a 1:50000 (Might take long) }
+   "USGS"    { GeoPhysX::AverageMaskUSGS   $grid }
+   "CANVEC"  { GeoPhysX::AverageMaskCANVEC $grid }
 }
 
-#----- VEGETATION
-switch $GenX::Data(Vege) {
-   "USGS"    { GeoPhysX::AverageVege $grid        ;#----- Standard vege averaging method }
-   "EOSD"    { GeoPhysX::AverageVegeEOSD $grid    ;#----- EOSD over Canada only vege averaging method }
-   "CORINE"  { GeoPhysX::AverageVegeCORINE $grid  ;#----- CORINE over Europe only vege averaging method }
+#----- Vegetation type
+if { $GenX::Data(Vege)!="NONE" } {
+   GeoPhysX::AverageVege $grid
 }
 
-#----- SOIL
+#----- Soil type
 switch $GenX::Data(Soil) {
-   "USDA"    { GeoPhysX::AverageSand       $grid  ;#----- Standard sand and clay averaging method
-               GeoPhysX::AverageClay       $grid
+   "USDA"    { GeoPhysX::AverageSandUSDA   $grid
+               GeoPhysX::AverageClayUSDA   $grid
              }
 }
 
-#----- POST_PROCESS
+#----- Consistency checks
+if { $GenX::Data(Check) } {
+   GeoPhysX::Check
+}
+
+#----- Sub grid calculations
 if { $GenX::Data(Post) } {
-   GeoPhysX::PostCheckConsistency
    GeoPhysX::PostCorrectionFactor
    GeoPhysX::PostTopoFilter
    GeoPhysX::PostLaunchingHeight
@@ -105,6 +113,11 @@ if { $GenX::Data(Post) } {
    GeoPhysX::PostRoughnessLength
 }
 
+#----- Consistency checks
+if { $GenX::Data(Diag) } {
+   GeoPhysX::Diag
+}
+
 GenX::MetaData
 fstdfile close GPXOUTFILE
-fstdfile close GPXSECFILE
+fstdfile close GPXAUXFILE

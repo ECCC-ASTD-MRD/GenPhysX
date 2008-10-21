@@ -49,7 +49,7 @@ namespace eval GenX { } {
    variable Data
    variable Batch
 
-   set Data(Version)   0.16                  ;#Application version
+   set Data(Version)   1.0                   ;#Application version
 
    set Data(Verbose)   1                     ;#Level of verbose
    set Data(Compress)  False                 ;#Compress standard file output
@@ -62,10 +62,13 @@ namespace eval GenX { } {
    set Data(Soil)      USDA                  ;#Soit type data selected
    set Data(Topo)      USGS                  ;#Topography data selected
    set Data(Mask)      USGS                  ;#Mask data selected
+   set Data(Aspect)    NONE                  ;#Slope and aspect selected
    set Data(Post)      True                  ;#Post selected
-   set Data(Aspect)    False                 ;#Slope and aspect selected
+   set Data(Check)     True                  ;#Consistency checks
+   set Data(Diag)      False                 ;#Diagnostics
 
-   set Data(Topos)     { NONE USGS SRTM DNEC50 DNEC250 }
+   set Data(Topos)     { NONE USGS SRTM DNEC250 DNEC50 }
+   set Data(Aspects)   { NONE SRTM DNEC250 DNEC50 }
    set Data(Veges)     { NONE USGS EOSD CORINE }
    set Data(Soils)     { NONE USDA }
    set Data(Masks)     { NONE USGS CANVEC }
@@ -91,14 +94,13 @@ namespace eval GenX { } {
       set Path(DBase) /data/dormrb04/genphysx/data
    }
 
-   set Path(Topo)  db/me_usgs2002
-   set Path(Vege)  db/vg_usgs2002
-   set Path(Mask)  db/mg_usgs2002
-   set Path(Sand)  { db/sand_usda db/sand_fao db/sand_argc }
-   set Path(Clay)  { db/clay_usda db/clay_fao db/clay_argc }
-   set Path(TopoL) data_lres
-   set Path(TopoD) data_hres
-   set Path(Gxy)   data_grad
+   set Path(Topo)    db/me_usgs2002
+   set Path(TopoLow) data_lres
+   set Path(Gxy)     data_grad
+   set Path(Vege)    db/vg_usgs2002
+   set Path(Mask)    db/mg_usgs2002
+   set Path(Sand)    { db/sand_usda db/sand_fao db/sand_argc }
+   set Path(Clay)    { db/clay_usda db/clay_fao db/clay_argc }
 
    set Path(SRTM)    /data/cmod8/afseeer/SRTMv4
    set Path(DNEC)    /data/cmod8/afseeer/DNEC
@@ -269,20 +271,25 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
 
       #----- Garder l'index de depart
       set idx [incr No]
+      set var {}
 
       #----- Parcourir les arguments du token specifie
       while { ([string is double [lindex $Argv $No]] || [string index [lindex $Argv $No] 0]!="-") && $No<$Argc } {
-         #----- Check for argument validity
-         set v [lindex $Argv $No]
-         if { [llength $Values] && [lsearch -exact $Values $v]==-1 } {
-            puts stderr "(Error) Invalid value for parameter [lindex $Argv [expr $No-1]], must be one of { $Values }"
-            exit 1;
 
+         #----- Check for argument validity
+         set vs [split [lindex $Argv $No] +]
+         if { [llength $Values] } {
+            foreach v $vs {
+               if { [lsearch -exact $Values $v]==-1 } {
+                  puts stderr "(Error) Invalid value for parameter [lindex $Argv [expr $No-1]], must be one of { $Values }"
+                  exit 1;
+               }
+            }
          }
          if { $Multi==1 } {
-            set var $v
+            set var $vs
          } else {
-            lappend var $v
+            eval lappend var $vs
          }
          incr No
       }
@@ -327,11 +334,15 @@ proc GenX::CommandLine { } {
       \[-target\]   [format "%-30s : Model target (GEM, GEM-MACH, ...)" ($Path(ModelTarget))]
 
    Processing parameters:
-      \[-topo\]     [format "%-30s : Topography method {$Data(Topos)}" ($Data(Topo))]
+      Specify databases in order of processing joined by + ex: STRM+USGS
+
+      \[-topo\]     [format "%-30s : Topography method(s) {$Data(Topos)}" ($Data(Topo))]
       \[-mask\]     [format "%-30s : Mask method {$Data(Masks)}" ($Data(Mask))]
-      \[-vege\]     [format "%-30s : Vegetation method {$Data(Veges)}" ($Data(Vege))]
+      \[-vege\]     [format "%-30s : Vegetation method(s) {$Data(Veges)}" ($Data(Vege))]
       \[-soil\]     [format "%-30s : Soil method {$Data(Soils)}" ($Data(Soil))]
-      \[-aspect\]   [format "%-30s : Calculates aspect and slope" ""]
+      \[-aspect\]   [format "%-30s : Slope and aspect method(s) {$Data(Aspects)}" ($Data(Aspect))]
+      \[-check\]    [format "%-30s : Do consistency checks" ""]
+      \[-diag\]     [format "%-30s : Do diagnostics" ""]
 
    Batch mode parameters:
       \[-batch\]    [format "%-30s : Launch in batch mode" ""]
@@ -387,13 +398,34 @@ proc GenX::ParseCommandLine { } {
          "t"         { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Time)] }
          "cm"        { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mem)] }
          "mail"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mail)] }
-         "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Topo) $GenX::Data(Topos)] }
+         "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Topo) $GenX::Data(Topos)] }
          "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Mask) $GenX::Data(Masks)] }
-         "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Vege) $GenX::Data(Veges)] }
+         "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Vege) $GenX::Data(Veges)] }
          "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Soil) $GenX::Data(Soils)] }
          "post"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Post)] }
-         "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Aspect)] }
+         "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Aspect)] }
+         "check"     { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Check)] }
+         "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
          default     { GenX::CommandLine ; exit 1 }
+      }
+   }
+
+   #----- Check dependencies
+   if { $GenX::Data(Vege)!="NONE" } {
+      if { $GenX::Data(Mask)=="NONE" } {
+         GenX::Trace "GenX::ParseCommandLine: (Error) To generate vegetation type fields you need to generate the mask" 0
+         exit 1
+      }
+   }
+
+   if { $GenX::Data(Post) } {
+      if { $GenX::Data(Mask)=="NONE" } {
+         GenX::Trace "GenX::ParseCommandLine: (Error) To generate sub-grid post-processed fields you need to generate the mask" 0
+         exit 1
+      }
+      if { $GenX::Data(Topo)=="NONE" } {
+         GenX::Trace "GenX::ParseCommandLine: (Error) To generate sub-grid post-processed fields you need to generate the topography" 0
+         exit 1
       }
    }
 
@@ -628,16 +660,16 @@ proc GenX::GridGetFromGEM { File } {
       fstdfield write TIC  GPXOUTFILE -32 True
       fstdfield write TAC  GPXOUTFILE -32 True
 
-      fstdfield write TIC  GPXSECFILE -32 True
-      fstdfield write TAC  GPXSECFILE -32 True
-      fstdfield write GRID GPXSECFILE -32 True
+      fstdfield write TIC  GPXAUXFILE -32 True
+      fstdfield write TAC  GPXAUXFILE -32 True
+      fstdfield write GRID GPXAUXFILE -32 True
    }
    fstdfile close GPXGRIDFILE
    file delete -force tape1
 
-   fstdfield read GRID  GPXSECFILE -1 "" 1200 -1 -1 "" "GRID"
-   fstdfield read GRIDU GPXSECFILE -1 "" 1199 -1 -1 "" "GRID"
-   fstdfield read GRIDV GPXSECFILE -1 "" 1198 -1 -1 "" "GRID"
+   fstdfield read GRID  GPXAUXFILE -1 "" 1200 -1 -1 "" "GRID"
+   fstdfield read GRIDU GPXAUXFILE -1 "" 1199 -1 -1 "" "GRID"
+   fstdfield read GRIDV GPXAUXFILE -1 "" 1198 -1 -1 "" "GRID"
 
    return [list GRID GRIDU GRIDV]
 }
@@ -670,11 +702,11 @@ proc GenX::GridGetFromNML { File } {
    fstdfield write TIC GPXOUTFILE -32 True
    fstdfield write TAC GPXOUTFILE -32 True
 
-   fstdfield write TIC  GPXSECFILE -32 True
-   fstdfield write TAC  GPXSECFILE -32 True
-   fstdfield write GRID GPXSECFILE -32 True
+   fstdfield write TIC  GPXAUXFILE -32 True
+   fstdfield write TAC  GPXAUXFILE -32 True
+   fstdfield write GRID GPXAUXFILE -32 True
 
-   fstdfield read GRID GPXSECFILE -1 "" 1200 -1 -1 "" "GRID"
+   fstdfield read GRID GPXAUXFILE -1 "" 1200 -1 -1 "" "GRID"
    return GRID
 }
 
@@ -712,20 +744,20 @@ proc GenX::GridGetFromFile { File } {
          fstdfield write TIC  GPXOUTFILE -32 True
          fstdfield write TAC  GPXOUTFILE -32 True
 
-         fstdfield write TIC  GPXSECFILE -32 True
-         fstdfield write TAC  GPXSECFILE -32 True
-         fstdfield write GRID GPXSECFILE -32 True
+         fstdfield write TIC  GPXAUXFILE -32 True
+         fstdfield write TAC  GPXAUXFILE -32 True
+         fstdfield write GRID GPXAUXFILE -32 True
       }
    } else {
       fstdfield read GRID GPXGRIDFILE -1 "" -1 -1 -1 "" ""
       fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -IP1 $ip1
-      fstdfield write GRID GPXSECFILE -32 True
+      fstdfield write GRID GPXAUXFILE -32 True
    }
    fstdfile close GPXGRIDFILE
 
-   fstdfield read GRID GPXSECFILE -1 "" 1200 -1 -1 "" "GRID"
-   catch { fstdfield read GRIDU GPXSECFILE -1 "" 1199 -1 -1 "" "GRID" }
-   catch { fstdfield read GRIDV GPXSECFILE -1 "" 1198 -1 -1 "" "GRID" }
+   fstdfield read GRID GPXAUXFILE -1 "" 1200 -1 -1 "" "GRID"
+   catch { fstdfield read GRIDU GPXAUXFILE -1 "" 1199 -1 -1 "" "GRID" }
+   catch { fstdfield read GRIDV GPXAUXFILE -1 "" 1198 -1 -1 "" "GRID" }
 
    return GRID
 }
