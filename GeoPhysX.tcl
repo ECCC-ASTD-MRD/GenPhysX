@@ -720,7 +720,6 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
          fstdfield gridinterp $Grid EOSDTILE NORMALIZED_COUNT $Data(VegeTypes) False
          gdalband free EOSDTILE EOSDMASK
          gdalfile close EOSDFILE
-         break
       }
 
       #----- Use accumulator to figure out coverage in destination
@@ -1186,7 +1185,7 @@ proc GeoPhysX::PostCorrectionFactor { } {
 
    GenX::Procs
    fstdfield read GPXMG GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
-   fstdfield read GPXMG GPXOUTFILE -1 "" -1 -1 -1 "" "MRES"
+   fstdfield read GPXMRES GPXAUXFILE -1 "" -1 -1 -1 "" "MRES"
 
    #----- For low-res and hi-res
    GenX::Trace "GeoPhysX::PostCorrectionFactor Computing low and high res fields" 1
@@ -1195,7 +1194,7 @@ proc GeoPhysX::PostCorrectionFactor { } {
    vexpr GPXDY ddy(GPXMG)
 
    GeoPhysX::PostCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) 2.0 4.0 8.0
-   GeoPhysX::PostCorrectionFilter GPXFHR GPXDX GPXDY MRES 2.0 1.0 7.5
+   GeoPhysX::PostCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES 2.0 1.0 7.5
 
    fstdfield define GPXFLR -NOMVAR FLR -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXFLR GPXAUXFILE -24 True
@@ -1357,12 +1356,12 @@ proc GeoPhysX::PostRoughnessLength { } {
 
    GenX::Procs
    fstdfield read GPXMED  GPXOUTFILE -1 "" -1 -1 -1 "" "ME"
+   fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
    fstdfield read GPXMED2 GPXAUXFILE -1 "" -1 -1 -1 "" "MRMS"
    fstdfield read GPXMED  GPXAUXFILE -1 "" -1 -1 -1 "" "ML"
    fstdfield read GPXMED2 GPXAUXFILE -1 "" -1 -1 -1 "" "LRMS"
    fstdfield read GPXFHR  GPXAUXFILE -1 "" -1 -1 -1 "" "FHR"
    fstdfield read GPXFLR  GPXAUXFILE -1 "" -1 -1 -1 "" "FLR"
-   fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
 
    vexpr GPXME   GPXME  *GPXFHR
    vexpr GPXMRMS GPXMRMS*GPXFHR
@@ -1513,6 +1512,7 @@ proc GeoPhysX::Check { } {
       foreach type $Data(SandTypes) {
          if { ![catch { fstdfield read GPXJ1 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J1" }] } {
             vexpr GPXJ1 ifelse(GPXGA==1.0,43.0,GPXJ1)
+            fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
             fstdfield write GPXJ1 GPXOUTFILE -24 True
          } else {
             GenX::Trace "GeoPhysX::Check: (Warning) Could not find J1($type) field, will not do the conscitency check between GA and J1($type)" 0
@@ -1523,6 +1523,7 @@ proc GeoPhysX::Check { } {
       foreach type $Data(ClayTypes) {
          if { ![catch { fstdfield read GPXJ2 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J2" }] } {
             vexpr GPXJ2 ifelse(GPXGA==1.0,19.0,GPXJ2)
+            fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
             fstdfield write GPXJ2 GPXOUTFILE -24 True
          } else {
             GenX::Trace "GeoPhysX::Check: (Warning) Could not find J2($type) field, will not do the conscitency check between GA and J2($type)" 0
