@@ -306,11 +306,11 @@ proc GeoPhysX::AverageTopoDNEC { Grids { Res 250 } } {
 #
 # Remarks :
 #     NVAR     IP3      Desc
-#     ASP0     0        Average aspect
-#     ASP      0        Fraction of aspect north quadrant oriented
-#     ASP      90       Fraction of aspect east quadrant oriented
-#     ASP      180      Fraction of aspect south quadrant oriented
-#     ASP      270      Fraction of aspect west quadrant oriented
+#     PSA0     0        Average aspect
+#     PSA      0        Fraction of aspect north quadrant oriented
+#     PSA      90       Fraction of aspect east quadrant oriented
+#     PSA      180      Fraction of aspect south quadrant oriented
+#     PSA      270      Fraction of aspect west quadrant oriented
 
 #     PEN0     0        Average slope
 #     PEN      0        Average slope with aspect north quadrant oriented
@@ -322,7 +322,7 @@ proc GeoPhysX::AverageAspect { Grid } {
    variable Data
 
    GenX::Procs
-   GenX::Trace "GeoPhysX::AverageAspect: Computing slope and aspect from original source" 1
+   GenX::Trace "GeoPhysX::AverageAspect: Computing slope and aspect" 1
 
    set SRTM [expr [lsearch -exact $GenX::Data(Aspect) SRTM]!=-1]
 
@@ -333,18 +333,18 @@ proc GeoPhysX::AverageAspect { Grid } {
       set DNEC 50
    }
 
-   fstdfield copy GPXASPEC  $Grid
-   fstdfield copy GPXASPECN $Grid
-   fstdfield copy GPXASPECE $Grid
-   fstdfield copy GPXASPECS $Grid
-   fstdfield copy GPXASPECW $Grid
-   fstdfield copy GPXSLOPE  $Grid
-   fstdfield copy GPXSLOPEN $Grid
-   fstdfield copy GPXSLOPEE $Grid
-   fstdfield copy GPXSLOPES $Grid
-   fstdfield copy GPXSLOPEW $Grid
+   fstdfield copy GPXPSA  $Grid
+   fstdfield copy GPXPSAN $Grid
+   fstdfield copy GPXPSAE $Grid
+   fstdfield copy GPXPSAS $Grid
+   fstdfield copy GPXPSAW $Grid
+   fstdfield copy GPXSLP  $Grid
+   fstdfield copy GPXSLPN $Grid
+   fstdfield copy GPXSLPE $Grid
+   fstdfield copy GPXSLPS $Grid
+   fstdfield copy GPXSLPW $Grid
 
-   GenX::GridClear [list GPXASPEC GPXASPECN GPXASPECE GPXASPECS GPXASPECW GPXSLOPE GPXSLOPEN GPXSLOPEE GPXSLOPES GPXSLOPEW] -1
+   GenX::GridClear [list GPXPSA GPXPSAN GPXPSAE GPXPSAS GPXPSAW GPXSLP GPXSLPN GPXSLPE GPXSLPS GPXSLPW] -1
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set lat0 [lindex $limits 0]
@@ -416,62 +416,62 @@ proc GeoPhysX::AverageAspect { Grid } {
          #----- If the tile has data, process on destination grid
          if { $data } {
             GenX::Trace "   Computing slope and aspect per quadrant" 2
-            GeoPhysX::AverageAspect $Grid DEMTILE
+            GeoPhysX::AverageAspectTile $Grid DEMTILE
          }
       }
    }
    GenX::CacheFree
 
    #----- Finalize Aspect and Slope
-   fstdfield gridinterp GPXASPEC  - NOP True
-   fstdfield gridinterp GPXASPECN - NOP True
-   fstdfield gridinterp GPXASPECE - NOP True
-   fstdfield gridinterp GPXASPECS - NOP True
-   fstdfield gridinterp GPXASPECW - NOP True
+   fstdfield gridinterp GPXPSA  - NOP True
+   fstdfield gridinterp GPXPSAN - NOP True
+   fstdfield gridinterp GPXPSAE - NOP True
+   fstdfield gridinterp GPXPSAS - NOP True
+   fstdfield gridinterp GPXPSAW - NOP True
 
-   fstdfield gridinterp GPXSLOPE  - NOP True
-   fstdfield gridinterp GPXSLOPEN - NOP True
-   fstdfield gridinterp GPXSLOPEE - NOP True
-   fstdfield gridinterp GPXSLOPES - NOP True
-   fstdfield gridinterp GPXSLOPEW - NOP True
+   fstdfield gridinterp GPXSLP  - NOP True
+   fstdfield gridinterp GPXSLPN - NOP True
+   fstdfield gridinterp GPXSLPE - NOP True
+   fstdfield gridinterp GPXSLPS - NOP True
+   fstdfield gridinterp GPXSLPW - NOP True
 
-   vexpr GPXSLOPE  max(GPXSLOPE,0);
-   vexpr GPXSLOPEN max(GPXSLOPEN,0);
-   vexpr GPXSLOPEE max(GPXSLOPEE,0);
-   vexpr GPXSLOPES max(GPXSLOPES,0);
-   vexpr GPXSLOPEW max(GPXSLOPEW,0);
+   vexpr GPXSLP  max(GPXSLP,0);
+   vexpr GPXSLPN max(GPXSLPN,0);
+   vexpr GPXSLPE max(GPXSLPE,0);
+   vexpr GPXSLPS max(GPXSLPS,0);
+   vexpr GPXSLPW max(GPXSLPW,0);
 
-   vexpr GPXASPECN max(GPXASPECN,0);
-   vexpr GPXASPECE max(GPXASPECE,0);
-   vexpr GPXASPECS max(GPXASPECS,0);
-   vexpr GPXASPECW max(GPXASPECW,0);
+   vexpr GPXPSAN max(GPXPSAN,0);
+   vexpr GPXPSAE max(GPXPSAE,0);
+   vexpr GPXPSAS max(GPXPSAS,0);
+   vexpr GPXPSAW max(GPXPSAW,0);
 
    #----- Save everything
-   fstdfield define GPXASPEC  -NOMVAR ASP0 -IP3 0
-   fstdfield define GPXASPECN -NOMVAR ASP  -IP3 0
-   fstdfield define GPXASPECE -NOMVAR ASP  -IP3 90
-   fstdfield define GPXASPECS -NOMVAR ASP  -IP3 180
-   fstdfield define GPXASPECW -NOMVAR ASP  -IP3 270
+   fstdfield define GPXPSA  -NOMVAR PSA0 -IP3 0
+   fstdfield define GPXPSAN -NOMVAR PSA  -IP3 0
+   fstdfield define GPXPSAE -NOMVAR PSA  -IP3 90
+   fstdfield define GPXPSAS -NOMVAR PSA  -IP3 180
+   fstdfield define GPXPSAW -NOMVAR PSA  -IP3 270
 
-   fstdfield define GPXSLOPE  -NOMVAR PEN0 -IP3 0
-   fstdfield define GPXSLOPEN -NOMVAR PEN  -IP3 0
-   fstdfield define GPXSLOPEE -NOMVAR PEN  -IP3 90
-   fstdfield define GPXSLOPES -NOMVAR PEN  -IP3 180
-   fstdfield define GPXSLOPEW -NOMVAR PEN  -IP3 270
+   fstdfield define GPXSLP  -NOMVAR PEN0 -IP3 0
+   fstdfield define GPXSLPN -NOMVAR PEN  -IP3 0
+   fstdfield define GPXSLPE -NOMVAR PEN  -IP3 90
+   fstdfield define GPXSLPS -NOMVAR PEN  -IP3 180
+   fstdfield define GPXSLPW -NOMVAR PEN  -IP3 270
 
-   fstdfield write GPXASPEC  GPXAUXFILE -24 True
-   fstdfield write GPXASPECN GPXAUXFILE -24 True
-   fstdfield write GPXASPECE GPXAUXFILE -24 True
-   fstdfield write GPXASPECS GPXAUXFILE -24 True
-   fstdfield write GPXASPECW GPXAUXFILE -24 True
+   fstdfield write GPXPSA  GPXAUXFILE -24 True
+   fstdfield write GPXPSAN GPXAUXFILE -24 True
+   fstdfield write GPXPSAE GPXAUXFILE -24 True
+   fstdfield write GPXPSAS GPXAUXFILE -24 True
+   fstdfield write GPXPSAW GPXAUXFILE -24 True
 
-   fstdfield write GPXSLOPE  GPXAUXFILE -24 True
-   fstdfield write GPXSLOPEN GPXAUXFILE -24 True
-   fstdfield write GPXSLOPEE GPXAUXFILE -24 True
-   fstdfield write GPXSLOPES GPXAUXFILE -24 True
-   fstdfield write GPXSLOPEW GPXAUXFILE -24 True
+   fstdfield write GPXSLP  GPXAUXFILE -24 True
+   fstdfield write GPXSLPN GPXAUXFILE -24 True
+   fstdfield write GPXSLPE GPXAUXFILE -24 True
+   fstdfield write GPXSLPS GPXAUXFILE -24 True
+   fstdfield write GPXSLPW GPXAUXFILE -24 True
 
-   fstdfield free GPXSLOPE GPXSLOPEN GPXSLOPEE GPXSLOPES GPXSLOPEW GPXASPEC GPXASPECN GPXASPECE GPXASPECS GPXASPECW
+   fstdfield free GPXSLP GPXSLPN GPXSLPE GPXSLPS GPXSLPW GPXPSA GPXPSAN GPXPSAE GPXPSAS GPXPSAW
    gdalband free DEMTILE
 }
 
@@ -1095,46 +1095,46 @@ proc GeoPhysX::AverageGradient { Grid } {
 #
 #----------------------------------------------------------------------------
 
-proc GeoPhysX::AverageAspect { Grid Band } {
+proc GeoPhysX::AverageAspectTile { Grid Band } {
 
    #----- Calculate slope and aspect for the tile
-   vexpr SLOPETILE dslopedeg($Band)
-   vexpr ASPECTILE daspect($Band)
+   vexpr SLPTILE dslopedeg($Band)
+   vexpr PSATILE daspect($Band)
 
    #----- Define aspect ranges
-   vexpr ASPECN ifelse((ASPECTILE>315 || ASPECTILE<=45)  && SLOPETILE!=0.0,1,-1)
-   vexpr ASPECE ifelse((ASPECTILE>45 && ASPECTILE<=135)  && SLOPETILE!=0.0,1,-1)
-   vexpr ASPECS ifelse((ASPECTILE>135 && ASPECTILE<=225) && SLOPETILE!=0.0,1,-1)
-   vexpr ASPECW ifelse((ASPECTILE>225 && ASPECTILE<=315) && SLOPETILE!=0.0,1,-1)
+   vexpr PSAN ifelse((PSATILE>315 || PSATILE<=45)  && SLPTILE!=0.0,1,-1)
+   vexpr PSAE ifelse((PSATILE>45 && PSATILE<=135)  && SLPTILE!=0.0,1,-1)
+   vexpr PSAS ifelse((PSATILE>135 && PSATILE<=225) && SLPTILE!=0.0,1,-1)
+   vexpr PSAW ifelse((PSATILE>225 && PSATILE<=315) && SLPTILE!=0.0,1,-1)
 
    #----- Set slope mask on the aspect ranges
-   vexpr SLOPEN  ifelse(ASPECN!=-1,SLOPETILE,-1)
-   vexpr SLOPEE  ifelse(ASPECE!=-1,SLOPETILE,-1)
-   vexpr SLOPES  ifelse(ASPECS!=-1,SLOPETILE,-1)
-   vexpr SLOPEW  ifelse(ASPECW!=-1,SLOPETILE,-1)
+   vexpr SLPN  ifelse(PSAN!=-1,SLPTILE,-1)
+   vexpr SLPE  ifelse(PSAE!=-1,SLPTILE,-1)
+   vexpr SLPS  ifelse(PSAS!=-1,SLPTILE,-1)
+   vexpr SLPW  ifelse(PSAW!=-1,SLPTILE,-1)
 
-   gdalband stats ASPECN -nodata -1
-   gdalband stats ASPECE -nodata -1
-   gdalband stats ASPECS -nodata -1
-   gdalband stats ASPECW -nodata -1
-   gdalband stats SLOPEN -nodata -1
-   gdalband stats SLOPEE -nodata -1
-   gdalband stats SLOPES -nodata -1
-   gdalband stats SLOPEW -nodata -1
+   gdalband stats PSAN -nodata -1
+   gdalband stats PSAE -nodata -1
+   gdalband stats PSAS -nodata -1
+   gdalband stats PSAW -nodata -1
+   gdalband stats SLPN -nodata -1
+   gdalband stats SLPE -nodata -1
+   gdalband stats SLPS -nodata -1
+   gdalband stats SLPW -nodata -1
 
    #----- Do the averaging on destination grid
-   fstdfield gridinterp GPXASPECN ASPECN COUNT False
-   fstdfield gridinterp GPXASPECE ASPECE COUNT False
-   fstdfield gridinterp GPXASPECS ASPECS COUNT False
-   fstdfield gridinterp GPXASPECW ASPECW COUNT False
+   fstdfield gridinterp GPXPSAN PSAN COUNT False
+   fstdfield gridinterp GPXPSAE PSAE COUNT False
+   fstdfield gridinterp GPXPSAS PSAS COUNT False
+   fstdfield gridinterp GPXPSAW PSAW COUNT False
 
-   fstdfield gridinterp GPXSLOPEN SLOPEN AVERAGE False
-   fstdfield gridinterp GPXSLOPEE SLOPEE AVERAGE False
-   fstdfield gridinterp GPXSLOPES SLOPES AVERAGE False
-   fstdfield gridinterp GPXSLOPEW SLOPEW AVERAGE False
+   fstdfield gridinterp GPXSLPN SLPN AVERAGE False
+   fstdfield gridinterp GPXSLPE SLPE AVERAGE False
+   fstdfield gridinterp GPXSLPS SLPS AVERAGE False
+   fstdfield gridinterp GPXSLPW SLPW AVERAGE False
 
-   fstdfield gridinterp GPXASPEC  ASPECTILE AVERAGE False
-   fstdfield gridinterp GPXSLOPE  SLOPETILE AVERAGE False
+   fstdfield gridinterp GPXPSA  PSATILE AVERAGE False
+   fstdfield gridinterp GPXSLP  SLPTILE AVERAGE False
 }
 
 #----------------------------------------------------------------------------

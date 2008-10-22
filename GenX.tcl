@@ -51,7 +51,7 @@ namespace eval GenX { } {
 
    set Data(Version)   1.0                   ;#Application version
 
-   set Data(Verbose)   1                     ;#Level of verbose
+   set Data(Verbose)   2                     ;#Level of verbose
    set Data(Compress)  False                 ;#Compress standard file output
    set Data(TileSize)  1024                  ;#Tile size to use for large dataset
    set Data(Cache)     {}                    ;#Input data cache list
@@ -63,7 +63,7 @@ namespace eval GenX { } {
    set Data(Topo)      USGS                  ;#Topography data selected
    set Data(Mask)      USGS                  ;#Mask data selected
    set Data(Aspect)    NONE                  ;#Slope and aspect selected
-   set Data(Post)      True                  ;#Post selected
+   set Data(Post)      False                 ;#Post selected
    set Data(Check)     True                  ;#Consistency checks
    set Data(Diag)      False                 ;#Diagnostics
 
@@ -218,16 +218,18 @@ proc GenX::Trace { Message { Level 1 } } {
 #----------------------------------------------------------------------------
 proc GenX::MetaData { { Header "" } { Extra "" } } {
    global env
+   global argv
    variable Data
    variable Path
 
    #----- Description des versions utilisees
 
-   set version "[info script] and GenX($Data(Version))"
+   set version "GenX($Data(Version))"
    catch { append version ", GeoPhysX($GeoPhysX::Data(Version))" }
    catch { append version ", BioGenX($BioGenX::Data(Version))" }
 
-   set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\nCode base      : $version\n"
+   set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\n"
+   append meta "Call parameters: [info script] [join $argv " "]\nCode base      : $version\n"
    append meta $Header
    append meta "Processing used:\n   [join $Data(Procs) "\n   "]\n"
    if { [file exists $Path(NameFile)] } {
