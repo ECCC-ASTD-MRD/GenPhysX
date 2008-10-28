@@ -29,12 +29,16 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 #   Processing parameters:
 #      Specify databases in order of processing joined by + ex: STRM+USGS
 #
-#      [-topo]     (DNEC250 SRTM USGS)            : Topography method { NONE USGS SRTM DNEC250 DNEC50 }
-#      [-mask]     (NONE)                         : Mask method { NONE USGS CANVEC }
-#      [-vege]     (NONE)                         : Vegetation method { NONE USGS EOSD CORINE }
-#      [-soil]     (NONE)                         : Soil method { NONE USDA }
+#      [-topo]     (USGS)                         : Topography method { NONE USGS SRTM DNEC250 DNEC50 }
+#      [-mask]     (USGS)                         : Mask method { NONE USGS CANVEC }
+#      [-vege]     (USGS)                         : Vegetation method { NONE USGS EOSD CORINE }
+#      [-soil]     (USDA)                         : Soil method { NONE USDA }
 #      [-aspect]   (NONE)                         : Calculates aspect and slope { NONE SRTM DNEC250 DNEC50 }
 #      [-check]                                   : Do consistency checks
+#      [-diag]                                    : Do diagnostics
+#
+#   Specific processing parameters:
+#      [-z0filter]                                : Apply GEM filter to roughness length
 #
 #   Batch mode parameters:
 #      [-batch]                                   : Launch in batch mode
@@ -100,17 +104,17 @@ switch $GenX::Data(Soil) {
 }
 
 #----- Consistency checks
-if { $GenX::Data(Check) } {
-   GeoPhysX::Check
+switch $GenX::Data(Check) {
+   "STD" { GeoPhysX::CheckConsistencyStandard }
 }
 
 #----- Sub grid calculations
-if { $GenX::Data(Post) } {
-   GeoPhysX::PostCorrectionFactor
-   GeoPhysX::PostTopoFilter
-   GeoPhysX::PostLaunchingHeight
-   GeoPhysX::PostY789
-   GeoPhysX::PostRoughnessLength
+if { $GenX::Data(Sub)!="NONE" } {
+   GeoPhysX::SubCorrectionFactor
+   GeoPhysX::SubTopoFilter
+   GeoPhysX::SubLaunchingHeight
+   GeoPhysX::SubY789
+   GeoPhysX::SubRoughnessLength
 }
 
 #----- Consistency checks

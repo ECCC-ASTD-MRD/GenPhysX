@@ -34,15 +34,15 @@
 #   GeoPhysX::AverageSandUSDA      { Grid }
 #   GeoPhysX::AverageClayUSDA      { Grid }
 #
-#   GeoPhysX::PostCorrectionFilter { FieldRes FieldDX FieldDY DBR C1 C2 C3 }
-#   GeoPhysX::PostCorrectionFactor { }
-#   GeoPhysX::PostTopoFilter       { }
-#   GeoPhysX::PostLaunchingHeight  { }
-#   GeoPhysX::PostY789             { }
-#   GeoPhysX::PostRoughnessLength  { }
+#   GeoPhysX::SubCorrectionFilter  { FieldRes FieldDX FieldDY DBR C1 C2 C3 }
+#   GeoPhysX::SubCorrectionFactor  { }
+#   GeoPhysX::SubTopoFilter        { }
+#   GeoPhysX::SubLaunchingHeight   { }
+#   GeoPhysX::SubY789              { }
+#   GeoPhysX::SubRoughnessLength   { }
 #
-#   GeoPhysX::Check                { }
-#   GeoPhysX::Diag                 { }
+#   GeoPhysX::CheckConsistencyStandard { }
+#   GeoPhysX::Diag                     { }
 #============================================================================
 
 namespace eval GeoPhysX { } {
@@ -60,21 +60,30 @@ namespace eval GeoPhysX { } {
    set Data(VegeZ0vTypes) { 0.001 0.0003 0.001 1.5 3.5 1.0 2.0 3.0 0.8 0.05 0.15 0.15 0.02
                             0.08 0.08 0.08 0.35 0.25 0.1 0.08 1.35 0.01 0.05 0.05 1.5 0.05 }
 
-   #----- constant definitions
+   #----- Constants definitions
 
-   set Const(lhmin)   3.0         ;#
-   set Const(mgmin)   0.001       ;#
-   set Const(z0min)   0.0001      ;#
-   set Const(z0def)   0.05        ;#
-   set Const(gaz0)    0.0003      ;#
-   set Const(dbl)     5000.0      ;#
-   set Const(drgcoef) 0.40        ;#
-   set Const(karman)  0.40        ;#
-   set Const(slpmin)  0.001       ;#
-   set Const(zrefmin) 10.0        ;#
-   set Const(lres)    5000.0      ;# Resolution of the smoothed database
-   set Const(z0def)   0.00001     ;#
-   set Const(zpdef)   -11.51      ;#
+   set Const(lhmin)   3.0         ;# Minimum value acceptable for launching height field LH
+                                   #   in meters, used in the calculation of LH, Y7, Y8 and Y9
+                                   #   (if LH < lhmin, these fields are set to zero)
+   set Const(mgmin)   0.001       ;# Threshold value of land-water mask field (MG), used in the
+                                   #   calculation of the topographic component of the roughness
+                                   #   length
+   set Const(z0min)   0.0001      ;# Threshold value of roughness length in meters, used to identify
+                                   #   some "gaps" in the roughness length field
+   set Const(gaz0)    0.0003      ;# Roughness length for glacier-type surfaces
+   set Const(lres)    5000.0      ;# Horizontal reference scale (5000 m) for topography features,
+                                   #   used to separate subgrid scales among the fields:
+                                   #     - LH,Y7,Y8,Y9 (which should use scales > 5000 m)
+                                   #     - Z0,ZP       (which should use scales < 5000 m)
+   set Const(drgcoef) 0.40        ;# Drag coefficient used in the formula of roughness length
+   set Const(karman)  0.40        ;# von Karman constant
+   set Const(slpmin)  0.001       ;# Threshold value for slope parameter, used in the calculation
+                                   #   of the topographic component of the roughness length
+   set Const(zrefmin) 10.0        ;# Threshold value for reference height, used in the calculation
+                                   #   of the roughness length
+   set Const(z0def)   0.00001     ;# Default value of the roughness length in meters, used to
+                                   #   fill in some "gaps" in the roughness length field
+   set Const(zpdef)   -11.51      ;# = ln(z0def)
 }
 
 #----------------------------------------------------------------------------
@@ -598,8 +607,7 @@ proc GeoPhysX::AverageVege { Grid } {
    variable Data
 
    fstdfield copy GPXVF $Grid
-   fstdfield copy GPXVG $Grid
-   GenX::GridClear [list GPXVF GPXVG $Grid] 0.0
+   GenX::GridClear [list GPXVF $Grid] 0.0
 
    foreach vege $GenX::Data(Vege) {
       switch $vege {
@@ -610,9 +618,12 @@ proc GeoPhysX::AverageVege { Grid } {
    }
    fstdfield gridinterp GPXVF - NOP True
 
-   GeoPhysX::DominantVege $Grid                        ;#----- Calculate Dominant type and save
+   #----- Save the 26 Vege types
+   fstdfield define GPXVF -NOMVAR VF -IP2 0 -IP3 0
+   fstdfield stats GPXVF -levels $Data(VegeTypes) -leveltype UNDEFINED
+   fstdfield write GPXVF GPXAUXFILE -24 True
 
-   fstdfield free GPXVF GPXVG
+   fstdfield free GPXVF
 }
 
 #----------------------------------------------------------------------------
@@ -788,56 +799,6 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
    gdalband free CORINETILE
    gdalfile close CORINEFILE
    vector free FROMCORINE TORPN
-}
-
-#----------------------------------------------------------------------------
-# Name     : <GeoPhysX::DominantVege>
-# Creation : Decembre 2007 - J.P. Gauthier - CMC/CMOE
-#
-# Goal     : Caclulates the dominant vege type and saves every vege fields.
-#
-# Parameters :
-#   <Grid>   : Grid on which to generate the vegetation
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GeoPhysX::DominantVege { Grid } {
-   variable Data
-
-   #----- Fix Consistency between MG and VF type 1
-   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
-      fstdfield read GPXMG GPXOUTFILE $idx
-      vexpr GPXX GPXVF()()(0)=ifelse(GPXMG==0.0 && GPXVF()()(2)==0.0,1.0,GPXVF()()(0))
-   } else {
-      GenX::Trace "GeoPhysX::DominantVege: (Warning) Could not find mask field MG, will not do the conscitency check between MG and VF(1)" 0
-   }
-
-   #----- Save the 26 Vege types
-   fstdfield define GPXVF -NOMVAR VF -IP2 0 -IP3 0
-   fstdfield stats GPXVF -levels $Data(VegeTypes) -leveltype UNDEFINED
-   fstdfield write GPXVF GPXOUTFILE -24 True
-
-   GenX::GridClear $Grid 0.0
-
-   #----- Generate VG field (Dominant type per cell)
-   foreach type $Data(VegeTypes) {
-      set k [expr $type-1]
-      vexpr GPXK  GPXVF()()($k)
-      vexpr GPXVG ifelse($Grid>=GPXK,GPXVG,$type)
-      vexpr $Grid ifelse($Grid>=GPXK,$Grid,GPXK)
-   }
-   fstdfield define GPXVG -NOMVAR VG -IP1 0 -IP2 0 -IP3 0
-   fstdfield write GPXVG GPXOUTFILE -24 True
-
-   #----- Generate GA field (glacier = VF type 2 = VF level 1)
-   vexpr GPXGA GPXVF()()(1)
-   fstdfield define GPXGA -NOMVAR GA -IP1 0 -IP2 0 -IP3 0
-   fstdfield write  GPXGA GPXOUTFILE -24 True
-
-   fstdfield free GPXK GPXMG GPXGA
 }
 
 #----------------------------------------------------------------------------
@@ -1138,7 +1099,7 @@ proc GeoPhysX::AverageAspectTile { Grid Band } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::PostCorrectionFilter>
+# Name     : <GeoPhysX::SubCorrectionFilter>
 # Creation : Septembre 2007 - Ayrton Zadra - CMC/CMOE
 #
 # Goal     : Generate a correction filter.
@@ -1157,7 +1118,7 @@ proc GeoPhysX::AverageAspectTile { Grid Band } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::PostCorrectionFilter { FieldRes FieldDX FieldDY DBR C1 C2 C3 } {
+proc GeoPhysX::SubCorrectionFilter { FieldRes FieldDX FieldDY DBR C1 C2 C3 } {
 
    GenX::Procs
    vexpr GPXDD sqrt($FieldDX*$FieldDY)
@@ -1168,7 +1129,7 @@ proc GeoPhysX::PostCorrectionFilter { FieldRes FieldDX FieldDY DBR C1 C2 C3 } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::PostCorrectionFactor>
+# Name     : <GeoPhysX::SubCorrectionFactor>
 # Creation : Septembre 2007 - Ayrton Zadra - CMC/CMOE
 #
 # Goal     : Apply a correction factor from low and high res topo.
@@ -1180,7 +1141,7 @@ proc GeoPhysX::PostCorrectionFilter { FieldRes FieldDX FieldDY DBR C1 C2 C3 } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::PostCorrectionFactor { } {
+proc GeoPhysX::SubCorrectionFactor { } {
    variable Const
 
    GenX::Procs
@@ -1188,13 +1149,13 @@ proc GeoPhysX::PostCorrectionFactor { } {
    fstdfield read GPXMRES GPXAUXFILE -1 "" -1 -1 -1 "" "MRES"
 
    #----- For low-res and hi-res
-   GenX::Trace "GeoPhysX::PostCorrectionFactor Computing low and high res fields" 1
+   GenX::Trace "GeoPhysX::SubCorrectionFactor Computing low and high res fields" 1
 
    vexpr GPXDX ddx(GPXMG)
    vexpr GPXDY ddy(GPXMG)
 
-   GeoPhysX::PostCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) 2.0 4.0 8.0
-   GeoPhysX::PostCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES 2.0 1.0 7.5
+   GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) 2.0 4.0 8.0
+   GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES 2.0 1.0 7.5
 
    fstdfield define GPXFLR -NOMVAR FLR -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXFLR GPXAUXFILE -24 True
@@ -1202,13 +1163,13 @@ proc GeoPhysX::PostCorrectionFactor { } {
    fstdfield write GPXFHR GPXAUXFILE -24 True
 
    #----- For low-res and hi-res (over land only)
-   GenX::Trace "GeoPhysX::PostCorrectionFactor Computing low and high res fields over land only" 1
+   GenX::Trace "GeoPhysX::SubCorrectionFactor Computing low and high res fields over land only" 1
 
    vexpr GPXDX GPXDX*sqrt(GPXMG)
    vexpr GPXDY GPXDY*sqrt(GPXMG)
 
-   GeoPhysX::PostCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) 2.0 4.0 8.0
-   GeoPhysX::PostCorrectionFilter GPXFHR GPXDX GPXDY MRES 2.0 1.0 7.5
+   GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) 2.0 4.0 8.0
+   GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES 2.0 1.0 7.5
 
    fstdfield define GPXFLR -NOMVAR FLRP -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXFLR GPXAUXFILE -24 True
@@ -1219,7 +1180,7 @@ proc GeoPhysX::PostCorrectionFactor { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::PostTopoFilter>
+# Name     : <GeoPhysX::SubTopoFilter>
 # Creation : Septembre 2007 - J.P. Gauthier - CMC/CMOE
 #
 # Goal     : Apply the GEM topo filter to the previously generated topo.
@@ -1231,12 +1192,12 @@ proc GeoPhysX::PostCorrectionFactor { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::PostTopoFilter { } {
+proc GeoPhysX::SubTopoFilter { } {
 
    GenX::Procs
    fstdfield read GPXMF GPXOUTFILE -1 "" 1200 -1 -1 "" "ME"
 
-   GenX::Trace "GeoPhysX::PostTopoFilter Filtering ME" 1
+   GenX::Trace "GeoPhysX::SubTopoFilter Filtering ME" 1
    fstdgrid zfilter GPXMF GenX::Settings
    fstdfield define GPXMF -NOMVAR MF -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXMF GPXOUTFILE -24 True
@@ -1245,7 +1206,7 @@ proc GeoPhysX::PostTopoFilter { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::PostLaunchingHeight>
+# Name     : <GeoPhysX::SubLaunchingHeight>
 # Creation : Septembre 2007 - Ayrton Zadra - CMC/CMOE
 #
 # Goal     : Calculates the launching height.
@@ -1257,7 +1218,7 @@ proc GeoPhysX::PostTopoFilter { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::PostLaunchingHeight { } {
+proc GeoPhysX::SubLaunchingHeight { } {
    variable Const
 
    GenX::Procs
@@ -1270,7 +1231,7 @@ proc GeoPhysX::PostLaunchingHeight { } {
    vexpr GPXMEL  GPXMEL *GPXFLR
    vexpr GPXLRMS GPXLRMS*GPXFLR
 
-   GenX::Trace "GeoPhysX::PostLaunchingHeight Computing launching height LH" 1
+   GenX::Trace "GeoPhysX::SubLaunchingHeight Computing launching height LH" 1
    vexpr GPXLH 2.0*GPXMG*((GPXLRMS^2 - GPXMEL^2)^0.5)
    vexpr GPXLH ifelse(GPXLH>=$Const(lhmin),GPXLH,0.0)
    fstdfield define GPXLH -NOMVAR LH -IP1 0 -IP2 0 -IP3 0
@@ -1280,7 +1241,7 @@ proc GeoPhysX::PostLaunchingHeight { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::PostY789>
+# Name     : <GeoPhysX::SubY789>
 # Creation : Septembre 2007 - Ayrton Zadra - CMC/CMOE
 #
 # Goal     : Calculates the Y789 fields.
@@ -1292,7 +1253,7 @@ proc GeoPhysX::PostLaunchingHeight { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::PostY789 { } {
+proc GeoPhysX::SubY789 { } {
    variable Const
 
    GenX::Procs
@@ -1316,19 +1277,19 @@ proc GeoPhysX::PostY789 { } {
    fstdfield define GPXALP -NOMVAR ALP -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXALP GPXAUXFILE -32 True
 
-   GenX::Trace "GeoPhysX::PostY789 Computing Y7" 1
+   GenX::Trace "GeoPhysX::SubY789 Computing Y7" 1
    vexpr GPXY789 GPXMG*(GPXGXX*(GPXCOSA^2) + GPXGYY*(GPXSINA^2) - 2.0*GPXGXY*GPXSINA*GPXCOSA)
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
    fstdfield define GPXY789 -NOMVAR Y7 -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXY789 GPXOUTFILE -32 True
 
-   GenX::Trace "GeoPhysX::PostY789 Computing Y8" 1
+   GenX::Trace "GeoPhysX::SubY789 Computing Y8" 1
    vexpr GPXY789 GPXMG*(GPXGXX*(GPXSINA^2) + GPXGYY*(GPXCOSA^2) + 2.0*GPXGXY*GPXSINA*GPXCOSA)
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
    fstdfield define GPXY789 -NOMVAR Y8 -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXY789 GPXOUTFILE -32 True
 
-   GenX::Trace "GeoPhysX::PostY789 Computing Y9" 1
+   GenX::Trace "GeoPhysX::SubY789 Computing Y9" 1
    vexpr GPXY789 GPXMG*((GPXGXX-GPXGYY)*GPXSINA*GPXCOSA + GPXGXY*(GPXCOSA^2-GPXSINA^2))
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
    fstdfield define GPXY789 -NOMVAR Y9 -IP1 0 -IP2 0 -IP3 0
@@ -1338,7 +1299,7 @@ proc GeoPhysX::PostY789 { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::PostRoughnessLength>
+# Name     : <GeoPhysX::SubRoughnessLength>
 # Creation : Septembre 2007 - Ayrton Zadra - CMC/CMOE
 #
 # Goal     : Calculates the roughness length.
@@ -1350,16 +1311,16 @@ proc GeoPhysX::PostY789 { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::PostRoughnessLength { } {
+proc GeoPhysX::SubRoughnessLength { } {
    variable Data
    variable Const
 
    GenX::Procs
-   fstdfield read GPXMED  GPXOUTFILE -1 "" -1 -1 -1 "" "ME"
+   fstdfield read GPXME   GPXOUTFILE -1 "" -1 -1 -1 "" "ME"
    fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
-   fstdfield read GPXMED2 GPXAUXFILE -1 "" -1 -1 -1 "" "MRMS"
-   fstdfield read GPXMED  GPXAUXFILE -1 "" -1 -1 -1 "" "ML"
-   fstdfield read GPXMED2 GPXAUXFILE -1 "" -1 -1 -1 "" "LRMS"
+   fstdfield read GPXMRMS GPXAUXFILE -1 "" -1 -1 -1 "" "MRMS"
+   fstdfield read GPXMEL  GPXAUXFILE -1 "" -1 -1 -1 "" "MEL"
+   fstdfield read GPXLRMS GPXAUXFILE -1 "" -1 -1 -1 "" "LRMS"
    fstdfield read GPXFHR  GPXAUXFILE -1 "" -1 -1 -1 "" "FHR"
    fstdfield read GPXFLR  GPXAUXFILE -1 "" -1 -1 -1 "" "FLR"
 
@@ -1368,7 +1329,7 @@ proc GeoPhysX::PostRoughnessLength { } {
    vexpr GPXMEL  GPXMEL *GPXFLR
    vexpr GPXLRMS GPXLRMS*GPXFLR
 
-   GenX::Trace "GeoPhysX::PostRoughnessLength Computing subgrid-scale variance" 1
+   GenX::Trace "GeoPhysX::SubRoughnessLength Computing subgrid-scale variance" 1
    vexpr GPXSSS (GPXMRMS^2 - GPXME^2)-(GPXLRMS^2 - GPXMEL^2)
    vexpr GPXSSS ifelse(GPXSSS>0.0,GPXSSS^0.5,0.0)
    vexpr GPXSSS ifelse(GPXMG>$Const(mgmin),GPXSSS,0.0)
@@ -1382,9 +1343,9 @@ proc GeoPhysX::PostRoughnessLength { } {
    vexpr GPXZREF ifelse(GPXZREF<$Const(zrefmin),$Const(zrefmin),GPXZREF)
    vexpr GPXZREF ifelse(GPXZREF>1500.0,1500.0,GPXZREF)
 
-   vexpr GPXSLP (GPXHCOEF*GPXHCOEF*GPXSSS/$Const(dbl))
+   vexpr GPXSLP (GPXHCOEF*GPXHCOEF*GPXSSS/$Const(lres))
 
-   GenX::Trace "GeoPhysX::PostRoughnessLength Computing Z0_topo" 1
+   GenX::Trace "GeoPhysX::SubRoughnessLength Computing Z0_topo" 1
    vexpr GPXZTP ifelse(GPXSLP>$Const(slpmin) || GPXZREF>$Const(zrefmin),1.0+GPXZREF*exp(-$Const(karman)/sqrt(0.5*$Const(drgcoef)*GPXSLP)),0.0)
    fstdfield define GPXZTP -NOMVAR ZTOP -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXZTP GPXAUXFILE -32 True
@@ -1462,9 +1423,10 @@ proc GeoPhysX::PostRoughnessLength { } {
    fstdfield write GPXZ0 GPXAUXFILE -32 True
 
    #------ Filter roughness length
-
-   GenX::Trace "GeoPhysX::PostRoughnessLength Filtering Z0" 1
-   fstdgrid zfilter GPXZ0 GenX::Settings
+   if { $GenX::Data(Z0Filter) } {
+      GenX::Trace "GeoPhysX::SubRoughnessLength Filtering Z0" 1
+      fstdgrid zfilter GPXZ0 GenX::Settings
+   }
    vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
    fstdfield define GPXZ0 -NOMVAR Z0 -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXZ0 GPXOUTFILE -32 True
@@ -1478,7 +1440,7 @@ proc GeoPhysX::PostRoughnessLength { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::Check>
+# Name     : <GeoPhysX::CheckConsistencyStandard>
 # Creation : Octobre 2008 - J.P. Gauthier - CMC/CMOE
 #
 # Goal     : Do consistncy checks.
@@ -1490,7 +1452,7 @@ proc GeoPhysX::PostRoughnessLength { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::Check { } {
+proc GeoPhysX::CheckConsistencyStandard { } {
    variable Data
 
    #----- Read mask
@@ -1500,40 +1462,116 @@ proc GeoPhysX::Check { } {
       GenX::Trace "GeoPhysX::Check: (Warning) Could not find mask field MG" 0
    }
 
-   #----- Read ice coverage
-   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "GA"]]] } {
-      fstdfield read GPXGA GPXOUTFILE $idx
+   #----- Read ice coverage VF(2)
+   if { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1198 -1 -1 "" "VF"]]] } {
+      fstdfield read GPXVF2 GPXAUXFILE $idx
    } else {
-      GenX::Trace "GeoPhysX::Check: (Warning) Could not find ice field GA" 0
+      GenX::Trace "GeoPhysX::Check: (Warning) Could not find ice field VF(2)" 0
    }
 
-   #----- Fix Consistency between J1 and GA
-   if { [fstdfield is GPXGA] } {
-      foreach type $Data(SandTypes) {
-         if { ![catch { fstdfield read GPXJ1 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J1" }] } {
-            vexpr GPXJ1 ifelse(GPXGA==1.0,43.0,GPXJ1)
-            fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
-            fstdfield write GPXJ1 GPXOUTFILE -24 True
-         } else {
-            GenX::Trace "GeoPhysX::Check: (Warning) Could not find J1($type) field, will not do the conscitency check between GA and J1($type)" 0
-         }
-      }
-
-      #----- Fix Consistency between J2 and GA
-      foreach type $Data(ClayTypes) {
-         if { ![catch { fstdfield read GPXJ2 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J2" }] } {
-            vexpr GPXJ2 ifelse(GPXGA==1.0,19.0,GPXJ2)
-            fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
-            fstdfield write GPXJ2 GPXOUTFILE -24 True
-         } else {
-            GenX::Trace "GeoPhysX::Check: (Warning) Could not find J2($type) field, will not do the conscitency check between GA and J2($type)" 0
-         }
-      }
+   #----- Read water coverage VF(3)
+   if { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1197 -1 -1 "" "VF"]]] } {
+      fstdfield read GPXVF3 GPXAUXFILE $idx
    } else {
-      GenX::Trace "GeoPhysX::Check: (Warning) Could not find GA field, will not do the conscitency check between GA and J1-J2" 0
+      GenX::Trace "GeoPhysX::Check: (Warning) Could not find water field VF(3)" 0
    }
 
-   fstdfield free GPXMG GPXGA GPXJ1 GPXJ2
+   #----- Check consistency for J1 and J2
+   if { $GenX::Data(Soil)!="NONE" }  {
+      if { [fstdfield is GPXVF2] } {
+         foreach type $Data(SandTypes) {
+            if { ![catch { fstdfield read GPXJ1 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J1" }] } {
+               vexpr GPXJ1 ifelse(GPXVF2==1.0,43.0,GPXJ1)
+               fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
+               fstdfield write GPXJ1 GPXOUTFILE -24 True
+            } else {
+               GenX::Trace "GeoPhysX::Check: (Warning) Could not find J1($type) field, will not do the conscitency check between VF(2) and J1($type)" 0
+            }
+         }
+
+         foreach type $Data(ClayTypes) {
+            if { ![catch { fstdfield read GPXJ2 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J2" }] } {
+               vexpr GPXJ2 ifelse(GPXVF2==1.0,19.0,GPXJ2)
+               fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
+               fstdfield write GPXJ2 GPXOUTFILE -24 True
+            } else {
+               GenX::Trace "GeoPhysX::Check: (Warning) Could not find J2($type) field, will not do the conscitency check between VF(2) and J2($type)" 0
+            }
+         }
+         fstdfield free GPXJ1 GPXJ2
+      } else {
+         GenX::Trace "GeoPhysX::Check: (Warning) Could not find VF(2) field, will not do the conscitency check on J1-J2" 0
+      }
+   }
+
+   #----- Check consistency for VF
+   if { $GenX::Data(Vege)!="NONE" }  {
+      if { [fstdfield is GPXVF3] && [fstdfield is GPXMG] } {
+         foreach type $Data(VegeTypes) {
+            if { ![catch { fstdfield read GPXVF GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
+               if { $type==1 } {
+                  vexpr GPXVF ifelse(GPXMG==0.0 && GPXVF3==0.0,1.0,GPXVF)
+               } else {
+                  vexpr GPXVF ifelse(GPXMG==0.0 && GPXVF3==0.0,0.0,GPXVF)
+               }
+               fstdfield define GPXVF -NOMVAR VF -IP1 [expr 1200-$type]
+               fstdfield write GPXVF GPXOUTFILE -24 True
+            } else {
+               GenX::Trace "GeoPhysX::Check: (Warning) Could not find VF($type) field while checking VF" 0
+            }
+         }
+         fstdfield free GPXVF
+      } else {
+         GenX::Trace "GeoPhysX::Check: (Warning) Could not find VF(3) and/or MG field(s), will not do the conscitency check on VF" 0
+      }
+
+      if { [fstdfield is GPXVF2] } {
+         fstdfield define GPXVF2 -NOMVAR GA -IP1 0
+         fstdfield write GPXVF2 GPXOUTFILE -24 True
+      } else {
+         GenX::Trace "GeoPhysX::Check: (Warning) Could not find VF(2), will not write GA field" 0
+      }
+
+      #----- Calculate Dominant type and save
+      GeoPhysX::DominantVege GPXVF2
+   }
+
+   fstdfield free GPXMG GPXVF2 GPXVF3
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::DominantVege>
+# Creation : Decembre 2007 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Caclulates the dominant vege type and saves every vege fields.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::DominantVege { Grid } {
+   variable Data
+
+   fstdfield copy GPXVG $Grid
+   GenX::GridClear [list GPXVG $Grid] 0.0
+
+   #----- Generate VG field (Dominant type per cell)
+   foreach type $Data(VegeTypes) {
+      if { ![catch { fstdfield read GPXVF GPXOUTFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
+         vexpr GPXVG ifelse($Grid>=GPXVF,GPXVG,$type)
+         vexpr $Grid ifelse($Grid>=GPXVF,$Grid,GPXVF)
+      } else {
+         GenX::Trace "GeoPhysX::DominantVege: (Warning) Could not find VF($type) field while processing VG" 0
+      }
+   }
+   fstdfield define GPXVG -NOMVAR VG -IP1 0 -IP2 0 -IP3 0
+   fstdfield write GPXVG GPXOUTFILE -24 True
+
+   fstdfield free GPXVF GPXVG
 }
 
 #----------------------------------------------------------------------------

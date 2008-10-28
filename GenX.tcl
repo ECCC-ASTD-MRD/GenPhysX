@@ -20,6 +20,7 @@
 #   GenX::MetaData         { { Header "" } { Extra "" } }
 #   GenX::ParseArgs        { Argv Argc No Multi Cmd }
 #   GenX::ParseCommandLine { }
+#   GenX::Continue         { }
 #   GenX::CommandLine      { }
 #   GenX::GetNML           { File }
 #   GenX::FieldCopy        { InFile OutFile DateV Etiket IP1 IP2 IP3 TV NV }
@@ -63,15 +64,19 @@ namespace eval GenX { } {
    set Data(Topo)      USGS                  ;#Topography data selected
    set Data(Mask)      USGS                  ;#Mask data selected
    set Data(Aspect)    NONE                  ;#Slope and aspect selected
-   set Data(Post)      False                 ;#Post selected
-   set Data(Check)     True                  ;#Consistency checks
+   set Data(Check)     STD                   ;#Consistency checks
+   set Data(Sub)       STD                   ;#Subgrid calculations selected
+
    set Data(Diag)      False                 ;#Diagnostics
+   set Data(Z0Filter)  True                  ;#Filter roughness length
 
    set Data(Topos)     { NONE USGS SRTM DNEC250 DNEC50 }
    set Data(Aspects)   { NONE SRTM DNEC250 DNEC50 }
    set Data(Veges)     { NONE USGS EOSD CORINE }
    set Data(Soils)     { NONE USDA }
    set Data(Masks)     { NONE USGS CANVEC }
+   set Data(Checks)    { NONE STD }
+   set Data(Subs)      { NONE STD }
 
    set Path(Work)        ""                    ;#Working directory
    set Path(Grid)        gemgrid               ;#GEM grid generator application
@@ -343,8 +348,12 @@ proc GenX::CommandLine { } {
       \[-vege\]     [format "%-30s : Vegetation method(s) {$Data(Veges)}" ($Data(Vege))]
       \[-soil\]     [format "%-30s : Soil method {$Data(Soils)}" ($Data(Soil))]
       \[-aspect\]   [format "%-30s : Slope and aspect method(s) {$Data(Aspects)}" ($Data(Aspect))]
-      \[-check\]    [format "%-30s : Do consistency checks" ""]
+      \[-check\]    [format "%-30s : Do consistency checks {$Data(Checks)}" ($Data(Check))]
+      \[-subgrid\]  [format "%-30s : calculates sub grid fields {$Data(Subs)}" ($Data(Sub))]
       \[-diag\]     [format "%-30s : Do diagnostics" ""]
+
+   Specific processing parameters:
+      \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
 
    Batch mode parameters:
       \[-batch\]    [format "%-30s : Launch in batch mode" ""]
@@ -356,6 +365,32 @@ proc GenX::CommandLine { } {
    If you have questions, suggestions or problems, send them to:
 
       genphysx@internallists.ec.gc.ca\n"
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::Continue>
+# Creation : Novembre 2008 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Ask for continuation in case of problem.
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::Continue { } {
+  variable Batch
+
+   if { $Batch(On) } {
+      exit 1
+   }
+
+   GenX::Trace "\nContinue anyway (y or n) ? " 0
+   if { [string toupper [string index [gets stdin] 0]]!="Y" } {
+      exit 1
+   }
 }
 
 #----------------------------------------------------------------------------
@@ -404,10 +439,11 @@ proc GenX::ParseCommandLine { } {
          "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Mask) $GenX::Data(Masks)] }
          "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Vege) $GenX::Data(Veges)] }
          "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Soil) $GenX::Data(Soils)] }
-         "post"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Post)] }
+         "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Sub)] }
          "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Aspect)] }
-         "check"     { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Check)] }
+         "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Check)] }
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
+         "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)] }
          default     { GenX::CommandLine ; exit 1 }
       }
    }
@@ -416,18 +452,18 @@ proc GenX::ParseCommandLine { } {
    if { $GenX::Data(Vege)!="NONE" } {
       if { $GenX::Data(Mask)=="NONE" } {
          GenX::Trace "GenX::ParseCommandLine: (Error) To generate vegetation type fields you need to generate the mask" 0
-         exit 1
+         GenX::Continue
       }
    }
 
-   if { $GenX::Data(Post) } {
+   if { $GenX::Data(Sub)!="NONE" } {
       if { $GenX::Data(Mask)=="NONE" } {
          GenX::Trace "GenX::ParseCommandLine: (Error) To generate sub-grid post-processed fields you need to generate the mask" 0
-         exit 1
+         GenX::Continue
       }
       if { $GenX::Data(Topo)=="NONE" } {
          GenX::Trace "GenX::ParseCommandLine: (Error) To generate sub-grid post-processed fields you need to generate the topography" 0
-         exit 1
+         GenX::Continue
       }
    }
 
