@@ -6,8 +6,8 @@
 #
 # Project    : Geophysical field generator.
 # File       : GeoPhysX.tcl
-# Creation   : Septembre 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
-# Description: Definitions of fonctions related to geo-physical fields
+# Creation   : September 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
+# Description: Definitions of functions related to geo-physical fields
 #
 # Remarks  :
 #   Aucune.
@@ -79,6 +79,8 @@ namespace eval GeoPhysX { } {
    set Const(karman)  0.40        ;# von Karman constant
    set Const(slpmin)  0.001       ;# Threshold value for slope parameter, used in the calculation
                                    #   of the topographic component of the roughness length
+   set Const(sssmin)  10.0        ;# Threshold value of the standard deviation of the
+                                   #   small-scale subgrid (< 5000 m)topography
    set Const(zrefmin) 10.0        ;# Threshold value for reference height, used in the calculation
                                    #   of the roughness length
    set Const(z0def)   0.00001     ;# Default value of the roughness length in meters, used to
@@ -1347,6 +1349,7 @@ proc GeoPhysX::SubRoughnessLength { } {
 
    GenX::Trace "GeoPhysX::SubRoughnessLength Computing Z0_topo" 1
    vexpr GPXZTP ifelse(GPXSLP>$Const(slpmin) || GPXZREF>$Const(zrefmin),1.0+GPXZREF*exp(-$Const(karman)/sqrt(0.5*$Const(drgcoef)*GPXSLP)),0.0)
+   vexpr GPXZTP ifelse(GPXSSS<=$Const(sssmin),0.1*GPXSSS,GPXZTP)
    fstdfield define GPXZTP -NOMVAR ZTOP -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXZTP GPXAUXFILE -32 True
 
@@ -1382,7 +1385,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXW1  ifelse(GPXZTP>0.0  && GPXZREF>GPXZTP , ((1.0-GPXGA)/ln(GPXZREF/GPXZTP))^2.0, 0.0)
    vexpr GPXW2  ifelse(GPXZ0V1>0.0 && GPXZREF>GPXZ0V1, (1.0/ln(GPXZREF/GPXZ0V1))^2.0       , 0.0)
    vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0             , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2)), 0.0 )
-   vexpr GPXZ0S ifelse(GPXZREF<$Const(zrefmin)       , GPXZ0V1                             , GPXZ0S)
+   vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)      , GPXZ0V1                             , GPXZ0S)
    vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)          , $Const(z0def)                       , GPXZ0S)
    fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXZ0S GPXAUXFILE -32 True
@@ -1395,7 +1398,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (GPXGA/ln(GPXZREF/GPXZTP))^2.0     , 0.0)
    vexpr GPXW2  ifelse(GPXZREF>$Const(gaz0)        , (1.0/ln(GPXZREF/$Const(gaz0)))^2.0 , 0.0)
    vexpr GPXZ0G ifelse((GPXW1+GPXW2)>0.0           , GPXZREF*exp(-1.0/sqrt(GPXW1+GPXW2)), 0.0)
-   vexpr GPXZ0G ifelse(GPXZREF<$Const(zrefmin)     , $Const(gaz0)                       , GPXZ0G)
+   vexpr GPXZ0G ifelse(GPXZREF<=$Const(zrefmin)    , $Const(gaz0)                       , GPXZ0G)
    vexpr GPXZ0G ifelse(GPXGA>0.0                   , GPXZ0G                             , 0.0 )
    vexpr GPXZ0G ifelse(GPXZ0G<$Const(z0def)        , $Const(z0def)                      , GPXZ0G)
    fstdfield define GPXZ0G -NOMVAR Z0G -IP1 0 -IP2 0 -IP3 0
@@ -1476,34 +1479,6 @@ proc GeoPhysX::CheckConsistencyStandard { } {
       GenX::Trace "GeoPhysX::Check: (Warning) Could not find water field VF(3)" 0
    }
 
-   #----- Check consistency for J1 and J2
-   if { $GenX::Data(Soil)!="NONE" }  {
-      if { [fstdfield is GPXVF2] } {
-         foreach type $Data(SandTypes) {
-            if { ![catch { fstdfield read GPXJ1 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J1" }] } {
-               vexpr GPXJ1 ifelse(GPXVF2==1.0,43.0,GPXJ1)
-               fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
-               fstdfield write GPXJ1 GPXOUTFILE -24 True
-            } else {
-               GenX::Trace "GeoPhysX::Check: (Warning) Could not find J1($type) field, will not do the conscitency check between VF(2) and J1($type)" 0
-            }
-         }
-
-         foreach type $Data(ClayTypes) {
-            if { ![catch { fstdfield read GPXJ2 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J2" }] } {
-               vexpr GPXJ2 ifelse(GPXVF2==1.0,19.0,GPXJ2)
-               fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
-               fstdfield write GPXJ2 GPXOUTFILE -24 True
-            } else {
-               GenX::Trace "GeoPhysX::Check: (Warning) Could not find J2($type) field, will not do the conscitency check between VF(2) and J2($type)" 0
-            }
-         }
-         fstdfield free GPXJ1 GPXJ2
-      } else {
-         GenX::Trace "GeoPhysX::Check: (Warning) Could not find VF(2) field, will not do the conscitency check on J1-J2" 0
-      }
-   }
-
    #----- Check consistency for VF
    if { $GenX::Data(Vege)!="NONE" }  {
       if { [fstdfield is GPXVF3] && [fstdfield is GPXMG] } {
@@ -1522,7 +1497,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
          }
          fstdfield free GPXVF
       } else {
-         GenX::Trace "GeoPhysX::Check: (Warning) Could not find VF(3) and/or MG field(s), will not do the conscitency check on VF" 0
+         GenX::Trace "GeoPhysX::Check: (Warning) Could not find VF(3) and/or MG field(s), will not do the consistency check on VF" 0
       }
 
       if { [fstdfield is GPXVF2] } {
@@ -1534,6 +1509,49 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 
       #----- Calculate Dominant type and save
       GeoPhysX::DominantVege GPXVF2
+   }
+
+   #----- Check consistency for J1 and J2
+   if { $GenX::Data(Soil)!="NONE" }  {
+      if { [fstdfield is GPXVF2] } {
+         foreach type $Data(SandTypes) {
+            if { ![catch { fstdfield read GPXJ1 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J1" }] } {
+               vexpr GPXJ1 ifelse(GPXVF2==1.0,43.0,GPXJ1)
+               fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
+               fstdfield write GPXJ1 GPXOUTFILE -24 True
+            } else {
+               GenX::Trace "GeoPhysX::Check: (Warning) Could not find J1($type) field, will not do the consistency check between VF(2) and J1($type)" 0
+            }
+            if { ![catch { fstdfield read GPXMG GPXOUTFILE -1 "" -1 -1 -1 "" "MG" }] } {
+               vexpr GPXJ1 ifelse(GPXMG<0.001,0.0,GPXJ1)
+               fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
+               fstdfield write GPXJ1 GPXOUTFILE -24 True
+            } else {
+               GenX::Trace "GeoPhysX::Check: (Warning) Could not find mask field MG, will not do the consistency check between MG and J1($type)" 0
+            }
+         }
+
+         foreach type $Data(ClayTypes) {
+            if { ![catch { fstdfield read GPXJ2 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J2" }] } {
+               vexpr GPXJ2 ifelse(GPXVF2==1.0,19.0,GPXJ2)
+               fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
+               fstdfield write GPXJ2 GPXOUTFILE -24 True
+            } else {
+               GenX::Trace "GeoPhysX::Check: (Warning) Could not find J2($type) field, will not do the consistency check between VF(2) and J2($type)" 0
+            }
+
+            if { ![catch { fstdfield read GPXMG GPXOUTFILE -1 "" -1 -1 -1 "" "MG" }] } {
+               vexpr GPXJ2 ifelse(GPXMG<0.001,0.0,GPXJ2)
+               fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
+               fstdfield write GPXJ2 GPXOUTFILE -24 True
+            } else {
+               GenX::Trace "GeoPhysX::Check: (Warning) Could not find mask field MG, will not do the consistency check between MG and J2($type)" 0
+            }
+         }
+         fstdfield free GPXJ1 GPXJ2
+      } else {
+         GenX::Trace "GeoPhysX::Check: (Warning) Could not find VF(2) field, will not do the consistency check on J1-J2" 0
+      }
    }
 
    fstdfield free GPXMG GPXVF2 GPXVF3

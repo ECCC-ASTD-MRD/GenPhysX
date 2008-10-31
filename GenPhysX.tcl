@@ -9,10 +9,10 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 #
 # Project    : Generateur de champs geophysiques.
 # File       : GenPhysX.tcl
-# Creation   : Septembre 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
+# Creation   : September 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
 # Description: Generer les champs geophysiques necessaires au modeles meteo (GEM)
 #
-# Parametres   :
+# Parameters   :
 #
 #   Information parameters:
 #      [-help]                                    : This information
@@ -27,7 +27,7 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 #      [-target]   ()                             : Model target (GEM, GEM-MACH, ...)
 #
 #   Processing parameters:
-#      Specify databases in order of processing joined by + ex: STRM+USGS
+#      Specify databases in order of processing, joined by + ex: STRM+USGS
 #
 #      [-topo]     (USGS)                         : Topography method { NONE USGS SRTM DNEC250 DNEC50 }
 #      [-mask]     (USGS)                         : Mask method { NONE USGS CANVEC }
@@ -42,7 +42,7 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 #
 #   Batch mode parameters:
 #      [-batch]                                   : Launch in batch mode
-#      [-mail]     ()                             : EMail address to send completion mail
+#      [-mail]     ()                             : Email address to send completion mail
 #      [-mach]     (goodenough.cmc.ec.gc.ca)      : Machine to run on in batch mode
 #      [-t]        (7200)                         : Reserved CPU time (s)
 #      [-cm]       (500)                          : Reserved RAM (MB)
@@ -50,7 +50,6 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 # Retour:
 #
 # Remarks  :
-#   Aucune.
 #
 #============================================================================
 
@@ -85,7 +84,7 @@ if { $GenX::Data(Aspect)!="NONE" } {
    GeoPhysX::AverageAspect $grid
 }
 
-#----- Mask
+#----- Land-water mask
 switch $GenX::Data(Mask) {
    "USGS"    { GeoPhysX::AverageMaskUSGS   $grid }
    "CANVEC"  { GeoPhysX::AverageMaskCANVEC $grid }
@@ -117,7 +116,7 @@ if { $GenX::Data(Sub)!="NONE" } {
    GeoPhysX::SubRoughnessLength
 }
 
-#----- Consistency checks
+#----- Diagnostics of output fields
 if { $GenX::Data(Diag) } {
    GeoPhysX::Diag
 }

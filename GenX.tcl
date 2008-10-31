@@ -350,7 +350,7 @@ proc GenX::CommandLine { } {
       \[-aspect\]   [format "%-30s : Slope and aspect method(s) {$Data(Aspects)}" ($Data(Aspect))]
       \[-check\]    [format "%-30s : Do consistency checks {$Data(Checks)}" ($Data(Check))]
       \[-subgrid\]  [format "%-30s : calculates sub grid fields {$Data(Subs)}" ($Data(Sub))]
-      \[-diag\]     [format "%-30s : Do diagnostics" ""]
+      \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
 
    Specific processing parameters:
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
