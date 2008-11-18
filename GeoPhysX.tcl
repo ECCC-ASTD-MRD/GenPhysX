@@ -234,7 +234,7 @@ proc GeoPhysX::AverageTopoSRTM { Grids } {
    #----- Use accumulator to figure out coverage in destination
    #----- But remove border of coverage since it will not be full
    #----- Apply coverage mask for next resolution
-   for { set i [expr [llength $Grids]-1] } { $i>0 } { incr i -1 } {
+   for { set i [expr [llength $Grids]-1] } { $i>=0 } { incr i -1 } {
       set grid [lindex $Grids $i]
 
       fstdfield gridinterp $grid - ACCUM
@@ -289,7 +289,7 @@ proc GeoPhysX::AverageTopoDNEC { Grids { Res 250 } } {
    #----- Use accumulator to figure out coverage in destination
    #----- But remove border of coverage since it will not be full
    #----- Apply coverage mask for next resolution
-   for { set i [expr [llength $Grids]-1] } { $i>0 } { incr i -1 } {
+   for { set i [expr [llength $Grids]-1] } { $i>=0 } { incr i -1 } {
       set grid [lindex $Grids $i]
 
       fstdfield gridinterp $grid - ACCUM
