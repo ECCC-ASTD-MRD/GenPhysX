@@ -73,7 +73,7 @@ namespace eval GenX { } {
    set Data(Topos)     { NONE USGS SRTM DNEC250 DNEC50 }
    set Data(Aspects)   { NONE SRTM DNEC250 DNEC50 }
    set Data(Veges)     { NONE USGS EOSD CORINE }
-   set Data(Soils)     { NONE USDA }
+   set Data(Soils)     { NONE USDA FAO AGRC }
    set Data(Masks)     { NONE USGS CANVEC }
    set Data(Checks)    { NONE STD }
    set Data(Subs)      { NONE STD }
@@ -99,21 +99,24 @@ namespace eval GenX { } {
       set Path(DBase) /data/dormrb04/genphysx/data
    }
 
-   set Path(Topo)    db/me_usgs2002
-   set Path(TopoLow) data_lres
-   set Path(Gxy)     data_grad
-   set Path(Vege)    db/vg_usgs2002
-   set Path(Mask)    db/mg_usgs2002
-   set Path(Sand)    { db/sand_usda db/sand_fao db/sand_argc }
-   set Path(Clay)    { db/clay_usda db/clay_fao db/clay_argc }
-
-   set Path(SRTM)    /data/cmod8/afseeer/SRTMv4
-   set Path(DNEC)    /data/cmod8/afseeer/DNEC
-   set Path(EOSD)    /data/cmod8/afseeer/EOSD
-   set Path(NTS)     /data/cmod8/afseeer/NTS
-   set Path(CANVEC)  /data/cmod8/afseeer/CanVec
-   set Path(CORINE)  /data/cmod8/afseeer/CORINE
-   set Path(Various) /data/cmod8/afseeer/Various
+   set Path(SandUSDA) $Path(DBase)/db/sand_usda
+   set Path(SandFAO)  $Path(DBase)/db/sand_fao
+   set Path(SandAGRC) $Path(DBase)/db/sand_argc
+   set Path(ClayUSDA) $Path(DBase)/db/clay_usda
+   set Path(ClayFAO)  $Path(DBase)/db/clay_fao
+   set Path(ClayAGRC) $Path(DBase)/db/clay_argc
+   set Path(TopoUSGS) $Path(DBase)/db/me_usgs2002
+   set Path(MaskUSGS) $Path(DBase)/db/mg_usgs2002
+   set Path(VegeUSGS) $Path(DBase)/db/vg_usgs2002
+   set Path(TopoLow)  $Path(DBase)/data_lres
+   set Path(Grad)     $Path(DBase)/data_grad
+   set Path(SRTM)     /data/cmod8/afseeer/SRTMv4
+   set Path(DNEC)     /data/cmod8/afseeer/DNEC
+   set Path(EOSD)     /data/cmod8/afseeer/EOSD
+   set Path(NTS)      /data/cmod8/afseeer/NTS
+   set Path(CANVEC)   /data/cmod8/afseeer/CanVec
+   set Path(CORINE)   /data/cmod8/afseeer/CORINE
+   set Path(Various)  /data/cmod8/afseeer/Various
 
    gdalfile error QUIET
 }
@@ -234,7 +237,7 @@ proc GenX::MetaData { { Header "" } { Extra "" } } {
    catch { append version ", BioGenX($BioGenX::Data(Version))" }
 
    set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\n"
-   append meta "Call parameters: [info script] [join $argv " "]\nCode base      : $version\n"
+   append meta "Call parameters: [info script] [join $argv " "]\nSPI API version: $env(SPI_PATH)\nCode base      : $version\n"
    append meta $Header
    append meta "Processing used:\n   [join $Data(Procs) "\n   "]\n"
    if { [file exists $Path(NameFile)] } {

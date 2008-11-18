@@ -31,8 +31,8 @@
 #   GeoPhysX::AverageVegeCORINE    { Grid }
 #   GeoPhysX::DominantVege         { Grid }
 #
-#   GeoPhysX::AverageSandUSDA      { Grid }
-#   GeoPhysX::AverageClayUSDA      { Grid }
+#   GeoPhysX::AverageSand          { Grid }
+#   GeoPhysX::AverageClay          { Grid }
 #
 #   GeoPhysX::SubCorrectionFilter  { FieldRes FieldDX FieldDY DBR C1 C2 C3 }
 #   GeoPhysX::SubCorrectionFactor  { }
@@ -118,7 +118,7 @@ proc GeoPhysX::AverageTopo { Grids } {
    foreach topo $GenX::Data(Topo) {
       switch $topo {
          "USGS"    { GeoPhysX::AverageTopoUSGS $Grids     ;#----- USGS topograhy averaging method (Global 900m) }
-         "SRTM"    { GeoPhysX::AverageTopoSRTM $Grids     ;#----- STRMv4 topograhy averaging method (Latitude -70,70 90m) }
+         "SRTM"    { GeoPhysX::AverageTopoSRTM $Grids     ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
          "DNEC50"  { GeoPhysX::AverageTopoDNEC $Grids 50  ;#----- DNEC50 topograhy averaging method (Canada 90m)}
          "DNEC250" { GeoPhysX::AverageTopoDNEC $Grids 250 ;#----- DNEC250 topograhy averaging method (Canada 25m)}
       }
@@ -166,7 +166,7 @@ proc GeoPhysX::AverageTopoUSGS { Grids } {
    GenX::Trace "GeoPhysX::AverageTopoUSGS" 1
 
    #----- Loop over files
-   foreach file [glob $GenX::Path(DBase)/$GenX::Path(Topo)/*] {
+   foreach file [glob $GenX::Path(TopoUSGS)/*] {
       GenX::Trace "   Processing USGS file : $file" 2
       fstdfile open GPXTOPOFILE read $file
 
@@ -232,21 +232,19 @@ proc GeoPhysX::AverageTopoSRTM { Grids } {
    gdalband free SRTMTILE
 
    #----- Use accumulator to figure out coverage in destination
-   fstdfield gridinterp GPXRMS - ACCUM
-   fstdfield define GPXRMS -NOMVAR RRRR -IP1 1200
-   fstdfield write GPXRMS GPXAUXFILE -32 True
+   #----- But remove border of coverage since it will not be full
+   #----- Apply coverage mask for next resolution
+   for { set i [expr [llength $Grids]-1] } { $i>0 } { incr i -1 } {
+      set grid [lindex $Grids $i]
+
+      fstdfield gridinterp $grid - ACCUM
+      vexpr GPXMASK !fpeel($grid)
+      fstdfield stats $grid -mask GPXMASK
+   }
+   fstdfield stats GPXRMS -mask GPXMASK
 
    #----- Create source resolution used in destination
    vexpr GPXRES ifelse((GPXMASK && GPXRMS),90,GPXRES)
-
-   #----- But remove border of coverage since it will not be full
-   vexpr GPXMASK fpeel(!GPXRMS,0,1)
-
-   #----- Apply coverage mask for next resolution
-   foreach grid $Grids {
-      fstdfield stats $grid -mask GPXMASK
-      fstdfield stats GPXRMS -mask GPXMASK
-   }
 }
 
 #----------------------------------------------------------------------------
@@ -289,19 +287,19 @@ proc GeoPhysX::AverageTopoDNEC { Grids { Res 250 } } {
    gdalband free DNECTILE
 
    #----- Use accumulator to figure out coverage in destination
-   fstdfield gridinterp GPXRMS - ACCUM
+   #----- But remove border of coverage since it will not be full
+   #----- Apply coverage mask for next resolution
+   for { set i [expr [llength $Grids]-1] } { $i>0 } { incr i -1 } {
+      set grid [lindex $Grids $i]
+
+      fstdfield gridinterp $grid - ACCUM
+      vexpr GPXMASK !fpeel($grid)
+      fstdfield stats $grid -mask GPXMASK
+   }
+   fstdfield stats GPXRMS -mask GPXMASK
 
    #----- Create source resolution used in destination
    vexpr GPXRES ifelse((GPXMASK && GPXRMS),[expr $Res==250?90:25],GPXRES)
-
-   #----- But remove border of coverage since it will not be full
-   vexpr GPXMASK fpeel(!GPXRMS,0,1)
-
-   #----- Apply coverage mask for next resolution
-   foreach grid $Grids {
-      fstdfield stats $grid -mask GPXMASK
-      fstdfield stats GPXRMS -mask GPXMASK
-   }
 }
 
 #----------------------------------------------------------------------------
@@ -507,7 +505,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
    GenX::GridClear $Grid 0.0
 
    #----- Loop over files
-   foreach file [glob $GenX::Path(DBase)/$GenX::Path(Mask)/*] {
+   foreach file [glob $GenX::Path(MaskUSGS)/*] {
       GenX::Trace "   Processing file : $file" 2
       fstdfile open GPXMASKFILE read $file
 
@@ -649,7 +647,7 @@ proc GeoPhysX::AverageVegeUSGS { Grid } {
    GenX::Trace "GeoPhysX::AverageVege Start" 1
 
    #----- Loop over files
-   foreach file [glob $GenX::Path(DBase)/$GenX::Path(Vege)/*] {
+   foreach file [glob $GenX::Path(VegeUSGS)/*] {
       GenX::Trace "   Processing file : $file" 2
       fstdfile open GPXVEGEFILE read $file
 
@@ -738,8 +736,8 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
       #----- Use accumulator to figure out coverage in destination
       #      But remove border of coverage since it will not be full
       fstdfield gridinterp $Grid - ACCUM
-      vexpr GPXMASK fpeel(!$Grid,0,1)
-      fstdfield stats $Grid -mask GPXMMASK
+      vexpr GPXMASK !fpeel($Grid)
+      fstdfield stats $Grid -mask GPXMASK
 
       gdalband free EOSDTILE
       vector free FROMEOSD TORPN
@@ -795,8 +793,8 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
    #----- Use accumulator to figure out coverage in destination
    #      But remove border of coverage since it will not be full
    fstdfield gridinterp $Grid - ACCUM
-   vexpr GPXMASK fpeel(!$Grid,0,1)
-   fstdfield stats $Grid -mask GPXMMASK
+   vexpr GPXMASK !fpeel($Grid)
+   fstdfield stats $Grid -mask GPXMASK
 
    gdalband free CORINETILE
    gdalfile close CORINEFILE
@@ -817,23 +815,23 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageSandUSDA { Grid } {
+proc GeoPhysX::AverageSand { Grid } {
    variable Data
 
    GenX::Procs
-   fstdfield copy GPXTMP $Grid
+   fstdfield copy GPXJ1 $Grid
 
    #----- Boucle sur les types
    foreach type $Data(SandTypes) {
-      GenX::Trace "   GeoPhysX::AverageSandUSDA Start ($type)" 1
-      GenX::GridClear [list $Grid GPXTMP] 0.0
+      GenX::Trace "GeoPhysX::AverageSand Start ($type)" 1
+      GenX::GridClear GPXJ1 0.0
+      fstdfield stats GPXJ1 -mask ""
 
       #----- Loop over datasets
-      foreach path $GenX::Path(Sand) {
-         fstdfield clear GPXTMP
+      foreach db $GenX::Data(Soil) {
+         GenX::Trace "   GeoPhysX::AverageSand Processing database $db" 1
 
-         #----- Loop over files
-         foreach file [glob $GenX::Path(DBase)/$path/*] {
+         foreach file [glob $GenX::Path(Sand$db)/*] {
             GenX::Trace "      Processing file : $file" 2
             fstdfile open GPXSANDFILE read $file
 
@@ -845,23 +843,25 @@ proc GeoPhysX::AverageSandUSDA { Grid } {
                fstdfield stats GPXTILE -nodata 0.0
 
                #----- Average on each output grid
-               fstdfield gridinterp GPXTMP GPXTILE AVERAGE False
+               fstdfield gridinterp GPXJ1 GPXTILE AVERAGE False
             }
             fstdfile close GPXSANDFILE
          }
-         fstdfield gridinterp GPXTMP - NOP True
-         vexpr $Grid ifelse($Grid==0.0,GPXTMP,$Grid)
+         fstdfield gridinterp GPXJ1 - ACCUM
+         vexpr GPXMASK !fpeel(GPXJ1)
+         fstdfield stats GPXJ1 -mask GPXMASK
       }
+      fstdfield gridinterp GPXJ1 - NOP True
 
       #----- Save output
-      fstdfield define $Grid -NOMVAR J1 -IP1 [expr 1200-$type]
-      fstdfield write $Grid GPXAUXFILE -24 True
+      fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
+      fstdfield write GPXJ1 GPXAUXFILE -24 True
    }
-   fstdfield free GPXTMP GPXTILE
+   fstdfield free GPXTILE GPXJ1 GPXMASK
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::AverageClayUSDA>
+# Name     : <GeoPhysX::AverageClay>
 # Creation : June 2006 - J.P. Gauthier - CMC/CMOE
 #
 # Goal     : Generate the clay percentage through averaging.
@@ -874,23 +874,24 @@ proc GeoPhysX::AverageSandUSDA { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageClayUSDA { Grid } {
+proc GeoPhysX::AverageClay { Grid } {
    variable Data
 
    GenX::Procs
-   fstdfield copy GPXTMP $Grid
+   fstdfield copy GPXJ2 $Grid
 
    #----- Loop over types
    foreach type $Data(ClayTypes) {
-      GenX::Trace "   GeoPhysX::AverageClayUSDA Start ($type)" 1
-      GenX::GridClear [list $Grid GPXTMP] 0.0
+      GenX::Trace "GeoPhysX::AverageClay Start ($type)" 1
+      GenX::GridClear GPXJ2 0.0
+      fstdfield stats GPXJ2 -mask ""
 
       #----- Loop over datasets
-      foreach path $GenX::Path(Clay) {
-         fstdfield clear GPXTMP
+      foreach db $GenX::Data(Soil) {
+         GenX::Trace "   GeoPhysX::AverageClay Processing database $db" 1
 
          #----- Loop over files
-         foreach file [glob $GenX::Path(DBase)/$path/*] {
+         foreach file [glob $GenX::Path(Clay$db)/*] {
             GenX::Trace "      Processing file : $file" 2
             fstdfile open GPXCLAYFILE read $file
 
@@ -902,19 +903,21 @@ proc GeoPhysX::AverageClayUSDA { Grid } {
                fstdfield stats GPXTILE -nodata 0.0
 
                #----- Average on each output grid
-               fstdfield gridinterp GPXTMP GPXTILE AVERAGE False
+               fstdfield gridinterp GPXJ2 GPXTILE AVERAGE False
             }
             fstdfile close GPXCLAYFILE
          }
-         fstdfield gridinterp GPXTMP - NOP True
-         vexpr $Grid ifelse($Grid==0.0,GPXTMP,$Grid)
+         fstdfield gridinterp GPXJ2 - ACCUM
+         vexpr GPXMASK !fpeel(GPXJ2)
+         fstdfield stats GPXJ2 -mask GPXMASK
       }
+      fstdfield gridinterp GPXJ2 - NOP True
 
       #----- Save output
-      fstdfield define $Grid -NOMVAR J2 -IP1 [expr 1200-$type]
-      fstdfield write $Grid GPXAUXFILE -24 True
+      fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
+      fstdfield write GPXJ2 GPXAUXFILE -24 True
    }
-   fstdfield free GPXTMP GPXTILE
+   fstdfield free GPXTILE GPXJ2 GPXMASK
 }
 
 #----------------------------------------------------------------------------
@@ -940,7 +943,7 @@ proc GeoPhysX::AverageTopoLow { Grid } {
    GenX::GridClear [list $Grid GPXLRMS] 0.0
 
    #----- Loop over files
-   foreach file [glob $GenX::Path(DBase)/$GenX::Path(TopoLow)/*] {
+   foreach file [glob $GenX::Path(TopoLow)/*] {
       GenX::Trace "   Processing file : $file" 2
       fstdfile open GPXTOPOFILE read $file
 
@@ -998,7 +1001,7 @@ proc GeoPhysX::AverageGradient { Grid } {
    GenX::GridClear [list GPXGXX GPXGYY GPXGXY] 0.0
 
    #----- compute Gxx, Gyy, Gxy
-   foreach file [glob $GenX::Path(DBase)/$GenX::Path(Gxy)/*] {
+   foreach file [glob $GenX::Path(Grad)/*] {
       GenX::Trace "   Processing file: $file " 2
       fstdfile open GPXGXYFILE read $file
       foreach field_gx [fstdfield find GPXGXYFILE -1 "" -1 -1 -1 "" "GX"] \

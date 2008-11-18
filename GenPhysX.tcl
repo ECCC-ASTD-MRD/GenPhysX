@@ -96,10 +96,9 @@ if { $GenX::Data(Vege)!="NONE" } {
 }
 
 #----- Soil type
-switch $GenX::Data(Soil) {
-   "USDA"    { GeoPhysX::AverageSandUSDA   $grid
-               GeoPhysX::AverageClayUSDA   $grid
-             }
+if { $GenX::Data(Soil)!="NONE" } {
+   GeoPhysX::AverageSand $grid
+   GeoPhysX::AverageClay $grid
 }
 
 #----- Consistency checks
