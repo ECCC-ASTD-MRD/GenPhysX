@@ -417,6 +417,12 @@ proc GenX::ParseCommandLine { } {
    upvar argc gargc
    upvar argv gargv
 
+   #----- Check if architecture is valid
+   if { ![string match -nocase "Linux" [exec uname]] } {
+      GenX::Trace "GenX::ParseCommandLine: (Error) GenPhysX only runs on Linux" 0
+      exit 1
+   }
+
    if { !$gargc } {
       GenX::CommandLine
       exit 1
