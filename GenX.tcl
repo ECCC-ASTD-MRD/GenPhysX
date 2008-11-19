@@ -264,7 +264,7 @@ proc GenX::MetaData { { Header "" } { Extra "" } } {
    fstdfield define $fld -NOMVAR META
    fstdfield write $fld GPXOUTFILE 0 True
 
-   puts "\nExecution time: [expr [clock seconds]-$Data(Secs)]]s"
+   puts "\nExecution time: [expr [clock seconds]-$Data(Secs)]s"
 }
 
 #----------------------------------------------------------------------------
