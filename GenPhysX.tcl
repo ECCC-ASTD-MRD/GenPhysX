@@ -19,7 +19,7 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 #      [-version]                                 : GenPhysX version
 #
 #   Input parameters:
-#      [-verbose]  (2)                            : Trace level (0 none,1 some ,2 more)
+#      [-verbose]  (2)                            : Trace level (0 none,1 some ,2 more,3 Debug)
 #      [-nml]      (gem_settings)                 : GEM namelist definition file
 #      [-gridfile] ()                             : FSTD file to get the grid from if no GEM namelist
 #      [-result]   (genphysx)                     : Result filename
@@ -52,6 +52,8 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 # Remarks  :
 #
 #============================================================================
+
+set secs [clock seconds]
 
 #----- Directory where to find processing procs
 set dir [info script]

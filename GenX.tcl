@@ -15,7 +15,7 @@
 # Functions :
 #
 #   GenX::Procs            { }
-#   GenX::Trace            { Message { Level 1 } }
+#   GenX::Log              { Type Message { Head True } }
 #   GenX::Submit           { }
 #   GenX::MetaData         { { Header "" } { Extra "" } }
 #   GenX::ParseArgs        { Argv Argc No Multi Cmd }
@@ -49,10 +49,10 @@ namespace eval GenX { } {
    variable Path
    variable Data
    variable Batch
+   variable Log
 
    set Data(Version)   1.0                   ;#Application version
 
-   set Data(Verbose)   2                     ;#Level of verbose
    set Data(Compress)  False                 ;#Compress standard file output
    set Data(TileSize)  1024                  ;#Tile size to use for large dataset
    set Data(Cache)     {}                    ;#Input data cache list
@@ -118,6 +118,10 @@ namespace eval GenX { } {
    set Path(CORINE)   /data/cmod8/afseeer/CORINE
    set Path(Various)  /data/cmod8/afseeer/Various
 
+   #----- Log related variables
+
+   array set Log { Level 2 MUST -1 ERROR 0 WARNING 1 INFO 2 DEBUG 3 };
+
    gdalfile error QUIET
 }
 
@@ -144,7 +148,7 @@ proc GenX::Submit { } {
    set env(GENPHYSXDB_BASE) $Path(DBase)
 
    if { ![file isdirectory $Path(Work)] } {
-      puts stderr "GenX::Submit: (Error) You have to specify a valid working directory"
+      GenX::Log ERROR "You have to specify a valid working directory"
       exit 1
    }
 
@@ -187,25 +191,35 @@ proc GenX::Procs { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GenX::Trace>
+# Name     : <GenX::Log>
 # Creation : Novembre 2007 - J.P. Gauthier - CMC/CMOE
 #
 # Goal     : Display verbose messages.
 #
 # Parameters :
+#  <Type>    : Type de message (ERROR,WARNING,INFO,...)
 #  <Message> : Message to display
-#  <Level>   : Verbose level
+#  <Head>    : Afficher l'info du stack
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::Trace { Message { Level 1 } } {
-   variable Data
+proc GenX::Log { Type Message { Head True } } {
+   variable Log
 
-   if { $Level<=$Data(Verbose) } {
-      puts $Message
+   set head " "
+
+   if { $Log($Type)<=$Log(Level) } {
+      if { $Head } {
+         set head " [lindex [info level [expr [info level]-1]] 0]: "
+      }
+      if { $Type=="ERROR" } {
+         puts stderr "($Type)$head$Message"
+      } else {
+         puts "($Type)$head$Message"
+      }
    }
 }
 
@@ -291,7 +305,7 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
          if { [llength $Values] } {
             foreach v $vs {
                if { [lsearch -exact $Values $v]==-1 } {
-                  puts stderr "(Error) Invalid value for parameter [lindex $Argv [expr $No-1]], must be one of { $Values }"
+                  GenX::Log ERROR "Invalid value for parameter [lindex $Argv [expr $No-1]], must be one of { $Values }"
                   exit 1;
                }
             }
@@ -328,6 +342,7 @@ proc GenX::CommandLine { } {
    variable Data
    variable Path
    variable Batch
+   variable Log
 
    puts stderr "Arguments must be:"
    puts stderr "
@@ -336,7 +351,7 @@ proc GenX::CommandLine { } {
       \[-version\]  [format "%-30s : GenPhysX version" ""]
 
    Input parameters:
-      \[-verbose\]  [format "%-30s : Trace level (0 none,1 some ,2 more)" ($Data(Verbose))]
+      \[-verbose\]  [format "%-30s : Trace level (0 none,1 some ,2 more, 3 Debug)" ($Log(Level))]
       \[-nml\]      [format "%-30s : GEM namelist definition file" ($Path(NameFile))]
       \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Path(GridFile))]
       \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]
@@ -390,7 +405,7 @@ proc GenX::Continue { } {
       exit 1
    }
 
-   GenX::Trace "\nContinue anyway (y or n) ? " 0
+   puts stdout "\nContinue anyway (y or n) ? " 0
    if { [string toupper [string index [gets stdin] 0]]!="Y" } {
       exit 1
    }
@@ -419,7 +434,7 @@ proc GenX::ParseCommandLine { } {
 
    #----- Check if architecture is valid
    if { ![string match -nocase "Linux" [exec uname]] } {
-      GenX::Trace "GenX::ParseCommandLine: (Error) GenPhysX only runs on Linux" 0
+      GenX::Log ERROR "GenPhysX only runs on Linux"
       exit 1
    }
 
@@ -432,7 +447,7 @@ proc GenX::ParseCommandLine { } {
    for { set i 0 } { $i < $gargc } { incr i } {
       switch -exact [string trimleft [lindex $gargv $i] "-"] {
          "version"   { puts "$Data(Version)"; exit 0 }
-         "verbose"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Verbose)] }
+         "verbose"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Log(Level)] }
          "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(OutFile)] }
          "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(ModelTarget)] }
          "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(GridFile)] }
@@ -460,18 +475,18 @@ proc GenX::ParseCommandLine { } {
    #----- Check dependencies
    if { $GenX::Data(Vege)!="NONE" } {
       if { $GenX::Data(Mask)=="NONE" } {
-         GenX::Trace "GenX::ParseCommandLine: (Error) To generate vegetation type fields you need to generate the mask" 0
+         GenX::Log ERROR "To generate vegetation type fields you need to generate the mask"
          GenX::Continue
       }
    }
 
    if { $GenX::Data(Sub)!="NONE" } {
       if { $GenX::Data(Mask)=="NONE" } {
-         GenX::Trace "GenX::ParseCommandLine: (Error) To generate sub-grid post-processed fields you need to generate the mask" 0
+         GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the mask"
          GenX::Continue
       }
       if { $GenX::Data(Topo)=="NONE" } {
-         GenX::Trace "GenX::ParseCommandLine: (Error) To generate sub-grid post-processed fields you need to generate the topography" 0
+         GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the topography"
          GenX::Continue
       }
    }
@@ -508,7 +523,7 @@ proc GenX::GetNML { File } {
    variable Settings
 
    if { ![file exists $File] } {
-      GenX::Trace "GenX::GetNML: (Warning) Could not read the namelist" 0
+      GenX::Log WARNING "Could not read the namelist"
       return
    }
 
@@ -541,8 +556,8 @@ proc GenX::GetNML { File } {
          }
       }
    }
-   GenX::Trace "GenX::GetNML: Read the following settings:" 2
-   if { $GenX::Data(Verbose)>=2 } {
+   GenX::Log INFO "Read the following settings:"
+   if { $GenX::Log(Level)>=2 } {
       parray GenX::Settings
    }
    close $f
@@ -652,7 +667,7 @@ proc GenX::GridGet { } {
    } elseif { [file exists $Path(NameFile)] } {
      set grids [GenX::GridGetFromGEM $Path(NameFile)]
    } else {
-      puts stderr "GenX::GridGet: (Error) Could not find a grid definition either from a standard file or a namelist"
+      GenX::Log ERROR "Could not find a grid definition either from a standard file or a namelist"
       exit 1
    }
    return $grids
@@ -676,12 +691,12 @@ proc GenX::GridGetFromGEM { File } {
    variable Path
    global   env
 
-   GenX::Trace "GenX::GridGetFromGEM: Found GEM version ([file tail $env(GEM)])"
+   GenX::Log INFO "Found GEM version ([file tail $env(GEM)])"
 
    set grid ""
    catch { set grid [exec which $Path(Grid)] }
    if { $grid=="" } {
-      puts stderr "GenX::GridGetFromGEM: (Error) Could not find \"$Path(Grid)\". Please load a GEM environment first (. r.sm.dot gem x.x.x)"
+      GenX::Log ERROR "Could not find \"$Path(Grid)\". Please load a GEM environment first (. r.sm.dot gem x.x.x)"
       exit 1
    }
 
@@ -774,7 +789,7 @@ proc GenX::GridGetFromNML { File } {
 proc GenX::GridGetFromFile { File } {
 
    if { [catch { fstdfile open GPXGRIDFILE read $File } ] } {
-      puts stderr "GenX::GridGetFromFile: (Error) Could not open $File."
+      GenX::Log ERROR "Could not open $File."
       exit 1
    }
 
@@ -964,7 +979,7 @@ proc GenX::DNECFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
    variable Path
 
    if { $Res!=50 && $Res!=250 } {
-      puts stderr "GenX::DNECFindFiles: (Error) Wrong resolution, must be 50 or 250."
+      GenX::Log ERROR "Wrong resolution, must be 50 or 250."
       exit 1
    }
    if { ![ogrlayer is NTSLAYER${Res}K] } {
