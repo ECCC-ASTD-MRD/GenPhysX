@@ -53,6 +53,7 @@ namespace eval GenX { } {
 
    set Data(Version)   1.0                   ;#Application version
 
+   set Data(Secs)      [clock seconds]       ;#To calculate execution time
    set Data(Compress)  False                 ;#Compress standard file output
    set Data(TileSize)  1024                  ;#Tile size to use for large dataset
    set Data(Cache)     {}                    ;#Input data cache list
@@ -262,6 +263,8 @@ proc GenX::MetaData { { Header "" } { Extra "" } } {
    set fld [MetData::TextCode $meta]
    fstdfield define $fld -NOMVAR META
    fstdfield write $fld GPXOUTFILE 0 True
+
+   puts "\nExecution time: [expr [clock seconds]-$Data(Secs)]]s"
 }
 
 #----------------------------------------------------------------------------

@@ -1453,6 +1453,9 @@ proc GeoPhysX::SubRoughnessLength { } {
 proc GeoPhysX::CheckConsistencyStandard { } {
    variable Data
 
+   GenX::Procs
+   GenX::Log INFO "Applying consistency checks"
+
    #----- Read mask
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
       fstdfield read GPXMG GPXOUTFILE $idx

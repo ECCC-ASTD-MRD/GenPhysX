@@ -53,8 +53,6 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.2.4a}/tclsh "$0" "$@"
 #
 #============================================================================
 
-set secs [clock seconds]
-
 #----- Directory where to find processing procs
 set dir [info script]
 while { ![catch { set dir [file link $dir] }] } {}
