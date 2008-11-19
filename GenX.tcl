@@ -61,7 +61,7 @@ namespace eval GenX { } {
    set Data(Procs)     {}                    ;#Procedure registration list
 
    set Data(Vege)      USGS                  ;#Vegetation data selected
-   set Data(Soil)      USDA                  ;#Soit type data selected
+   set Data(Soil)      {USDA AGRC FAO}       ;#Soil type data selected
    set Data(Topo)      USGS                  ;#Topography data selected
    set Data(Mask)      USGS                  ;#Mask data selected
    set Data(Aspect)    NONE                  ;#Slope and aspect selected
@@ -74,7 +74,7 @@ namespace eval GenX { } {
    set Data(Topos)     { NONE USGS SRTM DNEC250 DNEC50 }
    set Data(Aspects)   { NONE SRTM DNEC250 DNEC50 }
    set Data(Veges)     { NONE USGS EOSD CORINE }
-   set Data(Soils)     { NONE USDA FAO AGRC }
+   set Data(Soils)     { NONE USDA AGRC FAO }
    set Data(Masks)     { NONE USGS CANVEC }
    set Data(Checks)    { NONE STD }
    set Data(Subs)      { NONE STD }
@@ -364,11 +364,11 @@ proc GenX::CommandLine { } {
    Processing parameters:
       Specify databases in order of processing joined by + ex: STRM+USGS
 
-      \[-topo\]     [format "%-30s : Topography method(s) {$Data(Topos)}" ($Data(Topo))]
-      \[-mask\]     [format "%-30s : Mask method {$Data(Masks)}" ($Data(Mask))]
-      \[-vege\]     [format "%-30s : Vegetation method(s) {$Data(Veges)}" ($Data(Vege))]
-      \[-soil\]     [format "%-30s : Soil method {$Data(Soils)}" ($Data(Soil))]
-      \[-aspect\]   [format "%-30s : Slope and aspect method(s) {$Data(Aspects)}" ($Data(Aspect))]
+      \[-topo\]     [format "%-30s : Topography method(s) {$Data(Topos)}" ([join $Data(Topo)])]
+      \[-mask\]     [format "%-30s : Mask method {$Data(Masks)}" ([join $Data(Mask)])]
+      \[-vege\]     [format "%-30s : Vegetation method(s) {$Data(Veges)}" ([join $Data(Vege)])]
+      \[-soil\]     [format "%-30s : Soil method {$Data(Soils)}" ([join $Data(Soil) +])]
+      \[-aspect\]   [format "%-30s : Slope and aspect method(s) {$Data(Aspects)}" ([join $Data(Aspect)])]
       \[-check\]    [format "%-30s : Do consistency checks {$Data(Checks)}" ($Data(Check))]
       \[-subgrid\]  [format "%-30s : calculates sub grid fields {$Data(Subs)}" ($Data(Sub))]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
