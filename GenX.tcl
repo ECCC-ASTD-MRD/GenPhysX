@@ -197,7 +197,7 @@ proc GenX::Procs { } {
 # Goal     : Display verbose messages.
 #
 # Parameters :
-#  <Type>    : Type de message (ERROR,WARNING,INFO,...)
+#  <Type>    : Type de message (ERROR,WARNING,INFO,DEBUG,...)
 #  <Message> : Message to display
 #  <Head>    : Afficher l'info du stack
 #
@@ -405,7 +405,7 @@ proc GenX::Continue { } {
       exit 1
    }
 
-   puts stdout "\nContinue anyway (y or n) ? " 0
+   puts stdout "Continue anyway (y or n) ? "
    if { [string toupper [string index [gets stdin] 0]]!="Y" } {
       exit 1
    }
@@ -556,8 +556,8 @@ proc GenX::GetNML { File } {
          }
       }
    }
-   GenX::Log INFO "Read the following settings:"
-   if { $GenX::Log(Level)>=2 } {
+   GenX::Log DEBUG "Read the following settings:"
+   if { $GenX::Log(Level)>=3 } {
       parray GenX::Settings
    }
    close $f

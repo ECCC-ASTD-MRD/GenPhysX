@@ -1569,13 +1569,14 @@ proc GeoPhysX::DominantVege { Grid } {
    variable Data
 
    fstdfield copy GPXVG $Grid
-   GenX::GridClear [list GPXVG $Grid] 0.0
+   fstdfield copy GPXTP $Grid
+   GenX::GridClear [list GPXVG GPXTP] 0.0
 
    #----- Generate VG field (Dominant type per cell)
    foreach type $Data(VegeTypes) {
       if { ![catch { fstdfield read GPXVF GPXOUTFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
-         vexpr GPXVG ifelse($Grid>=GPXVF,GPXVG,$type)
-         vexpr $Grid ifelse($Grid>=GPXVF,$Grid,GPXVF)
+         vexpr GPXVG ifelse(GPXTP>=GPXVF,GPXVG,$type)
+         vexpr GPXTP ifelse(GPXTP>=GPXVF,GPXTP,GPXVF)
       } else {
          GenX::Log WARNING "Could not find VF($type) field while processing VG"
       }
@@ -1583,7 +1584,7 @@ proc GeoPhysX::DominantVege { Grid } {
    fstdfield define GPXVG -NOMVAR VG -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXVG GPXOUTFILE -24 True
 
-   fstdfield free GPXVF GPXVG
+   fstdfield free GPXVF GPXVG GPXTP
 }
 
 #----------------------------------------------------------------------------
