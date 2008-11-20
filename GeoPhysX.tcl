@@ -79,7 +79,7 @@ namespace eval GeoPhysX { } {
    set Const(karman)  0.40        ;# von Karman constant
    set Const(slpmin)  0.001       ;# Threshold value for slope parameter, used in the calculation
                                    #   of the topographic component of the roughness length
-   set Const(sssmin)  10.0        ;# Threshold value of the standard deviation of the
+   set Const(sssmin)  20.0        ;# Threshold value of the standard deviation of the
                                    #   small-scale subgrid (< 5000 m)topography
    set Const(zrefmin) 10.0        ;# Threshold value for reference height, used in the calculation
                                    #   of the roughness length
@@ -470,17 +470,17 @@ proc GeoPhysX::AverageAspect { Grid } {
    fstdfield define GPXSLPS -NOMVAR PEN  -IP3 180
    fstdfield define GPXSLPW -NOMVAR PEN  -IP3 270
 
-   fstdfield write GPXPSA  GPXAUXFILE -24 True
-   fstdfield write GPXPSAN GPXAUXFILE -24 True
-   fstdfield write GPXPSAE GPXAUXFILE -24 True
-   fstdfield write GPXPSAS GPXAUXFILE -24 True
-   fstdfield write GPXPSAW GPXAUXFILE -24 True
+   fstdfield write GPXPSA  GPXAUXFILE -32 True
+   fstdfield write GPXPSAN GPXAUXFILE -32 True
+   fstdfield write GPXPSAE GPXAUXFILE -32 True
+   fstdfield write GPXPSAS GPXAUXFILE -32 True
+   fstdfield write GPXPSAW GPXAUXFILE -32 True
 
-   fstdfield write GPXSLP  GPXAUXFILE -24 True
-   fstdfield write GPXSLPN GPXAUXFILE -24 True
-   fstdfield write GPXSLPE GPXAUXFILE -24 True
-   fstdfield write GPXSLPS GPXAUXFILE -24 True
-   fstdfield write GPXSLPW GPXAUXFILE -24 True
+   fstdfield write GPXSLP  GPXAUXFILE -32 True
+   fstdfield write GPXSLPN GPXAUXFILE -32 True
+   fstdfield write GPXSLPE GPXAUXFILE -32 True
+   fstdfield write GPXSLPS GPXAUXFILE -32 True
+   fstdfield write GPXSLPW GPXAUXFILE -32 True
 
    fstdfield free GPXSLP GPXSLPN GPXSLPE GPXSLPS GPXSLPW GPXPSA GPXPSAN GPXPSAE GPXPSAS GPXPSAW
    gdalband free DEMTILE
