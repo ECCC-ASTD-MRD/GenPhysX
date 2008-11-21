@@ -1378,9 +1378,9 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield read GPXGA GPXOUTFILE -1 "" 1198 -1 -1 "" "VF"
 
    vexpr GPXW1  ifelse(GPXZTP>0.0  && GPXZREF>GPXZTP , ((1.0-GPXGA)/ln(GPXZREF/GPXZTP))^2.0, 0.0)
-   vexpr GPXW2  ifelse(GPXZ0V1>0.0 && GPXZREF>GPXZ0V1, (1.0/ln(GPXZREF/GPXZ0V1))^2.0       , 0.0)
+   vexpr GPXW2  ifelse(GPXZ0V1>0.0 && GPXZREF>GPXZ0V2, (1.0/ln(GPXZREF/GPXZ0V2))^2.0       , 0.0)
    vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0             , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2)), 0.0 )
-   vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)      , GPXZ0V1                             , GPXZ0S)
+   vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)      , GPXZ0V2                             , GPXZ0S)
    vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)          , $Const(z0def)                       , GPXZ0S)
    fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXZ0S GPXAUXFILE -32 True
