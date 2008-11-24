@@ -40,6 +40,7 @@
 #
 #============================================================================
 
+package require Thread
 package require TclData
 package require MetData
 
@@ -59,6 +60,10 @@ namespace eval GenX { } {
    set Data(Cache)     {}                    ;#Input data cache list
    set Data(CacheMax)  20                    ;#Input data cache max
    set Data(Procs)     {}                    ;#Procedure registration list
+
+   set Data(ThreadPoolNb) 0                  ;#Number of threads to use
+   set Data(ThreadPoolNo) 0                  ;#Number of threads to use
+   set Data(ThreadPool)   {}                 ;#List of threads
 
    set Data(Vege)      USGS                  ;#Vegetation data selected
    set Data(Soil)      {USDA AGRC FAO}       ;#Soil type data selected
@@ -124,6 +129,53 @@ namespace eval GenX { } {
    array set Log { Level 2 MUST -1 ERROR 0 WARNING 1 INFO 2 DEBUG 3 };
 
    gdalfile error QUIET
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::ThreadPoolInit>
+# Creation : Novembre 2008 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Initialize thread pool.
+#
+# Parameters :
+#   <Dir>    : Directory where to source the scripts
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::ThreadPoolInit { Dir } {
+   variable Data
+
+   GenX::Log INFO "Initializing thread pool with $Data(ThreadPoolNb) threads"
+   for { set n 0 } { $n<$Data(ThreadPoolNb) } { incr n } {
+      lappend Data(ThreadPool) [set tid [thread::create -joinable "source $Dir/GenX.tcl; source $Dir/GeoPhysX.tcl; thread::wait" ]]
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::TThreadPoolSend>
+# Creation : Novembre 2008 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Sends job to next thread.
+#
+# Parameters :
+#   <args>   : Command to be executed by the thread
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::ThreadPoolSend { args } {
+   variable Data
+
+   #----- Get the next thread id
+   set Data(ThreadPoolNo) [expr [incr Data(ThreadPoolNo)]>=$Data(ThreadPoolNb)?0:$Data(ThreadPoolNo)]
+
+   #----- Transfer job to next thread
+   thread::send -async [lindex $Data(ThreadPool) $Data(ThreadPoolNo)] $args
 }
 
 #----------------------------------------------------------------------------
@@ -471,7 +523,8 @@ proc GenX::ParseCommandLine { } {
          "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Check)] }
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)] }
-         default     { GenX::CommandLine ; exit 1 }
+         "help"      { GenX::CommandLine ; exit 1 }
+         default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
       }
    }
 
@@ -694,12 +747,17 @@ proc GenX::GridGetFromGEM { File } {
    variable Path
    global   env
 
+   if { ![info exists env(GEM)] } {
+       GenX::Log ERROR "GEM environment not loaded (. r.sm.dot gem x.x.x)"
+       exit 1
+   }
+
    GenX::Log INFO "Found GEM version ([file tail $env(GEM)])"
 
    set grid ""
    catch { set grid [exec which $Path(Grid)] }
    if { $grid=="" } {
-      GenX::Log ERROR "Could not find \"$Path(Grid)\". Please load a GEM environment first (. r.sm.dot gem x.x.x)"
+      GenX::Log ERROR "Could not find \"$Path(Grid)\". Please make sure GEM environment is loaded first (. r.sm.dot gem x.x.x)"
       exit 1
    }
 
