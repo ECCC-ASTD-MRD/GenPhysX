@@ -1380,11 +1380,11 @@ proc GeoPhysX::SubRoughnessLength { } {
    #----- Roughness length over soil
    fstdfield read GPXGA GPXOUTFILE -1 "" 1198 -1 -1 "" "VF"
 
-   vexpr GPXW1  ifelse(GPXZTP>0.0  && GPXZREF>GPXZTP , ((1.0-GPXGA)/ln(GPXZREF/GPXZTP))^2.0, 0.0)
-   vexpr GPXW2  ifelse(GPXZ0V1>0.0 && GPXZREF>GPXZ0V2, (1.0/ln(GPXZREF/GPXZ0V2))^2.0       , 0.0)
-   vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0             , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2)), 0.0 )
-   vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)      , GPXZ0V2                             , GPXZ0S)
-   vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)          , $Const(z0def)                       , GPXZ0S)
+   vexpr GPXW1  ifelse(GPXZTP>0.0  && GPXZREF>GPXZTP , (1.0-GPXGA)*(1.0/ln(GPXZREF/GPXZTP))^2.0, 0.0)
+   vexpr GPXW2  ifelse(GPXZ0V1>0.0 && GPXZREF>GPXZ0V2, (1.0/ln(GPXZREF/GPXZ0V2))^2.0           , 0.0)
+   vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0             , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2))    , 0.0 )
+   vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)      , GPXZ0V2                                 , GPXZ0S)
+   vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)          , $Const(z0def)                           , GPXZ0S)
    fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXZ0S GPXAUXFILE -32 True
 
@@ -1393,7 +1393,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZPS GPXAUXFILE -32 True
 
    #----- Roughness length over glaciers
-   vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (GPXGA/ln(GPXZREF/GPXZTP))^2.0     , 0.0)
+   vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, GPXGA*(1.0/ln(GPXZREF/GPXZTP))^2.0 , 0.0)
    vexpr GPXW2  ifelse(GPXZREF>$Const(gaz0)        , (1.0/ln(GPXZREF/$Const(gaz0)))^2.0 , 0.0)
    vexpr GPXZ0G ifelse((GPXW1+GPXW2)>0.0           , GPXZREF*exp(-1.0/sqrt(GPXW1+GPXW2)), 0.0)
    vexpr GPXZ0G ifelse(GPXZREF<=$Const(zrefmin)    , $Const(gaz0)                       , GPXZ0G)
@@ -1522,7 +1522,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
                GenX::Log WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J1($type)"
             }
             if { [fstdfield is GPXMG] } {
-               vexpr GPXJ1 ifelse(GPXMG<0.001,0.0,GPXJ1)
+               vexpr GPXJ1 ifelse(GPXMG<0.001,0.0,ifelse(GPXJ1==0.0,43.0,GPXJ1))
             } else {
                GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J1($type)"
             }
@@ -1541,7 +1541,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
                GenX::Log WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J2($type)"
             }
             if { [fstdfield is GPXMG] } {
-               vexpr GPXJ2 ifelse(GPXMG<0.001,0.0,GPXJ2)
+               vexpr GPXJ2 ifelse(GPXMG<0.001,0.0,ifelse(GPXJ2==0.0,19.0,GPXJ2))
             } else {
                GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J2($type)"
             }
