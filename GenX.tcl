@@ -72,6 +72,7 @@ namespace eval GenX { } {
    set Data(Check)     STD                   ;#Consistency checks
    set Data(Sub)       STD                   ;#Subgrid calculations selected
 
+   set Data(Script)    ""                    ;#User definition script
    set Data(Diag)      False                 ;#Diagnostics
    set Data(Z0Filter)  True                  ;#Filter roughness length
 
@@ -411,6 +412,7 @@ proc GenX::CommandLine { } {
       \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]
       \[-workdir\]  [format "%-30s : Working directory" ($Path(Work))]
       \[-target\]   [format "%-30s : Model target (GEM, GEM-MACH, ...)" ($Path(ModelTarget))]
+      \[-script\]   [format "%-30s : User definition script to include" ""]
 
    Processing parameters:
       Specify databases in order of processing joined by + ex: STRM+USGS
@@ -522,25 +524,31 @@ proc GenX::ParseCommandLine { } {
          "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Check)] }
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)] }
+         "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Script)] }
          "help"      { GenX::CommandLine ; exit 1 }
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
       }
    }
 
+   #----- Check for user definitiond
+   if { $GenX::Data(Script)!="" } {
+      source $Data(Script)
+   }
+
    #----- Check dependencies
-   if { $GenX::Data(Vege)!="NONE" } {
-      if { $GenX::Data(Mask)=="NONE" } {
+   if { $Data(Vege)!="NONE" } {
+      if { $Data(Mask)=="NONE" } {
          GenX::Log ERROR "To generate vegetation type fields you need to generate the mask"
          GenX::Continue
       }
    }
 
-   if { $GenX::Data(Sub)!="NONE" } {
-      if { $GenX::Data(Mask)=="NONE" } {
+   if { $Data(Sub)!="NONE" } {
+      if { $Data(Mask)=="NONE" } {
          GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the mask"
          GenX::Continue
       }
-      if { $GenX::Data(Topo)=="NONE" } {
+      if { $Data(Topo)=="NONE" } {
          GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the topography"
          GenX::Continue
       }
