@@ -40,7 +40,6 @@
 #
 #============================================================================
 
-package require Thread
 package require TclData
 package require MetData
 

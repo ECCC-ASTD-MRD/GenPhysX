@@ -34,7 +34,7 @@
 #   GeoPhysX::AverageSand          { Grid }
 #   GeoPhysX::AverageClay          { Grid }
 #
-#   GeoPhysX::SubCorrectionFilter  { FieldRes FieldDX FieldDY DBR C1 C2 C3 }
+#   GeoPhysX::SubCorrectionFilter  { FieldRes FieldDX FieldDY DBR C1 C2 }
 #   GeoPhysX::SubCorrectionFactor  { }
 #   GeoPhysX::SubTopoFilter        { }
 #   GeoPhysX::SubLaunchingHeight   { }
@@ -85,7 +85,11 @@ namespace eval GeoPhysX { } {
                                    #   of the roughness length
    set Const(z0def)   0.00001     ;# Default value of the roughness length in meters, used to
                                    #   fill in some "gaps" in the roughness length field
-   set Const(zpdef)   -11.51      ;# = ln(z0def)
+   set Const(zpdef)   -11.51      ;# = ln(z0def
+   set Const(largec0) 8.0         ;# Large scale resolution dependent correction factor
+   set Const(largec1) 16.0        ;# Large scale resolution dependent correction factor
+   set Const(smallc0) 2.0         ;# Small scale resolution dependent correction factor
+   set Const(smallc1) 15.0        ;# Small scale resolution dependent correction factor
 }
 
 #----------------------------------------------------------------------------
@@ -1111,18 +1115,17 @@ proc GeoPhysX::AverageAspectTile { Grid Band } {
 #   <DBR>      :
 #   <C1>       :
 #   <C2>       :
-#   <C3>       :
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::SubCorrectionFilter { FieldRes FieldDX FieldDY DBR C1 C2 C3 } {
+proc GeoPhysX::SubCorrectionFilter { FieldRes FieldDX FieldDY DBR C1 C2 } {
 
    GenX::Procs
    vexpr GPXDD sqrt($FieldDX*$FieldDY)
-   vexpr GPXAN exp(-1.0*$C1*($C2*(GPXDD/$DBR)-$C3))
+   vexpr GPXAN exp(-1.0*($C1*(GPXDD/$DBR)-$C2))
    vexpr $FieldRes 0.5*(1.0+(1.0-GPXAN)/(1.0+GPXAN))
 
    fstdfield free GPXAN GPXDD
@@ -1154,8 +1157,8 @@ proc GeoPhysX::SubCorrectionFactor { } {
    vexpr GPXDX ddx(GPXMG)
    vexpr GPXDY ddy(GPXMG)
 
-   GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) 2.0 4.0 8.0
-   GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES 2.0 1.0 7.5
+   GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) $Const(largec1) $Const(largec2)
+   GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc1) $Const(smallc2)
 
    fstdfield define GPXFLR -NOMVAR FLR -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXFLR GPXAUXFILE -24 True
@@ -1168,8 +1171,8 @@ proc GeoPhysX::SubCorrectionFactor { } {
    vexpr GPXDX GPXDX*sqrt(GPXMG)
    vexpr GPXDY GPXDY*sqrt(GPXMG)
 
-   GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) 2.0 4.0 8.0
-   GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES 2.0 1.0 7.5
+   GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) $Const(largec1) $Const(largec2)
+   GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc1) $Const(smallc2)
 
    fstdfield define GPXFLR -NOMVAR FLRP -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXFLR GPXAUXFILE -24 True
@@ -1274,9 +1277,6 @@ proc GeoPhysX::SubY789 { } {
    vexpr GPXCOSA cos(GPXALP)
    vexpr GPXSINA sin(GPXALP)
 
-   fstdfield define GPXALP -NOMVAR ALP -IP1 0 -IP2 0 -IP3 0
-   fstdfield write GPXALP GPXAUXFILE -32 True
-
    GenX::Log INFO "Computing Y7"
    vexpr GPXY789 GPXMG*(GPXGXX*(GPXCOSA^2) + GPXGYY*(GPXSINA^2) - 2.0*GPXGXY*GPXSINA*GPXCOSA)
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
@@ -1343,6 +1343,9 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZREF ifelse(GPXZREF<$Const(zrefmin),$Const(zrefmin),GPXZREF)
    vexpr GPXZREF ifelse(GPXZREF>1500.0,1500.0,GPXZREF)
 
+   fstdfield define GPXZREF -NOMVAR ZREF -IP1 0 -IP2 0 -IP3 0
+   fstdfield write GPXZREF GPXAUXFILE -32 True
+
    vexpr GPXSLP (GPXHCOEF*GPXHCOEF*GPXSSS/$Const(lres))
 
    GenX::Log INFO "Computing Z0_topo"
@@ -1382,7 +1385,7 @@ proc GeoPhysX::SubRoughnessLength { } {
 
    vexpr GPXW1  ifelse(GPXZTP>0.0  && GPXZREF>GPXZTP , (1.0-GPXGA)*(1.0/ln(GPXZREF/GPXZTP))^2.0, 0.0)
    vexpr GPXW2  ifelse(GPXZ0V1>0.0 && GPXZREF>GPXZ0V2, (1.0/ln(GPXZREF/GPXZ0V2))^2.0           , 0.0)
-   vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0             , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2))    , 0.0 )
+   vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0             , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2))    , 0.0)
    vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)      , GPXZ0V2                                 , GPXZ0S)
    vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)          , $Const(z0def)                           , GPXZ0S)
    fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0 -IP3 0
