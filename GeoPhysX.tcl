@@ -123,8 +123,8 @@ proc GeoPhysX::AverageTopo { Grids } {
       switch $topo {
          "USGS"    { GeoPhysX::AverageTopoUSGS $Grids     ;#----- USGS topograhy averaging method (Global 900m) }
          "SRTM"    { GeoPhysX::AverageTopoSRTM $Grids     ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
-         "DNEC50"  { GeoPhysX::AverageTopoDNEC $Grids 50  ;#----- DNEC50 topograhy averaging method (Canada 90m)}
-         "DNEC250" { GeoPhysX::AverageTopoDNEC $Grids 250 ;#----- DNEC250 topograhy averaging method (Canada 25m)}
+         "CDED50"  { GeoPhysX::AverageTopoCDED $Grids 50  ;#----- CDED50 topograhy averaging method (Canada 90m)}
+         "CDED250" { GeoPhysX::AverageTopoCDED $Grids 250 ;#----- CDED250 topograhy averaging method (Canada 25m)}
       }
    }
 
@@ -133,7 +133,7 @@ proc GeoPhysX::AverageTopo { Grids } {
       fstdfield gridinterp $grid - NOP True
       fstdfield define $grid -NOMVAR ME -IP2 0 -IP3 0
       vexpr $grid ifelse($grid==-99.0,0.0,$grid)   ;#USGS NoData value
-      vexpr $grid ifelse($grid<-32000,0.0,$grid)   ;#SRTM and DNEC NoData value
+      vexpr $grid ifelse($grid<-32000,0.0,$grid)   ;#SRTM and CDED NoData value
       fstdfield write $grid GPXOUTFILE -32 True
    }
 
@@ -253,10 +253,10 @@ proc GeoPhysX::AverageTopoSRTM { Grids } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::AverageTopoDNEC>
+# Name     : <GeoPhysX::AverageTopoCDED>
 # Creation : Octobre 2008 - J.P. Gauthier - CMC/CMOE
 #
-# Goal     : Generate the topography using DNEC.
+# Goal     : Generate the topography using CDED.
 #
 # Parameters :
 #   <Grids>  : Grids on which to generate the topography
@@ -266,11 +266,11 @@ proc GeoPhysX::AverageTopoSRTM { Grids } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageTopoDNEC { Grids { Res 250 } } {
+proc GeoPhysX::AverageTopoCDED { Grids { Res 250 } } {
    variable Data
 
    GenX::Procs
-   GenX::Log INFO "Averaging topography using DNEC(1:${Res}000) database"
+   GenX::Log INFO "Averaging topography using CDED(1:${Res}000) database"
 
    set limits [georef limit [fstdfield define [lindex $Grids 0] -georef]]
    set la0 [lindex $limits 0]
@@ -278,18 +278,18 @@ proc GeoPhysX::AverageTopoDNEC { Grids { Res 250 } } {
    set la1 [lindex $limits 2]
    set lo1 [lindex $limits 3]
 
-   foreach file [GenX::DNECFindFiles $la0 $lo0 $la1 $lo1 $Res] {
-      GenX::Log DEBUG "   Processing DNEC file $file" False
-      gdalband read DNECTILE [gdalfile open DNECFILE read $file]
-      gdalband stats DNECTILE -nodata [expr $Res==50?-32767:0] -celldim 1
+   foreach file [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $Res] {
+      GenX::Log DEBUG "   Processing CDED file $file" False
+      gdalband read CDEDTILE [gdalfile open CDEDFILE read $file]
+      gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim 1
 
       foreach grid $Grids {
-         fstdfield gridinterp $grid DNECTILE AVERAGE False
+         fstdfield gridinterp $grid CDEDTILE AVERAGE False
       }
-      fstdfield gridinterp GPXRMS DNECTILE AVERAGE_SQUARE False
-      gdalfile close DNECFILE
+      fstdfield gridinterp GPXRMS CDEDTILE AVERAGE_SQUARE False
+      gdalfile close CDEDFILE
    }
-   gdalband free DNECTILE
+   gdalband free CDEDTILE
 
    #----- Create source resolution used in destination
    fstdfield gridinterp GPXRMS - ACCUM
@@ -341,11 +341,11 @@ proc GeoPhysX::AverageAspect { Grid } {
 
    set SRTM [expr [lsearch -exact $GenX::Data(Aspect) SRTM]!=-1]
 
-   if { [lsearch -exact $GenX::Data(Aspect) DNEC250]!=-1 } {
-      set DNEC 250
+   if { [lsearch -exact $GenX::Data(Aspect) CDED250]!=-1 } {
+      set CDED 250
    }
-   if { [lsearch -exact $GenX::Data(Aspect) DNEC50]!=-1 } {
-      set DNEC 50
+   if { [lsearch -exact $GenX::Data(Aspect) CDED50]!=-1 } {
+      set CDED 50
    }
 
    fstdfield copy GPXFSA  $Grid
@@ -368,12 +368,12 @@ proc GeoPhysX::AverageAspect { Grid } {
    set lon1 [lindex $limits 3]
 
    #----- Work tile resolution
-   if { $DNEC==50 && [llength [GenX::DNECFindFiles $lat0 $lon0 $lat1 $lon1]] } {
-      set res [expr (0.75/3600.0)]  ;# 0.75 arc-secondes DNEC
+   if { $CDED==50 && [llength [GenX::CDEDFindFiles $lat0 $lon0 $lat1 $lon1]] } {
+      set res [expr (0.75/3600.0)]  ;# 0.75 arc-secondes CDED
    } elseif { $SRTM } {
       set res [expr (3.0/3600.0)]   ;# 3 arc-secondes SRTM
    } else {
-      set res [expr (3.75/3600.0)]  ;# 0.75 arc-secondes DNEC
+      set res [expr (3.75/3600.0)]  ;# 0.75 arc-secondes CDED
    }
 
    set dpix [expr $GenX::Data(TileSize)*$res]
@@ -414,11 +414,11 @@ proc GeoPhysX::AverageAspect { Grid } {
             set data True
          }
 
-         #----- Process DNEC, if asked for
-         if { $DNEC && [llength [set dnecfiles [GenX::DNECFindFiles $la0 $lo0 $la1 $lo1 $DNEC]]] } {
+         #----- Process CDED, if asked for
+         if { $CDED && [llength [set dnecfiles [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $CDED]]] } {
             foreach file $dnecfiles {
-               GenX::CacheGet $file [expr $DNEC==50?-32767:0]
-               GenX::Log DEBUG "      Processing DNEC DEM file $file" False
+               GenX::CacheGet $file [expr $CDED==50?-32767:0]
+               GenX::Log DEBUG "      Processing CDED DEM file $file" False
 #               set ll [gdalband stats $file -gridpoint 0.0 0.0]
 #               puts stderr "ll= $ll"
 #               puts stderr "xy= [set xy [gdalband stats DEMTILE -coordpoint [lindex $ll 0] [lindex $ll 1] True]]"

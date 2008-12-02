@@ -33,7 +33,7 @@
 #   GenX::GridGetFromFile  { File }
 #   GenX::CANVECFindFiles  { Lat0 Lon0 Lat1 Lon1 Layers }
 #   GenX::SRTMFindFiles    { Lat0 Lon0Lat1 Lon1 }
-#   GenX::DNECFindFiles    { Lat0 Lon0 Lat1 Lon1 { Res 50 } }
+#   GenX::CDEDFindFiles    { Lat0 Lon0 Lat1 Lon1 { Res 50 } }
 #   GenX::EOSDFindFiles    { Lat0 Lon0Lat1 Lon1 }
 #   GenX::CacheGet         { File { NoData "" } }
 #   GenX::CacheFree        { }
@@ -76,8 +76,8 @@ namespace eval GenX { } {
    set Data(Diag)      False                 ;#Diagnostics
    set Data(Z0Filter)  True                  ;#Filter roughness length
 
-   set Data(Topos)     { NONE USGS SRTM DNEC250 DNEC50 }
-   set Data(Aspects)   { NONE SRTM DNEC250 DNEC50 }
+   set Data(Topos)     { NONE USGS SRTM CDED250 CDED50 }
+   set Data(Aspects)   { NONE SRTM CDED250 CDED50 }
    set Data(Veges)     { NONE USGS EOSD CORINE }
    set Data(Soils)     { NONE USDA AGRC FAO }
    set Data(Masks)     { NONE USGS CANVEC }
@@ -117,7 +117,7 @@ namespace eval GenX { } {
    set Path(TopoLow)  $Path(DBase)/data_lres
    set Path(Grad)     $Path(DBase)/data_grad
    set Path(SRTM)     /data/cmod8/afseeer/SRTMv4
-   set Path(DNEC)     /data/cmod8/afseeer/DNEC
+   set Path(CDED)     /data/cmod8/afseeer/CDED
    set Path(EOSD)     /data/cmod8/afseeer/EOSD
    set Path(NTS)      /data/cmod8/afseeer/NTS
    set Path(CANVEC)   /data/cmod8/afseeer/CanVec
@@ -1026,10 +1026,10 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GenX::DNECFindFiles>
+# Name     : <GenX::CDEDFindFiles>
 # Creation : Novembre 2007 - Alexandre Leroux - CMC/CMOE
 #
-# Goal     : Get the DNEC data filenames covering an area.
+# Goal     : Get the CDED data filenames covering an area.
 #
 # Parameters :
 #  <Lat0>    : Lower left corner latitude
@@ -1043,7 +1043,7 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::DNECFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
+proc GenX::CDEDFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
    variable Path
 
    if { $Res!=50 && $Res!=250 } {
@@ -1055,8 +1055,8 @@ proc GenX::DNECFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
       eval ogrlayer read NTSLAYER${Res}K $nts_layer
    }
 
-   #----- Pour les 250k : /data/cmod8/afseeer/DNEC/045/h/045h/045h_0100_deme.tif +west
-   #----- Pour les 50k  : /data/cmod8/afseeer/DNEC/031/h/031h01/031h01_0101_deme.tif +west
+   #----- Pour les 250k : /data/cmod8/afseeer/CDED/045/h/045h/045h_0100_deme.tif +west
+   #----- Pour les 50k  : /data/cmod8/afseeer/CDED/031/h/031h01/031h01_0101_deme.tif +west
    set files { }
    foreach id [ogrlayer pick NTSLAYER${Res}K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
       set feuillet [ogrlayer define NTSLAYER${Res}K -feature $id snrc]
@@ -1065,9 +1065,9 @@ proc GenX::DNECFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
       set s50  [string range $feuillet 4 5]
 
       if { $Res==50 } {
-         set path $Path(DNEC)/$s250/$sl/$s250$sl$s50
+         set path $Path(CDED)/$s250/$sl/$s250$sl$s50
       } else {
-         set path $Path(DNEC)/$s250/$sl/$s250$sl
+         set path $Path(CDED)/$s250/$sl/$s250$sl
       }
 
       if { [llength [set lst [glob -nocomplain $path/*e.tif]]] } {

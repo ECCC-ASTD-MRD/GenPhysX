@@ -29,11 +29,11 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.0}/tclsh "$0" "$@"
 #   Processing parameters:
 #      Specify databases in order of processing, joined by + ex: STRM+USGS
 #
-#      [-topo]     (USGS)                         : Topography method { NONE USGS SRTM DNEC250 DNEC50 }
+#      [-topo]     (USGS)                         : Topography method { NONE USGS SRTM CDED250 CDED50 }
 #      [-mask]     (USGS)                         : Mask method { NONE USGS CANVEC }
 #      [-vege]     (USGS)                         : Vegetation method { NONE USGS EOSD CORINE }
 #      [-soil]     (USDA)                         : Soil method { NONE USDA }
-#      [-aspect]   (NONE)                         : Calculates aspect and slope { NONE SRTM DNEC250 DNEC50 }
+#      [-aspect]   (NONE)                         : Calculates aspect and slope { NONE SRTM CDED250 CDED50 }
 #      [-check]                                   : Do consistency checks
 #      [-diag]                                    : Do diagnostics
 #
