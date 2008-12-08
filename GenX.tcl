@@ -92,7 +92,7 @@ namespace eval GenX { } {
    set Path(ModelTarget) ""                    ;#Model cible
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
-   set Batch(Host)     [info hostname]       ;#Host onto which to submit the job
+   set Batch(Host)     hawa                  ;#Host onto which to submit the job
    set Batch(Mem)      500                   ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
@@ -103,6 +103,8 @@ namespace eval GenX { } {
       set Path(DBase) $env(GENPHYSXDB_BASE)
    } else {
       set Path(DBase) /data/dormrb04/genphysx/data
+      set Path(DBase) /data/cmod8/afseeer
+      set Path(DBase) /data/shared_1_b0/armn
    }
 
    set Path(SandUSDA) $Path(DBase)/db/sand_usda
@@ -114,15 +116,15 @@ namespace eval GenX { } {
    set Path(TopoUSGS) $Path(DBase)/db/me_usgs2002
    set Path(MaskUSGS) $Path(DBase)/db/mg_usgs2002
    set Path(VegeUSGS) $Path(DBase)/db/vg_usgs2002
-   set Path(TopoLow)  $Path(DBase)/data_lres
-   set Path(Grad)     $Path(DBase)/data_grad
-   set Path(SRTM)     /data/cmod8/afseeer/SRTMv4
-   set Path(CDED)     /data/cmod8/afseeer/CDED
-   set Path(EOSD)     /data/cmod8/afseeer/EOSD
-   set Path(NTS)      /data/cmod8/afseeer/NTS
-   set Path(CANVEC)   /data/cmod8/afseeer/CanVec
-   set Path(CORINE)   /data/cmod8/afseeer/CORINE
-   set Path(Various)  /data/cmod8/afseeer/Various
+   set Path(TopoLow)  $Path(DBase)/db/data_lres
+   set Path(Grad)     $Path(DBase)/db/data_grad
+   set Path(SRTM)     $Path(DBase)/SRTMv4
+   set Path(CDED)     $Path(DBase)/CDED
+   set Path(EOSD)     $Path(DBase)/EOSD
+   set Path(NTS)      $Path(DBase)/NTS
+   set Path(CANVEC)   $Path(DBase)/CanVec
+   set Path(CORINE)   $Path(DBase)/CORINE
+   set Path(Various)  $Path(DBase)/Various
 
    #----- Log related variables
 

@@ -25,6 +25,7 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.0}/tclsh "$0" "$@"
 #      [-result]   (genphysx)                     : Result filename
 #      [-workdir]  ()                             : Working directory
 #      [-target]   ()                             : Model target (GEM, GEM-MACH, ...)
+#      [-script]   ()                             : User definition script to include
 #
 #   Processing parameters:
 #      Specify databases in order of processing, joined by + ex: STRM+USGS
@@ -43,7 +44,7 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.0}/tclsh "$0" "$@"
 #   Batch mode parameters:
 #      [-batch]                                   : Launch in batch mode
 #      [-mail]     ()                             : Email address to send completion mail
-#      [-mach]     (goodenough.cmc.ec.gc.ca)      : Machine to run on in batch mode
+#      [-mach]     (hawa)                         : Machine to run on in batch mode
 #      [-t]        (7200)                         : Reserved CPU time (s)
 #      [-cm]       (500)                          : Reserved RAM (MB)
 #

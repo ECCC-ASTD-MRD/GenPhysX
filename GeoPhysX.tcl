@@ -68,6 +68,8 @@ namespace eval GeoPhysX { } {
    set Const(mgmin)   0.001       ;# Threshold value of land-water mask field (MG), used in the
                                    #   calculation of the topographic component of the roughness
                                    #   length
+   set Const(gamin)   0.001       ;# Threshold value of glacier fraction (GA), used in the
+                                   #   calculation of the roughness length over soil and glacier
    set Const(z0min)   0.0001      ;# Threshold value of roughness length in meters, used to identify
                                    #   some "gaps" in the roughness length field
    set Const(gaz0)    0.0003      ;# Roughness length for glacier-type surfaces
@@ -85,7 +87,7 @@ namespace eval GeoPhysX { } {
                                    #   of the roughness length
    set Const(z0def)   0.00001     ;# Default value of the roughness length in meters, used to
                                    #   fill in some "gaps" in the roughness length field
-   set Const(zpdef)   -11.51      ;# = ln(z0def
+   set Const(zpdef)   -11.51      ;# = ln(z0def)
    set Const(largec0) 8.0         ;# Large scale resolution dependent correction factor
    set Const(largec1) 16.0        ;# Large scale resolution dependent correction factor
    set Const(smallc0) 2.0         ;# Small scale resolution dependent correction factor
@@ -1382,11 +1384,12 @@ proc GeoPhysX::SubRoughnessLength { } {
    #----- Roughness length over soil
    fstdfield read GPXGA GPXOUTFILE -1 "" 1198 -1 -1 "" "VF"
 
-   vexpr GPXW1  ifelse(GPXZTP>0.0  && GPXZREF>GPXZTP , (1.0-GPXGA)*(1.0/ln(GPXZREF/GPXZTP))^2.0, 0.0)
-   vexpr GPXW2  ifelse(GPXZ0V1>0.0 && GPXZREF>GPXZ0V2, (1.0/ln(GPXZREF/GPXZ0V2))^2.0           , 0.0)
-   vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0             , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2))    , 0.0)
-   vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)      , GPXZ0V2                                 , GPXZ0S)
-   vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)          , $Const(z0def)                           , GPXZ0S)
+   vexpr GPXW1  ifelse(GPXZTP >0.0 && GPXZREF>GPXZTP     , (1.0/ln(GPXZREF/GPXZTP ))^2.0        , 0.0)
+   vexpr GPXW2  ifelse(GPXZ0V2>0.0 && GPXZREF>GPXZ0V2    , (1.0/ln(GPXZREF/GPXZ0V2))^2.0        , 0.0)
+   vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0                 , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2)) , 0.0)
+   vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)          , GPXZ0V2                              , GPXZ0S)
+   vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)              , $Const(z0def)                        , GPXZ0S)
+   vexpr GPXZ0S ifelse(GPXGA>=(1.0-$Const(gamin))        , $Const(z0def)                        , GPXZ0S)
    fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXZ0S GPXAUXFILE -32 True
 
@@ -1395,12 +1398,12 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZPS GPXAUXFILE -32 True
 
    #----- Roughness length over glaciers
-   vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, GPXGA*(1.0/ln(GPXZREF/GPXZTP))^2.0 , 0.0)
+   vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (1.0/ln(GPXZREF/GPXZTP      ))^2.0 , 0.0)
    vexpr GPXW2  ifelse(GPXZREF>$Const(gaz0)        , (1.0/ln(GPXZREF/$Const(gaz0)))^2.0 , 0.0)
    vexpr GPXZ0G ifelse((GPXW1+GPXW2)>0.0           , GPXZREF*exp(-1.0/sqrt(GPXW1+GPXW2)), 0.0)
    vexpr GPXZ0G ifelse(GPXZREF<=$Const(zrefmin)    , $Const(gaz0)                       , GPXZ0G)
-   vexpr GPXZ0G ifelse(GPXGA>0.0                   , GPXZ0G                             , 0.0 )
    vexpr GPXZ0G ifelse(GPXZ0G<$Const(z0def)        , $Const(z0def)                      , GPXZ0G)
+   vexpr GPXZ0G ifelse(GPXGA<=$Const(gamin)        , $Const(z0def)                      , GPXZ0G)
    fstdfield define GPXZ0G -NOMVAR Z0G -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXZ0G GPXAUXFILE -32 True
 
