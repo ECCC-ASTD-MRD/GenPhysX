@@ -617,6 +617,8 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 proc GeoPhysX::AverageVege { Grid } {
    variable Data
 
+   GenX::Procs
+
    fstdfield copy GPXVF $Grid
    GenX::GridClear [list GPXVF $Grid] 0.0
 
@@ -1579,6 +1581,9 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 proc GeoPhysX::DominantVege { Grid } {
    variable Data
 
+   GenX::Procs
+   GenX::Log INFO "Calculating dominant vegtation"
+
    fstdfield copy GPXVG $Grid
    fstdfield copy GPXTP $Grid
    GenX::GridClear [list GPXVG GPXTP] 0.0
@@ -1613,5 +1618,7 @@ proc GeoPhysX::DominantVege { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::Diag { } {
 
-      GenX::Log INFO "(TODO)" 0
+   GenX::Procs
+
+   GenX::Log INFO "(TODO)" 0
 }
