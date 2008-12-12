@@ -1486,7 +1486,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
    }
 
    #----- Check consistency for VF
-   if { $GenX::Data(Vege)!="NONE" }  {
+   if { $GenX::Data(Vege)!="" }  {
       foreach type $Data(VegeTypes) {
          if { ![catch { fstdfield read GPXVF GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
             if { [fstdfield is GPXVF3] && [fstdfield is GPXMG] } {
@@ -1518,7 +1518,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
    }
 
    #----- Check consistency for J1 and J2
-   if { $GenX::Data(Soil)!="NONE" }  {
+   if { $GenX::Data(Soil)!="" }  {
       foreach type $Data(SandTypes) {
          if { ![catch { fstdfield read GPXJ1 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J1" }] } {
             if { [fstdfield is GPXVF2] } {

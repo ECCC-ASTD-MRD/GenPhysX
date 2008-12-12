@@ -20,6 +20,7 @@
 #   GenX::MetaData         { { Header "" } { Extra "" } }
 #   GenX::ParseArgs        { Argv Argc No Multi Cmd }
 #   GenX::ParseCommandLine { }
+#   GenX::ParseTarget      { } {
 #   GenX::Continue         { }
 #   GenX::CommandLine      { }
 #   GenX::GetNML           { File }
@@ -64,32 +65,33 @@ namespace eval GenX { } {
    set Data(ThreadPoolNo) 0                  ;#Number of threads to use
    set Data(ThreadPool)   {}                 ;#List of threads
 
-   set Data(Vege)      USGS                  ;#Vegetation data selected
-   set Data(Soil)      {USDA AGRC FAO}       ;#Soil type data selected
-   set Data(Topo)      USGS                  ;#Topography data selected
-   set Data(Mask)      USGS                  ;#Mask data selected
-   set Data(Aspect)    NONE                  ;#Slope and aspect selected
-   set Data(Check)     STD                   ;#Consistency checks
-   set Data(Sub)       STD                   ;#Subgrid calculations selected
+   set Data(Vege)      ""                    ;#Vegetation data selected
+   set Data(Soil)      ""                    ;#Soil type data selected
+   set Data(Topo)      ""                    ;#Topography data selected
+   set Data(Mask)      ""                    ;#Mask data selected
+   set Data(Aspect)    ""                    ;#Slope and aspect selected
+   set Data(Check)     ""                    ;#Consistency checks
+   set Data(Sub)       ""                    ;#Subgrid calculations selected
+   set Data(Target)    ""                    ;#Model cible
 
    set Data(Script)    ""                    ;#User definition script
    set Data(Diag)      False                 ;#Diagnostics
    set Data(Z0Filter)  True                  ;#Filter roughness length
 
-   set Data(Topos)     { NONE USGS SRTM CDED250 CDED50 }
-   set Data(Aspects)   { NONE SRTM CDED250 CDED50 }
-   set Data(Veges)     { NONE USGS EOSD CORINE }
-   set Data(Soils)     { NONE USDA AGRC FAO }
-   set Data(Masks)     { NONE USGS CANVEC }
-   set Data(Checks)    { NONE STD }
-   set Data(Subs)      { NONE STD }
+   set Data(Topos)     { USGS SRTM CDED250 CDED50 }
+   set Data(Aspects)   { SRTM CDED250 CDED50 }
+   set Data(Veges)     { USGS EOSD CORINE }
+   set Data(Soils)     { USDA AGRC FAO }
+   set Data(Masks)     { USGS CANVEC }
+   set Data(Checks)    { STD }
+   set Data(Subs)      { STD }
+   set Data(Targets)   { GEMMESO }             ;#Model cible
 
    set Path(Work)        ""                    ;#Working directory
    set Path(Grid)        gemgrid               ;#GEM grid generator application
    set Path(OutFile)     genphysx              ;#Output file prefix
    set Path(GridFile)    ""                    ;#Grid definition file to use (standard file with >> ^^)
    set Path(NameFile)    ""                    ;#Namelist to use
-   set Path(ModelTarget) ""                    ;#Model cible
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     hawa                  ;#Host onto which to submit the job
@@ -99,8 +101,8 @@ namespace eval GenX { } {
 
    #----- Various database paths
 
-   if  { [info exists env(GENPHYSXDB_BASE)] } {
-      set Path(DBase) $env(GENPHYSXDB_BASE)
+   if  { [info exists env(GENPHYSX_DBASE)] } {
+      set Path(DBase) $env(GENPHYSX_DBASE)
    } else {
       set Path(DBase) /data/dormrb04/genphysx/data
       set Path(DBase) /data/cmod8/afseeer
@@ -213,7 +215,7 @@ proc GenX::Submit { } {
    if { [info exists env(gem_dynversion)] } {
       puts $f ". r.sm.dot gem $env(gem_dynversion)"
    }
-   puts $f "export SPI_PATH=$env(SPI_PATH)\nexport GENPHYSXDB_BASE=$env(GENPHYSXDB_BASE)\n[info script] $gargv -batch 0"
+   puts $f "export SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=0\nexport GENPHYSX_DBASE=$env(GENPHYSX_DBASE)\n[info script] $gargv -batch 0"
 
    if { $Batch(Mail)!="" } {
       puts $f "mail -s \"GenPhysX job done\" $Batch(Mail) < $job"
@@ -413,7 +415,7 @@ proc GenX::CommandLine { } {
       \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Path(GridFile))]
       \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]
       \[-workdir\]  [format "%-30s : Working directory" ($Path(Work))]
-      \[-target\]   [format "%-30s : Model target (GEM, GEM-MACH, ...)" ($Path(ModelTarget))]
+      \[-target\]   [format "%-30s : Model target {$Data(Targets)}" ($Data(Target))]
       \[-script\]   [format "%-30s : User definition script to include" ""]
 
    Processing parameters:
@@ -507,7 +509,7 @@ proc GenX::ParseCommandLine { } {
          "version"   { puts "$Data(Version)"; exit 0 }
          "verbose"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Log(Level)] }
          "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(OutFile)] }
-         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(ModelTarget)] }
+         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Target) $GenX::Data(Targets)] }
          "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(GridFile)] }
          "workdir"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(Work)] }
          "nml"       { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(NameFile)] }
@@ -531,6 +533,9 @@ proc GenX::ParseCommandLine { } {
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
       }
    }
+
+   #----- Parse specific target model
+   GenX::ParseTarget
 
    #----- Check for user definitiond
    if { $GenX::Data(Script)!="" } {
@@ -568,6 +573,34 @@ proc GenX::ParseCommandLine { } {
 
    set Path(OutFile) [file rootname $Path(OutFile)]
    catch { file delete $Path(OutFile)_gfilemap.txt }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::ParseTarget>
+# Creation : Decembre 2008 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Select parameters for specific predefined models.
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::ParseTarget { } {
+   variable Data
+
+   switch $Data(Target) {
+      "GEMMESO" { set Data(Topo)     "USGS"
+                  set Data(Vege)     "USGS"
+                  set Data(Mask)     "USGS"
+                  set Data(Soil)     "USDA AGRC FAO"
+                  set Data(Check)    "STD"
+                  set Data(Sub)      "STD"
+                  set Data(Z0Filter) True
+                }
+   }
 }
 
 #----------------------------------------------------------------------------

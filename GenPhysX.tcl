@@ -1,6 +1,6 @@
 #!/bin/sh
 # the next line restarts using tclsh \
-exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.0}/tclsh "$0" "$@"
+exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.0}/tclsh "$0" "$@"
 #============================================================================
 # Environnement Canada
 # Centre Meteorologique Canadien
@@ -30,11 +30,11 @@ exec ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.0}/tclsh "$0" "$@"
 #   Processing parameters:
 #      Specify databases in order of processing, joined by + ex: STRM+USGS
 #
-#      [-topo]     (USGS)                         : Topography method { NONE USGS SRTM CDED250 CDED50 }
-#      [-mask]     (USGS)                         : Mask method { NONE USGS CANVEC }
-#      [-vege]     (USGS)                         : Vegetation method { NONE USGS EOSD CORINE }
-#      [-soil]     (USDA)                         : Soil method { NONE USDA }
-#      [-aspect]   (NONE)                         : Calculates aspect and slope { NONE SRTM CDED250 CDED50 }
+#      [-topo]     ()                             : Topography method { USGS SRTM CDED250 CDED50 }
+#      [-mask]     ()                             : Mask method { USGS CANVEC }
+#      [-vege]     ()                             : Vegetation method { USGS EOSD CORINE }
+#      [-soil]     ()                             : Soil method { USDA }
+#      [-aspect]   ()                             : Calculates aspect and slope { SRTM CDED250 CDED50 }
 #      [-check]                                   : Do consistency checks
 #      [-diag]                                    : Do diagnostics
 #
@@ -74,14 +74,14 @@ set grid [lindex [set grids [GenX::GridGet]] 0]
 GenX::GetNML $GenX::Path(NameFile)
 
 #----- Topography
-if { $GenX::Data(Topo)!="NONE" } {
+if { $GenX::Data(Topo)!="" } {
    GeoPhysX::AverageTopo     $grids
    GeoPhysX::AverageTopoLow  $grid
    GeoPhysX::AverageGradient $grid
 }
 
 #----- Slope and Aspect
-if { $GenX::Data(Aspect)!="NONE" } {
+if { $GenX::Data(Aspect)!="" } {
    GeoPhysX::AverageAspect $grid
 }
 
@@ -92,12 +92,12 @@ switch $GenX::Data(Mask) {
 }
 
 #----- Vegetation type
-if { $GenX::Data(Vege)!="NONE" } {
+if { $GenX::Data(Vege)!="" } {
    GeoPhysX::AverageVege $grid
 }
 
 #----- Soil type
-if { $GenX::Data(Soil)!="NONE" } {
+if { $GenX::Data(Soil)!="" } {
    GeoPhysX::AverageSand $grid
    GeoPhysX::AverageClay $grid
 }
@@ -108,7 +108,7 @@ switch $GenX::Data(Check) {
 }
 
 #----- Sub grid calculations
-if { $GenX::Data(Sub)!="NONE" } {
+if { $GenX::Data(Sub)!="" } {
    GeoPhysX::SubCorrectionFactor
    GeoPhysX::SubTopoFilter
    GeoPhysX::SubLaunchingHeight
