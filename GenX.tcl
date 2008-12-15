@@ -17,7 +17,7 @@
 #   GenX::Procs            { }
 #   GenX::Log              { Type Message { Head True } }
 #   GenX::Submit           { }
-#   GenX::MetaData         { { Header "" } { Extra "" } }
+#   GenX::MetaData         { }
 #   GenX::ParseArgs        { Argv Argc No Multi Cmd }
 #   GenX::ParseCommandLine { }
 #   GenX::ParseTarget      { } {
@@ -49,6 +49,7 @@ namespace eval GenX { } {
    variable Settings
    variable Path
    variable Data
+   variable Meta
    variable Batch
    variable Log
 
@@ -59,11 +60,14 @@ namespace eval GenX { } {
    set Data(TileSize)  1024                  ;#Tile size to use for large dataset
    set Data(Cache)     {}                    ;#Input data cache list
    set Data(CacheMax)  20                    ;#Input data cache max
-   set Data(Procs)     {}                    ;#Procedure registration list
 
    set Data(ThreadPoolNb) 0                  ;#Number of threads to use
-   set Data(ThreadPoolNo) 0                  ;#Number of threads to use
+   set Data(ThreadPoolNo) 0                  ;#Number of current thread
    set Data(ThreadPool)   {}                 ;#List of threads
+
+   set Meta(Procs)     {}                    ;#Metadata procedure registration list
+   set Meta(Header)    ""                    ;#Metadata header
+   set Meta(Footer)    ""                    ;#Metadata footer
 
    set Data(Vege)      ""                    ;#Vegetation data selected
    set Data(Soil)      ""                    ;#Soil type data selected
@@ -76,7 +80,7 @@ namespace eval GenX { } {
 
    set Data(Script)    ""                    ;#User definition script
    set Data(Diag)      False                 ;#Diagnostics
-   set Data(Z0Filter)  True                  ;#Filter roughness length
+   set Data(Z0Filter)  False                 ;#Filter roughness length
 
    set Data(Topos)     { USGS SRTM CDED250 CDED50 }
    set Data(Aspects)   { SRTM CDED250 CDED50 }
@@ -215,7 +219,11 @@ proc GenX::Submit { } {
    if { [info exists env(gem_dynversion)] } {
       puts $f ". r.sm.dot gem $env(gem_dynversion)"
    }
-   puts $f "export SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=0\nexport GENPHYSX_DBASE=$env(GENPHYSX_DBASE)\n[info script] $gargv -batch 0"
+   if  { [info exists env(GENPHYSX_DBASE)] } {
+      puts $f "export GENPHYSX_DBASE=$env(GENPHYSX_DBASE)\n"
+   }
+
+   puts $f "export SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=0\n[info script] $gargv -batch 0"
 
    if { $Batch(Mail)!="" } {
       puts $f "mail -s \"GenPhysX job done\" $Batch(Mail) < $job"
@@ -242,9 +250,9 @@ proc GenX::Submit { } {
 #
 #----------------------------------------------------------------------------
 proc GenX::Procs { } {
-   variable Data
+   variable Meta
 
-   lappend Data(Procs) [info level [expr [info level] -1]]
+   lappend Meta(Procs) [info level [expr [info level] -1]]
 }
 
 #----------------------------------------------------------------------------
@@ -287,39 +295,40 @@ proc GenX::Log { Type Message { Head True } } {
 # Goal     : Record metadata info in a standard RPN Field.
 #
 # Parameters :
-#   <Header> : String to add itn the metadata header (ex: extensio version info)
-#   <Extra>  : Extra info to add
 #
 # Return:
 #
 # Remarks :
 #    Metadata includes date-time and version, procedure used, and gem_settings file
 #----------------------------------------------------------------------------
-proc GenX::MetaData { { Header "" } { Extra "" } } {
+proc GenX::MetaData { } {
    global env
    global argv
    variable Data
+   variable Meta
    variable Path
 
-   #----- Description des versions utilisees
-
+   #----- Description of vesion used
    set version "GenX($Data(Version))"
    catch { append version ", GeoPhysX($GeoPhysX::Data(Version))" }
    catch { append version ", BioGenX($BioGenX::Data(Version))" }
 
+   #----- Generation date et parameters used
    set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\n"
    append meta "Call parameters: [info script] [join $argv " "]\nSPI API version: $env(SPI_PATH)\nCode base      : $version\n"
-   append meta $Header
-   append meta "Processing used:\n   [join $Data(Procs) "\n   "]\n"
+   append meta $Meta(Header)
+   append meta "Processing used:\n   [join $Meta(Procs) "\n   "]\n"
    if { [file exists $Path(NameFile)] } {
       append meta "\nGEM namelist   : { \n[exec cat $Path(NameFile)]\n }"
    }
-   append meta $Extra
+   append meta $Meta(Footer)
 
+   #----- Encode everyting
    set fld [MetData::TextCode $meta]
    fstdfield define $fld -NOMVAR META
    fstdfield write $fld GPXOUTFILE 0 True
 
+   #----- Tada ...
    puts "\nExecution time: [expr [clock seconds]-$Data(Secs)]s"
 }
 
@@ -408,9 +417,9 @@ proc GenX::CommandLine { } {
    Information parameters:
       \[-help\]     [format "%-30s : This information" ""]
       \[-version\]  [format "%-30s : GenPhysX version" ""]
+      \[-verbose\]  [format "%-30s : Trace level (0 none,1 some ,2 more, 3 Debug)" ($Log(Level))]
 
    Input parameters:
-      \[-verbose\]  [format "%-30s : Trace level (0 none,1 some ,2 more, 3 Debug)" ($Log(Level))]
       \[-nml\]      [format "%-30s : GEM namelist definition file" ($Path(NameFile))]
       \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Path(GridFile))]
       \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]

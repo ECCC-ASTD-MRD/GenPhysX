@@ -17,9 +17,9 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.
 #   Information parameters:
 #      [-help]                                    : This information
 #      [-version]                                 : GenPhysX version
+#      [-verbose]  (2)                            : Trace level (0 none,1 some ,2 more,3 Debug)
 #
 #   Input parameters:
-#      [-verbose]  (2)                            : Trace level (0 none,1 some ,2 more,3 Debug)
 #      [-nml]      (gem_settings)                 : GEM namelist definition file
 #      [-gridfile] ()                             : FSTD file to get the grid from if no GEM namelist
 #      [-result]   (genphysx)                     : Result filename
