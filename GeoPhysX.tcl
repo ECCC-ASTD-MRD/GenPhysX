@@ -342,6 +342,7 @@ proc GeoPhysX::AverageAspect { Grid } {
    GenX::Log INFO "Computing slope and aspect"
 
    set SRTM [expr [lsearch -exact $GenX::Data(Aspect) SRTM]!=-1]
+   set CDED 0
 
    if { [lsearch -exact $GenX::Data(Aspect) CDED250]!=-1 } {
       set CDED 250
