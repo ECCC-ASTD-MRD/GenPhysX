@@ -560,7 +560,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    variable Data
 
    GenX::Procs
-   GenX::Log INFO "Averaging topography using CANVEC database"
+   GenX::Log INFO "Averaging mask using CANVEC database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set lat0 [lindex $limits 0]
