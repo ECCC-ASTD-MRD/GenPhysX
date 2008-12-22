@@ -7,6 +7,7 @@
 # Project    : Geophysical field generator.
 # File       : GeoPhysX.tcl
 # Creation   : September 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
+# Revision   : $Id$
 # Description: Definitions of functions related to geo-physical fields
 #
 # Remarks  :
@@ -50,7 +51,7 @@ namespace eval GeoPhysX { } {
    variable Const
    global env
 
-   set Data(Version)   1.0
+   set Data(Version)   0.6
 
    #----- Specific data information
 

@@ -7,6 +7,7 @@
 # Project    : Geophysical field generator.
 # File       : GenX.tcl
 # Creation   : Septembre 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
+# Revision   : $Id$
 # Description: Definitions of global fonctions needed by the generator
 #
 # Remarks  :
@@ -27,7 +28,8 @@
 #   GenX::FieldCopy        { InFile OutFile DateV Etiket IP1 IP2 IP3 TV NV }
 #   GenX::GridClear        { Grids { Value 0.0 } }
 #   GenX::GridLimits       { Grid }
-#   GenX::GridCopy         { Field FileIn FileOut }
+#   GenX::GridCopy         { SourceField DestField }
+#   GenX::GridCopyDesc     { Field FileIn FileOut }
 #   GenX::GridGet          { }
 #   GenX::GridGetFromGEM   { File }
 #   GenX::GridGetFromNML   { File }
@@ -77,6 +79,7 @@ namespace eval GenX { } {
    set Data(Check)     ""                    ;#Consistency checks
    set Data(Sub)       ""                    ;#Subgrid calculations selected
    set Data(Target)    ""                    ;#Model cible
+   set Data(Biogenic)  ""                    ;#Biogenic emissions data selected
 
    set Data(Script)    ""                    ;#User definition script
    set Data(Diag)      False                 ;#Diagnostics
@@ -87,6 +90,7 @@ namespace eval GenX { } {
    set Data(Veges)     { USGS EOSD CORINE }
    set Data(Soils)     { USDA AGRC FAO }
    set Data(Masks)     { USGS CANVEC }
+   set Data(Biogenics) { BELD USGS }
    set Data(Checks)    { STD }
    set Data(Subs)      { STD }
    set Data(Targets)   { GEMMESO }             ;#Model cible
@@ -131,6 +135,7 @@ namespace eval GenX { } {
    set Path(CANVEC)   $Path(DBase)/CanVec
    set Path(CORINE)   $Path(DBase)/CORINE
    set Path(Various)  $Path(DBase)/Various
+   set Path(BELD3)    $Path(DBase)/BELD3
 
    #----- Log related variables
 
@@ -424,7 +429,7 @@ proc GenX::CommandLine { } {
       \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Path(GridFile))]
       \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]
       \[-workdir\]  [format "%-30s : Working directory" ($Path(Work))]
-      \[-target\]   [format "%-30s : Model target {$Data(Targets)}" ($Data(Target))]
+      \[-target\]   [format "%-30s : Set necessary flags for target model {$Data(Targets)}" ($Data(Target))]
       \[-script\]   [format "%-30s : User definition script to include" ""]
 
    Processing parameters:
@@ -435,8 +440,9 @@ proc GenX::CommandLine { } {
       \[-vege\]     [format "%-30s : Vegetation method(s) {$Data(Veges)}" ([join $Data(Vege)])]
       \[-soil\]     [format "%-30s : Soil method {$Data(Soils)}" ([join $Data(Soil) +])]
       \[-aspect\]   [format "%-30s : Slope and aspect method(s) {$Data(Aspects)}" ([join $Data(Aspect)])]
+      \[-biogenic\] [format "%-30s : Biogenic method(s) {$Data(Biogenics)}" ([join $Data(Biogenic)])]
       \[-check\]    [format "%-30s : Do consistency checks {$Data(Checks)}" ($Data(Check))]
-      \[-subgrid\]  [format "%-30s : calculates sub grid fields {$Data(Subs)}" ($Data(Sub))]
+      \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Data(Subs)}" ($Data(Sub))]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
 
    Specific processing parameters:
@@ -534,6 +540,7 @@ proc GenX::ParseCommandLine { } {
          "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Soil) $GenX::Data(Soils)] }
          "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Sub)] }
          "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Aspect)] }
+         "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Biogenic) $GenX::Data(Biogenics)] }
          "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Check)] }
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)] }
@@ -552,21 +559,32 @@ proc GenX::ParseCommandLine { } {
    }
 
    #----- Check dependencies
-   if { $Data(Vege)!="NONE" } {
-      if { $Data(Mask)=="NONE" } {
+   if { $Data(Vege)!="" } {
+      if { $Data(Mask)=="" } {
          GenX::Log ERROR "To generate vegetation type fields you need to generate the mask"
          GenX::Continue
       }
    }
 
-   if { $Data(Sub)!="NONE" } {
-      if { $Data(Mask)=="NONE" } {
+   if { $Data(Sub)!="" } {
+      if { $Data(Mask)=="" } {
          GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the mask"
          GenX::Continue
       }
-      if { $Data(Topo)=="NONE" } {
+      if { $Data(Topo)=="" } {
          GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the topography"
          GenX::Continue
+      }
+   }
+
+   if { $Data(Biogenic)!="" } {
+      if { $Data(Vege)=="" } {
+         GenX::Log ERROR "To generate biogenic emissions fields you need to generate the vegetation type fields (-vege option)"
+         GenX::Continue
+      }
+      if { $Data(Check)=="" } {
+            GenX::Log ERROR "To generate biogenic emissions fields you must also use the -check option."
+            GenX::Continue
       }
    }
 
@@ -698,7 +716,7 @@ proc GenX::FieldCopy { FileIn FileOut DateV Etiket IP1 IP2 IP3 TV NV } {
    foreach field [fstdfield find $FileIn $DateV $Etiket $IP1 $IP2 $IP3 $TV $NV] {
       fstdfield read GPXTMP $FileIn $field
       fstdfield write GPXTMP $FileOut 0 True $GenX::Data(Compress)
-      GenX::GridCopy GPXTMP $FileIn $FileOut
+      GenX::GridCopyDesc GPXTMP $FileIn $FileOut
    }
 }
 
@@ -725,8 +743,41 @@ proc GenX::GridClear { Grids { Value 0.0 } } {
    }
 }
 
+#-------------------------------------------------------------------------------
+# Nom      : GenX::GridCopy
+# Creation : 8 Mai 2007 - Louis-Philippe Crevier - AQMAS
+#
+# Description : Copie des parametres de grille d'un champ a un autre
+#
+# Parametres : SourceField : ID du champ source
+#              DestField : ID du champ destination
+#
+# Retour : --
+#
+# Remarques : Ne copie pas les champs ^^ et >>
+#
+#-------------------------------------------------------------------------------
+proc GenX::GridCopy { SourceField DestField } {
+
+   set grtyp [fstdfield define $SourceField -GRTYP]
+
+   switch -regexp -- $grtyp {
+      N|S|L    { set xgs [ fstdgrid cigaxg $grtyp \
+                     [fstdfield define $SourceField -IG1] [fstdfield define $SourceField -IG2] \
+                     [fstdfield define $SourceField -IG3] [fstdfield define $SourceField -IG4] ]
+                  fstdfield define $DestField -GRTYP $grtyp [lindex $xgs 0] [lindex $xgs 1] [lindex $xgs 2] [lindex $xgs 3]
+               }
+      default  { fstdfield define $DestField -GRTYP  [fstdfield define $SourceField -GRTYP] \
+                     -IG1 [fstdfield define $SourceField -IG1] \
+                     -IG2 [fstdfield define $SourceField -IG2] \
+                     -IG3 [fstdfield define $SourceField -IG3] \
+                     -IG4 [fstdfield define $SourceField -IG4]
+               }
+   }
+}
+
 #----------------------------------------------------------------------------
-# Name     : <GenX::GridCopy>
+# Name     : <GenX::GridCopyDesc>
 # Creation : Octobre 2007 - J.P. Gauthier - CMC/CMOE
 #
 # Goal     : Copy the grid descriptor to a new file.
@@ -741,7 +792,7 @@ proc GenX::GridClear { Grids { Value 0.0 } } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::GridCopy { Field FileIn FileOut } {
+proc GenX::GridCopyDesc { Field FileIn FileOut } {
 
    switch -regexp -- [fstdfield define $Field -GRTYP] {
       L|N|S    {  }

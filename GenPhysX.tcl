@@ -10,7 +10,9 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.
 # Project    : Generateur de champs geophysiques.
 # File       : GenPhysX.tcl
 # Creation   : September 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
+# Revision   : $Id$
 # Description: Generer les champs geophysiques necessaires au modeles meteo (GEM)
+#
 #
 # Parameters   :
 #
@@ -35,6 +37,7 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.
 #      [-vege]     ()                             : Vegetation method { USGS EOSD CORINE }
 #      [-soil]     ()                             : Soil method { USDA }
 #      [-aspect]   ()                             : Calculates aspect and slope { SRTM CDED250 CDED50 }
+#      [-biogenic] ()                             : Biogenic calculation { BELD USGS }
 #      [-check]                                   : Do consistency checks
 #      [-diag]                                    : Do diagnostics
 #
@@ -61,6 +64,7 @@ set dir [file dirname $dir]
 
 source $dir/GenX.tcl
 source $dir/GeoPhysX.tcl
+source $dir/BioGenX.tcl
 
 #----- Parse the arguments
 GenX::ParseCommandLine
@@ -114,6 +118,13 @@ if { $GenX::Data(Sub)!="" } {
    GeoPhysX::SubLaunchingHeight
    GeoPhysX::SubY789
    GeoPhysX::SubRoughnessLength
+}
+
+#----- Biogenic emissions calculations
+if { $GenX::Data(Biogenic)!="" } {
+   BioGenX::CalcEmissions  $grid
+   BioGenX::LULC_15Classes $grid
+   BioGenX::StateField $grid
 }
 
 #----- Diagnostics of output fields
