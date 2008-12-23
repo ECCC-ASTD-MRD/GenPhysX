@@ -84,6 +84,7 @@ namespace eval GenX { } {
    set Data(Script)    ""                    ;#User definition script
    set Data(Diag)      False                 ;#Diagnostics
    set Data(Z0Filter)  False                 ;#Filter roughness length
+   set Data(Cell)      1                     ;#Grid cell dimension (1=1D(point 2=2D(area))
 
    set Data(Topos)     { USGS SRTM CDED250 CDED50 }
    set Data(Aspects)   { SRTM CDED250 CDED50 }
@@ -447,6 +448,7 @@ proc GenX::CommandLine { } {
 
    Specific processing parameters:
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
+      \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" ($Data(Cell))]
 
    Batch mode parameters:
       \[-batch\]    [format "%-30s : Launch in batch mode" ""]
@@ -544,6 +546,7 @@ proc GenX::ParseCommandLine { } {
          "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Check)] }
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)] }
+         "celldim"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Cell)] }
          "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Script)] }
          "help"      { GenX::CommandLine ; exit 1 }
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }

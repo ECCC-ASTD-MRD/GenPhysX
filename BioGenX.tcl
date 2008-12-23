@@ -447,6 +447,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
       GenX::Log DEBUG "Reading layer $i_out of $nfiles: code [format "%3i" $k] -- $vegtyp($k)" False
       gdalfile open BELD3($file) read $file
       eval "gdalband read PC_VEG {{BELD3($file) 1}} $BioGenX::Data(X0) $BioGenX::Data(Y0) $BioGenX::Data(X1) $BioGenX::Data(Y1)"
+      gdalband stats PC_VEG -celldim $GenX::Data(Cell)
 
       #----- Interpolation de la grille LAMBERT a la grille de destination
       fstdfield gridinterp $Grid PC_VEG $Data(Interp) True

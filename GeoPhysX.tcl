@@ -181,7 +181,7 @@ proc GeoPhysX::AverageTopoUSGS { Grids } {
       foreach field [fstdfield find GPXTOPOFILE -1 "" -1 -1 -1 "" "ME"] {
          GenX::Log DEBUG "      Processing field : $field" False
          fstdfield read USGSTILE GPXTOPOFILE $field
-         fstdfield stats USGSTILE -nodata -99.0 -celldim 1
+         fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Data(Cell)
 
          #----- Average on each output grids
 
@@ -228,7 +228,7 @@ proc GeoPhysX::AverageTopoSRTM { Grids } {
    foreach file [GenX::SRTMFindFiles $la0 $lo0 $la1 $lo1] {
       GenX::Log DEBUG "   Processing SRTM file $file" False
       gdalband read SRTMTILE [gdalfile open SRTMFILE read $file]
-      gdalband stats SRTMTILE -nodata -32768 -celldim 1
+      gdalband stats SRTMTILE -nodata -32768 -celldim $GenX::Data(Cell)
 
       foreach grid $Grids {
          fstdfield gridinterp $grid SRTMTILE AVERAGE False
@@ -284,7 +284,7 @@ proc GeoPhysX::AverageTopoCDED { Grids { Res 250 } } {
    foreach file [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $Res] {
       GenX::Log DEBUG "   Processing CDED file $file" False
       gdalband read CDEDTILE [gdalfile open CDEDFILE read $file]
-      gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim 1
+      gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim $GenX::Data(Cell)
 
       foreach grid $Grids {
          fstdfield gridinterp $grid CDEDTILE AVERAGE False
@@ -390,7 +390,7 @@ proc GeoPhysX::AverageAspect { Grid } {
    #----- Create work tile with border included
    gdalband create DEMTILE [expr $GenX::Data(TileSize)+2] [expr $GenX::Data(TileSize)+2] 1 Int16
    gdalband define DEMTILE -georef LLREF
-   gdalband stats DEMTILE -nodata 0.0 -celldim 1
+   gdalband stats DEMTILE -nodata 0.0 -celldim $GenX::Data(Cell)
 
    #----- Loop en grid data at tile resolution
    set xlo 0
@@ -525,7 +525,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
       foreach field [fstdfield find GPXMASKFILE -1 "" -1 -1 -1 "" "MG"] {
          GenX::Log DEBUG "      Processing field : $field" False
          fstdfield read MASKTILE GPXMASKFILE $field
-         fstdfield stats MASKTILE -nodata -99.0 -celldim 1
+         fstdfield stats MASKTILE -nodata -99.0 -celldim $GenX::Data(Cell)
 
          #----- Average on output grid
          fstdfield gridinterp GPXMASK MASKTILE AVERAGE False
@@ -670,7 +670,7 @@ proc GeoPhysX::AverageVegeUSGS { Grid } {
       foreach field [fstdfield find GPXVEGEFILE -1 "" -1 -1 -1 "" "VG"] {
          GenX::Log DEBUG "      Processing field : $field" False
          fstdfield read VEGETILE GPXVEGEFILE $field
-         fstdfield stats VEGETILE -nodata -99.0 -celldim 1
+         fstdfield stats VEGETILE -nodata -99.0 -celldim $GenX::Data(Cell)
 
          #----- Count percentage for each type
          fstdfield gridinterp $Grid VEGETILE NORMALIZED_COUNT $Data(VegeTypes) False
@@ -717,7 +717,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
       foreach file $files {
          GenX::Log DEBUG "   Processing file $file" False
          gdalband read EOSDTILE [gdalfile open EOSDFILE read $file]
-         gdalband stats EOSDTILE -nodata -99 -celldim 1
+         gdalband stats EOSDTILE -nodata -99 -celldim $GenX::Data(Cell)
 
          #----- We have to maks some data since they might overlap a bit
          gdalband copy EOSDMASK EOSDTILE
@@ -786,7 +786,7 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
       for { set y 0 } { $y<[gdalfile height CORINEFILE] } { incr y $GenX::Data(TileSize) } {
          GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
          gdalband read CORINETILE { { CORINEFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
-         gdalband stats CORINETILE -nodata 255 -celldim 1
+         gdalband stats CORINETILE -nodata 255 -celldim $GenX::Data(Cell)
 
          vexpr CORINETILE lut(CORINETILE,FROMCORINE,TORPN)
          fstdfield gridinterp $Grid CORINETILE NORMALIZED_COUNT $Data(VegeTypes) False
@@ -843,7 +843,7 @@ proc GeoPhysX::AverageSand { Grid } {
                GenX::Log DEBUG "         Processing field : $field" False
                fstdfield read SANDTILE GPXSANDFILE $field
                vexpr SANDTILE max(SANDTILE,0.0)
-               fstdfield stats SANDTILE -nodata 0.0 -celldim 1
+               fstdfield stats SANDTILE -nodata 0.0 -celldim $GenX::Data(Cell)
 
                #----- Average on each output grid
                fstdfield gridinterp GPXJ1 SANDTILE AVERAGE False
@@ -903,7 +903,7 @@ proc GeoPhysX::AverageClay { Grid } {
                GenX::Log DEBUG "         Processing field : $field" False
                fstdfield read CLAYTILE GPXCLAYFILE $field
                vexpr CLAYTILE max(CLAYTILE,0.0)
-               fstdfield stats CLAYTILE -nodata 0.0 -celldim 1
+               fstdfield stats CLAYTILE -nodata 0.0 -celldim $GenX::Data(Cell)
 
                #----- Average on each output grid
                fstdfield gridinterp GPXJ2 CLAYTILE AVERAGE False
@@ -955,7 +955,7 @@ proc GeoPhysX::AverageTopoLow { Grid } {
       foreach field [fstdfield find GPXLOWFILE -1 "" -1 -1 -1 "" "ME"] {
          GenX::Log DEBUG "      Processing field : $field" False
          fstdfield read LOWTILE GPXLOWFILE $field
-         fstdfield stats LOWTILE -nodata 0.0 -celldim 1
+         fstdfield stats LOWTILE -nodata 0.0 -celldim $GenX::Data(Cell)
 
          #----- compute average of <Hhr^2>ij on target grid
          vexpr LOWTILE2 (LOWTILE*LOWTILE)
@@ -1013,11 +1013,11 @@ proc GeoPhysX::AverageGradient { Grid } {
               field_gy [fstdfield find GPXGXYFILE -1 "" -1 -1 -1 "" "GY"] {
           GenX::Log DEBUG "      Processing field : $field_gx" False
           fstdfield read GXYTILE1 GPXGXYFILE $field_gx
-          fstdfield stats GXYTILE1 -nodata 0 -celldim 1
+          fstdfield stats GXYTILE1 -nodata 0 -celldim $GenX::Data(Cell)
 
           GenX::Log DEBUG "      Processing field : $field_gy" False
           fstdfield read GXYTILE2 GPXGXYFILE $field_gy
-          fstdfield stats GXYTILE2 -nodata 0 -celldim 1
+          fstdfield stats GXYTILE2 -nodata 0 -celldim $GenX::Data(Cell)
 
           #----- Compute correlation Gxx
           vexpr GXYTILE1X (GXYTILE1*GXYTILE1)
