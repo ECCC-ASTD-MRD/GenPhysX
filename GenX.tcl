@@ -88,7 +88,7 @@ namespace eval GenX { } {
 
    set Data(Topos)     { USGS SRTM CDED250 CDED50 }
    set Data(Aspects)   { SRTM CDED250 CDED50 }
-   set Data(Veges)     { USGS EOSD CORINE }
+   set Data(Veges)     { USGS GLOBCOVER CCRS EOSD CORINE }
    set Data(Soils)     { USDA AGRC FAO }
    set Data(Masks)     { USGS CANVEC }
    set Data(Biogenics) { BELD USGS }
@@ -118,25 +118,27 @@ namespace eval GenX { } {
       set Path(DBase) /data/shared_1_b0/armn
    }
 
-   set Path(SandUSDA) $Path(DBase)/db/sand_usda
-   set Path(SandFAO)  $Path(DBase)/db/sand_fao
-   set Path(SandAGRC) $Path(DBase)/db/sand_argc
-   set Path(ClayUSDA) $Path(DBase)/db/clay_usda
-   set Path(ClayFAO)  $Path(DBase)/db/clay_fao
-   set Path(ClayAGRC) $Path(DBase)/db/clay_argc
-   set Path(TopoUSGS) $Path(DBase)/db/me_usgs2002
-   set Path(MaskUSGS) $Path(DBase)/db/mg_usgs2002
-   set Path(VegeUSGS) $Path(DBase)/db/vg_usgs2002
-   set Path(TopoLow)  $Path(DBase)/db/data_lres
-   set Path(Grad)     $Path(DBase)/db/data_grad
-   set Path(SRTM)     $Path(DBase)/SRTMv4
-   set Path(CDED)     $Path(DBase)/CDED
-   set Path(EOSD)     $Path(DBase)/EOSD
-   set Path(NTS)      $Path(DBase)/NTS
-   set Path(CANVEC)   $Path(DBase)/CanVec
-   set Path(CORINE)   $Path(DBase)/CORINE
-   set Path(Various)  $Path(DBase)/Various
-   set Path(BELD3)    $Path(DBase)/BELD3
+   set Path(SandUSDA)  $Path(DBase)/db/sand_usda
+   set Path(SandFAO)   $Path(DBase)/db/sand_fao
+   set Path(SandAGRC)  $Path(DBase)/db/sand_argc
+   set Path(ClayUSDA)  $Path(DBase)/db/clay_usda
+   set Path(ClayFAO)   $Path(DBase)/db/clay_fao
+   set Path(ClayAGRC)  $Path(DBase)/db/clay_argc
+   set Path(TopoUSGS)  $Path(DBase)/db/me_usgs2002
+   set Path(MaskUSGS)  $Path(DBase)/db/mg_usgs2002
+   set Path(VegeUSGS)  $Path(DBase)/db/vg_usgs2002
+   set Path(TopoLow)   $Path(DBase)/db/data_lres
+   set Path(Grad)      $Path(DBase)/db/data_grad
+   set Path(SRTM)      $Path(DBase)/SRTMv4
+   set Path(CDED)      $Path(DBase)/CDED
+   set Path(EOSD)      $Path(DBase)/EOSD
+   set Path(NTS)       $Path(DBase)/NTS
+   set Path(CANVEC)    $Path(DBase)/CanVec
+   set Path(CORINE)    $Path(DBase)/CORINE
+   set Path(GlobCover) $Path(DBase)/GlobCoverv2
+   set Path(CCRS)      $Path(DBase)/CCRS-LC2005/
+   set Path(Various)   $Path(DBase)/Various
+   set Path(BELD3)     $Path(DBase)/BELD3
 
    #----- Log related variables
 

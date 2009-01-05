@@ -30,6 +30,8 @@
 #   GeoPhysX::AverageVegeUSGS      { Grid }
 #   GeoPhysX::AverageVegeEOSD      { Grid }
 #   GeoPhysX::AverageVegeCORINE    { Grid }
+#   GeoPhysX::AverageVegeGLOBCOVER { Grid }
+#   GeoPhysX::AverageVegeCCRS      { Grid }
 #   GeoPhysX::DominantVege         { Grid }
 #
 #   GeoPhysX::AverageSand          { Grid }
@@ -626,9 +628,11 @@ proc GeoPhysX::AverageVege { Grid } {
 
    foreach vege $GenX::Data(Vege) {
       switch $vege {
-         "USGS"    { GeoPhysX::AverageVegeUSGS   GPXVF ;#----- USGS global vege averaging method }
-         "EOSD"    { GeoPhysX::AverageVegeEOSD   GPXVF ;#----- EOSD over Canada only vege averaging method }
-         "CORINE"  { GeoPhysX::AverageVegeCORINE GPXVF ;#----- CORINE over Europe only vege averaging method }
+         "USGS"      { GeoPhysX::AverageVegeUSGS      GPXVF ;#----- USGS global vege averaging method }
+         "GLOBCOVER" { GeoPhysX::AverageVegeGLOBCOVER GPXVF ;#----- GLOBCOVER global vege averaging method }
+         "CCRS"      { GeoPhysX::AverageVegeCCRS      GPXVF ;#----- CCRS over Canada only vege averaging method }
+         "EOSD"      { GeoPhysX::AverageVegeEOSD      GPXVF ;#----- EOSD over Canada only vege averaging method }
+         "CORINE"    { GeoPhysX::AverageVegeCORINE    GPXVF ;#----- CORINE over Europe only vege averaging method }
       }
    }
    fstdfield gridinterp GPXVF - NOP True
@@ -802,6 +806,110 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
    gdalband free CORINETILE
    gdalfile close CORINEFILE
    vector free FROMCORINE TORPN
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageVegeGLOBCOVER>
+# Creation : Janveir 2009 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the 20 something vegetation types through averaging.
+#            using GlobCover Database
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
+   variable Data
+
+   GenX::Procs
+   GenX::Log INFO "Averaging vegetation type using GlobCover database"
+
+   #----- Pour la conversion des classes GlobCover vers les classes RPN
+   vector create FROMGLOB { 220 210 70 40 90 50 60 30 120 230 14 20 11 190 150 160 170 180 200 100 110 130 }
+   #----- Correspondance de Stephane Belair decembre 2008
+   vector create TORPN  { 2 3 4 5 6 7 7 14 14 14 15 15 20 21 22 23 23 23 24 25 26 26 }
+
+   #----- Open the file
+   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_200412_200606_V2.2_Global_CLA.tif
+
+   #----- Loop over the data by tiles since it's too big to fit in memory
+   for { set x 0 } { $x<[gdalfile width GLOBFILE] } { incr x $GenX::Data(TileSize) } {
+      for { set y 0 } { $y<[gdalfile height GLOBFILE] } { incr y $GenX::Data(TileSize) } {
+         GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
+         gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
+         gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Data(Cell)
+
+         vexpr GLOBTILE lut(GLOBTILE,FROMGLOB,TORPN)
+         fstdfield gridinterp $Grid GLOBTILE NORMALIZED_COUNT $Data(VegeTypes) False
+      }
+   }
+
+   #----- Use accumulator to figure out coverage in destination
+   #      But remove border of coverage since it will not be full
+   fstdfield gridinterp $Grid - ACCUM
+   vexpr GPXVSK !fpeel($Grid)
+   fstdfield stats $Grid -mask GPXVSK
+
+   gdalband free GLOBTILE
+   gdalfile close GLOBFILE
+   vector free FROMGLOB TORPN
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageVegeCCRS>
+# Creation : Janveir 2009 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the 20 something vegetation types through averaging.
+#            using CCRS Database
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageVegeCCRS { Grid } {
+   variable Data
+
+   GenX::Procs
+   GenX::Log INFO "Averaging vegetation type using CCRS database"
+
+   #----- Pour la conversion des classes CCRS vers les classes RPN
+   vector create FROMCCRS { 39 37 38 1 3 4 6 7 8 9 10 5 2 11 12 16 20 18 17 26 27 28 29 36 21 22 23 24 25 19 32 30 33 34 35 13 14 15 31 }
+   #----- Correspondance de Stephane Belair decembre 2008
+   vector create TORPN  { 2 3 3 4 4 4 4 4 4 4 4 6 7 7 7 11 12 13 14 15 15 15 15 21 22 22 22 22 22 23 23 24 24 24 24 25 25 25 26 }
+
+   #----- Open the file
+   gdalfile open CCRSFILE read $GenX::Path(CCRS)/LCC2005_V1_3.tif
+
+   #----- Loop over the data by tiles since it's too big to fit in memory
+   for { set x 0 } { $x<[gdalfile width CCRSFILE] } { incr x $GenX::Data(TileSize) } {
+      for { set y 0 } { $y<[gdalfile height CCRSFILE] } { incr y $GenX::Data(TileSize) } {
+         GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
+         gdalband read CCRSTILE { { CCRSFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
+         gdalband stats CCRSTILE -nodata 255 -celldim $GenX::Data(Cell)
+
+         vexpr CCRSTILE lut(CCRSTILE,FROMCCRS,TORPN)
+         fstdfield gridinterp $Grid CCRSTILE NORMALIZED_COUNT $Data(VegeTypes) False
+      }
+   }
+
+   #----- Use accumulator to figure out coverage in destination
+   #      But remove border of coverage since it will not be full
+   fstdfield gridinterp $Grid - ACCUM
+   vexpr GPXVSK !fpeel($Grid)
+   fstdfield stats $Grid -mask GPXVSK
+
+   gdalband free CCRSTILE
+   gdalfile close CCRSFILE
+   vector free FROMCCRS TORPN
 }
 
 #----------------------------------------------------------------------------
@@ -1584,7 +1692,7 @@ proc GeoPhysX::DominantVege { Grid } {
    variable Data
 
    GenX::Procs
-   GenX::Log INFO "Calculating dominant vegtation"
+   GenX::Log INFO "Calculating dominant vegetation"
 
    fstdfield copy GPXVG $Grid
    fstdfield copy GPXTP $Grid
