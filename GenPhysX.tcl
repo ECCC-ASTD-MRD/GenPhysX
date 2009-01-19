@@ -59,8 +59,9 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.3.
 
 #----- Directory where to find processing procs
 set dir [info script]
-while { ![catch { set dir [file link $dir] }] } {}
+while { ![catch { set dir [file normalize [file link $dir]] }] } {}
 set dir [file dirname $dir]
+
 
 source $dir/GenX.tcl
 source $dir/GeoPhysX.tcl

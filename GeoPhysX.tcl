@@ -810,7 +810,7 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
 
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageVegeGLOBCOVER>
-# Creation : Janveir 2009 - J.P. Gauthier - CMC/CMOE
+# Creation : Janvier 2009 - J.P. Gauthier - CMC/CMOE
 #
 # Goal     : Generate the 20 something vegetation types through averaging.
 #            using GlobCover Database
@@ -862,7 +862,7 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
 
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageVegeCCRS>
-# Creation : Janveir 2009 - J.P. Gauthier - CMC/CMOE
+# Creation : Janvier 2009 - J.P. Gauthier - CMC/CMOE
 #
 # Goal     : Generate the 20 something vegetation types through averaging.
 #            using CCRS Database

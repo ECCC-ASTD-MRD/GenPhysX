@@ -231,7 +231,7 @@ proc GenX::Submit { } {
       puts $f "export GENPHYSX_DBASE=$env(GENPHYSX_DBASE)\n"
    }
 
-   puts $f "export SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=0\n[info script] $gargv -batch 0"
+   puts $f "export SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=0\n[file normalize [info script]] $gargv -batch 0"
 
    if { $Batch(Mail)!="" } {
       puts $f "mail -s \"GenPhysX job done\" $Batch(Mail) < $job"
