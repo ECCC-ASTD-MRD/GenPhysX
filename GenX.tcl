@@ -103,8 +103,9 @@ namespace eval GenX { } {
    set Path(NameFile)    ""                    ;#Namelist to use
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
-   set Batch(Host)     hawa                  ;#Host onto which to submit the job
-   set Batch(Mem)      500                   ;#Memory needed for the job
+   set Batch(Host)     hawa.cmc.ec.gc.ca     ;#Host onto which to submit the job
+   set Batch(Queue)    ""                    ;#Queue to use for the job
+   set Batch(Mem)      400000                ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
 
@@ -231,7 +232,9 @@ proc GenX::Submit { } {
       puts $f "export GENPHYSX_DBASE=$env(GENPHYSX_DBASE)\n"
    }
 
-   puts $f "export SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=0\n[file normalize [info script]] $gargv -batch 0"
+   set idx [lsearch -exact $gargv "-batch"]
+   set gargv [lreplace $gargv $idx $idx]
+   puts $f "export SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0\n[file normalize [info script]] $gargv"
 
    if { $Batch(Mail)!="" } {
       puts $f "mail -s \"GenPhysX job done\" $Batch(Mail) < $job"
@@ -240,7 +243,7 @@ proc GenX::Submit { } {
    close $f
 
    exec chmod 755 $job
-   exec soumet $job -mach $Batch(Host) -cpus 2 -t $Batch(Time) -cm $Batch(Mem)M
+   exec soumet $job -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem)
    exit 0
 }
 
@@ -596,6 +599,13 @@ proc GenX::ParseCommandLine { } {
    #----- If batch mode enabled, submit the job and exit
    if { $Batch(On) } {
       GenX::Submit
+   }
+
+   #----- Check for database accessibility
+
+   if { ![file readable $Path(DBase)] } {
+      GenX::Log ERROR "Invalid database directory ($Path(DBase))"
+      exit 1
    }
 
    #----- Go to work directory
