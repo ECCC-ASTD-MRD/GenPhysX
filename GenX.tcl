@@ -263,14 +263,14 @@ proc GenX::Submit { } {
    puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -fr $rdir"
 
    if { $Batch(Mail)!="" } {
-      puts $f "mail -s \"GenPhysX job done\" $Batch(Mail) < $job"
+      puts $f "echo $Path(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
    }
-   puts $f "rm -f $job"
    close $f
 
    #----- Launch job script
    exec chmod 755 $job
    catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) }
+   file delete -force $job
    exit 0
 }
 
