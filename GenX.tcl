@@ -106,9 +106,10 @@ namespace eval GenX { } {
    set Batch(Queue)    ""                    ;#Queue to use for the job
    set Batch(Mem)      400000                ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
-   set Batch(CPUs)     4                     ;#Number of CPUs to use for the job
+   set Batch(CPUs)     1                     ;#Number of CPUs to use for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
    set Batch(Submit)   "/home/ordenv/ssm-domains0/ssm-setup-dev/unified-setup_1.0_all/bin/ord_soumet.mfv"
+   set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet+"
 
    #----- Various database paths
 
@@ -218,20 +219,27 @@ proc GenX::Submit { } {
    upvar #0 argv gargv
 
    #----- Create remote temp dir and copy stuff there
-   exec ssh $Batch(Host) mkdir [set rdir /tmp/GenPhysX[pid]_[clock seconds]]
+   exec ssh $Batch(Host) mkdir [set rdir /tmp/GenPhysX[pid]_$Data(Secs)]
 
    set rargv ""
+
    if { $Path(GridFile)!="" } {
       exec scp $Path(GridFile) $Batch(Host):$rdir
       append rargv " -gridfile [file tail $Path(GridFile)]"
    }
+
    if { $Path(NameFile)!="" } {
       exec scp $Path(NameFile) $Batch(Host):$rdir
       append rargv " -nml [file tail $Path(NameFile)]"
    }
+
    if { $Path(Script)!="" } {
       exec scp $Path(Script) $Batch(Host):$rdir
       append rargv " -script [file tail $Path(Script)]"
+   }
+
+   if { [file exists $Path(OutFile).fst] } {
+      eval exec scp [glob $Path(OutFile)*] $Batch(Host):$rdir
    }
    set ldir [file dirname [file normalize $Path(OutFile)]]
    append rargv " -result [file tail $Path(OutFile)]"
