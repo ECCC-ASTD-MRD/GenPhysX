@@ -81,7 +81,6 @@ namespace eval GenX { } {
    set Data(Target)    ""                    ;#Model cible
    set Data(Biogenic)  ""                    ;#Biogenic emissions data selected
 
-   set Data(Script)    ""                    ;#User definition script
    set Data(Diag)      False                 ;#Diagnostics
    set Data(Z0Filter)  False                 ;#Filter roughness length
    set Data(Cell)      1                     ;#Grid cell dimension (1=1D(point 2=2D(area))
@@ -96,18 +95,20 @@ namespace eval GenX { } {
    set Data(Subs)      { STD }
    set Data(Targets)   { GEMMESO }             ;#Model cible
 
-   set Path(Work)        ""                    ;#Working directory
    set Path(Grid)        gemgrid               ;#GEM grid generator application
    set Path(OutFile)     genphysx              ;#Output file prefix
    set Path(GridFile)    ""                    ;#Grid definition file to use (standard file with >> ^^)
    set Path(NameFile)    ""                    ;#Namelist to use
+   set Path(Script)      ""                    ;#User definition script
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
-   set Batch(Host)     hawa.cmc.ec.gc.ca     ;#Host onto which to submit the job
+   set Batch(Host)     hawa                  ;#Host onto which to submit the job
    set Batch(Queue)    ""                    ;#Queue to use for the job
    set Batch(Mem)      400000                ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
+   set Batch(CPUs)     4                     ;#Number of CPUs to use for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
+   set Batch(Submit)   "/home/ordenv/ssm-domains0/ssm-setup-dev/unified-setup_1.0_all/bin/ord_soumet.mfv"
 
    #----- Various database paths
 
@@ -115,8 +116,8 @@ namespace eval GenX { } {
       set Path(DBase) $env(GENPHYSX_DBASE)
    } else {
       set Path(DBase) /data/dormrb04/genphysx/data
-      set Path(DBase) /data/cmod8/afseeer
       set Path(DBase) /data/shared_1_b0/armn
+      set Path(DBase) /data/cmod8/afseeer
    }
 
    set Path(SandUSDA)  $Path(DBase)/db/sand_usda
@@ -215,26 +216,43 @@ proc GenX::Submit { } {
    variable Batch
 
    upvar #0 argv gargv
-   set env(GENPHYSXDB_BASE) $Path(DBase)
 
-   if { ![file isdirectory $Path(Work)] } {
-      GenX::Log ERROR "You have to specify a valid working directory"
-      exit 1
+   #----- Create remote temp dir and copy stuff there
+   exec ssh $Batch(Host) mkdir [set rdir /tmp/GenPhysX[pid]_[clock seconds]]
+
+   set rargv ""
+   if { $Path(GridFile)!="" } {
+      exec scp $Path(GridFile) $Batch(Host):$rdir
+      append rargv " -gridfile [file tail $Path(GridFile)]"
    }
+   if { $Path(NameFile)!="" } {
+      exec scp $Path(NameFile) $Batch(Host):$rdir
+      append rargv " -nml [file tail $Path(NameFile)]"
+   }
+   if { $Path(Script)!="" } {
+      exec scp $Path(Script) $Batch(Host):$rdir
+      append rargv " -script [file tail $Path(Script)]"
+   }
+   set ldir [file dirname [file normalize $Path(OutFile)]]
+   append rargv " -result [file tail $Path(OutFile)]"
 
-   set job $env(TMPDIR)/GenX[pid]
+   #----- Remove batch flag from arguments
+   set idx [lsearch -exact $gargv "-batch"]
+   set gargv [lreplace $gargv $idx $idx]
+
+   #----- Create job script
+   set job $env(TMPDIR)/GenPhysX[pid]
    set f [open $job w]
    puts $f "#!/bin/ksh\nset -x"
    if { [info exists env(gem_dynversion)] } {
       puts $f ". r.sm.dot gem $env(gem_dynversion)"
    }
-   if  { [info exists env(GENPHYSX_DBASE)] } {
-      puts $f "export GENPHYSX_DBASE=$env(GENPHYSX_DBASE)\n"
-   }
 
-   set idx [lsearch -exact $gargv "-batch"]
-   set gargv [lreplace $gargv $idx $idx]
-   puts $f "export SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0\n[file normalize [info script]] $gargv"
+   puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0\n"
+   puts $f "cd $rdir\n"
+   puts $f "[file normalize [info script]] $gargv \\\n   $rargv\n"
+   puts $f "trap \"cd ..; rm -fr $rdir; exit 0\" 1 2 3 15 30"
+   puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -fr $rdir"
 
    if { $Batch(Mail)!="" } {
       puts $f "mail -s \"GenPhysX job done\" $Batch(Mail) < $job"
@@ -242,8 +260,9 @@ proc GenX::Submit { } {
    puts $f "rm -f $job"
    close $f
 
+   #----- Launch job script
    exec chmod 755 $job
-   exec soumet $job -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem)
+   catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) }
    exit 0
 }
 
@@ -434,7 +453,6 @@ proc GenX::CommandLine { } {
       \[-nml\]      [format "%-30s : GEM namelist definition file" ($Path(NameFile))]
       \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Path(GridFile))]
       \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]
-      \[-workdir\]  [format "%-30s : Working directory" ($Path(Work))]
       \[-target\]   [format "%-30s : Set necessary flags for target model {$Data(Targets)}" ($Data(Target))]
       \[-script\]   [format "%-30s : User definition script to include" ""]
 
@@ -533,7 +551,6 @@ proc GenX::ParseCommandLine { } {
          "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(OutFile)] }
          "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Target) $GenX::Data(Targets)] }
          "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(GridFile)] }
-         "workdir"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(Work)] }
          "nml"       { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(NameFile)] }
          "dbase"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(DBase)] }
          "batch"     { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Batch(On)] }
@@ -552,7 +569,7 @@ proc GenX::ParseCommandLine { } {
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)] }
          "celldim"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Cell)] }
-         "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Script)] }
+         "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(Script)] }
          "help"      { GenX::CommandLine ; exit 1 }
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
       }
@@ -562,8 +579,14 @@ proc GenX::ParseCommandLine { } {
    GenX::ParseTarget
 
    #----- Check for user definitiond
-   if { $GenX::Data(Script)!="" } {
-      source $Data(Script)
+   if { $GenX::Path(Script)!="" } {
+      source $Path(Script)
+   }
+
+   #----- Check for database accessibility
+   if { ![file readable $Path(DBase)] } {
+      GenX::Log ERROR "Invalid database directory ($Path(DBase))"
+      exit 1
    }
 
    #----- Check dependencies
@@ -596,21 +619,16 @@ proc GenX::ParseCommandLine { } {
       }
    }
 
-   #----- If batch mode enabled, submit the job and exit
+   #----- Check if a filename is included in result filename
+   if { [file isdirectory $Path(OutFile)] } {
+      append Path(OutFile) genphysx
+   }
+
+   #----- If batch mode enabled, submit the job and exit otherwise, go to result directory
    if { $Batch(On) } {
       GenX::Submit
-   }
-
-   #----- Check for database accessibility
-
-   if { ![file readable $Path(DBase)] } {
-      GenX::Log ERROR "Invalid database directory ($Path(DBase))"
-      exit 1
-   }
-
-   #----- Go to work directory
-   if { $Path(Work)!="" } {
-      cd $Path(Work)
+   } else {
+      cd [file dirname [file normalize $Path(OutFile)]]
    }
 
    set Path(OutFile) [file rootname $Path(OutFile)]
