@@ -117,8 +117,8 @@ namespace eval GenX { } {
       set Path(DBase) $env(GENPHYSX_DBASE)
    } else {
       set Path(DBase) /data/dormrb04/genphysx/data
-      set Path(DBase) /data/shared_1_b0/armn
       set Path(DBase) /data/cmod8/afseeer
+      set Path(DBase) /data/shared_1_b0/armn
    }
 
    set Path(SandUSDA)  $Path(DBase)/db/sand_usda
