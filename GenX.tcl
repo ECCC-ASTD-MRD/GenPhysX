@@ -591,12 +591,6 @@ proc GenX::ParseCommandLine { } {
       source $Path(Script)
    }
 
-   #----- Check for database accessibility
-   if { ![file readable $Path(DBase)] } {
-      GenX::Log ERROR "Invalid database directory ($Path(DBase))"
-      exit 1
-   }
-
    #----- Check dependencies
    if { $Data(Vege)!="" } {
       if { $Data(Mask)=="" } {
@@ -636,6 +630,11 @@ proc GenX::ParseCommandLine { } {
    if { $Batch(On) } {
       GenX::Submit
    } else {
+      #----- Check for database accessibility
+      if { ![file readable $Path(DBase)] } {
+         GenX::Log ERROR "Invalid database directory ($Path(DBase))"
+         exit 1
+      }
       cd [file dirname [file normalize $Path(OutFile)]]
    }
 
