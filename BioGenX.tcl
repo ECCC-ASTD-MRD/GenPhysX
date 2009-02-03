@@ -6,13 +6,12 @@
 #
 # Project     : Geophysical field generator for GEM-MACH et AURAMS
 # File        : BioGenX.tcl
-# Creation    : 8 mai 2007 Louis-Philippe Crevier - AQMAS
+# Creation    : 19 decembre 2008 Louis-Philippe Crevier - AQMAS
 # Revision    : $Id$
 # Description : Code generant les champs geophysiques et les emissions biogeniques
 #               pour GEM-MACH et AURAMS
 #
-# Remarques : - Base sur GenPhysX, localisation: ~afsr005/Scripts/Project/GenPhysX/GenPhysX.tcl
-#             - Does not work on pollux
+# Remarques : - Does not work on pollux
 #
 # Functions :
 #
@@ -30,11 +29,12 @@ namespace eval BioGenX { } {
    variable Data
    variable Const
 
-   set Data(Version)   0.5
+   set Data(Version)   0.9
 
-   set Data(FieldList) [list BGXISOP BGXMONO BGXVOC BGXNO BGXISOW BGXMONW BGXVOCW BGXNOW BGXLAI BGXAREA BGXVCHK ]
-   set Data(NameList)  [list ESIO    ESMO    ESVO   ESNO  EWIO    EWMO    EWVO    EWNO   LAI    AREA    VCHK ]
-   set Data(TypeList)  [list C       C       C      C     C       C       C       C      C      X       X ]
+   set Data(FieldList) [list ISOP MONO VOC  NO   ISOW MONW VOCW NOW  LAI AREA VCHK ]
+   set Data(NameList)  [list ESIO ESMO ESVO ESNO EWIO EWMO EWVO EWNO LAI AREA VCHK ]
+   set Data(TypeList)  [list C    C    C    C    C    C    C    C    C   X    X    ]
+   set Data(FileOut)   [list OUT  OUT  OUT  OUT  OUT  OUT  OUT  OUT  OUT AUX  AUX  ]
 
    set Data(DoNotUseBELD3) False
    set Data(Compress)      False
@@ -42,14 +42,24 @@ namespace eval BioGenX { } {
 
    set Data(ToleranceVCHK) 0.0001
 
+   # Type de LULC et fractions
    set Data(LuTypes)   { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }
+   set Data(CoFracs)   { 1.0 1.0 1.0 1.0 1.0 0.25 0.25 0.0 0.25 0.25 0.25 0.0 0.0 0.0 0.5 }
+   set Data(CoFracs26) { 0 0 0 1.0 1.0 1.0 1.0 1.0 1.0 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.5 0.25 0.25 0.0 1.0 0.25 }
 
-   set Const(C2io)   1.133333
-   set Const(C2mono) 1.133333
-   set Const(C2ovoc) 1.233333
-   set Const(C2no)   2.142857
-   set Const(Mug2g)  0.000001
-   set Const(H2s)    0.0002777778
+   # Paths to emission factor files
+   set Path(Factors)      $GenX::Path(BELD3)/Factors
+   set Path(BELD3Factors) beld3_beis3v13_ef.dat
+   set Path(VFFactors)    vf_beis3v13_ef.dat
+
+   # Constants
+                                  ;# Facteur de conversion d'equivalent carbone ...
+   set Const(C2io)   1.133333     ;#  ... en isoprene
+   set Const(C2mono) 1.133333     ;#  ... en monoterpene
+   set Const(C2ovoc) 1.233333     ;#  ... en compose organique volatil
+   set Const(C2no)   2.142857     ;#  ... en oxyde d'azote
+   set Const(Mug2g)  0.000001     ;# micro-gram to gram conversion factor
+   set Const(H2s)    0.0002777778 ;# Hour to seconds conversion factor
 }
 
 #-------------------------------------------------------------------------------
@@ -107,10 +117,115 @@ proc BioGenX::LULC_15Classes { Grid } {
    vexpr BGXLU BGXLU()()(13) = BGXVF()()(0)
    vexpr BGXLU BGXLU()()(14) = BGXVF()()(20)
 
-   fstdfield define BGXLU -ETIKET LULC-GRAHM
-   fstdfield write BGXLU GPXAUXFILE -24 True
+   fstdfield define BGXLU -ETIKET LULC-GRAHM -TYPVAR "C"
+   fstdfield write BGXLU GPXAUXFILE -32 True $BioGenX::Data(Compress)
 
-   fstdfield free BGXLU
+   fstdfield free BGXLU BGXCFRAC BGXTFRAC
+}
+
+#-------------------------------------------------------------------------------
+# Nom      : BioGenX::TransportFraction
+# Creation : 8 janvier 2009 - Louis-Philippe Crevier - AQMAS
+#
+# Description : Generer les transportable fractions por les fugitive dust
+#
+# Parametres :
+#              Grid : ID de la grille cible
+#
+# Retour : --
+#
+# Remarques : 
+#
+#-------------------------------------------------------------------------------
+ proc BioGenX::TransportableFractions { Grid } {
+
+   BioGenX::LULC_15Classes $Grid
+   BioGenX::TrFractions_15Classes $Grid
+   BioGenX::TrFractions_26Classes $Grid
+
+}
+
+#-------------------------------------------------------------------------------
+# Nom      : BioGenX::TrFractions_15Classes
+# Creation : 8 janvier 2009 - Louis-Philippe Crevier - AQMAS
+#
+# Description : Generer les transportable fractions por les fugitive dust
+#
+# Parametres :
+#              Grid : ID de la grille cible
+#
+# Retour : --
+#
+# Remarques :
+#
+#-------------------------------------------------------------------------------
+proc BioGenX::TrFractions_15Classes { Grid } {
+   variable Data
+
+   GenX::Procs
+   GenX::Log INFO "Generating 15-category transportable fractions"
+
+   #----- Initialisation des champs
+   GenX::GridClear $Grid 0.0
+   fstdfield copy  BGXCFRAC $Grid
+
+   #----- Recuperation du champ LULC
+   if { [catch { fstdfield read BGXLU GPXAUXFILE -1 "" -1 -1 -1 "" "LU15" } ] } {
+      GenX::Log ERROR "Calculating 15-category Transport fraction requires call to BioGenX::LULC_15Classes"
+      exit 1
+   }
+   fstdfield readcube BGXLU
+
+   for { set i 0 } { $i < [ llength $BioGenX::Data(LuTypes) ] } { incr i } {
+      eval vexpr BGXCFRAC BGXCFRAC + BGXLU()()($i) * [ lindex $BioGenX::Data(CoFracs) $i ]
+   }
+   vexpr BGXTFRAC 1.0 - BGXCFRAC
+
+   fstdfield define BGXTFRAC -NOMVAR TFRC -ETIKET "TR FRAC 15" -TYPVAR "C"
+   fstdfield write BGXTFRAC GPXAUXFILE -32 True $BioGenX::Data(Compress)
+
+   fstdfield free BGXTFRAC BGXCFRAC BGXLU
+}
+#-------------------------------------------------------------------------------
+# Nom      : BioGenX::TrFractions_26Classes
+# Creation : 8 janvier 2009 - Louis-Philippe Crevier - AQMAS
+#
+# Description : Generer les transportable fractions por les fugitive dust
+#
+# Parametres :
+#              Grid : ID de la grille cible
+#
+# Retour : --
+#
+# Remarques :
+#
+#-------------------------------------------------------------------------------
+proc BioGenX::TrFractions_26Classes { Grid } {
+   variable Data
+
+   GenX::Procs
+   GenX::Log INFO "Generating 26-category transportable fractions"
+
+   #----- Initialisation des champs
+   GenX::GridClear $Grid 0.0
+   fstdfield copy  BGXCFRAC $Grid
+
+   #----- Recuperation du champ VF
+   if { [catch { fstdfield read BGXVF GPXOUTFILE -1 "" -1 -1 -1 "" "VF" } ] } {
+      GenX::Log ERROR "Calculating 26-category Transport fraction requires use of -vege and -check options."
+      exit 1
+   }
+   fstdfield readcube BGXVF
+
+   for { set i 0 } { $i < [ llength $BioGenX::Data(CoFracs26) ] } { incr i } {
+      eval vexpr BGXCFRAC BGXCFRAC + BGXVF()()($i) * [ lindex $BioGenX::Data(CoFracs26) $i ]
+   }
+   vexpr BGXTFRAC 1.0 - BGXCFRAC
+
+   fstdfield define BGXTFRAC -NOMVAR TFRC -ETIKET "TR FRAC 26" -TYPVAR "C"
+   fstdfield write BGXTFRAC GPXAUXFILE -32 True $BioGenX::Data(Compress)
+
+   fstdfield free BGXTFRAC BGXCFRAC BGXVF
 }
 
 #-------------------------------------------------------------------------------
@@ -124,7 +239,7 @@ proc BioGenX::LULC_15Classes { Grid } {
 #
 # Retour : --
 #
-# Remarques : Priority is given to emissions generated using beld3 data
+# Remarques : 
 #
 #-------------------------------------------------------------------------------
 proc BioGenX::LocateGrid { Grid } {
@@ -161,14 +276,14 @@ proc BioGenX::LocateGrid { Grid } {
 
    if { ( !$iswithin && $intersectswith ) || !$iswithin } {
       lappend BioGenX::Data(datasets) "VF"
-      GenX::Log DEBUG "VF :Grille cible hors (en tout ou en partie) de la grille BELD3."
+      GenX::Log DEBUG "Grille cible hors (en tout ou en partie) de la zone BELD3."
    }
 
    #----- Liberation de l'espace memoire utilise
    gdalband free PC_VEG
    gdalfile close BELD3($file)
 
-   GenX::Log DEBUG "Using dataset(s) $BioGenX::Data(datasets)"
+   GenX::Log DEBUG "$BioGenX::Data(datasets) dataset(s) required to cover this grid. "
 
    return $BioGenX::Data(datasets)
 }
@@ -254,7 +369,7 @@ proc BioGenX::StateField { Grid } {
    GenX::GridClear $Grid -1.0
    fstdfield copy BGXST $Grid
    fstdfield define BGXST -NOMVAR "ST" -ETIKET "DUMMY"
-   fstdfield write BGXST GPXOUTFILE -12 True
+   fstdfield write BGXST GPXOUTFILE -12 True $BioGenX::Data(Compress)
 }
 
 #-------------------------------------------------------------------------------
@@ -281,7 +396,7 @@ proc BioGenX::CalcEmissions { Grid  } {
    #----- Initialisation des champs
    GenX::GridClear $Grid 0.0
    foreach field $BioGenX::Data(FieldList) {
-      fstdfield copy $field $Grid
+      fstdfield copy BGX$field $Grid
    }
    fstdfield copy BGXRMS $Grid
    GenX::GridClear BGXRMS 0.0
@@ -289,29 +404,29 @@ proc BioGenX::CalcEmissions { Grid  } {
    #----- Calculer les emissions pour chaque banque de donnee
    foreach landuse $GenX::Data(Biogenic) {
       switch $landuse {
-         "USGS" { BioGenX::CalcEmissionsUSGS $Grid }
+         "VF"   { BioGenX::CalcEmissionsVF   $Grid }
          "BELD" { BioGenX::CalcEmissionsBELD $Grid }
       }
    }
 
    #----- Save output
-   foreach field $BioGenX::Data(FieldList) varname $BioGenX::Data(NameList) season $BioGenX::Data(TypeList) {
-      fstdfield define $field -ETIKET "EMISSIONS" -TYPVAR $season -NOMVAR $varname -IP1 0
-      fstdfield write $field GPXOUTFILE -32 True $BioGenX::Data(Compress)
+   foreach field $BioGenX::Data(FieldList) varname $BioGenX::Data(NameList) season $BioGenX::Data(NameList) fichier $BioGenX::Data(FileOut) {
+      fstdfield define BGX$field -ETIKET "EMISSIONS" -TYPVAR $season -NOMVAR $varname -IP1 0
+      fstdfield write BGX$field GPX${fichier}FILE -32 True $BioGenX::Data(Compress)
    }
-   #----- Save RMS
+   #----- Save merge mask for different databases
    fstdfield define BGXRMS -NOMVAR BRMS -IP1 1200
-   fstdfield write BGXRMS GPXAUXFILE -32 True
+   fstdfield write BGXRMS GPXAUXFILE -32 True $BioGenX::Data(Compress)
 
    #----- Free output fields
    foreach field $BioGenX::Data(FieldList) {
-      fstdfield free $field
+      fstdfield free BGX$field
    }
-   fstdfield free BGXTSK
+   fstdfield free BGXRMS
 }
 
 #-------------------------------------------------------------------------------
-# Nom      : BioGenX::CalcEmissionsUSGS
+# Nom      : BioGenX::CalcEmissionsVF
 # Creation : 5 decembre 2008 - Louis-Philippe Crevier - AQMAS
 #
 # Description : Genereation des emissions biogeniques selon la methode
@@ -324,7 +439,7 @@ proc BioGenX::CalcEmissions { Grid  } {
 # Remarques :
 #
 #-------------------------------------------------------------------------------
-proc BioGenX::CalcEmissionsUSGS { Grid } {
+proc BioGenX::CalcEmissionsVF { Grid } {
    variable Data
    variable Const
 
@@ -333,7 +448,7 @@ proc BioGenX::CalcEmissionsUSGS { Grid } {
 
    #----- Ouverture et lecture de chacune des colonnes du
    #----- fichier texte des taux d'emissions dus a la vegetation
-   BioGenX::ReadEmissfacFile $GenX::Path(BELD3)/Factors/vf_beis3v13_ef.dat
+   BioGenX::ReadEmissfacFile $BioGenX::Path(Factors)/$BioGenX::Path(VFFactors)
 
    #----- Recuperation du champ VF
    if { [catch { fstdfield read BGXVF GPXOUTFILE -1 "" -1 -1 -1 "" "VF" } ] } {
@@ -419,12 +534,12 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
    #----- AVERAGE et autres ne moyennent les champs d'une fois a l'autre
    GenX::GridClear $Grid 0.0
    foreach field $Data(FieldList) {
-      fstdfield copy $field $Grid
+      fstdfield copy BGX$field $Grid
    }
 
    #----- Ouverture et lecture de chacune des colonnes du
    #----- fichier texte des taux d'emissions dus a la vegetation
-   BioGenX::ReadEmissfacFile $GenX::Path(BELD3)/Factors/beld3_beis3v13_ef.dat
+   BioGenX::ReadEmissfacFile $BioGenX::Path(Factors)/$BioGenX::Path(BELD3Factors)
 
    #----- Calcul des superficies des tuiles GEM-MACH (AREA) en m2
    vexpr BGXAREA darea($Grid)

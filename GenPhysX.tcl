@@ -124,8 +124,7 @@ if { $GenX::Data(Sub)!="" } {
 #----- Biogenic emissions calculations
 if { $GenX::Data(Biogenic)!="" } {
    BioGenX::CalcEmissions  $grid
-   BioGenX::LULC_15Classes $grid
-   BioGenX::StateField $grid
+   BioGenX::TransportableFractions $grid
 }
 
 #----- Diagnostics of output fields

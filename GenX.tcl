@@ -90,7 +90,7 @@ namespace eval GenX { } {
    set Data(Veges)     { USGS GLOBCOVER CCRS EOSD CORINE }
    set Data(Soils)     { USDA AGRC FAO }
    set Data(Masks)     { USGS CANVEC }
-   set Data(Biogenics) { BELD USGS }
+   set Data(Biogenics) { BELD VF }
    set Data(Checks)    { STD }
    set Data(Subs)      { STD }
    set Data(Targets)   { GEMMESO }             ;#Model cible
@@ -612,11 +612,11 @@ proc GenX::ParseCommandLine { } {
 
    if { $Data(Biogenic)!="" } {
       if { $Data(Vege)=="" } {
-         GenX::Log ERROR "To generate biogenic emissions fields you need to generate the vegetation type fields (-vege option)"
-         GenX::Continue
+            GenX::Log ERROR "To generate biogenic emissions fields you need to generate the vegetation type fields (-vege option)"
+            GenX::Continue
       }
       if { $Data(Check)=="" } {
-            GenX::Log ERROR "To generate biogenic emissions fields you must also use the -check option."
+            GenX::Log ERROR "To generate biogenic emissions fields you must use the -check option."
             GenX::Continue
       }
    }
