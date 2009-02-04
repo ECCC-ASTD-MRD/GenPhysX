@@ -257,9 +257,9 @@ proc GenX::Submit { } {
    }
 
    puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0\n"
+   puts $f "trap \"cd ..; rm -fr $rdir; exit 0\" 1 2 3 15 30"
    puts $f "cd $rdir\n"
    puts $f "[file normalize [info script]] $gargv \\\n   $rargv\n"
-   puts $f "trap \"cd ..; rm -fr $rdir; exit 0\" 1 2 3 15 30"
    puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -fr $rdir"
 
    if { $Batch(Mail)!="" } {
