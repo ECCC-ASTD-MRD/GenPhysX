@@ -89,7 +89,7 @@ namespace eval GenX { } {
    set Data(Aspects)   { SRTM CDED250 CDED50 }
    set Data(Veges)     { USGS GLOBCOVER CCRS EOSD CORINE }
    set Data(Soils)     { USDA AGRC FAO }
-   set Data(Masks)     { USGS CANVEC }
+   set Data(Masks)     { USGS GLOBCOVER CANVEC }
    set Data(Biogenics) { BELD VF }
    set Data(Checks)    { STD }
    set Data(Subs)      { STD }

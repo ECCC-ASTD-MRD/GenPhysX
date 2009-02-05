@@ -91,9 +91,8 @@ if { $GenX::Data(Aspect)!="" } {
 }
 
 #----- Land-water mask
-switch $GenX::Data(Mask) {
-   "USGS"    { GeoPhysX::AverageMaskUSGS   $grid }
-   "CANVEC"  { GeoPhysX::AverageMaskCANVEC $grid }
+if { $GenX::Data(Mask)!="" } {
+   GeoPhysX::AverageMask $grid
 }
 
 #----- Vegetation type

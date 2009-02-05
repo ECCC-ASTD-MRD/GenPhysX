@@ -23,8 +23,10 @@
 #   GeoPhysX::AverageTopoDEM       { Grids }
 #   GeoPhysX::AverageTopoLow       { Grid }
 #
+#   GeoPhysX::AverageMask          { Grid }
 #   GeoPhysX::AverageMaskUSGS      { Grid }
 #   GeoPhysX::AverageMaskCANVEC    { Grid }
+#   GeoPhysX::AverageMaskGLOBCOVER { Grid }
 #
 #   GeoPhysX::AverageVege          { Grid }
 #   GeoPhysX::AverageVegeUSGS      { Grid }
@@ -497,6 +499,32 @@ proc GeoPhysX::AverageAspect { Grid } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageMask>
+# Creation : June 2006 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the land/sea mask through averaging.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageMask { Grid } {
+   variable Data
+
+   GenX::Procs
+
+   switch $GenX::Data(Mask) {
+      "USGS"      { GeoPhysX::AverageMaskUSGS      $Grid }
+      "CANVEC"    { GeoPhysX::AverageMaskCANVEC    $Grid }
+      "GLOBCOVER" { GeoPhysX::AverageMaskGLOBCOVER $Grid }
+   }
+}
+
+#----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageMaskUSGS>
 # Creation : June 2006 - J.P. Gauthier - CMC/CMOE
 #
@@ -541,6 +569,61 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
    vexpr GPXMASK ifelse(GPXMASK==-99.0,0.0,GPXMASK/100.0)
    fstdfield write GPXMASK GPXOUTFILE -24 True
    fstdfield free MASKTILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageMaskGLOBCOVER>
+# Creation : June 2006 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the land/sea mask through averaging.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
+
+   GenX::Procs
+   GenX::Log INFO "Averaging mask using GLOBCOVER database"
+
+   fstdfield copy GPXMASK  $Grid
+   GenX::GridClear GPXMASK 0.0
+
+   #----- Open the file
+   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_200412_200606_V2.2_Global_CLA.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLOBFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with GLOBCOVER database, mask will not be calculated"
+   } else {
+      GenX::Log INFO "Grid intersection with GLOBCOVER database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Data(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Data(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
+            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
+            gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Data(Cell)
+
+            vexpr GLOBTILE ifelse(GLOBTILE==210,0.0,1.0)
+            fstdfield gridinterp GPXMASK GLOBTILE AVERAGE False
+         }
+      }
+
+      #----- Save output
+      fstdfield gridinterp GPXMASK - NOP True
+      fstdfield define GPXMASK -NOMVAR MG -IP1 0
+      fstdfield write GPXMASK GPXOUTFILE -24 True
+      fstdfield free MASKTILE
+   }
+   gdalfile close GLOBFILE
 }
 
 #----------------------------------------------------------------------------
@@ -837,25 +920,35 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
    #----- Open the file
    gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_200412_200606_V2.2_Global_CLA.tif
 
-   #----- Loop over the data by tiles since it's too big to fit in memory
-   for { set x 0 } { $x<[gdalfile width GLOBFILE] } { incr x $GenX::Data(TileSize) } {
-      for { set y 0 } { $y<[gdalfile height GLOBFILE] } { incr y $GenX::Data(TileSize) } {
-         GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
-         gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
-         gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Data(Cell)
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLOBFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with GLOBCOVER database, vegetation will not be calculated"
+   } else {
+      GenX::Log INFO "Grid intersection with GLOBCOVER database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
 
-         vexpr GLOBTILE lut(GLOBTILE,FROMGLOB,TORPN)
-         fstdfield gridinterp $Grid GLOBTILE NORMALIZED_COUNT $Data(VegeTypes) False
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Data(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Data(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
+            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
+            gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Data(Cell)
+
+            vexpr GLOBTILE lut(GLOBTILE,FROMGLOB,TORPN)
+            fstdfield gridinterp $Grid GLOBTILE NORMALIZED_COUNT $Data(VegeTypes) False
+         }
       }
+
+      #----- Use accumulator to figure out coverage in destination
+      #      But remove border of coverage since it will not be full
+      fstdfield gridinterp $Grid - ACCUM
+      vexpr GPXVSK !fpeel($Grid)
+      fstdfield stats $Grid -mask GPXVSK
+      gdalband free GLOBTILE
    }
 
-   #----- Use accumulator to figure out coverage in destination
-   #      But remove border of coverage since it will not be full
-   fstdfield gridinterp $Grid - ACCUM
-   vexpr GPXVSK !fpeel($Grid)
-   fstdfield stats $Grid -mask GPXVSK
-
-   gdalband free GLOBTILE
    gdalfile close GLOBFILE
    vector free FROMGLOB TORPN
 }
@@ -889,25 +982,34 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
    #----- Open the file
    gdalfile open CCRSFILE read $GenX::Path(CCRS)/LCC2005_V1_3.tif
 
-   #----- Loop over the data by tiles since it's too big to fit in memory
-   for { set x 0 } { $x<[gdalfile width CCRSFILE] } { incr x $GenX::Data(TileSize) } {
-      for { set y 0 } { $y<[gdalfile height CCRSFILE] } { incr y $GenX::Data(TileSize) } {
-         GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
-         gdalband read CCRSTILE { { CCRSFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
-         gdalband stats CCRSTILE -nodata 255 -celldim $GenX::Data(Cell)
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCRSFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with CCRS database, vegetation will not be calculated"
+   } else {
+      GenX::Log INFO "Grid intersection with CCRS database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
 
-         vexpr CCRSTILE lut(CCRSTILE,FROMCCRS,TORPN)
-         fstdfield gridinterp $Grid CCRSTILE NORMALIZED_COUNT $Data(VegeTypes) False
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Data(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Data(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
+            gdalband read CCRSTILE { { CCRSFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
+            gdalband stats CCRSTILE -nodata 255 -celldim $GenX::Data(Cell)
+
+            vexpr CCRSTILE lut(CCRSTILE,FROMCCRS,TORPN)
+            fstdfield gridinterp $Grid CCRSTILE NORMALIZED_COUNT $Data(VegeTypes) False
+         }
       }
+
+      #----- Use accumulator to figure out coverage in destination
+      #      But remove border of coverage since it will not be full
+      fstdfield gridinterp $Grid - ACCUM
+      vexpr GPXVSK !fpeel($Grid)
+      fstdfield stats $Grid -mask GPXVSK
+      gdalband free CCRSTILE
    }
-
-   #----- Use accumulator to figure out coverage in destination
-   #      But remove border of coverage since it will not be full
-   fstdfield gridinterp $Grid - ACCUM
-   vexpr GPXVSK !fpeel($Grid)
-   fstdfield stats $Grid -mask GPXVSK
-
-   gdalband free CCRSTILE
    gdalfile close CCRSFILE
    vector free FROMCCRS TORPN
 }
