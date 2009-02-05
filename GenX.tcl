@@ -407,7 +407,11 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
       while { ([string is double [lindex $Argv $No]] || [string index [lindex $Argv $No] 0]!="-") && $No<$Argc } {
 
          #----- Check for argument validity
-         set vs [split [lindex $Argv $No] +]
+         set vs [lindex $Argv $No]
+         if { $Multi==2 } {
+            set vs [split $vs +]
+         }
+
          if { [llength $Values] } {
             foreach v $vs {
                if { [lsearch -exact $Values $v]==-1 } {
@@ -467,12 +471,12 @@ proc GenX::CommandLine { } {
    Processing parameters:
       Specify databases in order of processing joined by + ex: STRM+USGS
 
-      \[-topo\]     [format "%-30s : Topography method(s) {$Data(Topos)}" ([join $Data(Topo)])]
-      \[-mask\]     [format "%-30s : Mask method {$Data(Masks)}" ([join $Data(Mask)])]
-      \[-vege\]     [format "%-30s : Vegetation method(s) {$Data(Veges)}" ([join $Data(Vege)])]
-      \[-soil\]     [format "%-30s : Soil method {$Data(Soils)}" ([join $Data(Soil) +])]
-      \[-aspect\]   [format "%-30s : Slope and aspect method(s) {$Data(Aspects)}" ([join $Data(Aspect)])]
-      \[-biogenic\] [format "%-30s : Biogenic method(s) {$Data(Biogenics)}" ([join $Data(Biogenic)])]
+      \[-topo\]     [format "%-30s : Topography method(s) among {$Data(Topos)}" ([join $Data(Topo)])]
+      \[-mask\]     [format "%-30s : Mask method, one of {$Data(Masks)}" ([join $Data(Mask)])]
+      \[-vege\]     [format "%-30s : Vegetation method(s) among {$Data(Veges)}" ([join $Data(Vege)])]
+      \[-soil\]     [format "%-30s : Soil method(s) among {$Data(Soils)}" ([join $Data(Soil)])]
+      \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Data(Aspects)}" ([join $Data(Aspect)])]
+      \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Data(Biogenics)}" ([join $Data(Biogenic)])]
       \[-check\]    [format "%-30s : Do consistency checks {$Data(Checks)}" ($Data(Check))]
       \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Data(Subs)}" ($Data(Sub))]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
@@ -569,7 +573,7 @@ proc GenX::ParseCommandLine { } {
          "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Topo) $GenX::Data(Topos)] }
          "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Mask) $GenX::Data(Masks)] }
          "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Vege) $GenX::Data(Veges)] }
-         "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Soil) $GenX::Data(Soils)] }
+         "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Soil) $GenX::Data(Soils)] }
          "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Sub)] }
          "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Aspect)] }
          "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Biogenic) $GenX::Data(Biogenics)] }
