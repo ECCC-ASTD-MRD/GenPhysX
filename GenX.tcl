@@ -239,7 +239,7 @@ proc GenX::Submit { } {
    }
 
    if { [file exists $Path(OutFile).fst] } {
-      eval exec scp [glob $Path(OutFile)*] $Batch(Host):$rdir
+      eval exec scp $Path(OutFile).fst $Path(OutFile)_aux.fst $Batch(Host):$rdir
    }
    set ldir [file dirname [file normalize $Path(OutFile)]]
    append rargv " -result [file tail $Path(OutFile)]"
