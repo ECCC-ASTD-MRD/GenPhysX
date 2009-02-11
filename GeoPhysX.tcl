@@ -815,7 +815,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
          #----- Burn NTS limits and mask EOSD
          set nts [string range [file tail $file] 0 3]
          GenX::Log DEBUG "      Applying NTS($nts) Limit mask" False
-         ogrlayer define NTSLAYER250K -featureselect [list [list SNRC == $nts]]
+         ogrlayer define NTSLAYER250K -featureselect [list [list IDENTIFIAN == $nts]]
          gdalband gridinterp EOSDMASK NTSLAYER250K FAST 1
          vexpr EOSDTILE ifelse(EOSDMASK,EOSDTILE,0)
 
