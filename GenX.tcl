@@ -1108,14 +1108,14 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
    variable Path
 
    if { ![ogrlayer is NTSLAYER50K] } {
-      set nts_layer [lindex [ogrfile open SHAPE50K read $Path(NTS)/50kindex.shp] 0]
+      set nts_layer [lindex [ogrfile open SHAPE50K read $Path(NTS)/decoupage50k_2.shp] 0]
       eval ogrlayer read NTSLAYER50K $nts_layer
    }
    set ids [ogrlayer pick NTSLAYER50K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True]
 
    set files { }
    foreach id $ids {
-      set feuillet [ogrlayer define NTSLAYER50K -feature $id snrc]
+      set feuillet [ogrlayer define NTSLAYER50K -feature $id IDENTIFIAN]
       set s250 [string range $feuillet 0 2]
       set sl   [string tolower [string range $feuillet 3 3]]
       set s50  [string range $feuillet 4 5]
@@ -1190,15 +1190,15 @@ proc GenX::CDEDFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
       exit 1
    }
    if { ![ogrlayer is NTSLAYER${Res}K] } {
-      set nts_layer [lindex [ogrfile open SHAPE${Res}K read $Path(NTS)/${Res}kindex.shp] 0]
+      set nts_layer [lindex [ogrfile open SHAPE${Res}K read $Path(NTS)/decoupage${Res}k_2.shp] 0]
       eval ogrlayer read NTSLAYER${Res}K $nts_layer
    }
 
    #----- Pour les 250k : /data/cmod8/afseeer/CDED/045/h/045h/045h_0100_deme.tif +west
    #----- Pour les 50k  : /data/cmod8/afseeer/CDED/031/h/031h01/031h01_0101_deme.tif +west
    set files { }
-   foreach id [ogrlayer pick NTSLAYER${Res}K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
-      set feuillet [ogrlayer define NTSLAYER${Res}K -feature $id snrc]
+   foreach id [ogrlayer pick NTSLAYER${Res}K [list $Lat0 $Lon0 $Lat1 $Lon0 $Lat1 $Lon1 $Lat0 $Lon1 $Lat0 $Lon0] True] {
+      set feuillet [ogrlayer define NTSLAYER${Res}K -feature $id IDENTIFIAN]
       set s250 [string range $feuillet 0 2]
       set sl   [string tolower [string range $feuillet 3 3]]
       set s50  [string range $feuillet 4 5]
@@ -1240,13 +1240,13 @@ proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
 
    if { ![ogrlayer is NTSLAYER250K] } {
-      set nts_layer [lindex [ogrfile open SHAPE250K read $Path(NTS)/250kindex.shp] 0]
+      set nts_layer [lindex [ogrfile open SHAPE250K read $Path(NTS)/decoupage250k_2.shp] 0]
       eval ogrlayer read NTSLAYER250K $nts_layer
    }
 
    set files { }
    foreach id [ogrlayer pick NTSLAYER250K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
-      set feuillet [ogrlayer define NTSLAYER250K -feature $id snrc]
+      set feuillet [ogrlayer define NTSLAYER250K -feature $id IDENTIFIAN]
       set s250 [string range $feuillet 0 3]
       if { [file exists [set path $Path(EOSD)/${s250}_lc_1/${s250}_lc_1.tif]] } {
          lappend files $path

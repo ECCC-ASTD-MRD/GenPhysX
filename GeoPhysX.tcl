@@ -284,6 +284,8 @@ proc GeoPhysX::AverageTopoCDED { Grids { Res 250 } } {
    set lo0 [lindex $limits 1]
    set la1 [lindex $limits 2]
    set lo1 [lindex $limits 3]
+   GenX::Log DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)" False
+#(58.345664978,-84.878112793) to (70.2351531982,-54.992980957)
 
    foreach file [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $Res] {
       GenX::Log DEBUG "   Processing CDED file $file" False
