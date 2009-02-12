@@ -907,7 +907,7 @@ proc GenX::GridGetFromGEM { File } {
       exit 1
    }
 
-   if { $File!="gem_settings.nml" } {
+   if { [file normalize $File]!=[file normalize gem_settings.nml] } {
       exec ln -fs $File gem_settings.nml
    }
 
