@@ -642,7 +642,6 @@ proc GenX::ParseCommandLine { } {
       cd [file dirname [file normalize $Path(OutFile)]]
    }
 
-   set Path(OutFile) [file rootname $Path(OutFile)]
    catch { file delete $Path(OutFile)_gfilemap.txt }
 }
 
