@@ -55,7 +55,7 @@ namespace eval GenX { } {
    variable Batch
    variable Log
 
-   set Data(Version)   1.0                   ;#Application version
+   set Data(Version)   1.0.1                  ;#Application version
 
    set Data(Secs)      [clock seconds]       ;#To calculate execution time
    set Data(Compress)  False                 ;#Compress standard file output
@@ -260,7 +260,7 @@ proc GenX::Submit { } {
    puts $f "trap \"cd ..; rm -fr $rdir; exit 0\" 1 2 3 15 30"
    puts $f "cd $rdir\n"
    puts $f "[file normalize [info script]] $gargv \\\n   $rargv\n"
-   puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -fr $rdir"
+   puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -f -r $rdir"
 
    if { $Batch(Mail)!="" } {
       puts $f "echo $Path(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
@@ -415,7 +415,7 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
          if { [llength $Values] } {
             foreach v $vs {
                if { [lsearch -exact $Values $v]==-1 } {
-                  GenX::Log ERROR "Invalid value for parameter [lindex $Argv [expr $No-1]], must be one of { $Values }"
+                  GenX::Log ERROR "Invalid value ($v) for parameter [lindex $Argv [expr $No-1]], must be one of { $Values }"
                   exit 1;
                }
             }
@@ -576,7 +576,7 @@ proc GenX::ParseCommandLine { } {
          "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Soil) $GenX::Data(Soils)] }
          "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Sub)] }
          "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Aspect)] }
-         "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Biogenic) $GenX::Data(Biogenics)] }
+         "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Biogenic) $GenX::Data(Biogenics)] }
          "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Check)] }
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)] }
