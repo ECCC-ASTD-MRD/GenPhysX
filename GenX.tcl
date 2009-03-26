@@ -459,7 +459,7 @@ proc GenX::CommandLine { } {
    Information parameters:
       \[-help\]     [format "%-30s : This information" ""]
       \[-version\]  [format "%-30s : GenPhysX version" ""]
-      \[-verbose\]  [format "%-30s : Trace level (0 none,1 some ,2 more, 3 Debug)" ($Log(Level))]
+      \[-verbose\]  [format "%-30s : Trace level (0 none, 1 some, 2 more, 3 debug)" ($Log(Level))]
 
    Input parameters:
       \[-nml\]      [format "%-30s : GEM namelist definition file" ($Path(NameFile))]
@@ -639,7 +639,7 @@ proc GenX::ParseCommandLine { } {
       cd [file dirname [file normalize $Path(OutFile)]]
    }
 
-   catch { file delete $Path(OutFile)_gfilemap.txt }
+   catch { file delete $Path(OutFile).fst_gfilemap.txt }
 }
 
 #----------------------------------------------------------------------------
@@ -915,7 +915,7 @@ proc GenX::GridGetFromGEM { File } {
    #----- Erase tape1 and gfilemap.txt since gemgrid won't run if they already exist
    catch { file delete -force tape1 gfilemap.txt }
    catch { exec $grid }
-   catch { file rename -force gfilemap.txt ${Path(OutFile)}_gfilemap.txt }
+   catch { file rename -force gfilemap.txt ${Path(OutFile)}.fst_gfilemap.txt }
 
    fstdfile open GPXGRIDFILE read tape1
 
