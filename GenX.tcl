@@ -257,7 +257,7 @@ proc GenX::Submit { } {
    }
 
    puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0\n"
-   puts $f "trap \"cd ..; rm -fr $rdir; exit 0\" 1 2 3 15 30"
+   puts $f "trap \"cd ..; rm -fr $rdir\" 0 1 2 3 6 15 30"
    puts $f "cd $rdir\n"
    puts $f "[file normalize [info script]] $gargv \\\n   $rargv\n"
    puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -f -r $rdir"
@@ -270,6 +270,7 @@ proc GenX::Submit { } {
    #----- Launch job script
    exec chmod 755 $job
    catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) }
+   puts stdout "Job launched on $Batch(Host) ... "
    file delete -force $job
    exit 0
 }
