@@ -55,7 +55,7 @@ namespace eval GenX { } {
    variable Batch
    variable Log
 
-   set Data(Version)   1.0.1                  ;#Application version
+   set Data(Version)   1.0.2                 ;#Application version
 
    set Data(Secs)      [clock seconds]       ;#To calculate execution time
    set Data(Compress)  False                 ;#Compress standard file output
@@ -721,9 +721,14 @@ proc GenX::GetNML { File } {
          }
       }
    }
-   GenX::Log DEBUG "Read the following settings:"
+
    if { $GenX::Log(Level)>=3 } {
+      GenX::Log DEBUG "Read the following settings:"
       parray GenX::Settings
+
+      GenX::Log DEBUG "Using following constants:"
+      parray GeoPhysX::Const
+      parray BioGenX::Const
    }
    close $f
 }

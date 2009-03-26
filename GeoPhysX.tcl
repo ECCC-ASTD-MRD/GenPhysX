@@ -812,6 +812,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
    set lat1 [lindex $limits 2]
    set lon1 [lindex $limits 3]
 
+   GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(EOSD2RPN) 0]\n   To  :[lindex $Const(EOSD2RPN) 1]"
    vector create FROMEOSD [lindex $Const(EOSD2RPN) 0]
    vector create TORPN    [lindex $Const(EOSD2RPN) 1]
 
@@ -877,6 +878,7 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using CORINE database"
 
+   GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(CORINE2RPN) 0]\n   To  :[lindex $Const(CORINE2RPN) 1]"
    vector create FROMCORINE [lindex $Const(CORINE2RPN) 0]
    vector create TORPN      [lindex $Const(CORINE2RPN) 1]
 
@@ -939,6 +941,7 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using GlobCover database"
 
+   GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(GLOBCOVER2RPN) 0]\n   To  :[lindex $Const(GLOBCOVER2RPN) 1]"
    vector create FROMGLOB [lindex $Const(GLOBCOVER2RPN) 0]
    vector create TORPN    [lindex $Const(GLOBCOVER2RPN) 1]
 
@@ -1000,6 +1003,7 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using CCRS database"
 
+   GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(CCRS2RPN) 0]\n   To  :[lindex $Const(CCRS2RPN) 1]"
    vector create FROMCCRS [lindex $Const(CCRS2RPN) 0]
    vector create TORPN    [lindex $Const(CCRS2RPN) 1]
 
