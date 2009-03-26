@@ -97,6 +97,22 @@ namespace eval GeoPhysX { } {
    set Const(largec1) 16.0        ;# Large scale resolution dependent correction factor
    set Const(smallc0) 2.0         ;# Small scale resolution dependent correction factor
    set Const(smallc1) 15.0        ;# Small scale resolution dependent correction factor
+
+   #----- Correspondance de Stéphane Bélair du 6 novembre 2007 pour la conversion des classes EOSD vers les classes RPN
+   set Const(EOSD2RPN) { {   0  11  12 20 21 31 32 33 40 51 52 81 82 83 100 211 212 213 221 222 223 231 232 233 }
+                         { -99 -99 -99  3  1  2 24 24 22 10 10 25 10 13  14   4   4   4   7   7   7  25  25  25 } }
+
+   #----- Correspondance de Janna Lindenberg de decembre 2007 pour la conversion des classes CORINE vers les classes RPN
+   set Const(CORINE2RPN) { {  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 }
+                           { 21 21 21 21 21 21 24 24 24 14 20 20 20 16 18 18 18 18 18 18 18 18  5  5 25 14 14 14 14 14 24 10 10  2 11 11  1  1  1  1  1  1  1  1 } }
+
+   #----- Correspondance de Stephane Belair decembre 2008 pour la conversion des classes GlobCover vers les classes RPN
+   set Const(GLOBCOVER2RPN) { { 220 210 70 40 90 50 60 30 120 230 14 20 11 190 150 160 170 180 200 100 110 130 }
+                              {   2   3  4  5  6  7  7 14  14  14 15 15 20  21  22  23  23  23  24  25  26  26 } }
+
+   #----- Correspondance de Stephane Belair decembre 2008 pour la conversion des classes CCRS vers les classes RPN
+   set Const(CCRS2RPN) { { 39 37 38 1 3 4 6 7 8 9 10 5 2 11 12 16 20 18 17 26 27 28 29 36 21 22 23 24 25 19 32 30 33 34 35 13 14 15 31 }
+                         {  2  3  3 4 4 4 4 4 4 4  4 6 7  7  7 11 12 13 14 15 15 15 15 21 22 22 22 22 22 23 23 24 24 24 24 25 25 25 26 } }
 }
 
 #----------------------------------------------------------------------------
@@ -285,7 +301,6 @@ proc GeoPhysX::AverageTopoCDED { Grids { Res 250 } } {
    set la1 [lindex $limits 2]
    set lo1 [lindex $limits 3]
    GenX::Log DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)" False
-#(58.345664978,-84.878112793) to (70.2351531982,-54.992980957)
 
    foreach file [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $Res] {
       GenX::Log DEBUG "   Processing CDED file $file" False
@@ -786,6 +801,7 @@ proc GeoPhysX::AverageVegeUSGS { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeEOSD { Grid } {
    variable Data
+   variable Const
 
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using EOSD database"
@@ -796,10 +812,8 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
    set lat1 [lindex $limits 2]
    set lon1 [lindex $limits 3]
 
-   #----- Pour la conversion des classes EOSD vers les classes RPN
-   vector create FROMEOSD { 0 11 12 20 21 31 32 33 40 51 52 81 82 83 100 211 212 213 221 222 223 231 232 233 }
-   #----- Correspondance de Stéphane Bélair du 6 novembre 2007
-   vector create TORPN  { -99 -99 -99 3 1 2 24 24 22 10 10 25 10 13 14 4 4 4 7 7 7 25 25 25 }
+   vector create FROMEOSD [lindex $Const(EOSD2RPN) 0]
+   vector create TORPN    [lindex $Const(EOSD2RPN) 1]
 
    #----- Loop over files
    if { [llength [set files [GenX::EOSDFindFiles $lat0 $lon0 $lat1 $lon1]]] } {
@@ -858,37 +872,47 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeCORINE { Grid } {
    variable Data
+   variable Const
 
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using CORINE database"
 
-   #----- Pour la conversion des classes CORINE vers les classes RPN
-   vector create FROMCORINE { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 }
-   #----- Correspondance de Janna Lindenberg de decembre 2007
-   vector create TORPN  { 21 21 21 21 21 21 24 24 24 14 20 20 20 16 18 18 18 18 18 18 18 18 5 5 25 14 14 14 14 14 24 10 10 2 11 11 1 1 1 1 1 1 1 1 }
+   vector create FROMCORINE [lindex $Const(CORINE2RPN) 0]
+   vector create TORPN      [lindex $Const(CORINE2RPN) 1]
 
    #----- Open the file
    gdalfile open CORINEFILE read $GenX::Path(CORINE)/lceugr100_00_pct.tif
 
-   #----- Loop over the data by tiles since it's too big to fit in memory
-   for { set x 0 } { $x<[gdalfile width CORINEFILE] } { incr x $GenX::Data(TileSize) } {
-      for { set y 0 } { $y<[gdalfile height CORINEFILE] } { incr y $GenX::Data(TileSize) } {
-         GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
-         gdalband read CORINETILE { { CORINEFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
-         gdalband stats CORINETILE -nodata 255 -celldim $GenX::Data(Cell)
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CORINEFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with CORINE database, vegetation will not be calculated"
+   } else {
+      GenX::Log INFO "Grid intersection with CORINE database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
 
-         vexpr CORINETILE lut(CORINETILE,FROMCORINE,TORPN)
-         fstdfield gridinterp $Grid CORINETILE NORMALIZED_COUNT $Data(VegeTypes) False
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Data(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Data(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
+            gdalband read CORINETILE { { CORINEFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
+            gdalband stats CORINETILE -nodata 255 -celldim $GenX::Data(Cell)
+
+            vexpr CORINETILE lut(CORINETILE,FROMCORINE,TORPN)
+            fstdfield gridinterp $Grid CORINETILE NORMALIZED_COUNT $Data(VegeTypes) False
+         }
       }
+
+      #----- Use accumulator to figure out coverage in destination
+      #      But remove border of coverage since it will not be full
+      fstdfield gridinterp $Grid - ACCUM
+      vexpr GPXVSK !fpeel($Grid)
+      fstdfield stats $Grid -mask GPXVSK
+
+      gdalband free CORINETILE
    }
 
-   #----- Use accumulator to figure out coverage in destination
-   #      But remove border of coverage since it will not be full
-   fstdfield gridinterp $Grid - ACCUM
-   vexpr GPXVSK !fpeel($Grid)
-   fstdfield stats $Grid -mask GPXVSK
-
-   gdalband free CORINETILE
    gdalfile close CORINEFILE
    vector free FROMCORINE TORPN
 }
@@ -910,14 +934,13 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
    variable Data
+   variable Const
 
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using GlobCover database"
 
-   #----- Pour la conversion des classes GlobCover vers les classes RPN
-   vector create FROMGLOB { 220 210 70 40 90 50 60 30 120 230 14 20 11 190 150 160 170 180 200 100 110 130 }
-   #----- Correspondance de Stephane Belair decembre 2008
-   vector create TORPN  { 2 3 4 5 6 7 7 14 14 14 15 15 20 21 22 23 23 23 24 25 26 26 }
+   vector create FROMGLOB [lindex $Const(GLOBCOVER2RPN) 0]
+   vector create TORPN    [lindex $Const(GLOBCOVER2RPN) 1]
 
    #----- Open the file
    gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_200412_200606_V2.2_Global_CLA.tif
@@ -972,14 +995,13 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeCCRS { Grid } {
    variable Data
+   variable Const
 
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using CCRS database"
 
-   #----- Pour la conversion des classes CCRS vers les classes RPN
-   vector create FROMCCRS { 39 37 38 1 3 4 6 7 8 9 10 5 2 11 12 16 20 18 17 26 27 28 29 36 21 22 23 24 25 19 32 30 33 34 35 13 14 15 31 }
-   #----- Correspondance de Stephane Belair decembre 2008
-   vector create TORPN  { 2 3 3 4 4 4 4 4 4 4 4 6 7 7 7 11 12 13 14 15 15 15 15 21 22 22 22 22 22 23 23 24 24 24 24 25 25 25 26 }
+   vector create FROMCCRS [lindex $Const(CCRS2RPN) 0]
+   vector create TORPN    [lindex $Const(CCRS2RPN) 1]
 
    #----- Open the file
    gdalfile open CCRSFILE read $GenX::Path(CCRS)/LCC2005_V1_3.tif
