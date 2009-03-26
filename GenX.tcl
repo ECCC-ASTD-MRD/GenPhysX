@@ -561,7 +561,7 @@ proc GenX::ParseCommandLine { } {
          "version"   { puts "$Data(Version)"; exit 0 }
          "verbose"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Log(Level)] }
          "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(OutFile)] }
-         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Target) $GenX::Data(Targets)] }
+         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Target) $GenX::Data(Targets)]; GenX::ParseTarget }
          "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(GridFile)] }
          "nml"       { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(NameFile)] }
          "dbase"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(DBase)] }
@@ -586,9 +586,6 @@ proc GenX::ParseCommandLine { } {
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
       }
    }
-
-   #----- Parse specific target model
-   GenX::ParseTarget
 
    #----- Check for user definitiond
    if { $GenX::Path(Script)!="" } {
