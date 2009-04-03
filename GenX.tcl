@@ -55,7 +55,7 @@ namespace eval GenX { } {
    variable Batch
    variable Log
 
-   set Data(Version)   1.0.2                 ;#Application version
+   set Data(Version)   1.1.0                 ;#Application version
 
    set Data(Secs)      [clock seconds]       ;#To calculate execution time
    set Data(Compress)  False                 ;#Compress standard file output
@@ -70,6 +70,7 @@ namespace eval GenX { } {
    set Meta(Procs)     {}                    ;#Metadata procedure registration list
    set Meta(Header)    ""                    ;#Metadata header
    set Meta(Footer)    ""                    ;#Metadata footer
+   set Meta(Command)   ""                    ;#Launch command
 
    set Data(Vege)      ""                    ;#Vegetation data selected
    set Data(Soil)      ""                    ;#Soil type data selected
@@ -104,7 +105,7 @@ namespace eval GenX { } {
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     hawa                  ;#Host onto which to submit the job
    set Batch(Queue)    ""                    ;#Queue to use for the job
-   set Batch(Mem)      400000                ;#Memory needed for the job
+   set Batch(Mem)      1G                    ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(CPUs)     1                     ;#Number of CPUs to use for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
@@ -256,7 +257,8 @@ proc GenX::Submit { } {
       puts $f ". r.sm.dot gem $env(gem_dynversion)"
    }
 
-   puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0\n"
+   puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0"
+   puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
    puts $f "trap \"cd ..; rm -fr $rdir\" 0 1 2 3 6 15 30"
    puts $f "cd $rdir\n"
    puts $f "[file normalize [info script]] $gargv \\\n   $rargv\n"
@@ -271,6 +273,7 @@ proc GenX::Submit { } {
    exec chmod 755 $job
    catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) }
    puts stdout "Job launched on $Batch(Host) ... "
+
    file delete -force $job
    exit 0
 }
@@ -354,7 +357,24 @@ proc GenX::MetaData { } {
 
    #----- Generation date et parameters used
    set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\n"
-   append meta "Call parameters: [info script] [join $argv " "]\nSPI API version: $env(SPI_PATH)\nCode base      : $version\n"
+
+   if  { [info exists env(GENPHYSX_BATCH)] } {
+      append meta "Call parameters: [info script] $env(GENPHYSX_BATCH)\n"
+   } else {
+      append meta "Call parameters: [info script] [join $argv " "]\n"
+   }
+   append meta "SPI API version: $env(SPI_PATH)\nCode base      : $version\n"
+
+   #----- Append script if any
+   if { $Path(Script)!="" } {
+      append meta "Script used    : $Path(Script)\n"
+      set f [open $Path(Script) r]
+      while { ![eof $f] } {
+         append meta "   [gets $f]\n"
+      }
+      close $f
+   }
+
    append meta $Meta(Header)
    append meta "Processing used:\n   [join $Meta(Procs) "\n   "]\n"
    if { [file exists $Path(NameFile)] } {
@@ -512,15 +532,14 @@ proc GenX::CommandLine { } {
 #
 #----------------------------------------------------------------------------
 proc GenX::Continue { } {
-  variable Batch
+   global env
 
-   if { $Batch(On) } {
-      exit 1
-   }
-
-   puts stdout "Continue anyway (y or n) ? "
-   if { [string toupper [string index [gets stdin] 0]]!="Y" } {
-      exit 1
+   #----- If we're not in batch mode, ask
+   if  { ![info exists env(GENPHYSX_BATCH)] } {
+      puts stdout "Continue anyway (y or n) ? "
+      if { [string toupper [string index [gets stdin] 0]]!="Y" } {
+         exit 1
+      }
    }
 }
 
