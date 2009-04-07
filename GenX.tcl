@@ -290,10 +290,6 @@ proc GenX::Submit { } {
    set rdir /tmp/GenPhysX[pid]_$Data(Secs)
    set rargv ""
 
-   #----- Remove batch flag from arguments
-   set idx [lsearch -exact $gargv "-batch"]
-   set gargv [lreplace $gargv $idx $idx]
-
    #----- Create job script
    set job $env(TMPDIR)/GenPhysX[pid]
    set f [open $job w]
@@ -330,6 +326,10 @@ proc GenX::Submit { } {
 
    set ldir [file dirname [file normalize $Path(OutFile)]]
    append rargv " -result [file tail $Path(OutFile)]"
+
+   #----- Remove batch flag from arguments
+   set idx [lsearch -exact $gargv "-batch"]
+   set gargv [lreplace $gargv $idx $idx]
 
    puts $f "\n[file normalize [info script]] $gargv \\\n   $rargv\n"
    puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -f -r $rdir"
