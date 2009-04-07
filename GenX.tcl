@@ -278,6 +278,76 @@ proc GenX::Submit { } {
    exit 0
 }
 
+proc GenX::Submit { } {
+   global env
+   variable Data
+   variable Path
+   variable Batch
+
+   upvar #0 argv gargv
+
+   set host [exec hostname]
+   set rdir /tmp/GenPhysX[pid]_$Data(Secs)
+   set rargv ""
+
+   #----- Remove batch flag from arguments
+   set idx [lsearch -exact $gargv "-batch"]
+   set gargv [lreplace $gargv $idx $idx]
+
+   #----- Create job script
+   set job $env(TMPDIR)/GenPhysX[pid]
+   set f [open $job w]
+   puts $f "#!/bin/ksh\nset -x"
+   if { [info exists env(gem_dynversion)] } {
+      puts $f ". r.sm.dot gem $env(gem_dynversion)"
+   }
+
+   puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0"
+   puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
+   puts $f "trap \"cd ..; rm -fr $rdir\" 0 1 2 3 6 15 30"
+
+   puts $f "mkdir $rdir"
+   puts $f "cd $rdir"
+
+   if { $Path(GridFile)!="" } {
+      puts $f "scp $host:[file normalize $Path(GridFile)] ."
+      append rargv " -gridfile [file tail $Path(GridFile)]"
+   }
+   if { $Path(NameFile)!="" } {
+      puts $f "scp $host:[file normalize $Path(NameFile)] ."
+      append rargv " -nml [file tail $Path(NameFile)]"
+   }
+   if { $Path(Script)!="" } {
+      puts $f "scp $host:[file normalize $Path(Script)] ."
+      append rargv " -script [file tail $Path(Script)]"
+   }
+   if { [file exists $Path(OutFile).fst] } {
+      puts $f "scp $host:[file normalize ${Path(OutFile)}.fst] ."
+   }
+   if { [file exists ${Path(OutFile)}_aux.fst] } {
+      puts $f "scp $host:[file normalize ${Path(OutFile)}_aux.fst.fst] ."
+   }
+
+   set ldir [file dirname [file normalize $Path(OutFile)]]
+   append rargv " -result [file tail $Path(OutFile)]"
+
+   puts $f "\n[file normalize [info script]] $gargv \\\n   $rargv\n"
+   puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -f -r $rdir"
+
+   if { $Batch(Mail)!="" } {
+      puts $f "echo $Path(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
+   }
+   close $f
+
+   #----- Launch job script
+   exec chmod 755 $job
+   catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) }
+   puts stdout "Job ($job) launched on $Batch(Host) ... "
+
+#   file delete -force $job
+   exit 0
+}
+
 #----------------------------------------------------------------------------
 # Name     : <GenX::Procs>
 # Creation : Decembre 2007 - J.P. Gauthier - CMC/CMOE
