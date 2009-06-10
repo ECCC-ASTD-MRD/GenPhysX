@@ -109,8 +109,11 @@ namespace eval GenX { } {
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(CPUs)     1                     ;#Number of CPUs to use for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
+#   set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
+#   set Batch(Submit)   "/home/dormrb02/ssm/env-batch_1.0_all/bin/ord_soumet+"
+#   set Batch(Submit)   "/home/ordenv/ssm-domains0/ssm-setup-dev/unified-setup_1.0_all/bin/ord_soumet"
    set Batch(Submit)   "/home/ordenv/ssm-domains0/ssm-setup-dev/unified-setup_1.0_all/bin/ord_soumet.mfv"
-   set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet+"
+   set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
 
    #----- Various database paths
 
@@ -118,8 +121,8 @@ namespace eval GenX { } {
       set Path(DBase) $env(GENPHYSX_DBASE)
    } else {
       set Path(DBase) /data/dormrb04/genphysx/data
-      set Path(DBase) /data/cmod8/afseeer
       set Path(DBase) /data/shared_1_b0/armn
+#      set Path(DBase) /data/cmod8/afseeer
    }
 
    set Path(SandUSDA)  $Path(DBase)/db/sand_usda
@@ -219,80 +222,13 @@ proc GenX::Submit { } {
 
    upvar #0 argv gargv
 
-   #----- Create remote temp dir and copy stuff there
-   exec ssh $Batch(Host) mkdir [set rdir /tmp/GenPhysX[pid]_$Data(Secs)]
-
-   set rargv ""
-
-   if { $Path(GridFile)!="" } {
-      exec scp $Path(GridFile) $Batch(Host):$rdir
-      append rargv " -gridfile [file tail $Path(GridFile)]"
-   }
-
-   if { $Path(NameFile)!="" } {
-      exec scp $Path(NameFile) $Batch(Host):$rdir
-      append rargv " -nml [file tail $Path(NameFile)]"
-   }
-
-   if { $Path(Script)!="" } {
-      exec scp $Path(Script) $Batch(Host):$rdir
-      append rargv " -script [file tail $Path(Script)]"
-   }
-
-   if { [file exists $Path(OutFile).fst] } {
-      eval exec scp ${Path(OutFile)}.fst ${Path(OutFile)}_aux.fst $Batch(Host):$rdir
-   }
-   set ldir [file dirname [file normalize $Path(OutFile)]]
-   append rargv " -result [file tail $Path(OutFile)]"
-
-   #----- Remove batch flag from arguments
-   set idx [lsearch -exact $gargv "-batch"]
-   set gargv [lreplace $gargv $idx $idx]
-
-   #----- Create job script
-   set job $env(TMPDIR)/GenPhysX[pid]
-   set f [open $job w]
-   puts $f "#!/bin/ksh\nset -x"
-   if { [info exists env(gem_dynversion)] } {
-      puts $f ". r.sm.dot gem $env(gem_dynversion)"
-   }
-
-   puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0"
-   puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
-   puts $f "trap \"cd ..; rm -fr $rdir\" 0 1 2 3 6 15 30"
-   puts $f "cd $rdir\n"
-   puts $f "[file normalize [info script]] $gargv \\\n   $rargv\n"
-   puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -f -r $rdir"
-
-   if { $Batch(Mail)!="" } {
-      puts $f "echo $Path(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
-   }
-   close $f
-
-   #----- Launch job script
-   exec chmod 755 $job
-   catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) }
-   puts stdout "Job launched on $Batch(Host) ... "
-
-   file delete -force $job
-   exit 0
-}
-
-proc GenX::Submit { } {
-   global env
-   variable Data
-   variable Path
-   variable Batch
-
-   upvar #0 argv gargv
-
    set host [exec hostname]
    set rdir /tmp/GenPhysX[pid]_$Data(Secs)
    set rargv ""
 
    #----- Create job script
-   set job $env(TMPDIR)/GenPhysX[pid]
-   set f [open $job w]
+   set f [open [set job $env(TMPDIR)/GenPhysX[pid]] w 0755]
+
    puts $f "#!/bin/ksh\nset -x"
    if { [info exists env(gem_dynversion)] } {
       puts $f ". r.sm.dot gem $env(gem_dynversion)"
@@ -340,9 +276,14 @@ proc GenX::Submit { } {
    close $f
 
    #----- Launch job script
-   exec chmod 755 $job
-   catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) }
-   puts stdout "Job ($job) launched on $Batch(Host) ... "
+   if { ![file exists $Batch(Submit)] } {
+      puts stderr "Could not find job submission program $Batch(Submit)"
+      exit 1
+   } else {
+      puts stdout "Using $Batch(Submit) to launch job ... "
+      catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -threads 2 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) } Message
+      puts stdout "$Message\nJob ($job) launched on $Batch(Host) ... "
+   }
 
 #   file delete -force $job
    exit 0
@@ -517,6 +458,12 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
             eval lappend var $vs
          }
          incr No
+      }
+
+      #----- Verifier le nombre de valeur
+      if { $Multi && ![llength $var] }  {
+         GenX::Log ERROR "No value specified for parameter [lindex $Argv [expr $No-1]]"
+         exit 1;
       }
 
       if { $No!=$idx } {
@@ -1300,10 +1247,10 @@ proc GenX::CDEDFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
          set path $Path(CDED)/$s250/$sl/$s250$sl
       }
 
-      if { [llength [set lst [glob -nocomplain $path/*e.tif]]] } {
+      if { [llength [set lst [glob -nocomplain $path/*deme*.tif]]] } {
          lappend files $lst
       }
-      if { [llength [set lst [glob -nocomplain $path/*w.tif]]] } {
+      if { [llength [set lst [glob -nocomplain $path/*demw*.tif]]] } {
          lappend files $lst
       }
    }
