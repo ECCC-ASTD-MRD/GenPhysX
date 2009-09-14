@@ -55,7 +55,7 @@ namespace eval GenX { } {
    variable Batch
    variable Log
 
-   set Data(Version)   1.1.0                 ;#Application version
+   set Data(Version)   1.1.1                 ;#Application version
 
    set Data(Secs)      [clock seconds]       ;#To calculate execution time
    set Data(Compress)  False                 ;#Compress standard file output
