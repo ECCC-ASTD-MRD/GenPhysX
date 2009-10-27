@@ -812,12 +812,13 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
    set lat1 [lindex $limits 2]
    set lon1 [lindex $limits 3]
 
-   GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(EOSD2RPN) 0]\n   To  :[lindex $Const(EOSD2RPN) 1]"
-   vector create FROMEOSD [lindex $Const(EOSD2RPN) 0]
-   vector create TORPN    [lindex $Const(EOSD2RPN) 1]
-
    #----- Loop over files
    if { [llength [set files [GenX::EOSDFindFiles $lat0 $lon0 $lat1 $lon1]]] } {
+
+      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(EOSD2RPN) 0]\n   To  :[lindex $Const(EOSD2RPN) 1]"
+      vector create FROMEOSD [lindex $Const(EOSD2RPN) 0]
+      vector create TORPN    [lindex $Const(EOSD2RPN) 1]
+
       foreach file $files {
          GenX::Log DEBUG "   Processing file $file" False
          gdalband read EOSDTILE [gdalfile open EOSDFILE read $file]
@@ -878,16 +879,16 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using CORINE database"
 
-   GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(CORINE2RPN) 0]\n   To  :[lindex $Const(CORINE2RPN) 1]"
-   vector create FROMCORINE [lindex $Const(CORINE2RPN) 0]
-   vector create TORPN      [lindex $Const(CORINE2RPN) 1]
-
    #----- Open the file
    gdalfile open CORINEFILE read $GenX::Path(CORINE)/lceugr100_00_pct.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CORINEFILE]]]] } {
       GenX::Log WARNING "Specified grid does not intersect with CORINE database, vegetation will not be calculated"
    } else {
+      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(CORINE2RPN) 0]\n   To  :[lindex $Const(CORINE2RPN) 1]"
+      vector create FROMCORINE [lindex $Const(CORINE2RPN) 0]
+      vector create TORPN      [lindex $Const(CORINE2RPN) 1]
+
       GenX::Log INFO "Grid intersection with CORINE database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
@@ -913,10 +914,9 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
       fstdfield stats $Grid -mask GPXVSK
 
       gdalband free CORINETILE
+      vector free FROMCORINE TORPN
    }
-
    gdalfile close CORINEFILE
-   vector free FROMCORINE TORPN
 }
 
 #----------------------------------------------------------------------------
@@ -941,16 +941,16 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using GlobCover database"
 
-   GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(GLOBCOVER2RPN) 0]\n   To  :[lindex $Const(GLOBCOVER2RPN) 1]"
-   vector create FROMGLOB [lindex $Const(GLOBCOVER2RPN) 0]
-   vector create TORPN    [lindex $Const(GLOBCOVER2RPN) 1]
-
    #----- Open the file
    gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_200412_200606_V2.2_Global_CLA.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLOBFILE]]]] } {
       GenX::Log WARNING "Specified grid does not intersect with GLOBCOVER database, vegetation will not be calculated"
    } else {
+      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(GLOBCOVER2RPN) 0]\n   To  :[lindex $Const(GLOBCOVER2RPN) 1]"
+      vector create FROMGLOB [lindex $Const(GLOBCOVER2RPN) 0]
+      vector create TORPN    [lindex $Const(GLOBCOVER2RPN) 1]
+
       GenX::Log INFO "Grid intersection with GLOBCOVER database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
@@ -974,11 +974,11 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
       fstdfield gridinterp $Grid - ACCUM
       vexpr GPXVSK !fpeel($Grid)
       fstdfield stats $Grid -mask GPXVSK
-      gdalband free GLOBTILE
-   }
 
+      gdalband free GLOBTILE
+      vector free FROMGLOB TORPN
+   }
    gdalfile close GLOBFILE
-   vector free FROMGLOB TORPN
 }
 
 #----------------------------------------------------------------------------
@@ -1003,16 +1003,16 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using CCRS database"
 
-   GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(CCRS2RPN) 0]\n   To  :[lindex $Const(CCRS2RPN) 1]"
-   vector create FROMCCRS [lindex $Const(CCRS2RPN) 0]
-   vector create TORPN    [lindex $Const(CCRS2RPN) 1]
-
    #----- Open the file
    gdalfile open CCRSFILE read $GenX::Path(CCRS)/LCC2005_V1_3.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCRSFILE]]]] } {
       GenX::Log WARNING "Specified grid does not intersect with CCRS database, vegetation will not be calculated"
    } else {
+      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(CCRS2RPN) 0]\n   To  :[lindex $Const(CCRS2RPN) 1]"
+      vector create FROMCCRS [lindex $Const(CCRS2RPN) 0]
+      vector create TORPN    [lindex $Const(CCRS2RPN) 1]
+
       GenX::Log INFO "Grid intersection with CCRS database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
@@ -1036,10 +1036,11 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
       fstdfield gridinterp $Grid - ACCUM
       vexpr GPXVSK !fpeel($Grid)
       fstdfield stats $Grid -mask GPXVSK
+
       gdalband free CCRSTILE
+      vector free FROMCCRS TORPN
    }
    gdalfile close CCRSFILE
-   vector free FROMCCRS TORPN
 }
 
 #----------------------------------------------------------------------------
@@ -1444,6 +1445,7 @@ proc GeoPhysX::SubTopoFilter { } {
    fstdfield read GPXMF GPXOUTFILE -1 "" 1200 -1 -1 "" "ME"
 
    GenX::Log INFO "Filtering ME"
+
    fstdgrid zfilter GPXMF GenX::Settings
    fstdfield define GPXMF -NOMVAR MF -IP1 0 -IP2 0 -IP3 0
    fstdfield write GPXMF GPXOUTFILE -24 True
