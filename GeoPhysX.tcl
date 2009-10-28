@@ -98,21 +98,27 @@ namespace eval GeoPhysX { } {
    set Const(smallc0) 2.0         ;# Small scale resolution dependent correction factor
    set Const(smallc1) 15.0        ;# Small scale resolution dependent correction factor
 
-   #----- Correspondance de Stéphane Bélair du 6 novembre 2007 pour la conversion des classes EOSD vers les classes RPN
+   #----- Correspondance de Stéphane Bélair de Novembre 2007 pour la conversion des classes EOSD vers les classes RPN
    set Const(EOSD2RPN) { {   0  11  12 20 21 31 32 33 40 51 52 81 82 83 100 211 212 213 221 222 223 231 232 233 }
                          { -99 -99 -99  3  1  2 24 24 22 10 10 25 10 13  14   4   4   4   7   7   7  25  25  25 } }
 
-   #----- Correspondance de Janna Lindenberg de decembre 2007 pour la conversion des classes CORINE vers les classes RPN
+   #----- Correspondance de Janna Lindenberg de Decembre 2007 pour la conversion des classes CORINE vers les classes RPN
    set Const(CORINE2RPN) { {  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 }
                            { 21 21 21 21 21 21 24 24 24 14 20 20 20 16 18 18 18 18 18 18 18 18  5  5 25 14 14 14 14 14 24 10 10  2 11 11  1  1  1  1  1  1  1  1 } }
 
-   #----- Correspondance de Stephane Belair decembre 2008 pour la conversion des classes GlobCover vers les classes RPN
+   #----- Correspondance de Stephane Belair Decembre 2008 pour la conversion des classes GlobCover vers les classes RPN
    set Const(GLOBCOVER2RPN) { { 220 210 70 40 90 50 60 30 120 230 14 20 11 190 150 160 170 180 200 100 110 130 }
                               {   2   3  4  5  6  7  7 14  14  14 15 15 20  21  22  23  23  23  24  25  26  26 } }
+   #----- Correspondance de Douglas Chan Juin 2009 pour la conversion des classes GlobCover vers les classes RPN
+   set Const(GLOBCOVER2RPN) { { 220 210 70 40 90 50 60 30 120 140 230 14 20 11 190 150 160 170 180 200 100 110 130 }
+                              {   2   3  4  5  4  7  7 14  14  14  24 15 15 20  21  24  23  23  23  24  25  26  26 } }
 
    #----- Correspondance de Stephane Belair decembre 2008 pour la conversion des classes CCRS vers les classes RPN
    set Const(CCRS2RPN) { { 39 37 38 1 3 4 6 7 8 9 10 5 2 11 12 16 20 18 17 26 27 28 29 36 21 22 23 24 25 19 32 30 33 34 35 13 14 15 31 }
                          {  2  3  3 4 4 4 4 4 4 4  4 6 7  7  7 11 12 13 14 15 15 15 15 21 22 22 22 22 22 23 23 24 24 24 24 25 25 25 26 } }
+   #----- Correspondance de Douglas Chan Juin 2009 pour la conversion des classes CCRS vers les classes RPN
+   set Const(CCRS2RPN) { { 39 37 38 1  3  4  5 6 7  8  9 10 2 11 12 16 20 18 17 26 27 28 29 36 21 22 23 24 25 19 32 30 33 34 35 13 14 15 31 }
+                         {  2  3  3 4 25 25 25 4 4 26 22 23 7  7  7 11 14 13 14 15 15 15 15 21 13 13 13 13 13 23 23 22 24 24 24 25 25 25 23 } }
 }
 
 #----------------------------------------------------------------------------
