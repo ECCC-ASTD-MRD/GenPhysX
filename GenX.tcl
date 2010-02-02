@@ -122,7 +122,7 @@ namespace eval GenX { } {
    } else {
       set Path(DBase) /data/dormrb04/genphysx/data
       set Path(DBase) /data/shared_1_b0/armn
-#      set Path(DBase) /data/cmod8/afseeer
+      set Path(DBase) /data/cmod8/afseeer
    }
 
    set Path(SandUSDA)  $Path(DBase)/db/sand_usda
@@ -257,7 +257,7 @@ proc GenX::Submit { } {
       puts $f "scp $host:[file normalize ${Path(OutFile)}.fst] ."
    }
    if { [file exists ${Path(OutFile)}_aux.fst] } {
-      puts $f "scp $host:[file normalize ${Path(OutFile)}_aux.fst.fst] ."
+      puts $f "scp $host:[file normalize ${Path(OutFile)}_aux.fst] ."
    }
 
    set ldir [file dirname [file normalize $Path(OutFile)]]
