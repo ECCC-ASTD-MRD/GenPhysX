@@ -95,6 +95,11 @@ if { $GenX::Data(Mask)!="" } {
    GeoPhysX::AverageMask $grid
 }
 
+#----- Land-water mask
+if { $GenX::Data(GeoMask)!="" } {
+   GeoPhysX::AverageGeoMask $grid
+}
+
 #----- Vegetation type
 if { $GenX::Data(Vege)!="" } {
    GeoPhysX::AverageVege $grid

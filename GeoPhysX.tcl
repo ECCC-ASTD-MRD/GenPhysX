@@ -28,6 +28,8 @@
 #   GeoPhysX::AverageMaskCANVEC    { Grid }
 #   GeoPhysX::AverageMaskGLOBCOVER { Grid }
 #
+#   GeoPhysX::AverageGeoMaskCANADA { Grid }
+#
 #   GeoPhysX::AverageVege          { Grid }
 #   GeoPhysX::AverageVegeUSGS      { Grid }
 #   GeoPhysX::AverageVegeEOSD      { Grid }
@@ -356,7 +358,7 @@ proc GeoPhysX::AverageTopoCDED { Grids { Res 250 } } {
 #     FSA      90       Fraction of aspect east quadrant oriented
 #     FSA      180      Fraction of aspect south quadrant oriented
 #     FSA      270      Fraction of aspect west quadrant oriented
-
+#
 #     SLA0     0        Average slope
 #     SLA      0        Average slope with aspect north quadrant oriented
 #     SLA      90       Average slope with aspect east quadrant oriented
@@ -708,6 +710,67 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    fstdfield write GPXMASK GPXOUTFILE -24 True
 
    ogrlayer free USLAKES CANVECTILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageGeoMask>
+# Creation : June 2006 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the land/sea mask through averaging.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageGeoMask { Grid } {
+   variable Data
+
+   GenX::Procs
+
+   switch $GenX::Data(GeoMask) {
+      "CANADA"    { GeoPhysX::AverageGeoMaskCANADA  $Grid }
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageGeoMaskCANADA>
+# Creation : Novembre 2007 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the land/sea mask through averaging using vectorial data.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
+   variable Path
+   variable Data
+
+   GenX::Procs
+   GenX::Log INFO "Averaging geopolitical mask using CANADA database"
+
+   fstdfield copy GPXMASK $Grid
+   GenX::GridClear GPXMASK 0.0
+
+   #----- Loop over files
+
+   ogrfile open CANPROVFILE read /data/cmoe/afsr005/Data/Vector/Country/Canada/Provinces.shp
+   ogrlayer read CANPROV CANPROVFILE 0
+   fstdfield gridinterp GPXMASK CANPROV INTERSECT
+   ogrfile close CANPROVFILE
+
+   fstdfield define GPXMASK -NOMVAR MGGO -IP1 0 -IP2 0 -IP3 0
+   fstdfield write GPXMASK GPXOUTFILE -24 True
+
+   ogrlayer free CANPROV
 }
 
 #----------------------------------------------------------------------------

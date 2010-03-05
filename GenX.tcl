@@ -76,6 +76,7 @@ namespace eval GenX { } {
    set Data(Soil)      ""                    ;#Soil type data selected
    set Data(Topo)      ""                    ;#Topography data selected
    set Data(Mask)      ""                    ;#Mask data selected
+   set Data(GeoMask)   ""                    ;#Geographical mask data selected
    set Data(Aspect)    ""                    ;#Slope and aspect selected
    set Data(Check)     ""                    ;#Consistency checks
    set Data(Sub)       ""                    ;#Subgrid calculations selected
@@ -91,6 +92,7 @@ namespace eval GenX { } {
    set Data(Veges)     { USGS GLOBCOVER CCRS EOSD CORINE }
    set Data(Soils)     { USDA AGRC FAO }
    set Data(Masks)     { USGS GLOBCOVER CANVEC }
+   set Data(GeoMasks)  { CANADA }
    set Data(Biogenics) { BELD VF }
    set Data(Checks)    { STD }
    set Data(Subs)      { STD }
@@ -112,7 +114,7 @@ namespace eval GenX { } {
 #   set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
 #   set Batch(Submit)   "/home/dormrb02/ssm/env-batch_1.0_all/bin/ord_soumet+"
 #   set Batch(Submit)   "/home/ordenv/ssm-domains0/ssm-setup-dev/unified-setup_1.0_all/bin/ord_soumet"
-   set Batch(Submit)   "/home/ordenv/ssm-domains0/ssm-setup-dev/unified-setup_1.0_all/bin/ord_soumet.mfv"
+#   set Batch(Submit)   "/home/ordenv/ssm-domains0/ssm-setup-dev/unified-setup_1.0_all/bin/ord_soumet.mfv"
    set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
 
    #----- Various database paths
@@ -122,7 +124,7 @@ namespace eval GenX { } {
    } else {
       set Path(DBase) /data/dormrb04/genphysx/data
       set Path(DBase) /data/shared_1_b0/armn
-      set Path(DBase) /data/cmod8/afseeer
+#      set Path(DBase) /data/cmod8/afseeer
    }
 
    set Path(SandUSDA)  $Path(DBase)/db/sand_usda
@@ -511,6 +513,7 @@ proc GenX::CommandLine { } {
 
       \[-topo\]     [format "%-30s : Topography method(s) among {$Data(Topos)}" ([join $Data(Topo)])]
       \[-mask\]     [format "%-30s : Mask method, one of {$Data(Masks)}" ([join $Data(Mask)])]
+      \[-geomask\]  [format "%-30s : Mask method, one of {$Data(GeoMasks)}" ([join $Data(GeoMask)])]
       \[-vege\]     [format "%-30s : Vegetation method(s) among {$Data(Veges)}" ([join $Data(Vege)])]
       \[-soil\]     [format "%-30s : Soil method(s) among {$Data(Soils)}" ([join $Data(Soil)])]
       \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Data(Aspects)}" ([join $Data(Aspect)])]
@@ -609,6 +612,7 @@ proc GenX::ParseCommandLine { } {
          "mail"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mail)] }
          "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Topo) $GenX::Data(Topos)] }
          "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Mask) $GenX::Data(Masks)] }
+         "geomask"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(GeoMask) $GenX::Data(GeoMasks)] }
          "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Vege) $GenX::Data(Veges)] }
          "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Soil) $GenX::Data(Soils)] }
          "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Sub)] }
