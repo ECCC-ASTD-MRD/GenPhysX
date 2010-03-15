@@ -768,7 +768,7 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
    ogrfile close CANPROVFILE
 
    fstdfield define GPXMASK -NOMVAR MGGO -IP1 0 -IP2 0 -IP3 0
-   fstdfield write GPXMASK GPXOUTFILE -24 True
+   fstdfield write GPXMASK GPXAUXFILE -24 True
 
    ogrlayer free CANPROV
 }
