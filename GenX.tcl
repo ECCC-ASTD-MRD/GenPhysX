@@ -221,7 +221,7 @@ proc GenX::Submit { } {
 
    upvar #0 argv gargv
 
-   set host [exec hostname]
+   set host [info hostname]
    set rdir /tmp/GenPhysX[pid]_$Data(Secs)
    set rargv ""
 
@@ -267,7 +267,7 @@ proc GenX::Submit { } {
    set gargv [lreplace $gargv $idx $idx]
 
    puts $f "\n[file normalize [info script]] $gargv \\\n   $rargv\n"
-   puts $f "scp [file tail $Path(OutFile)]* [info hostname]:$ldir\ncd ..\nrm -f -r $rdir"
+   puts $f "scp [file tail $Path(OutFile)]* $host:$ldir\ncd ..\nrm -f -r $rdir"
 
    if { $Batch(Mail)!="" } {
       puts $f "echo $Path(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
@@ -280,8 +280,12 @@ proc GenX::Submit { } {
       exit 1
    } else {
       puts stdout "Using $Batch(Submit) to launch job ... "
-      catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -threads 2 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) } Message
-      puts stdout "$Message\nJob ($job) launched on $Batch(Host) ... "
+      set err [catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -threads 2 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) 2>@1 } msg]
+      if { $err } {
+         puts stdout "Could not launch job ($job) on $Batch(Host)\n\n\t$msg"
+      } else {
+         puts stdout "Job ($job) launched on $Batch(Host) ... "
+      }
    }
 
 #   file delete -force $job
@@ -593,12 +597,13 @@ proc GenX::ParseCommandLine { } {
    }
 
    #----- Parse arguments
+   set flags 0
    for { set i 0 } { $i < $gargc } { incr i } {
       switch -exact [string trimleft [lindex $gargv $i] "-"] {
          "version"   { puts "$Data(Version)"; exit 0 }
          "verbose"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Log(Level)] }
          "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(OutFile)] }
-         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Target) $GenX::Data(Targets)]; GenX::ParseTarget }
+         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Target) $GenX::Data(Targets)]; GenX::ParseTarget; incr flags }
          "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(GridFile)] }
          "nml"       { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(NameFile)] }
          "dbase"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(DBase)] }
@@ -607,22 +612,30 @@ proc GenX::ParseCommandLine { } {
          "t"         { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Time)] }
          "cm"        { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mem)] }
          "mail"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mail)] }
-         "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Topo) $GenX::Data(Topos)] }
-         "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Mask) $GenX::Data(Masks)] }
-         "geomask"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(GeoMask) $GenX::Data(GeoMasks)] }
-         "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Vege) $GenX::Data(Veges)] }
-         "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Soil) $GenX::Data(Soils)] }
-         "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Sub)] }
-         "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Aspect)] }
-         "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Biogenic) $GenX::Data(Biogenics)] }
-         "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Check)] }
+         "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Topo) $GenX::Data(Topos)]; incr flags }
+         "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Mask) $GenX::Data(Masks)]; incr flags }
+         "geomask"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(GeoMask) $GenX::Data(GeoMasks)]; incr flags }
+         "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Vege) $GenX::Data(Veges)]; incr flags }
+         "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Soil) $GenX::Data(Soils)]; incr flags }
+         "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Sub)]; incr flags }
+         "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Aspect)]; incr flags }
+         "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Biogenic) $GenX::Data(Biogenics)]; incr flags }
+         "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Check)]; incr flags }
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
-         "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)] }
+         "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)]; incr flags }
          "celldim"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Cell)] }
          "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(Script)] }
          "help"      { GenX::CommandLine ; exit 1 }
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
       }
+   }
+
+   #----- If no processing is specified, we use the default target
+   if { !$flags } {
+      set Data(Target) [lindex $GenX::Data(Targets) 0]
+      GenX::ParseTarget
+      GenX::Log WARNING "No data processing were specified, will use default target $Data(Target)"
+      GenX::Continue
    }
 
    #----- Check for user definitiond
