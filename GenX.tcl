@@ -55,7 +55,7 @@ namespace eval GenX { } {
    variable Batch
    variable Log
 
-   set Data(Version)   1.1.1                 ;#Application version
+   set Data(Version)   1.2                   ;#Application version
 
    set Data(Secs)      [clock seconds]       ;#To calculate execution time
    set Data(Compress)  False                 ;#Compress standard file output
@@ -111,20 +111,17 @@ namespace eval GenX { } {
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(CPUs)     1                     ;#Number of CPUs to use for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
-#   set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
-#   set Batch(Submit)   "/home/dormrb02/ssm/env-batch_1.0_all/bin/ord_soumet+"
-#   set Batch(Submit)   "/home/ordenv/ssm-domains0/ssm-setup-dev/unified-setup_1.0_all/bin/ord_soumet"
-#   set Batch(Submit)   "/home/ordenv/ssm-domains0/ssm-setup-dev/unified-setup_1.0_all/bin/ord_soumet.mfv"
    set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
 
    #----- Various database paths
 
    if  { [info exists env(GENPHYSX_DBASE)] } {
       set Path(DBase) $env(GENPHYSX_DBASE)
+   } elseif  { [info exists env(GEO_PATH)] } {
+      set Path(DBase) $env(GEO_PATH)
    } else {
-      set Path(DBase) /data/dormrb04/genphysx/data
       set Path(DBase) /data/shared_1_b0/armn
-#      set Path(DBase) /data/cmod8/afseeer
+#      set Path(DBase) /cnfs/ops/production/cmoe/geo
    }
 
    set Path(SandUSDA)  $Path(DBase)/db/sand_usda

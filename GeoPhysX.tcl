@@ -212,7 +212,6 @@ proc GeoPhysX::AverageTopoUSGS { Grids } {
          fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Data(Cell)
 
          #----- Average on each output grids
-
          foreach grid $Grids {
             fstdfield gridinterp $grid USGSTILE AVERAGE False
          }
@@ -1799,80 +1798,79 @@ proc GeoPhysX::CheckConsistencyStandard { } {
    }
 
    #----- Check consistency for VF
-   if { $GenX::Data(Vege)!="" }  {
-      foreach type $Data(VegeTypes) {
-         if { ![catch { fstdfield read GPXVF GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
-            if { [fstdfield is GPXVF3] && [fstdfield is GPXMG] } {
-               if { $type==1 } {
-                  vexpr GPXVF ifelse(GPXMG==0.0 && GPXVF3==0.0,1.0,GPXVF)
-               } else {
-                  vexpr GPXVF ifelse(GPXMG==0.0 && GPXVF3==0.0,0.0,GPXVF)
-               }
+   foreach type $Data(VegeTypes) {
+      if { ![catch { fstdfield read GPXVF GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
+         if { [fstdfield is GPXVF3] && [fstdfield is GPXMG] } {
+            if { $type==1 } {
+               vexpr GPXVF ifelse(GPXMG==0.0 && GPXVF3==0.0,1.0,GPXVF)
             } else {
-               GenX::Log WARNING "Could not find VF(3) and/or MG field(s), will not do the consistency check on VF($type)"
+               vexpr GPXVF ifelse(GPXMG==0.0 && GPXVF3==0.0,0.0,GPXVF)
             }
-            fstdfield define GPXVF -NOMVAR VF -IP1 [expr 1200-$type]
-            fstdfield write GPXVF GPXOUTFILE -24 True
          } else {
-            GenX::Log WARNING "Could not find VF($type) field while checking VF"
+            GenX::Log WARNING "Could not find VF(3) and/or MG field(s), will not do the consistency check on VF($type)"
+            break
          }
-      }
-      fstdfield free GPXVF
-
-      if { [fstdfield is GPXVF2] } {
-         fstdfield define GPXVF2 -NOMVAR GA -IP1 0
-         fstdfield write GPXVF2 GPXOUTFILE -24 True
+         fstdfield define GPXVF -NOMVAR VF -IP1 [expr 1200-$type]
+         fstdfield write GPXVF GPXOUTFILE -24 True
       } else {
-         GenX::Log WARNING "Could not find VF(2), will not write GA field"
+         GenX::Log WARNING "Could not find VF($type) field while checking VF"
+         break
       }
+   }
+
+   if { [fstdfield is GPXVF2] } {
+      fstdfield define GPXVF2 -NOMVAR GA -IP1 0
+      fstdfield write GPXVF2 GPXOUTFILE -24 True
 
       #----- Calculate Dominant type and save
       GeoPhysX::DominantVege GPXVF2
+   } else {
+      GenX::Log WARNING "Could not find VF(2), will not write GA field and calculate dominant vegetation"
+      break
    }
 
    #----- Check consistency for J1 and J2
-   if { $GenX::Data(Soil)!="" }  {
-      foreach type $Data(SandTypes) {
-         if { ![catch { fstdfield read GPXJ1 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J1" }] } {
-            if { [fstdfield is GPXVF2] } {
-               vexpr GPXJ1 ifelse(GPXVF2==1.0,43.0,GPXJ1)
-            } else {
-               GenX::Log WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J1($type)"
-            }
-            if { [fstdfield is GPXMG] } {
-               vexpr GPXJ1 ifelse(GPXMG<0.001,0.0,ifelse(GPXJ1==0.0,43.0,GPXJ1))
-            } else {
-               GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J1($type)"
-            }
-            fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
-            fstdfield write GPXJ1 GPXOUTFILE -24 True
+   foreach type $Data(SandTypes) {
+      if { ![catch { fstdfield read GPXJ1 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J1" }] } {
+         if { [fstdfield is GPXVF2] } {
+            vexpr GPXJ1 ifelse(GPXVF2==1.0,43.0,GPXJ1)
          } else {
-            GenX::Log WARNING "Could not find J1($type) field, will not do the consistency check on J1($type)"
+            GenX::Log WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J1"
+            break
          }
-      }
-
-      foreach type $Data(ClayTypes) {
-         if { ![catch { fstdfield read GPXJ2 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J2" }] } {
-            if { [fstdfield is GPXVF2] } {
-               vexpr GPXJ2 ifelse(GPXVF2==1.0,19.0,GPXJ2)
-            } else {
-               GenX::Log WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J2($type)"
-            }
-            if { [fstdfield is GPXMG] } {
-               vexpr GPXJ2 ifelse(GPXMG<0.001,0.0,ifelse(GPXJ2==0.0,19.0,GPXJ2))
-            } else {
-               GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J2($type)"
-            }
-            fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
-            fstdfield write GPXJ2 GPXOUTFILE -24 True
+         if { [fstdfield is GPXMG] } {
+            vexpr GPXJ1 ifelse(GPXMG<0.001,0.0,ifelse(GPXJ1==0.0,43.0,GPXJ1))
          } else {
-            GenX::Log WARNING "Could not find J2($type) field, will not do the consistency check on J2($type)"
+            GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J1"
          }
+         fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
+         fstdfield write GPXJ1 GPXOUTFILE -24 True
+      } else {
+         GenX::Log WARNING "Could not find J1($type) field, will not do the consistency check on J1($type)"
       }
-      fstdfield free GPXJ1 GPXJ2
    }
 
-   fstdfield free GPXMG GPXVF2 GPXVF3
+   foreach type $Data(ClayTypes) {
+      if { ![catch { fstdfield read GPXJ2 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J2" }] } {
+         if { [fstdfield is GPXVF2] } {
+            vexpr GPXJ2 ifelse(GPXVF2==1.0,19.0,GPXJ2)
+         } else {
+            GenX::Log WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J2"
+            break
+         }
+         if { [fstdfield is GPXMG] } {
+            vexpr GPXJ2 ifelse(GPXMG<0.001,0.0,ifelse(GPXJ2==0.0,19.0,GPXJ2))
+         } else {
+            GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J2"
+            break
+         }
+         fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
+         fstdfield write GPXJ2 GPXOUTFILE -24 True
+      } else {
+         GenX::Log WARNING "Could not find J2($type) field, will not do the consistency check on J2($type)"
+      }
+   }
+   fstdfield free GPXJ1 GPXJ2 GPXMG GPXVF GPXVF2 GPXVF3
 }
 
 #----------------------------------------------------------------------------
