@@ -918,6 +918,8 @@ proc GenX::GridGet { } {
 
    if { [file exists $Path(GridFile)] } {
      set grids [GenX::GridGetFromFile $Path(GridFile)]
+   } elseif { [file exists $Path(OutFile).fst] } {
+     set grids [GenX::GridGetFromFile $Path(OutFile).fst]
    } elseif { [file exists $Path(NameFile)] } {
      set grids [GenX::GridGetFromGEM $Path(NameFile)]
    } else {

@@ -74,7 +74,6 @@ fstdfile open GPXOUTFILE write $GenX::Path(OutFile).fst
 fstdfile open GPXAUXFILE write $GenX::Path(OutFile)_aux.fst
 
 #----- Get the grid definition
-
 set grid [lindex [set grids [GenX::GridGet]] 0]
 GenX::GetNML $GenX::Path(NameFile)
 
