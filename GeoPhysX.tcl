@@ -18,9 +18,9 @@
 #   GeoPhysX::AverageAspect        { Grid }
 #   GeoPhysX::AverageGradient      { Grid }
 #
-#   GeoPhysX::AverageTopo          { Grids }
-#   GeoPhysX::AverageTopoUSGS      { Grids }
-#   GeoPhysX::AverageTopoDEM       { Grids }
+#   GeoPhysX::AverageTopo          { Grid }
+#   GeoPhysX::AverageTopoUSGS      { Grid }
+#   GeoPhysX::AverageTopoDEM       { Grid }
 #   GeoPhysX::AverageTopoLow       { Grid }
 #
 #   GeoPhysX::AverageMask          { Grid }
@@ -130,43 +130,41 @@ namespace eval GeoPhysX { } {
 # Goal     : Generate the topography on multiple grids (staggering) through averaging.
 #
 # Parameters :
-#   <Grids>   : Grids on which to generate the topo
+#   <Grid>   : Grid on which to generate the topo
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageTopo { Grids } {
+proc GeoPhysX::AverageTopo { Grid } {
    variable Data
 
    GenX::Procs
 
-   fstdfield copy GPXRMS [lindex $Grids 0]
-   fstdfield copy GPXRES [lindex $Grids 0]
-   fstdfield copy GPXTSK [lindex $Grids 0]
-   GenX::GridClear $Grids 0.0
+   fstdfield copy GPXRMS $Grid
+   fstdfield copy GPXRES $Grid
+   fstdfield copy GPXTSK $Grid
+   GenX::GridClear $Grid  0.0
    GenX::GridClear GPXRES 0.0
    GenX::GridClear GPXRMS 0.0
    GenX::GridClear GPXTSK 1.0
 
    foreach topo $GenX::Data(Topo) {
       switch $topo {
-         "USGS"    { GeoPhysX::AverageTopoUSGS $Grids     ;#----- USGS topograhy averaging method (Global 900m) }
-         "SRTM"    { GeoPhysX::AverageTopoSRTM $Grids     ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
-         "CDED50"  { GeoPhysX::AverageTopoCDED $Grids 50  ;#----- CDED50 topograhy averaging method (Canada 90m)}
-         "CDED250" { GeoPhysX::AverageTopoCDED $Grids 250 ;#----- CDED250 topograhy averaging method (Canada 25m)}
+         "USGS"    { GeoPhysX::AverageTopoUSGS $Grid     ;#----- USGS topograhy averaging method (Global 900m) }
+         "SRTM"    { GeoPhysX::AverageTopoSRTM $Grid     ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
+         "CDED50"  { GeoPhysX::AverageTopoCDED $Grid 50  ;#----- CDED50 topograhy averaging method (Canada 90m)}
+         "CDED250" { GeoPhysX::AverageTopoCDED $Grid 250 ;#----- CDED250 topograhy averaging method (Canada 25m)}
       }
    }
 
    #----- Save output
-   foreach grid $Grids {
-      fstdfield gridinterp $grid - NOP True
-      fstdfield define $grid -NOMVAR ME -IP2 0 -IP3 0
-      vexpr $grid ifelse($grid==-99.0,0.0,$grid)   ;#USGS NoData value
-      vexpr $grid ifelse($grid<-32000,0.0,$grid)   ;#SRTM and CDED NoData value
-      fstdfield write $grid GPXOUTFILE -32 True
-   }
+   fstdfield gridinterp $Grid - NOP True
+   fstdfield define $Grid -NOMVAR ME -IP2 0
+   vexpr $Grid ifelse($Grid==-99.0,0.0,$Grid)   ;#USGS NoData value
+   vexpr $Grid ifelse($Grid<-32000,0.0,$Grid)   ;#SRTM and CDED NoData value
+   fstdfield write $Grid GPXOUTFILE -32 True
 
    #----- Save RMS
    fstdfield gridinterp GPXRMS - NOP True
@@ -188,14 +186,14 @@ proc GeoPhysX::AverageTopo { Grids } {
 # Goal     : Generate the topography using USGS.
 #
 # Parameters :
-#   <Grids>  : Grids on which to generate the topography
+#   <Grid>   : Grid on which to generate the topography
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageTopoUSGS { Grids } {
+proc GeoPhysX::AverageTopoUSGS { Grid } {
 
    GenX::Procs
    GenX::Log INFO "Averaging topography using USGS database"
@@ -211,10 +209,7 @@ proc GeoPhysX::AverageTopoUSGS { Grids } {
          fstdfield read USGSTILE GPXTOPOFILE $field
          fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Data(Cell)
 
-         #----- Average on each output grids
-         foreach grid $Grids {
-            fstdfield gridinterp $grid USGSTILE AVERAGE False
-         }
+         fstdfield gridinterp $Grid USGSTILE AVERAGE False
          fstdfield gridinterp GPXRMS USGSTILE AVERAGE_SQUARE False
       }
       fstdfile close GPXTOPOFILE
@@ -233,20 +228,20 @@ proc GeoPhysX::AverageTopoUSGS { Grids } {
 # Goal     : Generate the topography using SRTM.
 #
 # Parameters :
-#   <Grids>  : Grids on which to generate the topography
+#   <Grid>   : Grid on which to generate the topography
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageTopoSRTM { Grids } {
+proc GeoPhysX::AverageTopoSRTM { Grid } {
    variable Data
 
    GenX::Procs
    GenX::Log INFO "Averaging topography using SRTM database"
 
-   set limits [georef limit [fstdfield define [lindex $Grids 0] -georef]]
+   set limits [georef limit [fstdfield define $Grid -georef]]
    set la0 [lindex $limits 0]
    set lo0 [lindex $limits 1]
    set la1 [lindex $limits 2]
@@ -257,9 +252,7 @@ proc GeoPhysX::AverageTopoSRTM { Grids } {
       gdalband read SRTMTILE [gdalfile open SRTMFILE read $file]
       gdalband stats SRTMTILE -nodata -32768 -celldim $GenX::Data(Cell)
 
-      foreach grid $Grids {
-         fstdfield gridinterp $grid SRTMTILE AVERAGE False
-      }
+      fstdfield gridinterp $Grid SRTMTILE AVERAGE False
       fstdfield gridinterp GPXRMS SRTMTILE AVERAGE_SQUARE False
       gdalfile close SRTMFILE
    }
@@ -272,13 +265,9 @@ proc GeoPhysX::AverageTopoSRTM { Grids } {
    #----- Use accumulator to figure out coverage in destination
    #----- But remove border of coverage since it will not be full
    #----- Apply coverage mask for next resolution
-   for { set i [expr [llength $Grids]-1] } { $i>=0 } { incr i -1 } {
-      set grid [lindex $Grids $i]
-
-      fstdfield gridinterp $grid - ACCUM
-      vexpr GPXTSK !fpeel($grid)
-      fstdfield stats $grid -mask GPXTSK
-   }
+   fstdfield gridinterp $Grid - ACCUM
+   vexpr GPXTSK !fpeel($Grid)
+   fstdfield stats $Grid -mask GPXTSK
    fstdfield stats GPXRMS -mask GPXTSK
 }
 
@@ -289,20 +278,20 @@ proc GeoPhysX::AverageTopoSRTM { Grids } {
 # Goal     : Generate the topography using CDED.
 #
 # Parameters :
-#   <Grids>  : Grids on which to generate the topography
+#   <Grid>   : Grid on which to generate the topography
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageTopoCDED { Grids { Res 250 } } {
+proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
    variable Data
 
    GenX::Procs
    GenX::Log INFO "Averaging topography using CDED(1:${Res}000) database"
 
-   set limits [georef limit [fstdfield define [lindex $Grids 0] -georef]]
+   set limits [georef limit [fstdfield define $Grid -georef]]
    set la0 [lindex $limits 0]
    set lo0 [lindex $limits 1]
    set la1 [lindex $limits 2]
@@ -314,9 +303,7 @@ proc GeoPhysX::AverageTopoCDED { Grids { Res 250 } } {
       gdalband read CDEDTILE [gdalfile open CDEDFILE read $file]
       gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim $GenX::Data(Cell)
 
-      foreach grid $Grids {
-         fstdfield gridinterp $grid CDEDTILE AVERAGE False
-      }
+      fstdfield gridinterp $Grid CDEDTILE AVERAGE False
       fstdfield gridinterp GPXRMS CDEDTILE AVERAGE_SQUARE False
       gdalfile close CDEDFILE
    }
@@ -329,13 +316,9 @@ proc GeoPhysX::AverageTopoCDED { Grids { Res 250 } } {
    #----- Use accumulator to figure out coverage in destination
    #----- But remove border of coverage since it will not be full
    #----- Apply coverage mask for next resolution
-   for { set i [expr [llength $Grids]-1] } { $i>=0 } { incr i -1 } {
-      set grid [lindex $Grids $i]
-
-      fstdfield gridinterp $grid - ACCUM
-      vexpr GPXTSK !fpeel($grid)
-      fstdfield stats $grid -mask GPXTSK
-   }
+   fstdfield gridinterp $Grid - ACCUM
+   vexpr GPXTSK !fpeel($Grid)
+   fstdfield stats $Grid -mask GPXTSK
    fstdfield stats GPXRMS -mask GPXTSK
 }
 
@@ -346,7 +329,7 @@ proc GeoPhysX::AverageTopoCDED { Grids { Res 250 } } {
 # Goal     : Generate the slope and aspect through averaging.
 #
 # Parameters :
-#   <Grids>  : Grids on which to generate the topography
+#   <Grid>   : Grid on which to generate the topography
 #
 # Return:
 #
@@ -494,17 +477,17 @@ proc GeoPhysX::AverageAspect { Grid } {
    vexpr GPXFSAW max(GPXFSAW,0);
 
    #----- Save everything
-   fstdfield define GPXFSA  -NOMVAR FSA0 -IP3 0
-   fstdfield define GPXFSAN -NOMVAR FSA  -IP3 0
-   fstdfield define GPXFSAE -NOMVAR FSA  -IP3 90
-   fstdfield define GPXFSAS -NOMVAR FSA  -IP3 180
-   fstdfield define GPXFSAW -NOMVAR FSA  -IP3 270
+   fstdfield define GPXFSA  -NOMVAR FSA0 -IP2 0
+   fstdfield define GPXFSAN -NOMVAR FSA  -IP2 0
+   fstdfield define GPXFSAE -NOMVAR FSA  -IP2 90
+   fstdfield define GPXFSAS -NOMVAR FSA  -IP2 180
+   fstdfield define GPXFSAW -NOMVAR FSA  -IP2 270
 
-   fstdfield define GPXSLA  -NOMVAR SLA0 -IP3 0
-   fstdfield define GPXSLAN -NOMVAR SLA  -IP3 0
-   fstdfield define GPXSLAE -NOMVAR SLA  -IP3 90
-   fstdfield define GPXSLAS -NOMVAR SLA  -IP3 180
-   fstdfield define GPXSLAW -NOMVAR SLA  -IP3 270
+   fstdfield define GPXSLA  -NOMVAR SLA0 -IP2 0
+   fstdfield define GPXSLAN -NOMVAR SLA  -IP2 0
+   fstdfield define GPXSLAE -NOMVAR SLA  -IP2 90
+   fstdfield define GPXSLAS -NOMVAR SLA  -IP2 180
+   fstdfield define GPXSLAW -NOMVAR SLA  -IP2 270
 
    fstdfield write GPXFSA  GPXAUXFILE -32 True
    fstdfield write GPXFSAN GPXAUXFILE -32 True
@@ -705,7 +688,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
       fstdfield free GPXME
    }
 
-   fstdfield define GPXMASK -NOMVAR MG -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXMASK -NOMVAR MG -IP1 0 -IP2 0
    fstdfield write GPXMASK GPXOUTFILE -24 True
 
    ogrlayer free USLAKES CANVECTILE
@@ -766,7 +749,7 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
    fstdfield gridinterp GPXMASK CANPROV INTERSECT
    ogrfile close CANPROVFILE
 
-   fstdfield define GPXMASK -NOMVAR MGGO -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXMASK -NOMVAR MGGO -IP1 0 -IP2 0
    fstdfield write GPXMASK GPXAUXFILE -24 True
 
    ogrlayer free CANPROV
@@ -806,7 +789,7 @@ proc GeoPhysX::AverageVege { Grid } {
    fstdfield gridinterp GPXVF - NOP True
 
    #----- Save the 26 Vege types
-   fstdfield define GPXVF -NOMVAR VF -IP2 0 -IP3 0
+   fstdfield define GPXVF -NOMVAR VF -IP2 0
    fstdfield stats GPXVF -levels $Data(VegeTypes) -leveltype UNDEFINED
    fstdfield write GPXVF GPXAUXFILE -24 True
 
@@ -1275,7 +1258,7 @@ proc GeoPhysX::AverageTopoLow { Grid } {
    #----- Save output
    fstdfield gridinterp GPXLOW - NOP True
    vexpr GPXLOW ifelse(GPXLOW==-99.0,0.0,GPXLOW)
-   fstdfield define GPXLOW -NOMVAR MEL -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXLOW -NOMVAR MEL -IP1 0 -IP2 0
    fstdfield write GPXLOW GPXAUXFILE -24 True
 
    #----- save <Hhr^2>ij
@@ -1472,9 +1455,9 @@ proc GeoPhysX::SubCorrectionFactor { } {
    GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) $Const(largec0) $Const(largec1)
    GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc0) $Const(smallc1)
 
-   fstdfield define GPXFLR -NOMVAR FLR -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXFLR -NOMVAR FLR -IP1 0 -IP2 0
    fstdfield write GPXFLR GPXAUXFILE -24 True
-   fstdfield define GPXFHR -NOMVAR FHR -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXFHR -NOMVAR FHR -IP1 0 -IP2 0
    fstdfield write GPXFHR GPXAUXFILE -24 True
 
    #----- For low-res and hi-res (over land only)
@@ -1486,9 +1469,9 @@ proc GeoPhysX::SubCorrectionFactor { } {
    GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) $Const(largec0) $Const(largec1)
    GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc0) $Const(smallc1)
 
-   fstdfield define GPXFLR -NOMVAR FLRP -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXFLR -NOMVAR FLRP -IP1 0 -IP2 0
    fstdfield write GPXFLR GPXAUXFILE -24 True
-   fstdfield define GPXFHR -NOMVAR FHRP -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXFHR -NOMVAR FHRP -IP1 0 -IP2 0
    fstdfield write GPXFHR GPXAUXFILE -24 True
 
    fstdfield free GPXMG GPXDX GPXDY GPXFLR GPXFHR
@@ -1515,7 +1498,7 @@ proc GeoPhysX::SubTopoFilter { } {
    GenX::Log INFO "Filtering ME"
 
    fstdgrid zfilter GPXMF GenX::Settings
-   fstdfield define GPXMF -NOMVAR MF -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXMF -NOMVAR MF -IP1 0 -IP2 0
    fstdfield write GPXMF GPXOUTFILE -24 True
 
    fstdfield free GPXMF
@@ -1550,7 +1533,7 @@ proc GeoPhysX::SubLaunchingHeight { } {
    GenX::Log INFO "Computing launching height LH"
    vexpr GPXLH 2.0*GPXMG*((GPXLRMS^2 - GPXMEL^2)^0.5)
    vexpr GPXLH ifelse(GPXLH>=$Const(lhmin),GPXLH,0.0)
-   fstdfield define GPXLH -NOMVAR LH -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXLH -NOMVAR LH -IP1 0 -IP2 0
    fstdfield write GPXLH GPXOUTFILE -32 True
 
    fstdfield free GPXLH GPXMEL GPXLRMS GPXMG GPXFLR
@@ -1593,19 +1576,19 @@ proc GeoPhysX::SubY789 { } {
    GenX::Log INFO "Computing Y7"
    vexpr GPXY789 GPXMG*(GPXGXX*(GPXCOSA^2) + GPXGYY*(GPXSINA^2) - 2.0*GPXGXY*GPXSINA*GPXCOSA)
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
-   fstdfield define GPXY789 -NOMVAR Y7 -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXY789 -NOMVAR Y7 -IP1 0 -IP2 0
    fstdfield write GPXY789 GPXOUTFILE -32 True
 
    GenX::Log INFO "Computing Y8"
    vexpr GPXY789 GPXMG*(GPXGXX*(GPXSINA^2) + GPXGYY*(GPXCOSA^2) + 2.0*GPXGXY*GPXSINA*GPXCOSA)
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
-   fstdfield define GPXY789 -NOMVAR Y8 -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXY789 -NOMVAR Y8 -IP1 0 -IP2 0
    fstdfield write GPXY789 GPXOUTFILE -32 True
 
    GenX::Log INFO "Computing Y9"
    vexpr GPXY789 GPXMG*((GPXGXX-GPXGYY)*GPXSINA*GPXCOSA + GPXGXY*(GPXCOSA^2-GPXSINA^2))
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
-   fstdfield define GPXY789 -NOMVAR Y9 -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXY789 -NOMVAR Y9 -IP1 0 -IP2 0
    fstdfield write GPXY789 GPXOUTFILE -32 True
 
    fstdfield free GPXGXX GPXGYY GPXGXY GPXMG GPXFLR GPXALP GPXCOSA GPXSINA GPXMG GPXLH GPXY789
@@ -1646,7 +1629,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXSSS (GPXMRMS^2 - GPXME^2)-(GPXLRMS^2 - GPXMEL^2)
    vexpr GPXSSS ifelse(GPXSSS>0.0,GPXSSS^0.5,0.0)
    vexpr GPXSSS ifelse(GPXMG>$Const(mgmin),GPXSSS,0.0)
-   fstdfield define GPXSSS -NOMVAR SSS -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXSSS -NOMVAR SSS -IP1 0 -IP2 0
    fstdfield write GPXSSS GPXAUXFILE -32 True
 
    vexpr GPXHCOEF (1.5 - 0.5*(GPXSSS-20.0)/680.0)
@@ -1656,7 +1639,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZREF ifelse(GPXZREF<$Const(zrefmin),$Const(zrefmin),GPXZREF)
    vexpr GPXZREF ifelse(GPXZREF>1500.0,1500.0,GPXZREF)
 
-   fstdfield define GPXZREF -NOMVAR ZREF -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZREF -NOMVAR ZREF -IP1 0 -IP2 0
    fstdfield write GPXZREF GPXAUXFILE -32 True
 
    vexpr GPXSLP (GPXHCOEF*GPXHCOEF*GPXSSS/$Const(lres))
@@ -1664,7 +1647,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    GenX::Log INFO "Computing Z0_topo"
    vexpr GPXZTP ifelse(GPXSLP>$Const(slpmin) || GPXZREF>$Const(zrefmin),1.0+GPXZREF*exp(-$Const(karman)/sqrt(0.5*$Const(drgcoef)*GPXSLP)),0.0)
    vexpr GPXZTP ifelse(GPXSSS<=$Const(sssmin),0.1*GPXSSS,GPXZTP)
-   fstdfield define GPXZTP -NOMVAR ZTOP -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZTP -NOMVAR ZTOP -IP1 0 -IP2 0
    fstdfield write GPXZTP GPXAUXFILE -32 True
 
    #----- Local (vegetation) roughness length
@@ -1679,7 +1662,7 @@ proc GeoPhysX::SubRoughnessLength { } {
       vexpr GPXZ0V2 (GPXZ0V2+GPXVF)
    }
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
-   fstdfield define GPXZ0V1 -NOMVAR ZVG1 -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZ0V1 -NOMVAR ZVG1 -IP1 0 -IP2 0
    fstdfield write GPXZ0V1 GPXAUXFILE -32 True
 
    GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
@@ -1690,7 +1673,7 @@ proc GeoPhysX::SubRoughnessLength { } {
       vexpr GPXZ0V2 (GPXZ0V2+GPXVF)
    }
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
-   fstdfield define GPXZ0V1 -NOMVAR ZVG2 -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZ0V1 -NOMVAR ZVG2 -IP1 0 -IP2 0
    fstdfield write GPXZ0V1 GPXAUXFILE -32 True
 
    #----- Roughness length over soil
@@ -1702,11 +1685,11 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)          , GPXZ0V1                              , GPXZ0S)
    vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)              , $Const(z0def)                        , GPXZ0S)
    vexpr GPXZ0S ifelse(GPXGA>=(1.0-$Const(gamin))        , $Const(z0def)                        , GPXZ0S)
-   fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0
    fstdfield write GPXZ0S GPXAUXFILE -32 True
 
    vexpr GPXZPS ifelse(GPXZ0S>0.0,ln(GPXZ0S),$Const(zpdef))
-   fstdfield define GPXZPS -NOMVAR ZPS -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZPS -NOMVAR ZPS -IP1 0 -IP2 0
    fstdfield write GPXZPS GPXAUXFILE -32 True
 
    #----- Roughness length over glaciers
@@ -1716,28 +1699,28 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZ0G ifelse(GPXZREF<=$Const(zrefmin)    , $Const(gaz0)                       , GPXZ0G)
    vexpr GPXZ0G ifelse(GPXZ0G<$Const(z0def)        , $Const(z0def)                      , GPXZ0G)
    vexpr GPXZ0G ifelse(GPXGA<=$Const(gamin)        , $Const(z0def)                      , GPXZ0G)
-   fstdfield define GPXZ0G -NOMVAR Z0G -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZ0G -NOMVAR Z0G -IP1 0 -IP2 0
    fstdfield write GPXZ0G GPXAUXFILE -32 True
 
    vexpr GPXZPG ifelse(GPXZ0G>0.0,ln(GPXZ0G),$Const(zpdef) )
-   fstdfield define GPXZPG -NOMVAR ZPG -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZPG -NOMVAR ZPG -IP1 0 -IP2 0
    fstdfield write GPXZPG GPXAUXFILE -32 True
 
    #----- Fill some gaps
    vexpr GPXZ0S ifelse(GPXMG>$Const(mgmin) && GPXZTP<$Const(z0min) && GPXZ0V1<$Const(z0min) && GPXZ0G<$Const(z0min),$Const(z0def),GPXZ0S)
-   fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0
    fstdfield write GPXZ0S GPXAUXFILE -32 True
    vexpr GPXZPS ifelse(GPXZ0S>0.0,ln(GPXZ0S),$Const(zpdef) )
-   fstdfield define GPXZPS -NOMVAR ZPS -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZPS -NOMVAR ZPS -IP1 0 -IP2 0
    fstdfield write GPXZPS GPXAUXFILE -32 True
 
    #----- Total roughness length
    vexpr GPXZP GPXMG*((1.0-GPXGA)*GPXZPS+GPXGA*GPXZPG)+(1.0-GPXMG)*ln(0.001)
-   fstdfield define GPXZP -NOMVAR ZP0 -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZP -NOMVAR ZP0 -IP1 0 -IP2 0
    fstdfield write GPXZP GPXAUXFILE -32 True
 
    vexpr GPXZ0 exp(GPXZP)
-   fstdfield define GPXZ0 -NOMVAR Z00 -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZ0 -NOMVAR Z00 -IP1 0 -IP2 0
    fstdfield write GPXZ0 GPXAUXFILE -32 True
 
    #------ Filter roughness length
@@ -1746,11 +1729,11 @@ proc GeoPhysX::SubRoughnessLength { } {
       fstdgrid zfilter GPXZ0 GenX::Settings
    }
    vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
-   fstdfield define GPXZ0 -NOMVAR Z0 -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZ0 -NOMVAR Z0 -IP1 0 -IP2 0
    fstdfield write GPXZ0 GPXOUTFILE -32 True
 
    vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
-   fstdfield define GPXZP -NOMVAR ZP -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXZP -NOMVAR ZP -IP1 0 -IP2 0
    fstdfield write GPXZP GPXOUTFILE -32 True
 
    fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S \
@@ -1906,7 +1889,7 @@ proc GeoPhysX::DominantVege { Grid } {
          GenX::Log WARNING "Could not find VF($type) field while processing VG"
       }
    }
-   fstdfield define GPXVG -NOMVAR VG -IP1 0 -IP2 0 -IP3 0
+   fstdfield define GPXVG -NOMVAR VG -IP1 0 -IP2 0
    fstdfield write GPXVG GPXOUTFILE -24 True
 
    fstdfield free GPXVF GPXVG GPXTP

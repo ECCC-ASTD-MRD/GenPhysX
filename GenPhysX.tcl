@@ -62,7 +62,6 @@ set dir [info script]
 while { ![catch { set dir [file normalize [file link $dir]] }] } {}
 set dir [file dirname $dir]
 
-
 source $dir/GenX.tcl
 source $dir/GeoPhysX.tcl
 source $dir/BioGenX.tcl
@@ -70,69 +69,80 @@ source $dir/BioGenX.tcl
 #----- Parse the arguments
 GenX::ParseCommandLine
 
+#----- Open output files
 fstdfile open GPXOUTFILE write $GenX::Path(OutFile).fst
 fstdfile open GPXAUXFILE write $GenX::Path(OutFile)_aux.fst
 
-#----- Get the grid definition
-set grid [lindex [set grids [GenX::GridGet]] 0]
+#----- Try to get the namelist if provided
 GenX::GetNML $GenX::Path(NameFile)
 
-#----- Topography
-if { $GenX::Data(Topo)!="" } {
-   GeoPhysX::AverageTopo     $grids
-   GeoPhysX::AverageTopoLow  $grid
-   GeoPhysX::AverageGradient $grid
-}
+#----- Loop on grids found
+foreach grid [GenX::GridGet] {
 
-#----- Slope and Aspect
-if { $GenX::Data(Aspect)!="" } {
-   GeoPhysX::AverageAspect $grid
-}
+   #----- Check if we only need to process topo
+   if { [fstdfield define $grid -IP1]!=1200 || [fstdfield define $grid -IP3]==1 } {
+      if { $GenX::Data(Topo)!="" } {
+         GeoPhysX::AverageTopo     $grid
+      }
+   } else {
+      #----- Topography
+      if { $GenX::Data(Topo)!="" } {
+         GeoPhysX::AverageTopo     $grid
+         GeoPhysX::AverageTopoLow  $grid
+         GeoPhysX::AverageGradient $grid
+      }
 
-#----- Land-water mask
-if { $GenX::Data(Mask)!="" } {
-   GeoPhysX::AverageMask $grid
-}
+      #----- Slope and Aspect
+      if { $GenX::Data(Aspect)!="" } {
+         GeoPhysX::AverageAspect $grid
+      }
 
-#----- Land-water mask
-if { $GenX::Data(GeoMask)!="" } {
-   GeoPhysX::AverageGeoMask $grid
-}
+      #----- Land-water mask
+      if { $GenX::Data(Mask)!="" } {
+         GeoPhysX::AverageMask $grid
+      }
 
-#----- Vegetation type
-if { $GenX::Data(Vege)!="" } {
-   GeoPhysX::AverageVege $grid
-}
+      #----- Land-water mask
+      if { $GenX::Data(GeoMask)!="" } {
+         GeoPhysX::AverageGeoMask $grid
+      }
 
-#----- Soil type
-if { $GenX::Data(Soil)!="" } {
-   GeoPhysX::AverageSand $grid
-   GeoPhysX::AverageClay $grid
-}
+      #----- Vegetation type
+      if { $GenX::Data(Vege)!="" } {
+         GeoPhysX::AverageVege $grid
+      }
 
-#----- Consistency checks
-switch $GenX::Data(Check) {
-   "STD" { GeoPhysX::CheckConsistencyStandard }
-}
+      #----- Soil type
+      if { $GenX::Data(Soil)!="" } {
+         GeoPhysX::AverageSand $grid
+         GeoPhysX::AverageClay $grid
+      }
 
-#----- Sub grid calculations
-if { $GenX::Data(Sub)!="" } {
-   GeoPhysX::SubCorrectionFactor
-   GeoPhysX::SubTopoFilter
-   GeoPhysX::SubLaunchingHeight
-   GeoPhysX::SubY789
-   GeoPhysX::SubRoughnessLength
-}
+      #----- Consistency checks
+      switch $GenX::Data(Check) {
+         "STD" { GeoPhysX::CheckConsistencyStandard }
+      }
 
-#----- Biogenic emissions calculations
-if { $GenX::Data(Biogenic)!="" } {
-   BioGenX::CalcEmissions  $grid
-   BioGenX::TransportableFractions $grid
-}
+      #----- Sub grid calculations
+      if { $GenX::Data(Sub)!="" } {
+         GeoPhysX::SubCorrectionFactor
+         GeoPhysX::SubTopoFilter
+         GeoPhysX::SubLaunchingHeight
+         GeoPhysX::SubY789
+         GeoPhysX::SubRoughnessLength
+      }
 
-#----- Diagnostics of output fields
-if { $GenX::Data(Diag) } {
-   GeoPhysX::Diag
+      #----- Biogenic emissions calculations
+      if { $GenX::Data(Biogenic)!="" } {
+         BioGenX::CalcEmissions  $grid
+         BioGenX::TransportableFractions $grid
+      }
+
+      #----- Diagnostics of output fields
+      if { $GenX::Data(Diag) } {
+         GeoPhysX::Diag
+      }
+   }
 }
 
 GenX::MetaData

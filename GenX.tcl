@@ -33,7 +33,7 @@
 #   GenX::GridGet          { }
 #   GenX::GridGetFromGEM   { File }
 #   GenX::GridGetFromNML   { File }
-#   GenX::GridGetFromFile  { File }
+#   GenX::GridGetFromFile  { File { Copy True } }
 #   GenX::CANVECFindFiles  { Lat0 Lon0 Lat1 Lon1 Layers }
 #   GenX::SRTMFindFiles    { Lat0 Lon0Lat1 Lon1 }
 #   GenX::CDEDFindFiles    { Lat0 Lon0 Lat1 Lon1 { Res 50 } }
@@ -117,8 +117,6 @@ namespace eval GenX { } {
 
    if  { [info exists env(GENPHYSX_DBASE)] } {
       set Path(DBase) $env(GENPHYSX_DBASE)
-   } elseif  { [info exists env(GEO_PATH)] } {
-      set Path(DBase) $env(GEO_PATH)
    } else {
       set Path(DBase) /data/shared_1_b0/armn
 #      set Path(DBase) /cnfs/ops/production/cmoe/geo
@@ -738,6 +736,10 @@ proc GenX::ParseTarget { } {
 proc GenX::GetNML { File } {
    variable Settings
 
+   if { $File=="" } {
+      return
+   }
+
    if { ![file exists $File] } {
       GenX::Log WARNING "Could not read the namelist"
       return
@@ -919,7 +921,7 @@ proc GenX::GridGet { } {
    if { [file exists $Path(GridFile)] } {
      set grids [GenX::GridGetFromFile $Path(GridFile)]
    } elseif { [file exists $Path(OutFile).fst] } {
-     set grids [GenX::GridGetFromFile $Path(OutFile).fst]
+     set grids [GenX::GridGetFromFile $Path(OutFile).fst False]
    } elseif { [file exists $Path(NameFile)] } {
      set grids [GenX::GridGetFromGEM $Path(NameFile)]
    } else {
@@ -994,6 +996,8 @@ proc GenX::GridGetFromGEM { File } {
    fstdfield read GRIDU GPXAUXFILE -1 "" 1199 -1 -1 "" "GRID"
    fstdfield read GRIDV GPXAUXFILE -1 "" 1198 -1 -1 "" "GRID"
 
+   fstdfield free TIC TAC
+
    return [list GRID GRIDU GRIDV]
 }
 
@@ -1030,6 +1034,8 @@ proc GenX::GridGetFromNML { File } {
    fstdfield write GRID GPXAUXFILE -32 True
 
    fstdfield read GRID GPXAUXFILE -1 "" 1200 -1 -1 "" "GRID"
+   fstdfield free TIC TAC
+
    return GRID
 }
 
@@ -1047,42 +1053,52 @@ proc GenX::GridGetFromNML { File } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::GridGetFromFile { File } {
+proc GenX::GridGetFromFile { File { Copy True } } {
 
    if { [catch { fstdfile open GPXGRIDFILE read $File } ] } {
       GenX::Log ERROR "Could not open $File."
       exit 1
    }
 
-   set ip1 1200
-   if { [llength [set tics [fstdfield find GPXGRIDFILE -1 "" -1 -1 -1 "" ">>"]]] } {
-      foreach tic [fstdfield find GPXGRIDFILE -1 "" -1 -1 -1 "" ">>"] {
-         fstdfield read TIC GPXGRIDFILE $tic
-         fstdfield read TAC GPXGRIDFILE -1 "" [fstdfield define TIC -IP1] [fstdfield define TIC -IP2] [fstdfield define TIC -IP3] "" "^^"
-         fstdfield create GRID [fstdfield define TIC -NI] [fstdfield define TAC -NJ] 1 Float32
-         fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -GRTYP Z \
-            -IG1 [fstdfield define TIC -IP1] -IG2 [fstdfield define TIC -IP2] -IG3 [fstdfield define TIC -IP3] -IP1 $ip1
-         incr ip1 -1
+   #----- Read grid descriptors from source file and write grid field in aux file
+   if { $Copy } {
+      set ip1 1200
+      if { [llength [set tics [fstdfield find GPXGRIDFILE -1 "" -1 -1 -1 "" ">>"]]] } {
+         foreach tic $tics {
+            fstdfield read TIC GPXGRIDFILE $tic
+            fstdfield read TAC GPXGRIDFILE -1 "" [fstdfield define TIC -IP1] [fstdfield define TIC -IP2] [fstdfield define TIC -IP3] "" "^^"
+            fstdfield create GRID [fstdfield define TIC -NI] [fstdfield define TAC -NJ] 1 Float32
+            fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -GRTYP Z \
+               -IG1 [fstdfield define TIC -IP1] -IG2 [fstdfield define TIC -IP2] -IG3 [fstdfield define TIC -IP3] -IP1 $ip1
+            incr ip1 -1
 
-         fstdfield write TIC  GPXOUTFILE -32 True
-         fstdfield write TAC  GPXOUTFILE -32 True
+            fstdfield write TIC  GPXOUTFILE -32 True
+            fstdfield write TAC  GPXOUTFILE -32 True
 
-         fstdfield write TIC  GPXAUXFILE -32 True
-         fstdfield write TAC  GPXAUXFILE -32 True
+            fstdfield write TIC  GPXAUXFILE -32 True
+            fstdfield write TAC  GPXAUXFILE -32 True
+            fstdfield write GRID GPXAUXFILE -32 True
+         }
+      } else {
+         fstdfield read GRID GPXGRIDFILE -1 "" -1 -1 -1 "" ""
+         fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -IP1 $ip1
          fstdfield write GRID GPXAUXFILE -32 True
       }
-   } else {
-      fstdfield read GRID GPXGRIDFILE -1 "" -1 -1 -1 "" ""
-      fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -IP1 $ip1
-      fstdfield write GRID GPXAUXFILE -32 True
    }
+
+   #----- Read every grids available
+   set i 0
+   set grids { }
+   foreach grid [fstdfield find GPXAUXFILE -1 "" -1 -1 -1 "" "GRID"] {
+      fstdfield read GRID$i GPXAUXFILE $grid
+      lappend grids GRID$i
+      incr i
+   }
+
    fstdfile close GPXGRIDFILE
+   fstdfield free GRID TIC TAC
 
-   fstdfield read GRID GPXAUXFILE -1 "" 1200 -1 -1 "" "GRID"
-   catch { fstdfield read GRIDU GPXAUXFILE -1 "" 1199 -1 -1 "" "GRID" }
-   catch { fstdfield read GRIDV GPXAUXFILE -1 "" 1198 -1 -1 "" "GRID" }
-
-   return GRID
+   return $grids
 }
 
 #----------------------------------------------------------------------------
