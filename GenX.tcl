@@ -57,17 +57,10 @@ namespace eval GenX { } {
    variable Log
 
    set Param(Version)   1.2                   ;#Application version
-
    set Param(Secs)      [clock seconds]       ;#To calculate execution time
-   set Param(Compress)  False                 ;#Compress standard file output
    set Param(TileSize)  1024                  ;#Tile size to use for large dataset
    set Param(Cache)     {}                    ;#Input data cache list
    set Param(CacheMax)  20                    ;#Input data cache max
-
-   set Meta(Procs)     {}                     ;#Metadata procedure registration list
-   set Meta(Header)    ""                     ;#Metadata header
-   set Meta(Footer)    ""                     ;#Metadata footer
-   set Meta(Command)   ""                     ;#Launch command
 
    set Param(Vege)      ""                    ;#Vegetation data selected
    set Param(Soil)      ""                    ;#Soil type data selected
@@ -82,6 +75,7 @@ namespace eval GenX { } {
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
+   set Param(Compress)  False                 ;#Compress standard file output
    set Param(Cell)      1                     ;#Grid cell dimension (1=1D(point 2=2D(area))
    set Param(Script)    ""                    ;#User definition script
    set Param(Process)   ""                    ;#Current processing id
@@ -106,7 +100,7 @@ namespace eval GenX { } {
    set Batch(Queue)    ""                    ;#Queue to use for the job
    set Batch(Mem)      1G                    ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
-   set Batch(CPUs)     1                     ;#Number of CPUs to use for the job
+   set Batch(CPUs)     2                     ;#Number of CPUs to use for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
    set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
 
@@ -116,7 +110,7 @@ namespace eval GenX { } {
       set Path(DBase) $env(GENPHYSX_DBASE)
    } else {
       set Path(DBase) /data/shared_1_b0/armn
-      set Path(DBase) /cnfs/ops/production/cmoe/geo
+#      set Path(DBase) /cnfs/ops/production/cmoe/geo
    }
 
    set Path(SandUSDA)  $Path(DBase)/db/sand_usda
@@ -140,6 +134,13 @@ namespace eval GenX { } {
    set Path(CCRS)      $Path(DBase)/CCRS-LC2005/
    set Path(Various)   $Path(DBase)/Various
    set Path(BELD3)     $Path(DBase)/BELD3
+
+   #----- Metadata related variables
+
+   set Meta(Procs)     {}                     ;#Metadata procedure registration list
+   set Meta(Header)    ""                     ;#Metadata header
+   set Meta(Footer)    ""                     ;#Metadata footer
+   set Meta(Command)   ""                     ;#Launch command
 
    #----- Log related variables
 
@@ -359,17 +360,22 @@ proc GenX::Procs { } {
 #----------------------------------------------------------------------------
 proc GenX::Log { Type Message { Head True } } {
    variable Log
+   variable Param
 
    set head " "
+   set proc ""
 
    if { $Log($Type)<=$Log(Level) } {
-      if { $Head && info level]} {
+      if { $Head && [info level]} {
          set head " [lindex [info level [expr [info level]-1]] 0]: "
       }
+      if { $Param(Process)!="" } {
+         set proc "($Param(Process)) "
+      }
       if { $Type=="ERROR" } {
-         puts stderr "($Type)$head$Message"
+         puts stderr "($Type)$proc$head$Message"
       } else {
-         puts "($Type)$head$Message"
+         puts "($Type)$proc$head$Message"
       }
    }
 }
@@ -557,6 +563,7 @@ proc GenX::CommandLine { } {
    Specific processing parameters:
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
       \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" ($Param(Cell))]
+      \[-compress\] [format "%-30s : Compress standard file output" ($Param(Compress))]
 
    Batch mode parameters:
       \[-batch\]    [format "%-30s : Launch in batch mode" ""]
@@ -656,6 +663,7 @@ proc GenX::ParseCommandLine { } {
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Diag)] }
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Z0Filter)]; incr flags }
          "celldim"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Cell)] }
+         "compress"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Compress)] }
          "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Script)] }
          "process"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Process)] }
          "help"      { GenX::CommandLine ; exit 1 }
@@ -750,6 +758,7 @@ proc GenX::ParseTarget { } {
                   set Param(Check)    "STD"
                   set Param(Sub)      "STD"
                   set Param(Z0Filter) True
+                  set Param(Compress) Fasle
                 }
    }
 }
@@ -1009,7 +1018,11 @@ proc GenX::GridGetFromGEM { File } {
 
    #----- Erase tape1 and gfilemap.txt since gemgrid won't run if they already exist
    catch { file delete -force tape1 gfilemap.txt }
-   catch { exec $grid }
+   set err [catch { exec $grid } msg]
+   if { $err } {
+      GenX::Log ERROR "Problem while creating grid with $grid:\n\n\t$msg"
+      exit 1
+   }
    catch { file rename -force gfilemap.txt ${Param(OutFile)}.fst_gfilemap.txt }
 
    fstdfile open GPXGRIDFILE read tape1
@@ -1116,7 +1129,7 @@ proc GenX::GridGetFromFile { File { Copy True } } {
 
             #----- Check if there are doubles
             if { [llength [fstdfield find GPXAUXFILE -1 "" $ip1 $ip2 $ip3 "" ">>"]] } {
-               GenX::Log INFO "Found duplicate grid (IP1=$ip1 IP2=$ip2 IP3=$ip3), will not process it"
+               GenX::Log WARNING "Found duplicate grid (IP1=$ip1 IP2=$ip2 IP3=$ip3), will not process it"
                continue
             }
 

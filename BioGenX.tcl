@@ -42,17 +42,17 @@ namespace eval BioGenX { } {
 
    set Param(ToleranceVCHK) 0.0001
 
-   # Type de LULC et fractions
+   #----- Type de LULC et fractions
    set Param(LuTypes)   { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }
    set Param(CoFracs)   { 1.0 1.0 1.0 1.0 1.0 0.25 0.25 0.0 0.25 0.25 0.25 0.0 0.0 0.0 0.5 }
    set Param(CoFracs26) { 0 0 0 1.0 1.0 1.0 1.0 1.0 1.0 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.5 0.25 0.25 0.0 1.0 0.25 }
 
-   # Paths to emission factor files
+   #----- Paths to emission factor files
    set Path(Factors)      $GenX::Path(BELD3)/Factors
    set Path(BELD3Factors) beld3_beis3v13_ef.dat
    set Path(VFFactors)    vf_beis3v13_ef.dat
 
-   # Constants
+   #----- Constants
                                   ;# Facteur de conversion d'equivalent carbone ...
    set Const(C2io)   1.133333     ;#  ... en isoprene
    set Const(C2mono) 1.133333     ;#  ... en monoterpene

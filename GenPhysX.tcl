@@ -25,7 +25,6 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.4.
 #      [-nml]      (gem_settings)                 : GEM namelist definition file
 #      [-gridfile] ()                             : FSTD file to get the grid from if no GEM namelist
 #      [-result]   (genphysx)                     : Result filename
-#      [-workdir]  ()                             : Working directory
 #      [-target]   ()                             : Model target (GEM, GEM-MACH, ...)
 #      [-script]   ()                             : User definition script to include
 #
@@ -34,15 +33,19 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.4.
 #
 #      [-topo]     ()                             : Topography method { USGS SRTM CDED250 CDED50 }
 #      [-mask]     ()                             : Mask method { USGS CANVEC }
+#      [-geomask]  ()                             : Mask method { USGS CANVEC }
 #      [-vege]     ()                             : Vegetation method { USGS EOSD CORINE }
 #      [-soil]     ()                             : Soil method { USDA }
 #      [-aspect]   ()                             : Calculates aspect and slope { SRTM CDED250 CDED50 }
 #      [-biogenic] ()                             : Biogenic calculation { BELD USGS }
 #      [-check]                                   : Do consistency checks
+#      [-subgrid]                                 : Calculates sub grid fields
 #      [-diag]                                    : Do diagnostics
 #
 #   Specific processing parameters:
 #      [-z0filter]                                : Apply GEM filter to roughness length
+#      [-celldim]                                 : Grid cell dimension (1=point, 2=area)
+#      [-compress]                                : Compress standard file output
 #
 #   Batch mode parameters:
 #      [-batch]                                   : Launch in batch mode
@@ -118,13 +121,14 @@ if { [llength $grids]==1 } {
    vwait Param(Done)
 
    #----- Merge results
+   GenX::Log INFO "Merging results"
    set Param(Process) 0
    foreach grid $grids {
-      set err [catch { exec echo "desire(-1,'','',-1,-1,-1,-1)" | editfst+ -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst } msg]
+      set err [catch { exec echo "desire(-1,'','',-1,-1,-1,-1)" | editfst+ -e -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst } msg]
       if { $err } {
          GenX::Log ERROR "Problems while merging results from grid #$Param(Process):\n\n\t:msg"
       }
-      set err [catch { exec echo "desire(-1,'','',-1,-1,-1,-1)" | editfst+ -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst } msg]
+      set err [catch { exec echo "desire(-1,'','',-1,-1,-1,-1)" | editfst+ -e -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst } msg]
       if { $err } {
          GenX::Log ERROR "Problems while merging auxiliary results from grid #$Param(Process):\n\n\t:msg"
       }
