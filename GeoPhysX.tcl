@@ -53,18 +53,18 @@
 #============================================================================
 
 namespace eval GeoPhysX { } {
-   variable Data
+   variable Param
    variable Const
    global env
 
-   set Data(Version)   1.1
+   set Param(Version)   1.1
 
    #----- Specific data information
 
-   set Data(SandTypes)    { 1 2 3 4 5 }
-   set Data(ClayTypes)    { 1 2 3 4 5 }
-   set Data(VegeTypes)    { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 }
-   set Data(VegeZ0vTypes) { 0.001 0.0003 0.001 1.5 3.5 1.0 2.0 3.0 0.8 0.05 0.15 0.15 0.02
+   set Param(SandTypes)    { 1 2 3 4 5 }
+   set Param(ClayTypes)    { 1 2 3 4 5 }
+   set Param(VegeTypes)    { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 }
+   set Param(VegeZ0vTypes) { 0.001 0.0003 0.001 1.5 3.5 1.0 2.0 3.0 0.8 0.05 0.15 0.15 0.02
                             0.08 0.08 0.08 0.35 0.25 0.1 0.08 1.35 0.01 0.05 0.05 1.5 0.05 }
 
    #----- Constants definitions
@@ -138,7 +138,7 @@ namespace eval GeoPhysX { } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopo { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
 
@@ -150,7 +150,7 @@ proc GeoPhysX::AverageTopo { Grid } {
    GenX::GridClear GPXRMS 0.0
    GenX::GridClear GPXTSK 1.0
 
-   foreach topo $GenX::Data(Topo) {
+   foreach topo $GenX::Param(Topo) {
       switch $topo {
          "USGS"    { GeoPhysX::AverageTopoUSGS $Grid     ;#----- USGS topograhy averaging method (Global 900m) }
          "SRTM"    { GeoPhysX::AverageTopoSRTM $Grid     ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
@@ -207,7 +207,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
       foreach field [fstdfield find GPXTOPOFILE -1 "" -1 -1 -1 "" "ME"] {
          GenX::Log DEBUG "      Processing field : $field" False
          fstdfield read USGSTILE GPXTOPOFILE $field
-         fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Data(Cell)
+         fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Param(Cell)
 
          fstdfield gridinterp $Grid USGSTILE AVERAGE False
          fstdfield gridinterp GPXRMS USGSTILE AVERAGE_SQUARE False
@@ -236,7 +236,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoSRTM { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Averaging topography using SRTM database"
@@ -250,7 +250,7 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
    foreach file [GenX::SRTMFindFiles $la0 $lo0 $la1 $lo1] {
       GenX::Log DEBUG "   Processing SRTM file $file" False
       gdalband read SRTMTILE [gdalfile open SRTMFILE read $file]
-      gdalband stats SRTMTILE -nodata -32768 -celldim $GenX::Data(Cell)
+      gdalband stats SRTMTILE -nodata -32768 -celldim $GenX::Param(Cell)
 
       fstdfield gridinterp $Grid SRTMTILE AVERAGE False
       fstdfield gridinterp GPXRMS SRTMTILE AVERAGE_SQUARE False
@@ -286,7 +286,7 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Averaging topography using CDED(1:${Res}000) database"
@@ -301,7 +301,7 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
    foreach file [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $Res] {
       GenX::Log DEBUG "   Processing CDED file $file" False
       gdalband read CDEDTILE [gdalfile open CDEDFILE read $file]
-      gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim $GenX::Data(Cell)
+      gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim $GenX::Param(Cell)
 
       fstdfield gridinterp $Grid CDEDTILE AVERAGE False
       fstdfield gridinterp GPXRMS CDEDTILE AVERAGE_SQUARE False
@@ -348,18 +348,18 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
 #     SLA      270      Average slope with aspect west quadrant oriented
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageAspect { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Computing slope and aspect"
 
-   set SRTM [expr [lsearch -exact $GenX::Data(Aspect) SRTM]!=-1]
+   set SRTM [expr [lsearch -exact $GenX::Param(Aspect) SRTM]!=-1]
    set CDED 0
 
-   if { [lsearch -exact $GenX::Data(Aspect) CDED250]!=-1 } {
+   if { [lsearch -exact $GenX::Param(Aspect) CDED250]!=-1 } {
       set CDED 250
    }
-   if { [lsearch -exact $GenX::Data(Aspect) CDED50]!=-1 } {
+   if { [lsearch -exact $GenX::Param(Aspect) CDED50]!=-1 } {
       set CDED 50
    }
 
@@ -391,7 +391,7 @@ proc GeoPhysX::AverageAspect { Grid } {
       set res [expr (3.75/3600.0)]  ;# 0.75 arc-secondes CDED
    }
 
-   set dpix [expr $GenX::Data(TileSize)*$res]
+   set dpix [expr $GenX::Param(TileSize)*$res]
    GenX::Log DEBUG "   Processing limits  $lat0,$lon0 to $lat1,$lon1 at resolution $res" False
 
    #----- Create latlon referential since original data is in latlon
@@ -399,9 +399,9 @@ proc GeoPhysX::AverageAspect { Grid } {
    eval georef define LLREF -border 1 -projection \{GEOGCS\[\"WGS 84\",DATUM\[\"WGS_1984\",SPHEROID\[\"WGS 84\",6378137,298.2572235629972,AUTHORITY\[\"EPSG\",\"7030\"\]\],AUTHORITY\[\"EPSG\",\"6326\"\]\],PRIMEM\[\"Greenwich\",0\],UNIT\[\"degree\",0.0174532925199433\],AUTHORITY\[\"EPSG\",\"4326\"\]\]\}
 
    #----- Create work tile with border included
-   gdalband create DEMTILE [expr $GenX::Data(TileSize)+2] [expr $GenX::Data(TileSize)+2] 1 Int16
+   gdalband create DEMTILE [expr $GenX::Param(TileSize)+2] [expr $GenX::Param(TileSize)+2] 1 Int16
    gdalband define DEMTILE -georef LLREF
-   gdalband stats DEMTILE -nodata 0.0 -celldim $GenX::Data(Cell)
+   gdalband stats DEMTILE -nodata 0.0 -celldim $GenX::Param(Cell)
 
    #----- Loop en grid data at tile resolution
    set xlo 0
@@ -520,11 +520,11 @@ proc GeoPhysX::AverageAspect { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageMask { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
 
-   switch $GenX::Data(Mask) {
+   switch $GenX::Param(Mask) {
       "USGS"      { GeoPhysX::AverageMaskUSGS      $Grid }
       "CANVEC"    { GeoPhysX::AverageMaskCANVEC    $Grid }
       "GLOBCOVER" { GeoPhysX::AverageMaskGLOBCOVER $Grid }
@@ -562,7 +562,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
       foreach field [fstdfield find GPXMASKFILE -1 "" -1 -1 -1 "" "MG"] {
          GenX::Log DEBUG "      Processing field : $field" False
          fstdfield read MASKTILE GPXMASKFILE $field
-         fstdfield stats MASKTILE -nodata -99.0 -celldim $GenX::Data(Cell)
+         fstdfield stats MASKTILE -nodata -99.0 -celldim $GenX::Param(Cell)
 
          #----- Average on output grid
          fstdfield gridinterp GPXMASK MASKTILE AVERAGE False
@@ -613,11 +613,11 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
       set y1 [lindex $limits 3]
 
       #----- Loop over the data by tiles since it's too big to fit in memory
-      for { set x $x0 } { $x<$x1 } { incr x $GenX::Data(TileSize) } {
-         for { set y $y0 } { $y<$y1 } { incr y $GenX::Data(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
-            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
-            gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Data(Cell)
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
+            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr GLOBTILE ifelse(GLOBTILE==210,0.0,1.0)
             fstdfield gridinterp GPXMASK GLOBTILE AVERAGE False
@@ -649,7 +649,7 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageMaskCANVEC { Grid } {
    variable Path
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Averaging mask using CANVEC database"
@@ -709,11 +709,11 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageGeoMask { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
 
-   switch $GenX::Data(GeoMask) {
+   switch $GenX::Param(GeoMask) {
       "CANADA"    { GeoPhysX::AverageGeoMaskCANADA  $Grid }
    }
 }
@@ -734,7 +734,7 @@ proc GeoPhysX::AverageGeoMask { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
    variable Path
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Averaging geopolitical mask using CANADA database"
@@ -770,14 +770,14 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVege { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
 
    fstdfield copy GPXVF $Grid
    GenX::GridClear [list GPXVF $Grid] 0.0
 
-   foreach vege $GenX::Data(Vege) {
+   foreach vege $GenX::Param(Vege) {
       switch $vege {
          "USGS"      { GeoPhysX::AverageVegeUSGS      GPXVF ;#----- USGS global vege averaging method }
          "GLOBCOVER" { GeoPhysX::AverageVegeGLOBCOVER GPXVF ;#----- GLOBCOVER global vege averaging method }
@@ -790,7 +790,7 @@ proc GeoPhysX::AverageVege { Grid } {
 
    #----- Save the 26 Vege types
    fstdfield define GPXVF -NOMVAR VF -IP2 0
-   fstdfield stats GPXVF -levels $Data(VegeTypes) -leveltype UNDEFINED
+   fstdfield stats GPXVF -levels $Param(VegeTypes) -leveltype UNDEFINED
    fstdfield write GPXVF GPXAUXFILE -24 True
 
    fstdfield free GPXVF
@@ -811,7 +811,7 @@ proc GeoPhysX::AverageVege { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeUSGS { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Averaging vegetation type using USGS database"
@@ -825,10 +825,10 @@ proc GeoPhysX::AverageVegeUSGS { Grid } {
       foreach field [fstdfield find GPXVEGEFILE -1 "" -1 -1 -1 "" "VG"] {
          GenX::Log DEBUG "      Processing field : $field" False
          fstdfield read VEGETILE GPXVEGEFILE $field
-         fstdfield stats VEGETILE -nodata -99.0 -celldim $GenX::Data(Cell)
+         fstdfield stats VEGETILE -nodata -99.0 -celldim $GenX::Param(Cell)
 
          #----- Count percentage for each type
-         fstdfield gridinterp $Grid VEGETILE NORMALIZED_COUNT $Data(VegeTypes) False
+         fstdfield gridinterp $Grid VEGETILE NORMALIZED_COUNT $Param(VegeTypes) False
       }
       fstdfile close GPXVEGEFILE
    }
@@ -851,7 +851,7 @@ proc GeoPhysX::AverageVegeUSGS { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeEOSD { Grid } {
-   variable Data
+   variable Param
    variable Const
 
    GenX::Procs
@@ -873,7 +873,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
       foreach file $files {
          GenX::Log DEBUG "   Processing file $file" False
          gdalband read EOSDTILE [gdalfile open EOSDFILE read $file]
-         gdalband stats EOSDTILE -nodata -99 -celldim $GenX::Data(Cell)
+         gdalband stats EOSDTILE -nodata -99 -celldim $GenX::Param(Cell)
 
          #----- We have to maks some data since they might overlap a bit
          gdalband copy EOSDMASK EOSDTILE
@@ -889,7 +889,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
          #----- Apply Table conversion
          vexpr EOSDTILE lut(EOSDTILE,FROMEOSD,TORPN)
 
-         fstdfield gridinterp $Grid EOSDTILE NORMALIZED_COUNT $Data(VegeTypes) False
+         fstdfield gridinterp $Grid EOSDTILE NORMALIZED_COUNT $Param(VegeTypes) False
          gdalband free EOSDTILE EOSDMASK
          gdalfile close EOSDFILE
       }
@@ -924,7 +924,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeCORINE { Grid } {
-   variable Data
+   variable Param
    variable Const
 
    GenX::Procs
@@ -947,14 +947,14 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
       set y1 [lindex $limits 3]
 
       #----- Loop over the data by tiles since it's too big to fit in memory
-      for { set x $x0 } { $x<$x1 } { incr x $GenX::Data(TileSize) } {
-         for { set y $y0 } { $y<$y1 } { incr y $GenX::Data(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
-            gdalband read CORINETILE { { CORINEFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
-            gdalband stats CORINETILE -nodata 255 -celldim $GenX::Data(Cell)
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
+            gdalband read CORINETILE { { CORINEFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            gdalband stats CORINETILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr CORINETILE lut(CORINETILE,FROMCORINE,TORPN)
-            fstdfield gridinterp $Grid CORINETILE NORMALIZED_COUNT $Data(VegeTypes) False
+            fstdfield gridinterp $Grid CORINETILE NORMALIZED_COUNT $Param(VegeTypes) False
          }
       }
 
@@ -986,7 +986,7 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
-   variable Data
+   variable Param
    variable Const
 
    GenX::Procs
@@ -1009,14 +1009,14 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
       set y1 [lindex $limits 3]
 
       #----- Loop over the data by tiles since it's too big to fit in memory
-      for { set x $x0 } { $x<$x1 } { incr x $GenX::Data(TileSize) } {
-         for { set y $y0 } { $y<$y1 } { incr y $GenX::Data(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
-            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
-            gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Data(Cell)
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
+            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr GLOBTILE lut(GLOBTILE,FROMGLOB,TORPN)
-            fstdfield gridinterp $Grid GLOBTILE NORMALIZED_COUNT $Data(VegeTypes) False
+            fstdfield gridinterp $Grid GLOBTILE NORMALIZED_COUNT $Param(VegeTypes) False
          }
       }
 
@@ -1048,7 +1048,7 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeCCRS { Grid } {
-   variable Data
+   variable Param
    variable Const
 
    GenX::Procs
@@ -1071,14 +1071,14 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
       set y1 [lindex $limits 3]
 
       #----- Loop over the data by tiles since it's too big to fit in memory
-      for { set x $x0 } { $x<$x1 } { incr x $GenX::Data(TileSize) } {
-         for { set y $y0 } { $y<$y1 } { incr y $GenX::Data(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]" False
-            gdalband read CCRSTILE { { CCRSFILE 1 } } $x $y [expr $x+$GenX::Data(TileSize)] [expr $y+$GenX::Data(TileSize)]
-            gdalband stats CCRSTILE -nodata 255 -celldim $GenX::Data(Cell)
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
+            gdalband read CCRSTILE { { CCRSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            gdalband stats CCRSTILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr CCRSTILE lut(CCRSTILE,FROMCCRS,TORPN)
-            fstdfield gridinterp $Grid CCRSTILE NORMALIZED_COUNT $Data(VegeTypes) False
+            fstdfield gridinterp $Grid CCRSTILE NORMALIZED_COUNT $Param(VegeTypes) False
          }
       }
 
@@ -1109,19 +1109,19 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageSand { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
    fstdfield copy GPXJ1 $Grid
 
    #----- Boucle sur les types
-   foreach type $Data(SandTypes) {
+   foreach type $Param(SandTypes) {
       GenX::Log INFO "Averaging sand ($type)"
       GenX::GridClear GPXJ1 0.0
       fstdfield stats GPXJ1 -mask ""
 
       #----- Loop over datasets
-      foreach db $GenX::Data(Soil) {
+      foreach db $GenX::Param(Soil) {
          GenX::Log DEBUG "   Processing database $db" False
 
          foreach file [glob $GenX::Path(Sand$db)/*] {
@@ -1133,7 +1133,7 @@ proc GeoPhysX::AverageSand { Grid } {
                GenX::Log DEBUG "         Processing field : $field" False
                fstdfield read SANDTILE GPXSANDFILE $field
                vexpr SANDTILE max(SANDTILE,0.0)
-               fstdfield stats SANDTILE -nodata 0.0 -celldim $GenX::Data(Cell)
+               fstdfield stats SANDTILE -nodata 0.0 -celldim $GenX::Param(Cell)
 
                #----- Average on each output grid
                fstdfield gridinterp GPXJ1 SANDTILE AVERAGE False
@@ -1168,19 +1168,19 @@ proc GeoPhysX::AverageSand { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageClay { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
    fstdfield copy GPXJ2 $Grid
 
    #----- Loop over types
-   foreach type $Data(ClayTypes) {
+   foreach type $Param(ClayTypes) {
       GenX::Log INFO "Averaging clay ($type)"
       GenX::GridClear GPXJ2 0.0
       fstdfield stats GPXJ2 -mask ""
 
       #----- Loop over datasets
-      foreach db $GenX::Data(Soil) {
+      foreach db $GenX::Param(Soil) {
          GenX::Log DEBUG "   Processing database $db" False
 
          #----- Loop over files
@@ -1193,7 +1193,7 @@ proc GeoPhysX::AverageClay { Grid } {
                GenX::Log DEBUG "         Processing field : $field" False
                fstdfield read CLAYTILE GPXCLAYFILE $field
                vexpr CLAYTILE max(CLAYTILE,0.0)
-               fstdfield stats CLAYTILE -nodata 0.0 -celldim $GenX::Data(Cell)
+               fstdfield stats CLAYTILE -nodata 0.0 -celldim $GenX::Param(Cell)
 
                #----- Average on each output grid
                fstdfield gridinterp GPXJ2 CLAYTILE AVERAGE False
@@ -1245,7 +1245,7 @@ proc GeoPhysX::AverageTopoLow { Grid } {
       foreach field [fstdfield find GPXLOWFILE -1 "" -1 -1 -1 "" "ME"] {
          GenX::Log DEBUG "      Processing field : $field" False
          fstdfield read LOWTILE GPXLOWFILE $field
-         fstdfield stats LOWTILE -nodata 0.0 -celldim $GenX::Data(Cell)
+         fstdfield stats LOWTILE -nodata 0.0 -celldim $GenX::Param(Cell)
 
          #----- compute average of <Hhr^2>ij on target grid
          vexpr LOWTILE2 (LOWTILE*LOWTILE)
@@ -1303,11 +1303,11 @@ proc GeoPhysX::AverageGradient { Grid } {
               field_gy [fstdfield find GPXGXYFILE -1 "" -1 -1 -1 "" "GY"] {
           GenX::Log DEBUG "      Processing field : $field_gx" False
           fstdfield read GXYTILE1 GPXGXYFILE $field_gx
-          fstdfield stats GXYTILE1 -nodata 0 -celldim $GenX::Data(Cell)
+          fstdfield stats GXYTILE1 -nodata 0 -celldim $GenX::Param(Cell)
 
           GenX::Log DEBUG "      Processing field : $field_gy" False
           fstdfield read GXYTILE2 GPXGXYFILE $field_gy
-          fstdfield stats GXYTILE2 -nodata 0 -celldim $GenX::Data(Cell)
+          fstdfield stats GXYTILE2 -nodata 0 -celldim $GenX::Param(Cell)
 
           #----- Compute correlation Gxx
           vexpr GXYTILE1X (GXYTILE1*GXYTILE1)
@@ -1608,7 +1608,7 @@ proc GeoPhysX::SubY789 { } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::SubRoughnessLength { } {
-   variable Data
+   variable Param
    variable Const
 
    GenX::Procs
@@ -1655,7 +1655,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield copy GPXZ0V2 GPXZ0V1
    GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
 
-   foreach element $Data(VegeTypes) zzov $Data(VegeZ0vTypes) {
+   foreach element $Param(VegeTypes) zzov $Param(VegeZ0vTypes) {
       set ip1 [expr 1200-$element]
       fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
       vexpr GPXZ0V1 (GPXZ0V1+GPXVF*$zzov)
@@ -1666,7 +1666,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZ0V1 GPXAUXFILE -32 True
 
    GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
-   foreach element [lrange $Data(VegeTypes) 3 end] zzov [lrange $Data(VegeZ0vTypes) 3 end] {
+   foreach element [lrange $Param(VegeTypes) 3 end] zzov [lrange $Param(VegeZ0vTypes) 3 end] {
       set ip1 [expr 1200-$element]
       fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
       vexpr GPXZ0V1 (GPXZ0V1+GPXVF*$zzov)
@@ -1724,7 +1724,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZ0 GPXAUXFILE -32 True
 
    #------ Filter roughness length
-   if { $GenX::Data(Z0Filter) } {
+   if { $GenX::Param(Z0Filter) } {
       GenX::Log INFO "Filtering Z0"
       fstdgrid zfilter GPXZ0 GenX::Settings
    }
@@ -1754,7 +1754,7 @@ proc GeoPhysX::SubRoughnessLength { } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::CheckConsistencyStandard { } {
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Applying consistency checks"
@@ -1781,7 +1781,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
    }
 
    #----- Check consistency for VF
-   foreach type $Data(VegeTypes) {
+   foreach type $Param(VegeTypes) {
       if { ![catch { fstdfield read GPXVF GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
          if { [fstdfield is GPXVF3] && [fstdfield is GPXMG] } {
             if { $type==1 } {
@@ -1813,7 +1813,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
    }
 
    #----- Check consistency for J1 and J2
-   foreach type $Data(SandTypes) {
+   foreach type $Param(SandTypes) {
       if { ![catch { fstdfield read GPXJ1 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J1" }] } {
          if { [fstdfield is GPXVF2] } {
             vexpr GPXJ1 ifelse(GPXVF2==1.0,43.0,GPXJ1)
@@ -1833,7 +1833,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
       }
    }
 
-   foreach type $Data(ClayTypes) {
+   foreach type $Param(ClayTypes) {
       if { ![catch { fstdfield read GPXJ2 GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "J2" }] } {
          if { [fstdfield is GPXVF2] } {
             vexpr GPXJ2 ifelse(GPXVF2==1.0,19.0,GPXJ2)
@@ -1871,7 +1871,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::DominantVege { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Calculating dominant vegetation"
@@ -1881,7 +1881,7 @@ proc GeoPhysX::DominantVege { Grid } {
    GenX::GridClear [list GPXVG GPXTP] 0.0
 
    #----- Generate VG field (Dominant type per cell)
-   foreach type $Data(VegeTypes) {
+   foreach type $Param(VegeTypes) {
       if { ![catch { fstdfield read GPXVF GPXOUTFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
          vexpr GPXVG ifelse(GPXTP>=GPXVF,GPXVG,$type)
          vexpr GPXTP ifelse(GPXTP>=GPXVF,GPXTP,GPXVF)

@@ -18,7 +18,7 @@
 #   GenX::Procs            { }
 #   GenX::Log              { Type Message { Head True } }
 #   GenX::Submit           { }
-#   GenX::MetaData         { }
+#   GenX::MetaData         { Grid }
 #   GenX::ParseArgs        { Argv Argc No Multi Cmd }
 #   GenX::ParseCommandLine { }
 #   GenX::ParseTarget      { } {
@@ -45,64 +45,61 @@
 
 package require TclData
 package require MetData
+package require Thread
 
 namespace eval GenX { } {
    global env
    variable Settings
    variable Path
-   variable Data
+   variable Param
    variable Meta
    variable Batch
    variable Log
 
-   set Data(Version)   1.2                   ;#Application version
+   set Param(Version)   1.2                   ;#Application version
 
-   set Data(Secs)      [clock seconds]       ;#To calculate execution time
-   set Data(Compress)  False                 ;#Compress standard file output
-   set Data(TileSize)  1024                  ;#Tile size to use for large dataset
-   set Data(Cache)     {}                    ;#Input data cache list
-   set Data(CacheMax)  20                    ;#Input data cache max
+   set Param(Secs)      [clock seconds]       ;#To calculate execution time
+   set Param(Compress)  False                 ;#Compress standard file output
+   set Param(TileSize)  1024                  ;#Tile size to use for large dataset
+   set Param(Cache)     {}                    ;#Input data cache list
+   set Param(CacheMax)  20                    ;#Input data cache max
 
-   set Data(ThreadPoolNb) 0                  ;#Number of threads to use
-   set Data(ThreadPoolNo) 0                  ;#Number of current thread
-   set Data(ThreadPool)   {}                 ;#List of threads
+   set Meta(Procs)     {}                     ;#Metadata procedure registration list
+   set Meta(Header)    ""                     ;#Metadata header
+   set Meta(Footer)    ""                     ;#Metadata footer
+   set Meta(Command)   ""                     ;#Launch command
 
-   set Meta(Procs)     {}                    ;#Metadata procedure registration list
-   set Meta(Header)    ""                    ;#Metadata header
-   set Meta(Footer)    ""                    ;#Metadata footer
-   set Meta(Command)   ""                    ;#Launch command
+   set Param(Vege)      ""                    ;#Vegetation data selected
+   set Param(Soil)      ""                    ;#Soil type data selected
+   set Param(Topo)      ""                    ;#Topography data selected
+   set Param(Mask)      ""                    ;#Mask data selected
+   set Param(GeoMask)   ""                    ;#Geographical mask data selected
+   set Param(Aspect)    ""                    ;#Slope and aspect selected
+   set Param(Check)     ""                    ;#Consistency checks
+   set Param(Sub)       ""                    ;#Subgrid calculations selected
+   set Param(Target)    ""                    ;#Model cible
+   set Param(Biogenic)  ""                    ;#Biogenic emissions data selected
 
-   set Data(Vege)      ""                    ;#Vegetation data selected
-   set Data(Soil)      ""                    ;#Soil type data selected
-   set Data(Topo)      ""                    ;#Topography data selected
-   set Data(Mask)      ""                    ;#Mask data selected
-   set Data(GeoMask)   ""                    ;#Geographical mask data selected
-   set Data(Aspect)    ""                    ;#Slope and aspect selected
-   set Data(Check)     ""                    ;#Consistency checks
-   set Data(Sub)       ""                    ;#Subgrid calculations selected
-   set Data(Target)    ""                    ;#Model cible
-   set Data(Biogenic)  ""                    ;#Biogenic emissions data selected
+   set Param(Diag)      False                 ;#Diagnostics
+   set Param(Z0Filter)  False                 ;#Filter roughness length
+   set Param(Cell)      1                     ;#Grid cell dimension (1=1D(point 2=2D(area))
+   set Param(Script)    ""                    ;#User definition script
+   set Param(Process)   ""                    ;#Current processing id
+   set Param(GridBin)   gemgrid               ;#GEM grid generator application
+   set Param(OutFile)   genphysx              ;#Output file prefix
+   set Param(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
+   set Param(NameFile)  ""                    ;#Namelist to use
 
-   set Data(Diag)      False                 ;#Diagnostics
-   set Data(Z0Filter)  False                 ;#Filter roughness length
-   set Data(Cell)      1                     ;#Grid cell dimension (1=1D(point 2=2D(area))
-
-   set Data(Topos)     { USGS SRTM CDED250 CDED50 }
-   set Data(Aspects)   { SRTM CDED250 CDED50 }
-   set Data(Veges)     { USGS GLOBCOVER CCRS EOSD CORINE }
-   set Data(Soils)     { USDA AGRC FAO }
-   set Data(Masks)     { USGS GLOBCOVER CANVEC }
-   set Data(GeoMasks)  { CANADA }
-   set Data(Biogenics) { BELD VF }
-   set Data(Checks)    { STD }
-   set Data(Subs)      { STD }
-   set Data(Targets)   { GEMMESO }             ;#Model cible
-
-   set Path(Grid)        gemgrid               ;#GEM grid generator application
-   set Path(OutFile)     genphysx              ;#Output file prefix
-   set Path(GridFile)    ""                    ;#Grid definition file to use (standard file with >> ^^)
-   set Path(NameFile)    ""                    ;#Namelist to use
-   set Path(Script)      ""                    ;#User definition script
+   set Param(Topos)     { USGS SRTM CDED250 CDED50 }
+   set Param(Aspects)   { SRTM CDED250 CDED50 }
+   set Param(Veges)     { USGS GLOBCOVER CCRS EOSD CORINE }
+   set Param(Soils)     { USDA AGRC FAO }
+   set Param(Masks)     { USGS GLOBCOVER CANVEC }
+   set Param(GeoMasks)  { CANADA }
+   set Param(Biogenics) { BELD VF }
+   set Param(Checks)    { STD }
+   set Param(Subs)      { STD }
+   set Param(Targets)   { GEMMESO }             ;#Model cible
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     hawa                  ;#Host onto which to submit the job
@@ -119,7 +116,7 @@ namespace eval GenX { } {
       set Path(DBase) $env(GENPHYSX_DBASE)
    } else {
       set Path(DBase) /data/shared_1_b0/armn
-#      set Path(DBase) /cnfs/ops/production/cmoe/geo
+      set Path(DBase) /cnfs/ops/production/cmoe/geo
    }
 
    set Path(SandUSDA)  $Path(DBase)/db/sand_usda
@@ -152,50 +149,85 @@ namespace eval GenX { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GenX::ThreadPoolInit>
-# Creation : Novembre 2008 - J.P. Gauthier - CMC/CMOE
+# Name     : <GenX::Process>
+# Creation : Mai 2010 - J.P. Gauthier - CMC/CMOE
 #
-# Goal     : Initialize thread pool.
+# Goal     : Launch processing on a grid.
 #
 # Parameters :
-#   <Dir>    : Directory where to source the scripts
+#   <Grid>   : Grid on which to generate the topo
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::ThreadPoolInit { Dir } {
-   variable Data
+proc GenX::Process { Grid } {
 
-   GenX::Log INFO "Initializing thread pool with $Data(ThreadPoolNb) threads"
-   for { set n 0 } { $n<$Data(ThreadPoolNb) } { incr n } {
-      lappend Data(ThreadPool) [set tid [thread::create -joinable "source $Dir/GenX.tcl; source $Dir/GeoPhysX.tcl; thread::wait" ]]
+   #----- Check if we only need to process topo
+   if { [fstdfield define $Grid -IP1]!=1200 } {
+      if { $GenX::Param(Topo)!="" } {
+         GeoPhysX::AverageTopo     $Grid
+      }
+   } else {
+      #----- Topography
+      if { $GenX::Param(Topo)!="" } {
+         GeoPhysX::AverageTopo     $Grid
+         GeoPhysX::AverageTopoLow  $Grid
+         GeoPhysX::AverageGradient $Grid
+      }
+
+      #----- Slope and Aspect
+      if { $GenX::Param(Aspect)!="" } {
+         GeoPhysX::AverageAspect $Grid
+      }
+
+      #----- Land-water mask
+      if { $GenX::Param(Mask)!="" } {
+         GeoPhysX::AverageMask $Grid
+      }
+
+      #----- Land-water mask
+      if { $GenX::Param(GeoMask)!="" } {
+         GeoPhysX::AverageGeoMask $Grid
+      }
+
+      #----- Vegetation type
+      if { $GenX::Param(Vege)!="" } {
+         GeoPhysX::AverageVege $Grid
+      }
+
+      #----- Soil type
+      if { $GenX::Param(Soil)!="" } {
+         GeoPhysX::AverageSand $Grid
+         GeoPhysX::AverageClay $Grid
+      }
+
+      #----- Consistency checks
+      switch $GenX::Param(Check) {
+         "STD" { GeoPhysX::CheckConsistencyStandard }
+      }
+
+      #----- Sub grid calculations
+      if { $GenX::Param(Sub)!="" } {
+         GeoPhysX::SubCorrectionFactor
+         GeoPhysX::SubTopoFilter
+         GeoPhysX::SubLaunchingHeight
+         GeoPhysX::SubY789
+         GeoPhysX::SubRoughnessLength
+      }
+
+      #----- Biogenic emissions calculations
+      if { $GenX::Param(Biogenic)!="" } {
+         BioGenX::CalcEmissions  $Grid
+         BioGenX::TransportableFractions $Grid
+      }
+
+      #----- Diagnostics of output fields
+      if { $GenX::Param(Diag) } {
+         GeoPhysX::Diag
+      }
    }
-}
-
-#----------------------------------------------------------------------------
-# Name     : <GenX::TThreadPoolSend>
-# Creation : Novembre 2008 - J.P. Gauthier - CMC/CMOE
-#
-# Goal     : Sends job to next thread.
-#
-# Parameters :
-#   <args>   : Command to be executed by the thread
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GenX::ThreadPoolSend { args } {
-   variable Data
-
-   #----- Get the next thread id
-   set Data(ThreadPoolNo) [expr [incr Data(ThreadPoolNo)]>=$Data(ThreadPoolNb)?0:$Data(ThreadPoolNo)]
-
-   #----- Transfer job to next thread
-   thread::send -async [lindex $Data(ThreadPool) $Data(ThreadPoolNo)] $args
 }
 
 #----------------------------------------------------------------------------
@@ -213,14 +245,14 @@ proc GenX::ThreadPoolSend { args } {
 #----------------------------------------------------------------------------
 proc GenX::Submit { } {
    global env
-   variable Data
+   variable Param
    variable Path
    variable Batch
 
    upvar #0 argv gargv
 
    set host [info hostname]
-   set rdir /tmp/GenPhysX[pid]_$Data(Secs)
+   set rdir /tmp/GenPhysX[pid]_$Param(Secs)
    set rargv ""
 
    #----- Create job script
@@ -238,37 +270,37 @@ proc GenX::Submit { } {
    puts $f "mkdir $rdir"
    puts $f "cd $rdir"
 
-   if { $Path(GridFile)!="" } {
-      puts $f "scp $host:[file normalize $Path(GridFile)] ."
-      append rargv " -gridfile [file tail $Path(GridFile)]"
+   if { $Param(GridFile)!="" } {
+      puts $f "scp $host:[file normalize $Param(GridFile)] ."
+      append rargv " -gridfile [file tail $Param(GridFile)]"
    }
-   if { $Path(NameFile)!="" } {
-      puts $f "scp $host:[file normalize $Path(NameFile)] ."
-      append rargv " -nml [file tail $Path(NameFile)]"
+   if { $Param(NameFile)!="" } {
+      puts $f "scp $host:[file normalize $Param(NameFile)] ."
+      append rargv " -nml [file tail $Param(NameFile)]"
    }
-   if { $Path(Script)!="" } {
-      puts $f "scp $host:[file normalize $Path(Script)] ."
-      append rargv " -script [file tail $Path(Script)]"
+   if { $Param(Script)!="" } {
+      puts $f "scp $host:[file normalize $Param(Script)] ."
+      append rargv " -script [file tail $Param(Script)]"
    }
-   if { [file exists $Path(OutFile).fst] } {
-      puts $f "scp $host:[file normalize ${Path(OutFile)}.fst] ."
+   if { [file exists $Param(OutFile).fst] } {
+      puts $f "scp $host:[file normalize ${Param(OutFile)}.fst] ."
    }
-   if { [file exists ${Path(OutFile)}_aux.fst] } {
-      puts $f "scp $host:[file normalize ${Path(OutFile)}_aux.fst] ."
+   if { [file exists ${Param(OutFile)}_aux.fst] } {
+      puts $f "scp $host:[file normalize ${Param(OutFile)}_aux.fst] ."
    }
 
-   set ldir [file dirname [file normalize $Path(OutFile)]]
-   append rargv " -result [file tail $Path(OutFile)]"
+   set ldir [file dirname [file normalize $Param(OutFile)]]
+   append rargv " -result [file tail $Param(OutFile)]"
 
    #----- Remove batch flag from arguments
    set idx [lsearch -exact $gargv "-batch"]
    set gargv [lreplace $gargv $idx $idx]
 
    puts $f "\n[file normalize [info script]] $gargv \\\n   $rargv\n"
-   puts $f "scp [file tail $Path(OutFile)]* $host:$ldir\ncd ..\nrm -f -r $rdir"
+   puts $f "scp [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r $rdir"
 
    if { $Batch(Mail)!="" } {
-      puts $f "echo $Path(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
+      puts $f "echo $Param(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
    }
    close $f
 
@@ -331,7 +363,7 @@ proc GenX::Log { Type Message { Head True } } {
    set head " "
 
    if { $Log($Type)<=$Log(Level) } {
-      if { $Head } {
+      if { $Head && info level]} {
          set head " [lindex [info level [expr [info level]-1]] 0]: "
       }
       if { $Type=="ERROR" } {
@@ -349,23 +381,24 @@ proc GenX::Log { Type Message { Head True } } {
 # Goal     : Record metadata info in a standard RPN Field.
 #
 # Parameters :
+#   <Grid>   : Grid on which to generate the topo
 #
 # Return:
 #
 # Remarks :
 #    Metadata includes date-time and version, procedure used, and gem_settings file
 #----------------------------------------------------------------------------
-proc GenX::MetaData { } {
+proc GenX::MetaData { Grid } {
    global env
    global argv
-   variable Data
+   variable Param
    variable Meta
    variable Path
 
    #----- Description of vesion used
-   set version "GenX($Data(Version))"
-   catch { append version ", GeoPhysX($GeoPhysX::Data(Version))" }
-   catch { append version ", BioGenX($BioGenX::Data(Version))" }
+   set version "GenX($Param(Version))"
+   catch { append version ", GeoPhysX($GeoPhysX::Param(Version))" }
+   catch { append version ", BioGenX($BioGenX::Param(Version))" }
 
    #----- Generation date et parameters used
    set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\n"
@@ -378,9 +411,9 @@ proc GenX::MetaData { } {
    append meta "SPI API version: $env(SPI_PATH)\nCode base      : $version\n"
 
    #----- Append script if any
-   if { $Path(Script)!="" } {
-      append meta "Script used    : $Path(Script)\n"
-      set f [open $Path(Script) r]
+   if { $Param(Script)!="" } {
+      append meta "Script used    : $Param(Script)\n"
+      set f [open $Param(Script) r]
       while { ![eof $f] } {
          append meta "   [gets $f]\n"
       }
@@ -389,18 +422,18 @@ proc GenX::MetaData { } {
 
    append meta $Meta(Header)
    append meta "Processing used:\n   [join $Meta(Procs) "\n   "]\n"
-   if { [file exists $Path(NameFile)] } {
-      append meta "\nGEM namelist   : { \n[exec cat $Path(NameFile)]\n }"
+   if { [file exists $Param(NameFile)] } {
+      append meta "\nGEM namelist   : { \n[exec cat $Param(NameFile)]\n }"
    }
    append meta $Meta(Footer)
 
    #----- Encode everyting
    set fld [MetData::TextCode $meta]
-   fstdfield define $fld -NOMVAR META
+   fstdfield define $fld -NOMVAR META -IP1 [fstdfield define $Grid -IP1] -IP2 [fstdfield define $Grid -IP2] -IP3 [fstdfield define $Grid -IP3]
    fstdfield write $fld GPXOUTFILE 0 True
 
    #----- Tada ...
-   puts "\nExecution time: [expr [clock seconds]-$Data(Secs)]s"
+   puts "\nExecution time: [expr [clock seconds]-$Param(Secs)]s"
 }
 
 #----------------------------------------------------------------------------
@@ -488,7 +521,7 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
 #
 #----------------------------------------------------------------------------
 proc GenX::CommandLine { } {
-   variable Data
+   variable Param
    variable Path
    variable Batch
    variable Log
@@ -501,29 +534,29 @@ proc GenX::CommandLine { } {
       \[-verbose\]  [format "%-30s : Trace level (0 none, 1 some, 2 more, 3 debug)" ($Log(Level))]
 
    Input parameters:
-      \[-nml\]      [format "%-30s : GEM namelist definition file" ($Path(NameFile))]
-      \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Path(GridFile))]
-      \[-result\]   [format "%-30s : Result filename" ($Path(OutFile))]
-      \[-target\]   [format "%-30s : Set necessary flags for target model {$Data(Targets)}" ($Data(Target))]
+      \[-nml\]      [format "%-30s : GEM namelist definition file" ($Param(NameFile))]
+      \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Param(GridFile))]
+      \[-result\]   [format "%-30s : Result filename" ($Param(OutFile))]
+      \[-target\]   [format "%-30s : Set necessary flags for target model {$Param(Targets)}" ($Param(Target))]
       \[-script\]   [format "%-30s : User definition script to include" ""]
 
    Processing parameters:
       Specify databases in order of processing joined by + ex: STRM+USGS
 
-      \[-topo\]     [format "%-30s : Topography method(s) among {$Data(Topos)}" ([join $Data(Topo)])]
-      \[-mask\]     [format "%-30s : Mask method, one of {$Data(Masks)}" ([join $Data(Mask)])]
-      \[-geomask\]  [format "%-30s : Mask method, one of {$Data(GeoMasks)}" ([join $Data(GeoMask)])]
-      \[-vege\]     [format "%-30s : Vegetation method(s) among {$Data(Veges)}" ([join $Data(Vege)])]
-      \[-soil\]     [format "%-30s : Soil method(s) among {$Data(Soils)}" ([join $Data(Soil)])]
-      \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Data(Aspects)}" ([join $Data(Aspect)])]
-      \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Data(Biogenics)}" ([join $Data(Biogenic)])]
-      \[-check\]    [format "%-30s : Do consistency checks {$Data(Checks)}" ($Data(Check))]
-      \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Data(Subs)}" ($Data(Sub))]
+      \[-topo\]     [format "%-30s : Topography method(s) among {$Param(Topos)}" ([join $Param(Topo)])]
+      \[-mask\]     [format "%-30s : Mask method, one of {$Param(Masks)}" ([join $Param(Mask)])]
+      \[-geomask\]  [format "%-30s : Mask method, one of {$Param(GeoMasks)}" ([join $Param(GeoMask)])]
+      \[-vege\]     [format "%-30s : Vegetation method(s) among {$Param(Veges)}" ([join $Param(Vege)])]
+      \[-soil\]     [format "%-30s : Soil method(s) among {$Param(Soils)}" ([join $Param(Soil)])]
+      \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Param(Aspects)}" ([join $Param(Aspect)])]
+      \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Param(Biogenics)}" ([join $Param(Biogenic)])]
+      \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" ($Param(Check))]
+      \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Param(Subs)}" ($Param(Sub))]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
 
    Specific processing parameters:
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
-      \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" ($Data(Cell))]
+      \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" ($Param(Cell))]
 
    Batch mode parameters:
       \[-batch\]    [format "%-30s : Launch in batch mode" ""]
@@ -552,9 +585,10 @@ proc GenX::CommandLine { } {
 #----------------------------------------------------------------------------
 proc GenX::Continue { } {
    global env
+   variable Param
 
    #----- If we're not in batch mode, ask
-   if  { ![info exists env(GENPHYSX_BATCH)] } {
+   if  { ![info exists env(GENPHYSX_BATCH)] && $Param(Process)=="" } {
       puts stdout "Continue anyway (y or n) ? "
       if { [string toupper [string index [gets stdin] 0]]!="Y" } {
          exit 1
@@ -576,7 +610,7 @@ proc GenX::Continue { } {
 #
 #----------------------------------------------------------------------------
 proc GenX::ParseCommandLine { } {
-   variable Data
+   variable Param
    variable Path
    variable Batch
 
@@ -598,31 +632,32 @@ proc GenX::ParseCommandLine { } {
    set flags 0
    for { set i 0 } { $i < $gargc } { incr i } {
       switch -exact [string trimleft [lindex $gargv $i] "-"] {
-         "version"   { puts "$Data(Version)"; exit 0 }
+         "version"   { puts "$Param(Version)"; exit 0 }
          "verbose"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Log(Level)] }
-         "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(OutFile)] }
-         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Target) $GenX::Data(Targets)]; GenX::ParseTarget; incr flags }
-         "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(GridFile)] }
-         "nml"       { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(NameFile)] }
+         "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(OutFile)] }
+         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Target) $GenX::Param(Targets)]; GenX::ParseTarget; incr flags }
+         "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(GridFile)] }
+         "nml"       { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(NameFile)] }
          "dbase"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(DBase)] }
          "batch"     { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Batch(On)] }
          "mach"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Host)] }
          "t"         { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Time)] }
          "cm"        { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mem)] }
          "mail"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mail)] }
-         "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Topo) $GenX::Data(Topos)]; incr flags }
-         "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Mask) $GenX::Data(Masks)]; incr flags }
-         "geomask"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(GeoMask) $GenX::Data(GeoMasks)]; incr flags }
-         "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Vege) $GenX::Data(Veges)]; incr flags }
-         "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Soil) $GenX::Data(Soils)]; incr flags }
-         "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Sub)]; incr flags }
-         "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Aspect)]; incr flags }
-         "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Data(Biogenic) $GenX::Data(Biogenics)]; incr flags }
-         "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Check)]; incr flags }
-         "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Diag)] }
-         "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Data(Z0Filter)]; incr flags }
-         "celldim"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Data(Cell)] }
-         "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(Script)] }
+         "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Topo) $GenX::Param(Topos)]; incr flags }
+         "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Mask) $GenX::Param(Masks)]; incr flags }
+         "geomask"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
+         "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
+         "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
+         "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Sub)]; incr flags }
+         "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Aspect)]; incr flags }
+         "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
+         "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Check)]; incr flags }
+         "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Diag)] }
+         "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Z0Filter)]; incr flags }
+         "celldim"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Cell)] }
+         "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Script)] }
+         "process"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Process)] }
          "help"      { GenX::CommandLine ; exit 1 }
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
       }
@@ -630,50 +665,50 @@ proc GenX::ParseCommandLine { } {
 
    #----- If no processing is specified, we use the default target
    if { !$flags } {
-      set Data(Target) [lindex $GenX::Data(Targets) 0]
+      set Param(Target) [lindex $GenX::Param(Targets) 0]
       GenX::ParseTarget
-      GenX::Log WARNING "No data processing were specified, will use default target $Data(Target)"
+      GenX::Log WARNING "No data processing were specified, will use default target $Param(Target)"
       GenX::Continue
    }
 
    #----- Check for user definitiond
-   if { $GenX::Path(Script)!="" } {
-      source $Path(Script)
+   if { $GenX::Param(Script)!="" } {
+      source $Param(Script)
    }
 
    #----- Check dependencies
-   if { $Data(Vege)!="" } {
-      if { $Data(Mask)=="" } {
+   if { $Param(Vege)!="" } {
+      if { $Param(Mask)=="" } {
          GenX::Log ERROR "To generate vegetation type fields you need to generate the mask"
          GenX::Continue
       }
    }
 
-   if { $Data(Sub)!="" } {
-      if { $Data(Mask)=="" } {
+   if { $Param(Sub)!="" } {
+      if { $Param(Mask)=="" } {
          GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the mask"
          GenX::Continue
       }
-      if { $Data(Topo)=="" } {
+      if { $Param(Topo)=="" } {
          GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the topography"
          GenX::Continue
       }
    }
 
-   if { $Data(Biogenic)!="" } {
-      if { $Data(Vege)=="" } {
+   if { $Param(Biogenic)!="" } {
+      if { $Param(Vege)=="" } {
             GenX::Log ERROR "To generate biogenic emissions fields you need to generate the vegetation type fields (-vege option)"
             GenX::Continue
       }
-      if { $Data(Check)=="" } {
+      if { $Param(Check)=="" } {
             GenX::Log ERROR "To generate biogenic emissions fields you must use the -check option."
             GenX::Continue
       }
    }
 
    #----- Check if a filename is included in result filename
-   if { [file isdirectory $Path(OutFile)] } {
-      append Path(OutFile) genphysx
+   if { [file isdirectory $Param(OutFile)] } {
+      append Param(OutFile) genphysx
    }
 
    #----- If batch mode enabled, submit the job and exit otherwise, go to result directory
@@ -685,10 +720,10 @@ proc GenX::ParseCommandLine { } {
          GenX::Log ERROR "Invalid database directory ($Path(DBase))"
          exit 1
       }
-      cd [file dirname [file normalize $Path(OutFile)]]
+      cd [file dirname [file normalize $Param(OutFile)]]
    }
 
-   catch { file delete $Path(OutFile).fst_gfilemap.txt }
+   catch { file delete $Param(OutFile).fst_gfilemap.txt }
 }
 
 #----------------------------------------------------------------------------
@@ -705,16 +740,16 @@ proc GenX::ParseCommandLine { } {
 #
 #----------------------------------------------------------------------------
 proc GenX::ParseTarget { } {
-   variable Data
+   variable Param
 
-   switch $Data(Target) {
-      "GEMMESO" { set Data(Topo)     "USGS"
-                  set Data(Vege)     "USGS"
-                  set Data(Mask)     "USGS"
-                  set Data(Soil)     "USDA AGRC FAO"
-                  set Data(Check)    "STD"
-                  set Data(Sub)      "STD"
-                  set Data(Z0Filter) True
+   switch $Param(Target) {
+      "GEMMESO" { set Param(Topo)     "USGS"
+                  set Param(Vege)     "USGS"
+                  set Param(Mask)     "USGS"
+                  set Param(Soil)     "USDA AGRC FAO"
+                  set Param(Check)    "STD"
+                  set Param(Sub)      "STD"
+                  set Param(Z0Filter) True
                 }
    }
 }
@@ -809,11 +844,11 @@ proc GenX::GetNML { File } {
 #
 #----------------------------------------------------------------------------
 proc GenX::FieldCopy { FileIn FileOut DateV Etiket IP1 IP2 IP3 TV NV } {
-   variable Data
+   variable Param
 
    foreach field [fstdfield find $FileIn $DateV $Etiket $IP1 $IP2 $IP3 $TV $NV] {
       fstdfield read GPXTMP $FileIn $field
-      fstdfield write GPXTMP $FileOut 0 True $GenX::Data(Compress)
+      fstdfield write GPXTMP $FileOut 0 True $GenX::Param(Compress)
       GenX::GridCopyDesc GPXTMP $FileIn $FileOut
    }
 }
@@ -917,18 +952,23 @@ proc GenX::GridCopyDesc { Field FileIn FileOut } {
 #----------------------------------------------------------------------------
 proc GenX::GridGet { } {
    variable Path
+   variable Param
 
-   if { [file exists $Path(GridFile)] } {
-     set grids [GenX::GridGetFromFile $Path(GridFile)]
-   } elseif { [file exists $Path(OutFile).fst] } {
-     set grids [GenX::GridGetFromFile $Path(OutFile).fst False]
-   } elseif { [file exists $Path(NameFile)] } {
-     set grids [GenX::GridGetFromGEM $Path(NameFile)]
+   if { [file exists $Param(GridFile)] } {
+     set grids [GenX::GridGetFromFile $Param(GridFile)]
+   } elseif { [file exists $Param(OutFile).fst] } {
+     set grids [GenX::GridGetFromFile $Param(OutFile).fst False]
+   } elseif { [file exists $Param(NameFile)] } {
+     set grids [GenX::GridGetFromGEM $Param(NameFile)]
    } else {
       GenX::Log ERROR "Could not find a grid definition either from a standard file or a namelist"
       exit 1
    }
-   return $grids
+   if { $Param(Process)!="" } {
+      return [lindex $grids $Param(Process)]
+   } else {
+      return $grids
+   }
 }
 
 #----------------------------------------------------------------------------
@@ -946,8 +986,8 @@ proc GenX::GridGet { } {
 #
 #----------------------------------------------------------------------------
 proc GenX::GridGetFromGEM { File } {
-   variable Path
    global   env
+   variable Param
 
    if { ![info exists env(GEM)] } {
        GenX::Log ERROR "GEM environment not loaded (. r.sm.dot gem x.x.x)"
@@ -957,9 +997,9 @@ proc GenX::GridGetFromGEM { File } {
    GenX::Log INFO "Found GEM version ([file tail $env(GEM)])"
 
    set grid ""
-   catch { set grid [exec which $Path(Grid)] }
+   catch { set grid [exec which $Param(GridBin)] }
    if { $grid=="" } {
-      GenX::Log ERROR "Could not find \"$Path(Grid)\". Please make sure GEM environment is loaded first (. r.sm.dot gem x.x.x)"
+      GenX::Log ERROR "Could not find \"$Param(GridBin)\". Please make sure GEM environment is loaded first (. r.sm.dot gem x.x.x)"
       exit 1
    }
 
@@ -970,7 +1010,7 @@ proc GenX::GridGetFromGEM { File } {
    #----- Erase tape1 and gfilemap.txt since gemgrid won't run if they already exist
    catch { file delete -force tape1 gfilemap.txt }
    catch { exec $grid }
-   catch { file rename -force gfilemap.txt ${Path(OutFile)}.fst_gfilemap.txt }
+   catch { file rename -force gfilemap.txt ${Param(OutFile)}.fst_gfilemap.txt }
 
    fstdfile open GPXGRIDFILE read tape1
 
@@ -1054,24 +1094,40 @@ proc GenX::GridGetFromNML { File } {
 #
 #----------------------------------------------------------------------------
 proc GenX::GridGetFromFile { File { Copy True } } {
+   variable Param
 
    if { [catch { fstdfile open GPXGRIDFILE read $File } ] } {
       GenX::Log ERROR "Could not open $File."
       exit 1
    }
 
-   #----- Read grid descriptors from source file and write grid field in aux file
-   if { $Copy } {
-      set ip1 1200
+   #----- If the descriptors have'nt been made in grids yet
+   if { $Copy && $Param(Process)=="" } {
+
+      set tip1 1200
+      #----- Read grid descriptors from source file and write grid field in aux file
       if { [llength [set tics [fstdfield find GPXGRIDFILE -1 "" -1 -1 -1 "" ">>"]]] } {
          foreach tic $tics {
             fstdfield read TIC GPXGRIDFILE $tic
-            fstdfield read TAC GPXGRIDFILE -1 "" [fstdfield define TIC -IP1] [fstdfield define TIC -IP2] [fstdfield define TIC -IP3] "" "^^"
+
+            set ip1 [fstdfield define TIC -IP1]
+            set ip2 [fstdfield define TIC -IP2]
+            set ip3 [fstdfield define TIC -IP3]
+
+            #----- Check if there are doubles
+            if { [llength [fstdfield find GPXAUXFILE -1 "" $ip1 $ip2 $ip3 "" ">>"]] } {
+               GenX::Log INFO "Found duplicate grid (IP1=$ip1 IP2=$ip2 IP3=$ip3), will not process it"
+               continue
+            }
+
+            #----- Create a grid field
+            fstdfield read TAC GPXGRIDFILE -1 "" $ip1 $ip2 $ip3 "" "^^"
             fstdfield create GRID [fstdfield define TIC -NI] [fstdfield define TAC -NJ] 1 Float32
             fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -GRTYP Z \
-               -IG1 [fstdfield define TIC -IP1] -IG2 [fstdfield define TIC -IP2] -IG3 [fstdfield define TIC -IP3] -IP1 $ip1
-            incr ip1 -1
+               -IG1 $ip1 -IG2 $ip2 -IG3 $ip3 -IP1 $tip1 -IP2 0 -IP3 $ip3
+            incr tip1 -1
 
+            #----- Write the grid and descriptors to output files
             fstdfield write TIC  GPXOUTFILE -32 True
             fstdfield write TAC  GPXOUTFILE -32 True
 
@@ -1080,6 +1136,7 @@ proc GenX::GridGetFromFile { File { Copy True } } {
             fstdfield write GRID GPXAUXFILE -32 True
          }
       } else {
+         #----- Otherwise, use the first field found as output grid
          fstdfield read GRID GPXGRIDFILE -1 "" -1 -1 -1 "" ""
          fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -IP1 $ip1
          fstdfield write GRID GPXAUXFILE -32 True
@@ -1118,19 +1175,19 @@ proc GenX::GridGetFromFile { File { Copy True } } {
 #
 #----------------------------------------------------------------------------
 proc GenX::CacheGet { File { NoData "" } } {
-   variable Data
+   variable Param
 
-   if { [lsearch -exact $Data(Cache) $File]==-1 } {
+   if { [lsearch -exact $Param(Cache) $File]==-1 } {
       gdalband read $File [gdalfile open DEMFILE read $File]
       if { $NoData!="" } {
          gdalband stats $File -nodata $NoData
       }
       gdalfile close DEMFILE
-      lappend Data(Cache) $File
+      lappend Param(Cache) $File
 
-      if { [llength $Data(Cache)]>$Data(CacheMax) } {
-         gdalband free [lindex $Data(Cache) 0]
-         set Data(Cache) [lreplace $Data(Cache) 0 0]
+      if { [llength $Param(Cache)]>$Param(CacheMax) } {
+         gdalband free [lindex $Param(Cache) 0]
+         set Param(Cache) [lreplace $Param(Cache) 0 0]
       }
    }
    return $File
@@ -1150,9 +1207,9 @@ proc GenX::CacheGet { File { NoData "" } } {
 #
 #----------------------------------------------------------------------------
 proc GenX::CacheFree { } {
-   variable Data
+   variable Param
 
-   foreach band $Data(Cache) {
+   foreach band $Param(Cache) {
       gdalband free $band
    }
 }

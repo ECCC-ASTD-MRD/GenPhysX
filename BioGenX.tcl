@@ -26,26 +26,26 @@
 #===============================================================================
 
 namespace eval BioGenX { } {
-   variable Data
+   variable Param
    variable Const
 
-   set Data(Version)   0.9
+   set Param(Version)   0.9
 
-   set Data(FieldList) [list ISOP MONO VOC  NO   ISOW MONW VOCW NOW  LAI AREA VCHK ]
-   set Data(NameList)  [list ESIO ESMO ESVO ESNO EWIO EWMO EWVO EWNO LAI AREA VCHK ]
-   set Data(TypeList)  [list C    C    C    C    C    C    C    C    C   X    X    ]
-   set Data(FileOut)   [list OUT  OUT  OUT  OUT  OUT  OUT  OUT  OUT  OUT AUX  AUX  ]
+   set Param(FieldList) [list ISOP MONO VOC  NO   ISOW MONW VOCW NOW  LAI AREA VCHK ]
+   set Param(NameList)  [list ESIO ESMO ESVO ESNO EWIO EWMO EWVO EWNO LAI AREA VCHK ]
+   set Param(TypeList)  [list C    C    C    C    C    C    C    C    C   X    X    ]
+   set Param(FileOut)   [list OUT  OUT  OUT  OUT  OUT  OUT  OUT  OUT  OUT AUX  AUX  ]
 
-   set Data(DoNotUseBELD3) False
-   set Data(Compress)      False
-   set Data(Interp)        AVERAGE
+   set Param(DoNotUseBELD3) False
+   set Param(Compress)      False
+   set Param(Interp)        AVERAGE
 
-   set Data(ToleranceVCHK) 0.0001
+   set Param(ToleranceVCHK) 0.0001
 
    # Type de LULC et fractions
-   set Data(LuTypes)   { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }
-   set Data(CoFracs)   { 1.0 1.0 1.0 1.0 1.0 0.25 0.25 0.0 0.25 0.25 0.25 0.0 0.0 0.0 0.5 }
-   set Data(CoFracs26) { 0 0 0 1.0 1.0 1.0 1.0 1.0 1.0 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.5 0.25 0.25 0.0 1.0 0.25 }
+   set Param(LuTypes)   { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }
+   set Param(CoFracs)   { 1.0 1.0 1.0 1.0 1.0 0.25 0.25 0.0 0.25 0.25 0.25 0.0 0.0 0.0 0.5 }
+   set Param(CoFracs26) { 0 0 0 1.0 1.0 1.0 1.0 1.0 1.0 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.5 0.25 0.25 0.0 1.0 0.25 }
 
    # Paths to emission factor files
    set Path(Factors)      $GenX::Path(BELD3)/Factors
@@ -77,7 +77,7 @@ namespace eval BioGenX { } {
 #
 #-------------------------------------------------------------------------------
 proc BioGenX::LULC_15Classes { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Generating 15 category land-use classification"
@@ -90,13 +90,13 @@ proc BioGenX::LULC_15Classes { Grid } {
    fstdfield readcube BGXVF
 
    #----- Creer le champ LUAU pour la deposition seche
-   fstdfield create BGXLU [fstdfield define $Grid -NI] [fstdfield define $Grid -NJ] [llength $Data(LuTypes)]
+   fstdfield create BGXLU [fstdfield define $Grid -NI] [fstdfield define $Grid -NJ] [llength $Param(LuTypes)]
    GenX::GridClear BGXLU 0.0
 
    GenX::GridCopy BGXVF BGXLU
 
    fstdfield define BGXLU -IP2 0 -IP3 0 -NOMVAR LU15
-   fstdfield stats BGXLU -levels $Data(LuTypes) -leveltype UNDEFINED
+   fstdfield stats BGXLU -levels $Param(LuTypes) -leveltype UNDEFINED
 
    #----- Assigner les 26 champs VF aux 15 categories
    #----- Note: Les indices du slicer vont de 0 a n
@@ -118,7 +118,7 @@ proc BioGenX::LULC_15Classes { Grid } {
    vexpr BGXLU BGXLU()()(14) = BGXVF()()(20)
 
    fstdfield define BGXLU -ETIKET LULC-GRAHM -TYPVAR "C"
-   fstdfield write BGXLU GPXAUXFILE -32 True $BioGenX::Data(Compress)
+   fstdfield write BGXLU GPXAUXFILE -32 True $BioGenX::Param(Compress)
 
    fstdfield free BGXLU BGXCFRAC BGXTFRAC
 }
@@ -134,7 +134,7 @@ proc BioGenX::LULC_15Classes { Grid } {
 #
 # Retour : --
 #
-# Remarques : 
+# Remarques :
 #
 #-------------------------------------------------------------------------------
  proc BioGenX::TransportableFractions { Grid } {
@@ -160,7 +160,7 @@ proc BioGenX::LULC_15Classes { Grid } {
 #
 #-------------------------------------------------------------------------------
 proc BioGenX::TrFractions_15Classes { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Generating 15-category transportable fractions"
@@ -176,13 +176,13 @@ proc BioGenX::TrFractions_15Classes { Grid } {
    }
    fstdfield readcube BGXLU
 
-   for { set i 0 } { $i < [ llength $BioGenX::Data(LuTypes) ] } { incr i } {
-      eval vexpr BGXCFRAC BGXCFRAC + BGXLU()()($i) * [ lindex $BioGenX::Data(CoFracs) $i ]
+   for { set i 0 } { $i < [ llength $BioGenX::Param(LuTypes) ] } { incr i } {
+      eval vexpr BGXCFRAC BGXCFRAC + BGXLU()()($i) * [ lindex $BioGenX::Param(CoFracs) $i ]
    }
    vexpr BGXTFRAC 1.0 - BGXCFRAC
 
    fstdfield define BGXTFRAC -NOMVAR TFRC -ETIKET "TR FRAC 15" -TYPVAR "C"
-   fstdfield write BGXTFRAC GPXAUXFILE -32 True $BioGenX::Data(Compress)
+   fstdfield write BGXTFRAC GPXAUXFILE -32 True $BioGenX::Param(Compress)
 
    fstdfield free BGXTFRAC BGXCFRAC BGXLU
 }
@@ -201,7 +201,7 @@ proc BioGenX::TrFractions_15Classes { Grid } {
 #
 #-------------------------------------------------------------------------------
 proc BioGenX::TrFractions_26Classes { Grid } {
-   variable Data
+   variable Param
 
    GenX::Procs
    GenX::Log INFO "Generating 26-category transportable fractions"
@@ -217,13 +217,13 @@ proc BioGenX::TrFractions_26Classes { Grid } {
    }
    fstdfield readcube BGXVF
 
-   for { set i 0 } { $i < [ llength $BioGenX::Data(CoFracs26) ] } { incr i } {
-      eval vexpr BGXCFRAC BGXCFRAC + BGXVF()()($i) * [ lindex $BioGenX::Data(CoFracs26) $i ]
+   for { set i 0 } { $i < [ llength $BioGenX::Param(CoFracs26) ] } { incr i } {
+      eval vexpr BGXCFRAC BGXCFRAC + BGXVF()()($i) * [ lindex $BioGenX::Param(CoFracs26) $i ]
    }
    vexpr BGXTFRAC 1.0 - BGXCFRAC
 
    fstdfield define BGXTFRAC -NOMVAR TFRC -ETIKET "TR FRAC 26" -TYPVAR "C"
-   fstdfield write BGXTFRAC GPXAUXFILE -32 True $BioGenX::Data(Compress)
+   fstdfield write BGXTFRAC GPXAUXFILE -32 True $BioGenX::Param(Compress)
 
    fstdfield free BGXTFRAC BGXCFRAC BGXVF
 }
@@ -239,17 +239,17 @@ proc BioGenX::TrFractions_26Classes { Grid } {
 #
 # Retour : --
 #
-# Remarques : 
+# Remarques :
 #
 #-------------------------------------------------------------------------------
 proc BioGenX::LocateGrid { Grid } {
-   variable Data
+   variable Param
    variable Const
 
    GenX::Log DEBUG "Identifying which datasets to use for biogenic emissions"
 
    #----- BELD3
-   set BioGenX::Data(datasets) {}
+   set BioGenX::Param(datasets) {}
 
    #----- Lecture d'une bande de la base de donnees beld3
    set file $GenX::Path(BELD3)/beld3-16.tif
@@ -264,18 +264,18 @@ proc BioGenX::LocateGrid { Grid } {
    GenX::Log DEBUG "intersects with BELD3? (Yes if > 0): $intersectswith"
 
    if { $iswithin || $intersectswith } {
-      lappend BioGenX::Data(datasets) "BELD3"
-      set BioGenX::Data(X0) [ lindex $intersect 0 ]
-      set BioGenX::Data(Y0) [ lindex $intersect 1 ]
-      set BioGenX::Data(X1) [ lindex $intersect 2 ]
-      set BioGenX::Data(Y1) [ lindex $intersect 3 ]
+      lappend BioGenX::Param(datasets) "BELD3"
+      set BioGenX::Param(X0) [ lindex $intersect 0 ]
+      set BioGenX::Param(Y0) [ lindex $intersect 1 ]
+      set BioGenX::Param(X1) [ lindex $intersect 2 ]
+      set BioGenX::Param(Y1) [ lindex $intersect 3 ]
    } else {
       GenX::Log DEBUG "BELD3 :Grille cible hors de la grille BELD3."
-      set BioGenX::Data(DoNotUseBELD3) True
+      set BioGenX::Param(DoNotUseBELD3) True
    }
 
    if { ( !$iswithin && $intersectswith ) || !$iswithin } {
-      lappend BioGenX::Data(datasets) "VF"
+      lappend BioGenX::Param(datasets) "VF"
       GenX::Log DEBUG "Grille cible hors (en tout ou en partie) de la zone BELD3."
    }
 
@@ -283,9 +283,9 @@ proc BioGenX::LocateGrid { Grid } {
    gdalband free PC_VEG
    gdalfile close BELD3($file)
 
-   GenX::Log DEBUG "$BioGenX::Data(datasets) dataset(s) required to cover this grid. "
+   GenX::Log DEBUG "$BioGenX::Param(datasets) dataset(s) required to cover this grid. "
 
-   return $BioGenX::Data(datasets)
+   return $BioGenX::Param(datasets)
 }
 
 #-------------------------------------------------------------------------------
@@ -369,7 +369,7 @@ proc BioGenX::StateField { Grid } {
    GenX::GridClear $Grid -1.0
    fstdfield copy BGXST $Grid
    fstdfield define BGXST -NOMVAR "ST" -ETIKET "DUMMY"
-   fstdfield write BGXST GPXOUTFILE -12 True $BioGenX::Data(Compress)
+   fstdfield write BGXST GPXOUTFILE -12 True $BioGenX::Param(Compress)
 }
 
 #-------------------------------------------------------------------------------
@@ -387,7 +387,7 @@ proc BioGenX::StateField { Grid } {
 #
 #-------------------------------------------------------------------------------
 proc BioGenX::CalcEmissions { Grid  } {
-   variable Data
+   variable Param
    variable Const
 
    GenX::Procs
@@ -395,14 +395,14 @@ proc BioGenX::CalcEmissions { Grid  } {
 
    #----- Initialisation des champs
    GenX::GridClear $Grid 0.0
-   foreach field $BioGenX::Data(FieldList) {
+   foreach field $BioGenX::Param(FieldList) {
       fstdfield copy BGX$field $Grid
    }
    fstdfield copy BGXRMS $Grid
    GenX::GridClear BGXRMS 0.0
 
    #----- Calculer les emissions pour chaque banque de donnee
-   foreach landuse $GenX::Data(Biogenic) {
+   foreach landuse $GenX::Param(Biogenic) {
       switch $landuse {
          "VF"   { BioGenX::CalcEmissionsVF   $Grid }
          "BELD" { BioGenX::CalcEmissionsBELD $Grid }
@@ -410,16 +410,16 @@ proc BioGenX::CalcEmissions { Grid  } {
    }
 
    #----- Save output
-   foreach field $BioGenX::Data(FieldList) varname $BioGenX::Data(NameList) season $BioGenX::Data(NameList) fichier $BioGenX::Data(FileOut) {
+   foreach field $BioGenX::Param(FieldList) varname $BioGenX::Param(NameList) season $BioGenX::Param(NameList) fichier $BioGenX::Param(FileOut) {
       fstdfield define BGX$field -ETIKET "EMISSIONS" -TYPVAR $season -NOMVAR $varname -IP1 0
-      fstdfield write BGX$field GPX${fichier}FILE -32 True $BioGenX::Data(Compress)
+      fstdfield write BGX$field GPX${fichier}FILE -32 True $BioGenX::Param(Compress)
    }
    #----- Save merge mask for different databases
    fstdfield define BGXRMS -NOMVAR BRMS -IP1 1200
-   fstdfield write BGXRMS GPXAUXFILE -32 True $BioGenX::Data(Compress)
+   fstdfield write BGXRMS GPXAUXFILE -32 True $BioGenX::Param(Compress)
 
    #----- Free output fields
-   foreach field $BioGenX::Data(FieldList) {
+   foreach field $BioGenX::Param(FieldList) {
       fstdfield free BGX$field
    }
    fstdfield free BGXRMS
@@ -440,7 +440,7 @@ proc BioGenX::CalcEmissions { Grid  } {
 #
 #-------------------------------------------------------------------------------
 proc BioGenX::CalcEmissionsVF { Grid } {
-   variable Data
+   variable Param
    variable Const
 
    GenX::Procs
@@ -467,7 +467,7 @@ proc BioGenX::CalcEmissionsVF { Grid } {
    set no_cst [expr $Const(C2no)   * $Const(Mug2g) * $Const(H2s)]
 
    #----- Calcul des concentrations finales des emissions biogeniques...
-   foreach k $GeoPhysX::Data(VegeTypes) {
+   foreach k $GeoPhysX::Param(VegeTypes) {
 
       #----- Extraire la fraction dans un champ temporaire
       vexpr BGXTMP BGXVF()()([expr $k-1])
@@ -516,15 +516,15 @@ proc BioGenX::CalcEmissionsVF { Grid } {
 #
 #-------------------------------------------------------------------------------
 proc BioGenX::CalcEmissionsBELD { Grid } {
-   variable Data
+   variable Param
    variable Const
 
    GenX::Procs
-   GenX::Log INFO "Calculating biogenic emissions using BELD3 database ($Data(Interp))."
+   GenX::Log INFO "Calculating biogenic emissions using BELD3 database ($Param(Interp))."
 
    #----- Verification de la necessite d'utiliser BELD3
    BioGenX::LocateGrid $Grid
-   if {$BioGenX::Data(DoNotUseBELD3)} {
+   if {$BioGenX::Param(DoNotUseBELD3)} {
       GenX::Log WARNING "Specified grid does not intersect with BELD3 dataset. Skipping."
       return
    }
@@ -533,7 +533,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
    #----- Nettoyer à 0 le champ Grid pour eviter que les interpolations
    #----- AVERAGE et autres ne moyennent les champs d'une fois a l'autre
    GenX::GridClear $Grid 0.0
-   foreach field $Data(FieldList) {
+   foreach field $Param(FieldList) {
       fstdfield copy BGX$field $Grid
    }
 
@@ -561,11 +561,11 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
       set i_out [format "%3i" $i]
       GenX::Log DEBUG "Reading layer $i_out of $nfiles: code [format "%3i" $k] -- $vegtyp($k)" False
       gdalfile open BELD3($file) read $file
-      eval "gdalband read PC_VEG {{BELD3($file) 1}} $BioGenX::Data(X0) $BioGenX::Data(Y0) $BioGenX::Data(X1) $BioGenX::Data(Y1)"
-      gdalband stats PC_VEG -celldim $GenX::Data(Cell)
+      eval "gdalband read PC_VEG {{BELD3($file) 1}} $BioGenX::Param(X0) $BioGenX::Param(Y0) $BioGenX::Param(X1) $BioGenX::Param(Y1)"
+      gdalband stats PC_VEG -celldim $GenX::Param(Cell)
 
       #----- Interpolation de la grille LAMBERT a la grille de destination
-      fstdfield gridinterp $Grid PC_VEG $Data(Interp) True
+      fstdfield gridinterp $Grid PC_VEG $Param(Interp) True
 
       #----- Liberation de l'espace memoire utilise
       gdalband free PC_VEG
@@ -608,7 +608,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
    eval "vexpr BGXNOW   BGXNOW*$Const(C2no)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
 
    #----- Calculate mask for VF-based emissions
-   set ecartmax [expr 1.0 + $Data(ToleranceVCHK)]
-   set ecartmin [expr 1.0 - $Data(ToleranceVCHK)]
+   set ecartmax [expr 1.0 + $Param(ToleranceVCHK)]
+   set ecartmin [expr 1.0 - $Param(ToleranceVCHK)]
    vexpr BGXRMS ifelse((BGXVCHK >= $ecartmin) && (BGXVCHK <= $ecartmax),1.0,0.0)
 }

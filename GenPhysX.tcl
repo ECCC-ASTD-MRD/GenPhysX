@@ -70,81 +70,70 @@ source $dir/BioGenX.tcl
 GenX::ParseCommandLine
 
 #----- Open output files
-fstdfile open GPXOUTFILE write $GenX::Path(OutFile).fst
-fstdfile open GPXAUXFILE write $GenX::Path(OutFile)_aux.fst
+fstdfile open GPXOUTFILE write $GenX::Param(OutFile)$GenX::Param(Process).fst
+fstdfile open GPXAUXFILE write $GenX::Param(OutFile)$GenX::Param(Process)_aux.fst
 
 #----- Try to get the namelist if provided
-GenX::GetNML $GenX::Path(NameFile)
+GenX::GetNML $GenX::Param(NameFile)
 
-#----- Loop on grids found
-foreach grid [GenX::GridGet] {
+proc ProcessCheck { Channel } {
+   global Param
 
-   #----- Check if we only need to process topo
-   if { [fstdfield define $grid -IP1]!=1200 || [fstdfield define $grid -IP3]==1 } {
-      if { $GenX::Data(Topo)!="" } {
-         GeoPhysX::AverageTopo     $grid
-      }
+   if { [eof $Channel] } {
+      close $Channel
+      incr Param(Process) -1
    } else {
-      #----- Topography
-      if { $GenX::Data(Topo)!="" } {
-         GeoPhysX::AverageTopo     $grid
-         GeoPhysX::AverageTopoLow  $grid
-         GeoPhysX::AverageGradient $grid
-      }
-
-      #----- Slope and Aspect
-      if { $GenX::Data(Aspect)!="" } {
-         GeoPhysX::AverageAspect $grid
-      }
-
-      #----- Land-water mask
-      if { $GenX::Data(Mask)!="" } {
-         GeoPhysX::AverageMask $grid
-      }
-
-      #----- Land-water mask
-      if { $GenX::Data(GeoMask)!="" } {
-         GeoPhysX::AverageGeoMask $grid
-      }
-
-      #----- Vegetation type
-      if { $GenX::Data(Vege)!="" } {
-         GeoPhysX::AverageVege $grid
-      }
-
-      #----- Soil type
-      if { $GenX::Data(Soil)!="" } {
-         GeoPhysX::AverageSand $grid
-         GeoPhysX::AverageClay $grid
-      }
-
-      #----- Consistency checks
-      switch $GenX::Data(Check) {
-         "STD" { GeoPhysX::CheckConsistencyStandard }
-      }
-
-      #----- Sub grid calculations
-      if { $GenX::Data(Sub)!="" } {
-         GeoPhysX::SubCorrectionFactor
-         GeoPhysX::SubTopoFilter
-         GeoPhysX::SubLaunchingHeight
-         GeoPhysX::SubY789
-         GeoPhysX::SubRoughnessLength
-      }
-
-      #----- Biogenic emissions calculations
-      if { $GenX::Data(Biogenic)!="" } {
-         BioGenX::CalcEmissions  $grid
-         BioGenX::TransportableFractions $grid
-      }
-
-      #----- Diagnostics of output fields
-      if { $GenX::Data(Diag) } {
-         GeoPhysX::Diag
-      }
+      puts [read -nonewline $Channel]
+   }
+   if { !$Param(Process) } {
+      set Param(Done) True
    }
 }
 
-GenX::MetaData
+#----- Get get grids to process
+set grids [GenX::GridGet]
+
+if { [llength $grids]==1 } {
+   #----- If we have only on grid
+   GenX::Process $grids
+   GenX::MetaData $grids
+} else {
+   #----- Otherwise, launch each grid into a sub-process
+   set Param(Process) 0
+   set Param(Done)    False
+
+   foreach grid $grids {
+      GenX::Log INFO "Launching processing for grid #$Param(Process)"
+
+      file copy -force $GenX::Param(OutFile).fst $GenX::Param(OutFile)$Param(Process).fst
+      file copy -force $GenX::Param(OutFile)_aux.fst $GenX::Param(OutFile)$Param(Process)_aux.fst
+
+      set channel [open "|[info script] $argv -process $Param(Process) 2>@1" r+]
+      fconfigure $channel -blocking False -buffering line
+      fileevent $channel readable [list ProcessCheck $channel]
+      incr Param(Process) 1
+   }
+
+   #----- Wait for all of them to finish
+   vwait Param(Done)
+
+   #----- Merge results
+   set Param(Process) 0
+   foreach grid $grids {
+      set err [catch { exec echo "desire(-1,'','',-1,-1,-1,-1)" | editfst+ -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst } msg]
+      if { $err } {
+         GenX::Log ERROR "Problems while merging results from grid #$Param(Process):\n\n\t:msg"
+      }
+      set err [catch { exec echo "desire(-1,'','',-1,-1,-1,-1)" | editfst+ -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst } msg]
+      if { $err } {
+         GenX::Log ERROR "Problems while merging auxiliary results from grid #$Param(Process):\n\n\t:msg"
+      }
+      #file delete [glob $GenX::Param(OutFile)$Param(Process).fst $GenX::Param(OutFile)$Param(Process)_aux.fst]
+      incr Param(Process) 1
+   }
+}
+
+GenX::Log INFO "Done processing"
+
 fstdfile close GPXOUTFILE
 fstdfile close GPXAUXFILE
