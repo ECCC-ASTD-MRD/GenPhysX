@@ -960,16 +960,24 @@ proc GenX::GridGet { } {
    variable Path
    variable Param
 
+   set grids {}
    if { [file exists $Param(GridFile)] } {
      set grids [GenX::GridGetFromFile $Param(GridFile)]
-   } elseif { [file exists $Param(OutFile).fst] } {
+   }
+
+   if { ![llength $grids] && [file exists $Param(OutFile).fst] } {
      set grids [GenX::GridGetFromFile $Param(OutFile).fst False]
-   } elseif { [file exists $Param(NameFile)] } {
+   }
+
+   if { ![llength $grids] && [file exists $Param(NameFile)] } {
      set grids [GenX::GridGetFromGEM $Param(NameFile)]
-   } else {
+   }
+
+   if { ![llength $grids] } {
       GenX::Log ERROR "Could not find a grid definition either from a standard file or a namelist"
       exit 1
    }
+
    if { $Param(Process)!="" } {
       return [lindex $grids $Param(Process)]
    } else {
