@@ -366,7 +366,7 @@ proc GenX::Log { Type Message { Head True } } {
    set proc ""
 
    if { $Log($Type)<=$Log(Level) } {
-      if { $Head && [info level]} {
+      if { $Head && [info level]>1} {
          set head " [lindex [info level [expr [info level]-1]] 0]: "
       }
       if { $Param(Process)!="" } {
@@ -437,9 +437,6 @@ proc GenX::MetaData { Grid } {
    set fld [MetData::TextCode $meta]
    fstdfield define $fld -NOMVAR META -IP1 [fstdfield define $Grid -IP1] -IP2 [fstdfield define $Grid -IP2] -IP3 [fstdfield define $Grid -IP3]
    fstdfield write $fld GPXOUTFILE 0 True
-
-   #----- Tada ...
-   puts "\nExecution time: [expr [clock seconds]-$Param(Secs)]s"
 }
 
 #----------------------------------------------------------------------------

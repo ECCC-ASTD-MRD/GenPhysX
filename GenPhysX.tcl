@@ -137,7 +137,8 @@ if { [llength $grids]==1 } {
    }
 }
 
-GenX::Log INFO "Done processing"
+#----- Tadaaaa ...
+GenX::Log INFO "Done processing (Execution time: [expr [clock seconds]-$GenX::Param(Secs)]s)"
 
 fstdfile close GPXOUTFILE
 fstdfile close GPXAUXFILE
