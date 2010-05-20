@@ -115,6 +115,10 @@ namespace eval GeoPhysX { } {
    set Const(GLOBCOVER2RPN) { { 220 210 70 40 90 50 60 30 120 140 230 14 20 11 190 150 160 170 180 200 100 110 130 }
                               {   2   3  4  5  4  7  7 14  14  14  24 15 15 20  21  24  23  23  23  24  25  26  26 } }
 
+   #----- Correspondance de Douglas Chan Mai 2010 pour la conversion des classes GCL2000 vers les classes RPN
+   set Const(GLC20002RPN) { { 1 2 3 4 5 6   7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22  23 }
+                            { 5 7 7 4 6 25 23 23 25 25 26 11 13 13 23 15 15 15 24  3  2 21 -99  } }
+
    #----- Correspondance de Stephane Belair decembre 2008 pour la conversion des classes CCRS vers les classes RPN
    set Const(CCRS2RPN) { { 39 37 38 1 3 4 6 7 8 9 10 5 2 11 12 16 20 18 17 26 27 28 29 36 21 22 23 24 25 19 32 30 33 34 35 13 14 15 31 }
                          {  2  3  3 4 4 4 4 4 4 4  4 6 7  7  7 11 12 13 14 15 15 15 15 21 22 22 22 22 22 23 23 24 24 24 24 25 25 25 26 } }
@@ -528,6 +532,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "USGS"      { GeoPhysX::AverageMaskUSGS      $Grid }
       "CANVEC"    { GeoPhysX::AverageMaskCANVEC    $Grid }
       "GLOBCOVER" { GeoPhysX::AverageMaskGLOBCOVER $Grid }
+      "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
    }
 }
 
@@ -629,8 +634,66 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
       fstdfield define GPXMASK -NOMVAR MG -IP1 0
       fstdfield write GPXMASK GPXOUTFILE -24 True
       fstdfield free MASKTILE
+
+      gdalband free GLOBTILE
    }
    gdalfile close GLOBFILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageMaskGLC2000>
+# Creation : June 2006 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the land/sea mask through averaging.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageMaskGLC2000 { Grid } {
+
+   GenX::Procs
+   GenX::Log INFO "Averaging mask using GLC2000 database"
+
+   fstdfield copy GPXMASK  $Grid
+   GenX::GridClear GPXMASK 0.0
+
+   #----- Open the file
+   gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLCFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with GLC2000 database, mask will not be calculated"
+   } else {
+      GenX::Log INFO "Grid intersection with GLOBCOVER database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
+            gdalband read GLCTILE { { GLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            gdalband stats GLCTILE -nodata 255 -celldim $GenX::Param(Cell)
+
+            vexpr GLCTILE ifelse(GLCTILE==20,0.0,1.0)
+            fstdfield gridinterp GPXMASK GLCTILE AVERAGE False
+         }
+      }
+
+      #----- Save output
+      fstdfield gridinterp GPXMASK - NOP True
+      fstdfield define GPXMASK -NOMVAR MG -IP1 0
+      fstdfield write GPXMASK GPXOUTFILE -24 True
+
+      gdalband free GCLTILE
+   }
+   gdalfile close GLCFILE
 }
 
 #----------------------------------------------------------------------------
@@ -781,6 +844,7 @@ proc GeoPhysX::AverageVege { Grid } {
       switch $vege {
          "USGS"      { GeoPhysX::AverageVegeUSGS      GPXVF ;#----- USGS global vege averaging method }
          "GLOBCOVER" { GeoPhysX::AverageVegeGLOBCOVER GPXVF ;#----- GLOBCOVER global vege averaging method }
+         "GLC2000"   { GeoPhysX::AverageVegeGLC2000   GPXVF ;#----- GLC2000 global vege averaging method }
          "CCRS"      { GeoPhysX::AverageVegeCCRS      GPXVF ;#----- CCRS over Canada only vege averaging method }
          "EOSD"      { GeoPhysX::AverageVegeEOSD      GPXVF ;#----- EOSD over Canada only vege averaging method }
          "CORINE"    { GeoPhysX::AverageVegeCORINE    GPXVF ;#----- CORINE over Europe only vege averaging method }
@@ -1030,6 +1094,68 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
       vector free FROMGLOB TORPN
    }
    gdalfile close GLOBFILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageVegeGLC2000>
+# Creation : Janvier 2009 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the 20 something vegetation types through averaging.
+#            using GlobCover Database
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageVegeGLC2000 { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs
+   GenX::Log INFO "Averaging vegetation type using GLC2000 database"
+
+   #----- Open the file
+   gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLCFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with GLC2000 database, vegetation will not be calculated"
+   } else {
+      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(GLC20002RPN) 0]\n   To  :[lindex $Const(GLC20002RPN) 1]"
+      vector create FROMGLC  [lindex $Const(GLC20002RPN) 0]
+      vector create TORPN    [lindex $Const(GLC20002RPN) 1]
+
+      GenX::Log INFO "Grid intersection with GLC2000 database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
+            gdalband read GLCTILE { { GLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            gdalband stats GLCTILE -nodata 255 -celldim $GenX::Param(Cell)
+
+            vexpr GLCTILE lut(GLCTILE,FROMGLC,TORPN)
+            fstdfield gridinterp $Grid GLCTILE NORMALIZED_COUNT $Param(VegeTypes) False
+         }
+      }
+
+      #----- Use accumulator to figure out coverage in destination
+      #      But remove border of coverage since it will not be full
+      fstdfield gridinterp $Grid - ACCUM
+      vexpr GPXVSK !fpeel($Grid)
+      fstdfield stats $Grid -mask GPXVSK
+
+      gdalband free GLCTILE
+      vector free FROMGLC TORPN
+   }
+   gdalfile close GLCFILE
 }
 
 #----------------------------------------------------------------------------

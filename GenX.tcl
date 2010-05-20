@@ -86,9 +86,9 @@ namespace eval GenX { } {
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
-   set Param(Veges)     { USGS GLOBCOVER CCRS EOSD CORINE }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD CORINE }
    set Param(Soils)     { USDA AGRC FAO }
-   set Param(Masks)     { USGS GLOBCOVER CANVEC }
+   set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Checks)    { STD }
@@ -131,6 +131,7 @@ namespace eval GenX { } {
    set Path(CANVEC)    $Path(DBase)/CanVec
    set Path(CORINE)    $Path(DBase)/CORINE
    set Path(GlobCover) $Path(DBase)/GlobCoverv2
+   set Path(GLC2000)   $Path(DBase)/GLC2000
    set Path(CCRS)      $Path(DBase)/CCRS-LC2005/
    set Path(Various)   $Path(DBase)/Various
    set Path(BELD3)     $Path(DBase)/BELD3
@@ -961,6 +962,7 @@ proc GenX::GridGet { } {
    variable Param
 
    set grids {}
+
    if { [file exists $Param(GridFile)] } {
      set grids [GenX::GridGetFromFile $Param(GridFile)]
    }
