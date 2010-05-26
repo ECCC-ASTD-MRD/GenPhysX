@@ -127,12 +127,14 @@ if { [llength $grids]==1 } {
       set err [catch { exec echo "desire(-1,'','',-1,-1,-1,-1)" | editfst+ -e -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst } msg]
       if { $err } {
          GenX::Log ERROR "Problems while merging results from grid #$Param(Process):\n\n\t:msg"
+      } else {
+         file delete $GenX::Param(OutFile)$Param(Process).fst
       }
       set err [catch { exec echo "desire(-1,'','',-1,-1,-1,-1)" | editfst+ -e -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst } msg]
       if { $err } {
          GenX::Log ERROR "Problems while merging auxiliary results from grid #$Param(Process):\n\n\t:msg"
+         file delete $GenX::Param(OutFile)$Param(Process)_aux.fst
       }
-      #file delete [glob $GenX::Param(OutFile)$Param(Process).fst $GenX::Param(OutFile)$Param(Process)_aux.fst]
       incr Param(Process) 1
    }
 }

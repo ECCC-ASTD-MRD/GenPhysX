@@ -132,7 +132,7 @@ namespace eval GenX { } {
    set Path(CORINE)    $Path(DBase)/CORINE
    set Path(GlobCover) $Path(DBase)/GlobCoverv2
    set Path(GLC2000)   $Path(DBase)/GLC2000
-   set Path(CCRS)      $Path(DBase)/CCRS-LC2005/
+   set Path(CCRS)      $Path(DBase)/CCRS-LC2005
    set Path(Various)   $Path(DBase)/Various
    set Path(BELD3)     $Path(DBase)/BELD3
 
