@@ -19,9 +19,11 @@
 #   GeoPhysX::AverageGradient      { Grid }
 #
 #   GeoPhysX::AverageTopo          { Grid }
-#   GeoPhysX::AverageTopoUSGS      { Grid }
-#   GeoPhysX::AverageTopoDEM       { Grid }
 #   GeoPhysX::AverageTopoLow       { Grid }
+#   GeoPhysX::AverageTopoUSGS      { Grid }
+#   GeoPhysX::AverageTopoCDED      { Grid { Res 250 } }
+#   GeoPhysX::AverageTopoSRTM      { Grid }
+#   GeoPhysX::AverageTopoASTERGDEM { Grid }
 #
 #   GeoPhysX::AverageMask          { Grid }
 #   GeoPhysX::AverageMaskUSGS      { Grid }
@@ -156,10 +158,11 @@ proc GeoPhysX::AverageTopo { Grid } {
 
    foreach topo $GenX::Param(Topo) {
       switch $topo {
-         "USGS"    { GeoPhysX::AverageTopoUSGS $Grid     ;#----- USGS topograhy averaging method (Global 900m) }
-         "SRTM"    { GeoPhysX::AverageTopoSRTM $Grid     ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
-         "CDED50"  { GeoPhysX::AverageTopoCDED $Grid 50  ;#----- CDED50 topograhy averaging method (Canada 90m)}
-         "CDED250" { GeoPhysX::AverageTopoCDED $Grid 250 ;#----- CDED250 topograhy averaging method (Canada 25m)}
+         "USGS"      { GeoPhysX::AverageTopoUSGS      $Grid     ;#----- USGS topograhy averaging method (Global 900m) }
+         "SRTM"      { GeoPhysX::AverageTopoSRTM      $Grid     ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
+         "CDED50"    { GeoPhysX::AverageTopoCDED      $Grid 50  ;#----- CDED50 topograhy averaging method (Canada 90m) }
+         "CDED250"   { GeoPhysX::AverageTopoCDED      $Grid 250 ;#----- CDED250 topograhy averaging method (Canada 25m) }
+         "ASTERGDEM" { GeoPhysX::AverageTopoASTERGDEM $Grid     ;#----- ASTERGDEM topograhy averaging method (Global but south pole 25m) }
       }
    }
 
@@ -223,6 +226,56 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
    #----- Create source resolution used in destination
    fstdfield gridinterp GPXRMS - ACCUM
    vexpr GPXRES ifelse((GPXTSK && GPXRMS),900.0,GPXRES)
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageTopoASTERGDEM>
+# Creation : Octobre 2008 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the topography using ASTER GDEM.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the topography
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
+   variable Param
+
+   GenX::Procs
+   GenX::Log INFO "Averaging topography using ATSERGDEM database"
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   set la0 [lindex $limits 0]
+   set lo0 [lindex $limits 1]
+   set la1 [lindex $limits 2]
+   set lo1 [lindex $limits 3]
+
+   foreach file [GenX::ASTERGDEMFindFiles $la0 $lo0 $la1 $lo1] {
+      GenX::Log DEBUG "   Processing ATSERGDEM file $file" False
+      gdalband read ATSERGDEMTILE [gdalfile open ATSERGDEMFILE read $file]
+      gdalband stats ATSERGDEMTILE -nodata -9999 -celldim $GenX::Param(Cell)
+
+      fstdfield gridinterp $Grid ATSERGDEMTILE AVERAGE False
+      fstdfield gridinterp GPXRMS ATSERGDEMTILE AVERAGE_SQUARE False
+      gdalfile close ATSERGDEMFILE
+   }
+   gdalband free ATSERGDEMTILE
+
+   #----- Create source resolution used in destination
+   fstdfield gridinterp GPXRMS - ACCUM
+   vexpr GPXRES ifelse((GPXTSK && GPXRMS),25,GPXRES)
+
+   #----- Use accumulator to figure out coverage in destination
+   #----- But remove border of coverage since it will not be full
+   #----- Apply coverage mask for next resolution
+   fstdfield gridinterp $Grid - ACCUM
+   vexpr GPXTSK !fpeel($Grid)
+   fstdfield stats $Grid -mask GPXTSK
+   fstdfield stats GPXRMS -mask GPXTSK
 }
 
 #----------------------------------------------------------------------------

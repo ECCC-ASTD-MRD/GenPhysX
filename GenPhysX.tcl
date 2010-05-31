@@ -31,12 +31,12 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.4.
 #   Processing parameters:
 #      Specify databases in order of processing, joined by + ex: STRM+USGS
 #
-#      [-topo]     ()                             : Topography method { USGS SRTM CDED250 CDED50 }
+#      [-topo]     ()                             : Topography method { USGS SRTM CDED250 CDED50 ASTERGDEM }
 #      [-mask]     ()                             : Mask method { USGS CANVEC }
 #      [-geomask]  ()                             : Mask method { USGS CANVEC }
 #      [-vege]     ()                             : Vegetation method { USGS EOSD CORINE }
 #      [-soil]     ()                             : Soil method { USDA }
-#      [-aspect]   ()                             : Calculates aspect and slope { SRTM CDED250 CDED50 }
+#      [-aspect]   ()                             : Calculates aspect and slope { SRTM CDED250 CDED50 ASTERGDEM }
 #      [-biogenic] ()                             : Biogenic calculation { BELD USGS }
 #      [-check]                                   : Do consistency checks
 #      [-subgrid]                                 : Calculates sub grid fields
@@ -133,6 +133,7 @@ if { [llength $grids]==1 } {
       set err [catch { exec echo "desire(-1,'','',-1,-1,-1,-1)" | editfst+ -e -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst } msg]
       if { $err } {
          GenX::Log ERROR "Problems while merging auxiliary results from grid #$Param(Process):\n\n\t:msg"
+      } else {
          file delete $GenX::Param(OutFile)$Param(Process)_aux.fst
       }
       incr Param(Process) 1

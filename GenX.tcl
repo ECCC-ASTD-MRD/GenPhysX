@@ -15,31 +15,32 @@
 #
 # Functions :
 #
-#   GenX::Procs            { }
-#   GenX::Log              { Type Message { Head True } }
-#   GenX::Submit           { }
-#   GenX::MetaData         { Grid }
-#   GenX::ParseArgs        { Argv Argc No Multi Cmd }
-#   GenX::ParseCommandLine { }
-#   GenX::ParseTarget      { } {
-#   GenX::Continue         { }
-#   GenX::CommandLine      { }
-#   GenX::GetNML           { File }
-#   GenX::FieldCopy        { InFile OutFile DateV Etiket IP1 IP2 IP3 TV NV }
-#   GenX::GridClear        { Grids { Value 0.0 } }
-#   GenX::GridLimits       { Grid }
-#   GenX::GridCopy         { SourceField DestField }
-#   GenX::GridCopyDesc     { Field FileIn FileOut }
-#   GenX::GridGet          { }
-#   GenX::GridGetFromGEM   { File }
-#   GenX::GridGetFromNML   { File }
-#   GenX::GridGetFromFile  { File { Copy True } }
-#   GenX::CANVECFindFiles  { Lat0 Lon0 Lat1 Lon1 Layers }
-#   GenX::SRTMFindFiles    { Lat0 Lon0Lat1 Lon1 }
-#   GenX::CDEDFindFiles    { Lat0 Lon0 Lat1 Lon1 { Res 50 } }
-#   GenX::EOSDFindFiles    { Lat0 Lon0Lat1 Lon1 }
-#   GenX::CacheGet         { File { NoData "" } }
-#   GenX::CacheFree        { }
+#   GenX::Procs              { }
+#   GenX::Log                { Type Message { Head True } }
+#   GenX::Submit             { }
+#   GenX::MetaData           { Grid }
+#   GenX::ParseArgs          { Argv Argc No Multi Cmd }
+#   GenX::ParseCommandLine   { }
+#   GenX::ParseTarget        { } {
+#   GenX::Continue           { }
+#   GenX::CommandLine        { }
+#   GenX::GetNML             { File }
+#   GenX::FieldCopy          { InFile OutFile DateV Etiket IP1 IP2 IP3 TV NV }
+#   GenX::GridClear          { Grids { Value 0.0 } }
+#   GenX::GridLimits         { Grid }
+#   GenX::GridCopy           { SourceField DestField }
+#   GenX::GridCopyDesc       { Field FileIn FileOut }
+#   GenX::GridGet            { }
+#   GenX::GridGetFromGEM     { File }
+#   GenX::GridGetFromNML     { File }
+#   GenX::GridGetFromFile    { File { Copy True } }
+#   GenX::ASTERGDEMFindFiles { Lat0 Lon0Lat1 Lon1 }
+#   GenX::CANVECFindFiles    { Lat0 Lon0 Lat1 Lon1 Layers }
+#   GenX::SRTMFindFiles      { Lat0 Lon0Lat1 Lon1 }
+#   GenX::CDEDFindFiles      { Lat0 Lon0 Lat1 Lon1 { Res 50 } }
+#   GenX::EOSDFindFiles      { Lat0 Lon0Lat1 Lon1 }
+#   GenX::CacheGet           { File { NoData "" } }
+#   GenX::CacheFree          { }
 #
 #============================================================================
 
@@ -84,8 +85,8 @@ namespace eval GenX { } {
    set Param(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
    set Param(NameFile)  ""                    ;#Namelist to use
 
-   set Param(Topos)     { USGS SRTM CDED250 CDED50 }
-   set Param(Aspects)   { SRTM CDED250 CDED50 }
+   set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM }
+   set Param(Aspects)   { SRTM CDED250 CDED50 ASTERGDEM }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD CORINE }
    set Param(Soils)     { USDA AGRC FAO }
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
@@ -126,6 +127,7 @@ namespace eval GenX { } {
    set Path(Grad)      $Path(DBase)/db/data_grad
    set Path(SRTM)      $Path(DBase)/SRTMv4
    set Path(CDED)      $Path(DBase)/CDED
+   set Path(ASTERGDEM) $Path(DBase)/ASTGTM_V1.1
    set Path(EOSD)      $Path(DBase)/EOSD
    set Path(NTS)       $Path(DBase)/NTS
    set Path(CANVEC)    $Path(DBase)/CanVec
@@ -1232,6 +1234,58 @@ proc GenX::CacheFree { } {
    foreach band $Param(Cache) {
       gdalband free $band
    }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::ASTERGDEMFindFiles>
+# Creation : Novembre 2007 - Gauthier JP - CMC/CMOE
+#
+# Goal     : Get the ASTER GDEM data filenames covering an area.
+#
+# Parameters :
+#  <Lat0>    : Lower left corner latitude
+#  <Lon0>    : Lower left corner longitude
+#  <Lat1>    : Upper right corner latitude
+#  <Lon1>    : Upper right corner longitude
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::ASTERGDEMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
+   variable Path
+
+   set files { }
+   set lon0 [expr int(floor($Lon0/5))*5]
+   set lon1 [expr int(ceil($Lon1/5))*5]
+   set lat0 [expr int(floor($Lat0/5))*5]
+   set lat1 [expr int(ceil($Lat1/5))*5]
+
+   for { set lat $lat0 } { $lat<=$lat1 } { incr lat 5 } {
+      for { set lon $lon0 } { $lon<=$lon1 } { incr lon 5 } {
+
+         if { $lat<0 } {
+            set y S
+         } else {
+            set y N
+         }
+         set la [expr abs($lat)]
+
+         if { $lon<0 } {
+            set x W
+            set lo [expr abs($lon)]
+         } else {
+            set x E
+            set lo $lon
+         }
+
+         if { [llength [set lst [glob -nocomplain [format "$Path(ASTERGDEM)/UNIT_%s%02i%s%03i/*_dem.tif" $y $la $x $lo]]]] } {
+            set files [concat $files $lst]
+         }
+      }
+   }
+   return $files
 }
 
 #----------------------------------------------------------------------------
