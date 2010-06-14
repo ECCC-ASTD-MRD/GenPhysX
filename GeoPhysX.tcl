@@ -163,6 +163,7 @@ proc GeoPhysX::AverageTopo { Grid } {
          "CDED50"    { GeoPhysX::AverageTopoCDED      $Grid 50  ;#----- CDED50 topograhy averaging method (Canada 90m) }
          "CDED250"   { GeoPhysX::AverageTopoCDED      $Grid 250 ;#----- CDED250 topograhy averaging method (Canada 25m) }
          "ASTERGDEM" { GeoPhysX::AverageTopoASTERGDEM $Grid     ;#----- ASTERGDEM topograhy averaging method (Global but south pole 25m) }
+         "GTOPO30"   { GeoPhysX::AverageTopoGTOPO30   $Grid     ;#----- GTOPO30 topograhy averaging method (Global  900m) }
       }
    }
 
@@ -222,6 +223,48 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
       fstdfile close GPXTOPOFILE
    }
    fstdfield free USGSTILE
+
+   #----- Create source resolution used in destination
+   fstdfield gridinterp GPXRMS - ACCUM
+   vexpr GPXRES ifelse((GPXTSK && GPXRMS),900.0,GPXRES)
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageTopoGTOPO30>
+# Creation : June 2006 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the topography using GTOPO30.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the topography
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
+
+   GenX::Procs
+   GenX::Log INFO "Averaging topography using GTOPO30 database"
+
+   #----- Loop over files
+   foreach file [glob $GenX::Path(GTOPO30)/*.DEM] {
+      GenX::Log DEBUG "   Processing GTOPO30 file : $file" False
+      set bands [gdalfile open GTOPO30FILE read $file]
+      if { [llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GTOPO30FILE]]]] } {
+         gdalband read GTOPO30TILE $bands
+         gdalband stats GTOPO30TILE -celldim $GenX::Param(Cell)
+
+         #----- Replace nodata value with 0 meters
+         vexpr GTOPO30TILE ifelse(GTOPO30TILE==-9999,0,GTOPO30TILE)
+
+         fstdfield gridinterp $Grid GTOPO30TILE AVERAGE False
+         fstdfield gridinterp GPXRMS GTOPO30TILE AVERAGE_SQUARE False
+      }
+      gdalfile close GTOPO30FILE
+   }
+   gdalband free GTOPO30TILE
 
    #----- Create source resolution used in destination
    fstdfield gridinterp GPXRMS - ACCUM
@@ -1988,7 +2031,6 @@ proc GeoPhysX::CheckConsistencyStandard { } {
       GeoPhysX::DominantVege GPXVF2
    } else {
       GenX::Log WARNING "Could not find VF(2), will not write GA field and calculate dominant vegetation"
-      break
    }
 
    #----- Check consistency for J1 and J2
