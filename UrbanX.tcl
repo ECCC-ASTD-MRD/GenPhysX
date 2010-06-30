@@ -235,14 +235,15 @@ proc UrbanX::FindPaths { } {
 }
 
 proc UrbanX::SandwichBNDT { } {
-# Rasterize and flattens all NTDB layers
+# Rasterize and flatten all NTDB layers
    variable Data
-   puts "\nProcessing Sandwich"
-   set Data(Excluded) { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p }
-   set Data(LayersPostPro) { mininga_p railway_l road_l runway_a runway_p sport_t_l buildin_p buildin_a }
+   puts "\nGenerating Sandwich"
+   set Data(Excluded) { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers ignored for rasterization
+
    gdalband create RSANDWICH $Data(Width) $Data(Height) 1 UInt16
    eval gdalband define RSANDWICH -georef UTMREF
    gdalband define RSANDWICH -transform [list $Data(X0) $Data(Res) 0.000000000000000 $Data(Y0) 0.000000000000000 -$Data(Res)]
+
    # Vérification des shapefiles présents afin de ne pas en manquer un hors-liste
    for { set i 0 } { $i < $Data(Nombre_feuillets) } {  incr i } {
       set shp_filenames [glob -nocomplain -tails -directory $Data(Path$i) *.shp]
@@ -251,11 +252,13 @@ proc UrbanX::SandwichBNDT { } {
          if { [lsearch -exact $Data(Files) $file]==-1 } {
             if { [lsearch -exact $Data(Excluded) $file]==-1 } {
                puts "\n\033\[01;31m*** WARNING *** FILE NAMED '$Data(Sheet_names$i)_$file.shp' HAS NO PRIORITY VALUE AND WON'T BE PROCESSED ****\033\[0m\n"
-#               puts "*** WARNING *** FILE NAMED '$Data(Sheet_names$i)_$file.shp' HAS NO PRIORITY VALUE AND WON'T BE PROCESSED ****\n"
             }
          }
       }
    }
+
+   # Rasterization of NTDB layers
+   set Data(LayersPostPro) { mininga_p railway_l road_l runway_a runway_p sport_t_l buildin_p buildin_a } ;# layers requiring postprocessing
    set j 0
    for { set i 0 } { $i < $Data(Nombre_feuillets) } { incr i } {
       foreach file $Data(Files) value $Data(Values) {
@@ -265,19 +268,19 @@ proc UrbanX::SandwichBNDT { } {
             if { [lsearch -exact $Data(LayersPostPro) $file]!=-1 } {
                if  { $file=="mininga_p" } {
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (type != 2) "
-                  puts "Processing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                  puts "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) $value
                   # mine souterraine ponctuelle convertie en batiment :
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (type = 2) "
-                  puts "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (underground mines) from $Data(Sheet_names$i)_$file.shp to priority value 161"
+                  puts "Converting and rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] selected features (underground mines) from $Data(Sheet_names$i)_$file.shp to priority value 161"
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) 161
                } elseif  { $file=="railway_l" } {
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (rel_ground != 2) "
-                  puts "Processing [ogrlayer define VFEATURE2KEEP$j -nb] features (excluding railway bridges and tunnels) from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                  puts "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features (excluding railway bridges and tunnels) from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) $value
                } elseif  { $file=="runway_a" || $file=="runway_p" } {
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (surface != 2) "
-                  puts "Processing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                  puts "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) $value
                   # unpaved runway converted to priority 41
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (surface = 2) "
@@ -285,7 +288,7 @@ proc UrbanX::SandwichBNDT { } {
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) 41
                } elseif  { $file=="sport_t_l" || $file=="sport_t_a" } {
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (type != 1) "
-                  puts "Processing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                  puts "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) $value
                   # paved sports tracks converted to priority 271
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (type = 1) "
@@ -293,7 +296,7 @@ proc UrbanX::SandwichBNDT { } {
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) 271
                } elseif  { $file=="seapl_b_p" } {
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (type != 1) "
-                  puts "Processing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                  puts "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp as VFEATURE2KEEP$j with priority value $value"
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) $value
                   # seaplane base mouillage converted to priority 181
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (type = 1) "
@@ -302,7 +305,7 @@ proc UrbanX::SandwichBNDT { } {
                } elseif  { $file=="road_l" } {
                   # rasterize non-bridge and non-tunnel roads (and non-dam)
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (support != 2) "
-                  puts "Processing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp (surface roads) as VFEATURE2KEEP$j with priority value $value"
+                  puts "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp (surface roads) as VFEATURE2KEEP$j with priority value $value"
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) $value
                   # unpaved roads converted to priority 212
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (support != 2) AND (surface = 2) "
@@ -315,7 +318,7 @@ proc UrbanX::SandwichBNDT { } {
                } elseif  { $file=="buildin_p" } {
                   # divide building types: general, industrial-commercial, day-night 24/7
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (function NOT IN (10,11,14,18,23,31,37)) "
-                  puts "Processing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp (general buildings) as VFEATURE2KEEP$j with priority value $value"
+                  puts "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp (general buildings) as VFEATURE2KEEP$j with priority value $value"
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) $value
                   # industrial-commercial buildings converted to priority 21
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (function IN (11,13,14,16,18,23,27,31,33,35,37)) "
@@ -328,7 +331,7 @@ proc UrbanX::SandwichBNDT { } {
                } elseif  { $file=="buildin_a" } {
                   # divide building types: general, industrial-commercial, day-night 24/7
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (function NOT IN (10,11,14,18,23,31,37)) "
-                  puts "Processing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp (general buildings) as VFEATURE2KEEP$j with priority value $value"
+                  puts "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file $Data(Sheet_names$i)_$file.shp (general buildings) as VFEATURE2KEEP$j with priority value $value"
                   gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Data(Mode) $value
                   # industrial-commercial buildings converted to priority 301
                   ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $Data(Sheet_names$i)_$file WHERE (function IN (11,13,14,16,18,23,27,31,33,35,37)) "
@@ -345,7 +348,7 @@ proc UrbanX::SandwichBNDT { } {
                incr j
             } else {
                eval ogrlayer read LAYER$j $layer
-               puts "Processing [ogrlayer define LAYER$j -nb] features from file $Data(Sheet_names$i)_$file.shp as LAYER$j with priority value $value"
+               puts "Rasterizing [ogrlayer define LAYER$j -nb] features from file $Data(Sheet_names$i)_$file.shp as LAYER$j with priority value $value"
                gdalband gridinterp RSANDWICH LAYER$j $Data(Mode) $value
                ogrlayer free LAYER$j
             }
@@ -523,6 +526,7 @@ proc UrbanX::PopDens2Builtup { } {
    }
 
    puts "Calculating population density values"
+# next line crashes most of the time...
    ogrlayer stats VPOPDENS -transform UTMREF
    foreach n $features {
       set pop   [ogrlayer define VPOPDENS -feature $n TOTPOPUL]
@@ -831,11 +835,12 @@ proc UrbanX::Shp2Height { } {
 }
 
 proc UrbanX::FilterGen { Type Size } {
+
+   # Est-ce cette proc maintenant dans le 'main code' de JP?
    # Il manque les filtres median, directionel, lp/hp gaussien, Sobel/Roberts, FFT
    if { $Size%2 == 0 } {
       set Size [expr ($Size -1)]
       puts "\n\033\[01;31m*** ERROR: Filter size must be an odd number ***\n*** Generated filter kernel will NOT be good ***\nNew filter size decreased to $Size\033\[0m\n"
-      #puts "\n*** ERROR: Filter size must be an odd number ***\n*** Generated filter kernel will NOT be good ***\nNew filter size decreased to $Size\n"
    }
 
    set kernel { }
@@ -891,7 +896,7 @@ if { $UrbanX::Data(Zone_name) == "ott"} {
 ## La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
 ##   UrbanX::Shp2Height
 }
-UrbanX::ChampsBuffers            ;# Create the fields and building vicinity output using spatial buffers
+#UrbanX::ChampsBuffers            ;# Create the fields and building vicinity output using spatial buffers
 UrbanX::PopDens2Builtup
 UrbanX::HeightGain
 UrbanX::BuildingHeight ;# This proc must be used in conjuction with the previous one otherwise $Data(HeightGain) won't be defined
