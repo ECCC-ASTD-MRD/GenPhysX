@@ -196,7 +196,7 @@ proc UrbanX::DefineZone { } {
 proc UrbanX::FindNTSSheets { } {
 # Find the NTS sheets for the area of interest
    variable Data
-   set Data(NTS_index) /data/cmod8/afseeer/NTS/50kindex.shp
+   set Data(NTS_index) /cnfs/ops/production/cmoe/geo/NTS/50kindex.shp
    set nts_layer [lindex [ogrfile open SHAPE read $Data(NTS_index)] 0]
    eval ogrlayer read NTSLAYER $nts_layer
    # next line includes about 200m buffers to account for off-zone buffers which would influence results
@@ -526,7 +526,7 @@ proc UrbanX::PopDens2Builtup { } {
    }
 
    puts "Calculating population density values"
-# next line crashes most of the time...
+# next line crashes most of the time
    ogrlayer stats VPOPDENS -transform UTMREF
    foreach n $features {
       set pop   [ogrlayer define VPOPDENS -feature $n TOTPOPUL]
@@ -898,10 +898,10 @@ if { $UrbanX::Data(Zone_name) == "ott"} {
 }
 #UrbanX::ChampsBuffers            ;# Create the fields and building vicinity output using spatial buffers
 UrbanX::PopDens2Builtup
-UrbanX::HeightGain
-UrbanX::BuildingHeight ;# This proc must be used in conjuction with the previous one otherwise $Data(HeightGain) won't be defined
+#UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
+#UrbanX::BuildingHeight ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Data(HeightGain) won't be defined
 
-UrbanX::Values2TEB               ;# Applies LUT to all processing results to generate TEB classes
+#UrbanX::Values2TEB               ;# Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
 
 ## Optional outputs:
 UrbanX::VegeMask                 ;# Generate and apply vegetation mask
