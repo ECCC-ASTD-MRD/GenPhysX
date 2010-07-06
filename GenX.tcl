@@ -73,6 +73,7 @@ namespace eval GenX { } {
    set Param(Sub)       ""                    ;#Subgrid calculations selected
    set Param(Target)    ""                    ;#Model cible
    set Param(Biogenic)  ""                    ;#Biogenic emissions data selected
+   set Param(Urban)     ""                    ;#Urban coverage
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
@@ -92,6 +93,7 @@ namespace eval GenX { } {
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
+   set Param(Urbans)    { }
    set Param(Checks)    { STD }
    set Param(Subs)      { STD }
    set Param(Targets)   { GEMMESO }             ;#Model cible
@@ -130,6 +132,7 @@ namespace eval GenX { } {
    set Path(ASTERGDEM) $Path(DBase)/ASTGTM_V1.1
    set Path(GTOPO30)   $Path(DBase)/GTOPO30
    set Path(EOSD)      $Path(DBase)/EOSD
+   set Path(BNDT)      $Path(DBase)/BNDT
    set Path(NTS)       $Path(DBase)/NTS
    set Path(CANVEC)    $Path(DBase)/CanVec
    set Path(CORINE)    $Path(DBase)/CORINE
@@ -557,6 +560,7 @@ proc GenX::CommandLine { } {
       \[-soil\]     [format "%-30s : Soil method(s) among {$Param(Soils)}" ([join $Param(Soil)])]
       \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Param(Aspects)}" ([join $Param(Aspect)])]
       \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Param(Biogenics)}" ([join $Param(Biogenic)])]
+      \[-urban\]    [format "%-30s : Urban coverage {$Param(Urban)}" ([join $Param(Urban)])]
       \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" ($Param(Check))]
       \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Param(Subs)}" ($Param(Sub))]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
@@ -660,6 +664,7 @@ proc GenX::ParseCommandLine { } {
          "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Sub)]; incr flags }
          "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Aspect)]; incr flags }
          "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
+         "urban"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Urban) $GenX::Param(Urbans)]; incr flags }
          "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Check)]; incr flags }
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Diag)] }
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Z0Filter)]; incr flags }
@@ -1300,6 +1305,7 @@ proc GenX::ASTERGDEMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #  <Lon0>    : Lower left corner longitude
 #  <Lat1>    : Upper right corner latitude
 #  <Lon1>    : Upper right corner longitude
+#  <Layers>  : Layers to get
 #
 # Return:
 #

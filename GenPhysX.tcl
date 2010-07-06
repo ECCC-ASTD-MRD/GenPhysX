@@ -68,9 +68,15 @@ set dir [file dirname $dir]
 source $dir/GenX.tcl
 source $dir/GeoPhysX.tcl
 source $dir/BioGenX.tcl
+source $dir/UrbanX.tcl
 
 #----- Parse the arguments
 GenX::ParseCommandLine
+
+#----- Urban classes calculations
+if { $GenX::Param(Urban)!="" } {
+   UrbanX::Process $GenX::Param(Urban)
+}
 
 #----- Open output files
 fstdfile open GPXOUTFILE write $GenX::Param(OutFile)$GenX::Param(Process).fst
