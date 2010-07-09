@@ -57,20 +57,19 @@ namespace eval UrbanX { } {
    set Param(PopFile) /data/cmoex7/afsralx/canyon-urbain/global_data/statcan/traitements/da2001ca_socio_eco.shp
 }
 
-# Set the lat long bounding box for the city specified at launch
-
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::AreaDefine>
 # Creation : June 2006 - Alexandre Leroux - CMC/CMOE
 #
 # Goal     : Define raster coverage based on coverage name
+#            Set the lat long bounding box for the city specified at launch
 #
 # Parameters :
 #   <Coverage>   : Coverage name
 #
 # Return:
 #
-# Remarks :BELD VF
+# Remarks :
 #
 #----------------------------------------------------------------------------
 
@@ -207,7 +206,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } } {
    set Param(Width)  [expr int(ceil(([lindex $xy1 0] - [lindex $xy0 0])/$Res))]
    set Param(Height) [expr int(ceil(([lindex $xy1 1] - [lindex $xy0 1])/$Res))]
 
-   georef define UTMREF -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 -$Res]
+   georef define UTMREF -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
 
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 }
@@ -236,7 +235,7 @@ proc UrbanX::FindNTSSheets { } {
          GenX::Log WARNING "NTS sheet $file missing, results will be incomplete"
       }
    }
-   GenX::Log INFO "Total number of NTS Sheets included in the processing: [llength  $Data(Sheets)]\nNTS Sheets to process: $Data(Sheets)"
+   GenX::Log INFO "Total number of NTS Sheets included in the processing: [llength  $Data(Sheets)], NTS Sheets to process: $Data(Sheets)"
 
    ogrlayer free NTSLAYER
    ogrfile close SHAPE
@@ -273,10 +272,8 @@ proc UrbanX::SandwichBNDT { } {
    #----- Rasterization of NTDB layers
    foreach sheet $Data(Sheets) path $Data(Paths) {
       foreach file $Param(Files) value $Param(Values) {
-
-         set path [glob -nocomplain $path/${sheet}_$file.shp]
-         if { [file exists $path] } {
-            set layer [lindex [ogrfile open SHAPE read $path] 0]
+         if { [file exists $path/${sheet}_$file.shp] } {
+            set layer [lindex [ogrfile open SHAPE read $path/${sheet}_$file.shp] 0]
             if { [lsearch -exact Param(LayersPostPro) $file]!=-1 } {
                switch $file {
                   "mininga_p" {
@@ -485,10 +482,10 @@ proc UrbanX::ChampsBuffers { } {
             eval ogrlayer read LAYER$i $layer2
             if  { $layer=="buildin_a" }  {
                ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM ${sheet}_$layer WHERE function NOT IN (3,4,14,36) "
-               ogrlayer stats LAYER$i -buffer 0.00089993 8
+#               ogrlayer stats LAYER$i -buffer 0.00089993 8
             } elseif  { $layer=="buildin_p" }  {
                ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM ${sheet}_$layer WHERE function NOT IN (3,4,14,36) "
-               ogrlayer stats LAYER$i -buffer 0.000224982 8
+#               ogrlayer stats LAYER$i -buffer 0.000224982 8
             }
             GenX::Log INFO "Buffering [ogrlayer define LAYER$i -nb] features from ${sheet}_$layer.shp as LAYER$i with buffer value $value"
             gdalband gridinterp RBUFFER LAYER$i $Param(Mode) $value
@@ -619,13 +616,13 @@ proc UrbanX::HeightGain { } {
    gdalband gridinterp RHAUTEURPROJ RHAUTEUR
    gdalband free RHAUTEUR
    gdalfile close FHAUTEUR
+
    set min [gdalband stats RHAUTEURPROJ -min]
    if { [lindex $min 0] == -9999 } {
-      GenX::Log WARNING "Heights does not overlap entirely the area, sverage won't be good, absent values will be set to 0"
+      GenX::Log WARNING "Heights does not overlap entirely the area, average won't be good, absent values will be set to 0"
       vexpr RHAUTEURPROJ ifelse(RHAUTEURPROJ==-9999,0,RHAUTEURPROJ)
    }
    vexpr RHEIGHTCHAMPS ifelse(RCHAMPS==820,RHAUTEURPROJ,0)
-   gdalband free RHAUTEURPROJ
 
    #----- Average est calculé (pour le moment) que pour les valeurs != 0 dans le code en C
    #      Pour avec les 0: set Param(HeightGain) [vexpr XX savg(RHEIGHTCHAMPS)]
@@ -642,9 +639,8 @@ proc UrbanX::HeightGain { } {
    gdalband write RHEIGHTCHAMPS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
 
-   gdalband free RCHAMPS
+   gdalband free RCHAMPS RHEIGHTCHAMPS RHAUTEURPROJ
    gdalfile close FCHAMPS
-   gdalband free RHEIGHTCHAMPS
 }
 
 proc UrbanX::BuildingHeight { } {
