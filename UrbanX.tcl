@@ -42,12 +42,152 @@ namespace eval UrbanX { } {
    set Param(ShapeField)     ""
 
    set Param(Files)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
+
+#----------------
+#AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
+#Cette liste Param(Files) sera à modifier avec des noms de la forme AA_9999999_0
+#Retirer les éléments _1 car géométrie linéaire?
+#Couper les shift+enter entre les éléments de façon à afficher l'ensemble sur quelques lignes
+  #set Param(Files)		{BS_1250009_0 
+  #BS_1370009_2 
+  #BS_2000009_0 
+  #BS_2010009_0 
+  #BS_2010009_2 
+  #BS_2060009_0 
+  #BS_2080009_0 
+  #BS_2080009_2 
+  #BS_2120009_0 
+  #BS_2230009_1 
+  #BS_2240009_1 
+  #BS_2310009_1 
+  #BS_2350009_0 
+  #BS_2380009_0 
+  #BS_2380002_2 
+  #BS_2440009_0 
+  #BS_2530009_0 
+  #EN_1120009_1 
+  #EN_1180009_1 
+  #EN_1340009_0 
+  #EN_1360049_0 
+  #EN_1360049_2 
+  #EN_1360059_0 
+  #EN_1360059_2
+  #EN_2170009_0
+  #FO_1030009_1
+  #FO_1080019_2
+  #FO_1080029_1
+  #FO_1080038_2
+  #FO_1080049_2
+  #FO_1080059_2
+  #FO_1080069_2
+  #FO_1080079_0
+  #FO_1200009_0
+  #FO_2570009_1
+  #FO_2610009_0
+  #HD_1140009_2
+  #HD_1450009_0
+  #HD_1450009_1
+  #HD_1450009_2
+  #HD_1460009_0
+  #HD_1460009_1
+  #HD_1460009_2
+  #HD_1470009_1
+  #HD_1480009_2
+  #HD_1490009_2
+  #IC_1350019_2
+  #IC_1350029_2
+  #IC_1350039_0
+  #IC_1350039_2
+  #IC_1350049_0
+  #IC_1350049_2
+  #IC_1350059_2
+  #IC_1360019_2
+  #IC_1360029_0
+  #IC_1360029_2
+  #IC_1360039_0
+  #IC_1360039_2
+  #IC_2110009_2
+  #IC_2360009_2
+  #IC_2600009_0
+  #LI_1210009_2
+  #LX_1000019_0
+  #LX_1000019_2
+  #LX_1000029_0
+  #LX_1000039_0
+  #LX_1000039_2
+  #LX_1000049_2
+  #LX_1000059_0
+  #LX_1000059_1
+  #LX_1000059_2
+  #LX_1000069_0
+  #LX_1000079_1
+  #LX_1000079_2
+  #LX_1000089_2
+  #LX_2030009_0
+  #LX_2070009_0
+  #LX_2070009_2
+  #LX_2200009_2
+  #LX_2210009_0
+  #LX_2220009_0
+  #LX_2260009_2
+  #LX_2270009_2
+  #LX_2280009_1
+  #LX_2400009_0
+  #LX_2400009_2
+  #LX_2420009_1
+  #LX_2460009_2
+  #LX_2480009_0
+  #LX_2480009_2
+  #LX_2490009_0
+  #LX_2490009_2
+  #LX_2500009_0
+  #LX_2500009_2
+  #LX_2510009_2
+  #LX_2560009_2
+  #SS_1320019_2
+  #SS_1320029_2
+  #SS_1320039_2
+  #SS_1320049_2
+  #SS_1320059_2
+  #TO_1580009_0
+  #TO_1580009_1
+  #TO_1580009_2
+  #TR_1020009_1
+  #TR_1190009_0
+  #TR_1190009_2
+  #TR_1750009_1
+  #TR_1760009_1
+  #TR_1770009_0
+  #TR_1780009_0
+  #TR_1790009_0
+  #TR_2320009_0
+  #VE_1240009_2
+  #VE_2290009_1}
+#FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
+#----------------
+
+
    set Param(Values)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of values for the NTDB layers to be processed
+
+#----------------
+#AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
+#Associer les valeurs Param(Values) aux layers correspondants Param(Files).  Établir une table pour connaître l'ordre.
+#FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
+#----------------
+
    set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers ignored for rasterization
    set Param(LayersPostPro)    { mininga_p railway_l road_l runway_a runway_p sport_t_l buildin_p buildin_a } ;# layers requiring postprocessing
    set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a }
    set Param(BufferLayers)     { bridge_l buildin_p road_l }
    set Param(BufferFuncLayers) { buildin_p buildin_a }
+
+#----------------
+#AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
+#Les listes Excluded, LayersPostPro, WaterLayers, BufferLayers, BufferFuncLayers, seront à modifier avec des noms de la forme AA_9999999_0.
+#Tous les éléments _1 feront partie de Excluded car géométrie linéaire?  Quoi d'autre?  Établir les correspondances bndt vs canvec.
+#FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
+#----------------
+
    set Param(BufferFuncValues) { 1 2 }
    set Param(TEBValues)         { 902 830 830 830 410 440 903 520 520 520 520 820 450 820 820 820 840 820 830 120 530 530 320 410 450 410 320 901 830 360 810 840 440 901 360 410 120 310 440 830 830 450 901 200 901 830 450 430 440 420 430 430 340 100 100 120 320 440 320 320 330 330 410 901 420 110 440 520 420 420 330 330 310 320 350 360 440 830 901 440 320 110 830 530 360 110 420 530 140 110 520 520 110 520 410 110 360 440 330 310 420 420 112 111 110 }
 
@@ -212,6 +352,42 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } } {
 }
 
 proc UrbanX::FindNTSSheets { } {
+
+#----------------
+#AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
+
+#proc UrbanX::FindNTSSheets {Lat0 Lon0 Lat1 Lon1 { Res 5 }} {}
+#Est-il nécessaire d'avoir les paramètres Lat/Lon en input pour l'appel de la proc GenX::CANVECFindFiles ?
+#On y accède via variable Param, mais elles sont en input dans la proc précédente : UrbanX::UTMZoneDefine{Lat0 Lon0 Lat1 Lon1 { Res 5 }}
+#À vérifier
+
+#Besoin d'une variable Layers contenant une liste d'éléments portant des noms tel que 063i09_5_0_TR_1760009_1.shp
+#Cette variable prend la place de Param(Files) défini en ligne 44?  À établir.
+#Nom de fichier :
+#1- identifiant NTS : 999a99
+#2- dataset edition number : 5
+#3- dataset version number : 0
+#4- theme code : BS, EN, FO, HD, IC, LI, LX, SS, TO, TR, V
+#5- generic code : 7 digits.  voir Feature catalogue
+#6- geometry code : 0=point, 1=line, 2=area
+#7- extension : shp, dbf, shx, prj...
+#On ne peut pas procéder par boucle pour le generic code.  La liste Param(Files) contiendra donc des éléments de forme BS_1250009_0, BS_1370009_2, etc.
+#Tous les fichiers ne sont pas présents dans chaque répertoire 999a99.  Besoin d'une vérification du type if file exist...
+
+#La proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } 
+#1- Dresse la liste des ids des feuillets NTS (exemple 999a99) situés sous la zone définie par les lat/lon passés en argument
+#2- Pour chacun de ces ids, établit le path bla/999/a/99/999a99, puis
+#3- Pour chacun des layers de la variable Layer passée en argument, ajoute l'élément path/layer à la liste files
+#4- Retourne la liste files contenant donc une série d'éléments de la forme bla/999/a/99/999a99/layer1
+
+#Dans cette proc, on peut donc ajouter une ligne reprenant le début du nom du layer, afin d'obtenir
+#bla/999/a/99/999a99/999a99_
+#On peut ensuite ajouter les numéros d'édition et de version.  À voir si on veut des variables, pour une possible modif.  On obtient donc
+#bla/999/a/99/999a99/999a99_5_0_
+#Puis, passer la liste Param(Files) contenant les theme_codes, generic_codes, geometry_codes.
+#FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
+#----------------
+
    variable Param
    variable Data
 
