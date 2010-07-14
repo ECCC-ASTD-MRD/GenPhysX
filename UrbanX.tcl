@@ -41,36 +41,38 @@ namespace eval UrbanX { } {
    set Param(Shape)          ""
    set Param(ShapeField)     ""
 
-   set Param(Files)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
+
+#   set Param(Layers)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
 
 #----------------
 #AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
-#Cette liste Param(Files) sera à modifier avec des noms de la forme AA_9999999_0
-#Retirer les éléments _1 car géométrie linéaire?
+#Cette liste Param(Layers) sera à modifier avec des noms de la forme AA_9999999_0
 #Couper les shift+enter entre les éléments de façon à afficher l'ensemble sur quelques lignes
-  #set Param(Files)		{BS_1250009_0 
-  #BS_1370009_2 
-  #BS_2000009_0 
-  #BS_2010009_0 
-  #BS_2010009_2 
-  #BS_2060009_0 
-  #BS_2080009_0 
-  #BS_2080009_2 
-  #BS_2120009_0 
-  #BS_2230009_1 
-  #BS_2240009_1 
-  #BS_2310009_1 
-  #BS_2350009_0 
-  #BS_2380009_0 
-  #BS_2380002_2 
-  #BS_2440009_0 
-  #BS_2530009_0 
-  #EN_1120009_1 
-  #EN_1180009_1 
-  #EN_1340009_0 
-  #EN_1360049_0 
-  #EN_1360049_2 
-  #EN_1360059_0 
+   set Param(Layers) {
+      BS_1250009_0 ;# INSERT Description de la layer
+      BS_9999999_9
+      #BS_1370009_2
+      #BS_2000009_0
+      #BS_2010009_0
+      #BS_2010009_2
+      #BS_2060009_0
+      #BS_2080009_0
+      #BS_2080009_2
+      #BS_2120009_0
+      #BS_2230009_1
+      #BS_2240009_1
+      #BS_2310009_1
+      #BS_2350009_0
+      #BS_2380009_0
+      #BS_2380002_2
+  #BS_2440009_0
+  #BS_2530009_0
+  #EN_1120009_1
+  #EN_1180009_1
+  #EN_1340009_0
+  #EN_1360049_0
+  #EN_1360049_2
+  #EN_1360059_0
   #EN_1360059_2
   #EN_2170009_0
   #FO_1030009_1
@@ -162,7 +164,7 @@ namespace eval UrbanX { } {
   #TR_1790009_0
   #TR_2320009_0
   #VE_1240009_2
-  #VE_2290009_1}
+   VE_2290009_1}
 #FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
 #----------------
 
@@ -170,9 +172,7 @@ namespace eval UrbanX { } {
    set Param(Values)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of values for the NTDB layers to be processed
 
 #----------------
-#AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
-#Associer les valeurs Param(Values) aux layers correspondants Param(Files).  Établir une table pour connaître l'ordre.
-#FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
+#Associer les valeurs Param(Values) aux layers correspondants Param(Layers).  Établir une table pour connaître l'ordre.
 #----------------
 
    set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers ignored for rasterization
@@ -182,10 +182,10 @@ namespace eval UrbanX { } {
    set Param(BufferFuncLayers) { buildin_p buildin_a }
 
 #----------------
-#AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
-#Les listes Excluded, LayersPostPro, WaterLayers, BufferLayers, BufferFuncLayers, seront à modifier avec des noms de la forme AA_9999999_0.
-#Tous les éléments _1 feront partie de Excluded car géométrie linéaire?  Quoi d'autre?  Établir les correspondances bndt vs canvec.
-#FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
+# AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
+# Les listes Excluded, LayersPostPro, WaterLayers, BufferLayers, BufferFuncLayers, seront à modifier avec des noms de la forme AA_9999999_0.
+# Établir les correspondances bndt vs canvec.
+# FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
 #----------------
 
    set Param(BufferFuncValues) { 1 2 }
@@ -216,7 +216,7 @@ namespace eval UrbanX { } {
 proc UrbanX::AreaDefine { Coverage } {
    variable Param
 
-
+# Param(HeightFile) and Param(HeightMaskFile) will need to be removed or updated
    switch $Coverage {
       "VANCOUVER" {
          set Param(Lon1)   -122.50
@@ -351,6 +351,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } } {
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 }
 
+
 proc UrbanX::FindNTSSheets { } {
 
 #----------------
@@ -362,7 +363,7 @@ proc UrbanX::FindNTSSheets { } {
 #À vérifier
 
 #Besoin d'une variable Layers contenant une liste d'éléments portant des noms tel que 063i09_5_0_TR_1760009_1.shp
-#Cette variable prend la place de Param(Files) défini en ligne 44?  À établir.
+#Cette variable prend la place de Param(Layers) défini en ligne 44?  À établir.
 #Nom de fichier :
 #1- identifiant NTS : 999a99
 #2- dataset edition number : 5
@@ -371,10 +372,10 @@ proc UrbanX::FindNTSSheets { } {
 #5- generic code : 7 digits.  voir Feature catalogue
 #6- geometry code : 0=point, 1=line, 2=area
 #7- extension : shp, dbf, shx, prj...
-#On ne peut pas procéder par boucle pour le generic code.  La liste Param(Files) contiendra donc des éléments de forme BS_1250009_0, BS_1370009_2, etc.
+#On ne peut pas procéder par boucle pour le generic code.  La liste Param(Layers) contiendra donc des éléments de forme BS_1250009_0, BS_1370009_2, etc.
 #Tous les fichiers ne sont pas présents dans chaque répertoire 999a99.  Besoin d'une vérification du type if file exist...
 
-#La proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } 
+#La proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers }
 #1- Dresse la liste des ids des feuillets NTS (exemple 999a99) situés sous la zone définie par les lat/lon passés en argument
 #2- Pour chacun de ces ids, établit le path bla/999/a/99/999a99, puis
 #3- Pour chacun des layers de la variable Layer passée en argument, ajoute l'élément path/layer à la liste files
@@ -384,7 +385,7 @@ proc UrbanX::FindNTSSheets { } {
 #bla/999/a/99/999a99/999a99_
 #On peut ensuite ajouter les numéros d'édition et de version.  À voir si on veut des variables, pour une possible modif.  On obtient donc
 #bla/999/a/99/999a99/999a99_5_0_
-#Puis, passer la liste Param(Files) contenant les theme_codes, generic_codes, geometry_codes.
+#Puis, passer la liste Param(Layers) contenant les theme_codes, generic_codes, geometry_codes.
 #FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
 #----------------
 
@@ -398,10 +399,12 @@ proc UrbanX::FindNTSSheets { } {
    set  layers [lindex [ogrfile open SHAPE read $GenX::Path(NTS)/50kindex.shp] 0]
    eval ogrlayer read NTSLAYER $layers
 
+   # Select NTS sheets for the area and consider the buffer distance to account for spatial buffers
    set ids [ogrlayer pick NTSLAYER [list [expr $Param(Lat1)+$Param(Buffer)] [expr $Param(Lon1)+$Param(Buffer)] [expr $Param(Lat1)+$Param(Buffer)] [expr $Param(Lon0)-$Param(Buffer)] [expr $Param(Lat0)-$Param(Buffer)] [expr $Param(Lon0)-$Param(Buffer)] [expr $Param(Lat0)-$Param(Buffer)] [expr $Param(Lon1)+$Param(Buffer)] [expr $Param(Lat1)+$Param(Buffer)] [expr $Param(Lon1)+$Param(Buffer)]] True]
    foreach indexnts $ids {
       set sheet    [string tolower [ogrlayer define NTSLAYER -feature $indexnts snrc]]
       set sheetpath /data/cmoex7/afsralx/canyon-urbain/global_data/bndt-geonet/$sheet
+#      set sheetpath /data/cmoex7/afsralx/canyon-urbain/global_data/bndt-geonet/$sheet
       if { [file exists $sheetpath] } {
          set path [glob -nocomplain $sheetpath/*_nts_lim_l.shp]
          lappend Data(Sheets) [lindex [split [file tail $path] _] 0]
@@ -422,6 +425,7 @@ proc UrbanX::FindNTSSheets { } {
    }
 }
 
+# THIS PROC WILL BE DELETED... REPLACED BY CANVEC DATA
 #----- Rasterize and flatten all NTDB layers
 proc UrbanX::SandwichBNDT { } {
    variable Param
@@ -437,7 +441,7 @@ proc UrbanX::SandwichBNDT { } {
    foreach sheet $Data(Sheets) path $Data(Paths) {
       foreach file [glob -nocomplain -tails -directory $path *.shp] {
          set file [string range [file rootname [file tail $file]] 7 end]
-         if { [lsearch -exact $Param(Files) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
+         if { [lsearch -exact $Param(Layers) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
                GenX::Log WARNING "File '${sheet}_$file.shp' has no priority value and won't be processed"
          }
       }
@@ -447,7 +451,158 @@ proc UrbanX::SandwichBNDT { } {
 
    #----- Rasterization of NTDB layers
    foreach sheet $Data(Sheets) path $Data(Paths) {
-      foreach file $Param(Files) value $Param(Values) {
+      foreach file $Param(Layers) value $Param(Values) {
+         if { [file exists $path/${sheet}_$file.shp] } {
+            set layer [lindex [ogrfile open SHAPE read $path/${sheet}_$file.shp] 0]
+            if { [lsearch -exact Param(LayersPostPro) $file]!=-1 } {
+               switch $file {
+                  "mininga_p" {
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type != 2) "
+                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
+                     #----- mine souterraine ponctuelle convertie en batiment :
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type = 2) "
+                     GenX::Log INFO "Converting and rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] selected features (underground mines) from ${sheet}_$file.shp to priority value 161"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 161
+                  }
+                  "railway_l" {
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (rel_ground != 2) "
+                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features (excluding railway bridges and tunnels) from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
+                  }
+                  "runway_a" -
+                  "runway_p" {
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (surface != 2) "
+                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
+                     #----- unpaved runway converted to priority 41
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (surface = 2) "
+                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (unpaved runways) from ${sheet}_$file.shp to priority value 41"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 41
+                  }
+                  "sport_t_l" -
+                  "sport_t_a" {
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type != 1) "
+                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
+                     #----- paved sports tracks converted to priority 271
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type = 1) "
+                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (paved sports tracks) from ${sheet}_$file.shp to priority value 271"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 271
+                  }
+                  "seapl_b_p" {
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type != 1) "
+                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
+                     #----- seaplane base mouillage converted to priority 181
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type = 1) "
+                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (seaplane base mouillage) from ${sheet}_$file.shp to priority value 181"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 181
+                  }
+                  "road_l" {
+                     #-----rasterize non-bridge and non-tunnel roads (and non-dam)
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (support != 2) "
+                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp (surface roads) as VFEATURE2KEEP$j with priority value $value"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
+                     #----- unpaved roads converted to priority 212
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (support != 2) AND (surface = 2) "
+                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (unpaved surface roads) from ${sheet}_$file.shp to priority value 212"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 212
+                     #----- highways converted to priority 211
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (support != 2) AND (classifica = 1) "
+                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (surface highways) from ${sheet}_$file.shp to priority value 211"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 211
+                  }
+                  "buildin_p" {
+                     #----- divide building types: general, industrial-commercial, day-night 24/7
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function NOT IN (10,11,14,18,23,31,37)) "
+                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp (general buildings) as VFEATURE2KEEP$j with priority value $value"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
+                     #----- industrial-commercial buildings converted to priority 21
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function IN (11,13,14,16,18,23,27,31,33,35,37)) "
+                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from ${sheet}_$file.shp to priority value 21"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 21
+                     #----- day-night 24/7 buildings converted to priority 22
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function IN (9,12,17,19,26,39,40)) "
+                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from ${sheet}_$file.shp to priority value 22"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 22
+                  }
+                  "buildin_a" {
+                     #----- divide building types: general, industrial-commercial, day-night 24/7
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function NOT IN (10,11,14,18,23,31,37)) "
+                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp (general buildings) as VFEATURE2KEEP$j with priority value $value"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
+                     #----- industrial-commercial buildings converted to priority 301
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function IN (11,13,14,16,18,23,27,31,33,35,37)) "
+                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from ${sheet}_$file.shp to priority value 301"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 301
+                     #----- day-night 24/7 buildings converted to priority 302
+                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function IN (9,12,17,19,26,39,40)) "
+                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from ${sheet}_$file.shp to priority value 302"
+                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 302
+                  }
+                  default {
+                     GenX::Log WARNING "Post-processing for $file not found"
+                  }
+               }
+              ogrlayer free VFEATURE2KEEP$j
+              incr j
+           } else {
+               eval ogrlayer read LAYER$j $layer
+               GenX::Log INFO "Rasterizing [ogrlayer define LAYER$j -nb] features from file ${sheet}_$file.shp as LAYER$j with priority value $value"
+               gdalband gridinterp RSANDWICH LAYER$j $Param(Mode) $value
+               ogrlayer free LAYER$j
+            }
+            ogrfile close SHAPE
+         }
+      }
+   }
+
+   file delete -force $GenX::Param(OutFile)_sandwich.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich.tif GeoTiff
+   gdalband write RSANDWICH FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   gdalfile close FILEOUT
+   gdalband free RSANDWICH
+}
+
+#----- Rasterize and flatten CanVec layers
+proc UrbanX::SandwichCanVec { } {
+   variable Param
+   variable Data
+
+   GenX::Procs
+   GenX::Log INFO "Generating Sandwich"
+
+   gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
+   gdalband define RSANDWICH -georef UTMREF
+
+   # Identify all CanVec layers paths
+   set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Layers)]
+
+   # VEUT-ON REFAIRE CETTE VÉRIFICATION ? ELLE SERAIT UTILE - VOIR APRES
+   #----- Vérification des shapefiles présents afin de ne pas en manquer un hors-liste
+#   foreach sheet $Data(Sheets) path $Data(Paths) {
+#      foreach file [glob -nocomplain -tails -directory $path *.shp] {
+#         set file [string range [file rootname [file tail $file]] 7 end]
+#         if { [lsearch -exact $Param(Layers) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
+#               GenX::Log WARNING "File '${sheet}_$file.shp' has no priority value and won't be processed"
+#         }
+#      }
+#   }
+# NEW CODE TO FIX
+#   foreach file $Param(Files) {
+#      set file [string range [file rootname [file tail $file]] 7 end]
+#      if { [lsearch -exact $Param(Layers) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
+#            GenX::Log WARNING "File '$Param(Files)' has no priority value and won't be processed"
+#      }
+#   }
+
+
+   set j 0
+
+   #----- Rasterization of CanVec layers
+   foreach sheet $Data(Sheets) path $Data(Paths) {
+      foreach file $Param(Layers) value $Param(Values) {
          if { [file exists $path/${sheet}_$file.shp] } {
             set layer [lindex [ogrfile open SHAPE read $path/${sheet}_$file.shp] 0]
             if { [lsearch -exact Param(LayersPostPro) $file]!=-1 } {
@@ -579,7 +734,7 @@ proc UrbanX::ScaleBuffers { } {
       foreach layer $Param(BufferLayers) {
          set path [glob -nocomplain $Data(Path$i)${sheet}_$layer.shp]
          if { [file exists $path] } {
-            set value [lindex $Param(Values) [lsearch -exact $Param(Files) $layer]]
+            set value [lindex $Param(Values) [lsearch -exact $Param(Layers) $layer]]
             set layer2 [lindex [ogrfile open SHAPE read $path] 0]
             eval ogrlayer read LAYER$j $layer2
             # 1m = 0.000008999280057595392 degre
@@ -1066,23 +1221,24 @@ proc UrbanX::Process { Coverage } {
 
    UrbanX::AreaDefine    $Coverage
    UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
-   UrbanX::FindNTSSheets
+   UrbanX::FindNTSSheets ;# Useless now since we use GenX::CANVECFindFiles
 
    #----- Rasterize and flattens all NTDB layers
-   UrbanX::SandwichBNDT
-   UrbanX::ScaleBuffers
+   #UrbanX::SandwichBNDT
+   UrbanX::SandwichCanVec
+   #UrbanX::ScaleBuffers
 
    #-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
-   UrbanX::Shp2Height
+   #UrbanX::Shp2Height
 
    #----- Create the fields and building vicinity output using spatial buffers
-   UrbanX::ChampsBuffers
-   UrbanX::PopDens2Builtup
+   #UrbanX::ChampsBuffers
+   #UrbanX::PopDens2Builtup
    #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
    #UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
 
    #----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
-   UrbanX::Values2TEB
+   #UrbanX::Values2TEB
 
    #----- Optional outputs:
    #UrbanX::VegeMask
