@@ -1319,6 +1319,14 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
       set nts_layer [lindex [ogrfile open SHAPE50K read $Path(NTS)/decoupage50k_2.shp] 0]
       eval ogrlayer read NTSLAYER50K $nts_layer
    }
+#----------------
+#AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
+#que fait cette boucle if???  Où est défini l'objet NTSLAYER50K ?
+#1re mention dans GenX en ligne 1318 (donc ici)
+#jamais de mention dans UrbanX ni dans GenPhysX
+#FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
+#----------------
+
    set ids [ogrlayer pick NTSLAYER50K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True]
 
    set files { }
@@ -1328,11 +1336,26 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
       set sl   [string tolower [string range $feuillet 3 3]]
       set s50  [string range $feuillet 4 5]
       set path $Path(CANVEC)/$s250/$sl/$s250$sl$s50
+#----------------
+#AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
+#à modifier 
+#set ed = 5 : variables importées d'ailleurs?
+#set vr = 0 : variables importées d'ailleurs?
+#set $Path(CANVEC)/$s250/$sl/$s250$sl$s50/$s250$sl$s50_ed_vr
+#FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
+#----------------
 
       foreach layer $Layers {
          if { [llength [set lst [glob -nocomplain $path/*$layer*.shp]]] } {
             set files [concat $files $lst]
          }
+#----------------
+#AJOUT PAR LUCIE BOUCHER : 14 JUILLET 2010
+#à modifier pour $path_$layer.shp, avec $layer de forme AA_9999999_1
+#que fait le paramètre llength? pourquoi ne pas juste faire un append de la liste $files?
+#ajouter une boucle de vérif si le fichier existe ou non, avant de faire l'ajout, ou procéder plus tard?
+#FIN DE L'AJOUT FAIT PAR LUCIE BOUCHER LE 14 JUILLET 2010
+#----------------
       }
    }
    return $files
