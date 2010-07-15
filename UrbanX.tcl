@@ -732,8 +732,12 @@ proc UrbanX::SandwichCanVec { } {
 
    foreach file $Param(Files) {
       set layer [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
+      set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
+puts $filename
       set value [lindex $Param(Priorities) [lsearch -exact $Param(Layers) $layer]]
       ogrfile open SHAPE read $file
+puts [ogrfile open SHAPE read $file]
+
       if { [lsearch -exact $Param(LayersPostPro) $layer] !=-1} {
          switch $layer {
             AA_9999999_0 { ;# layer 1 from the list Param(LayersPostPro)
@@ -744,7 +748,7 @@ proc UrbanX::SandwichCanVec { } {
             }
             "BS_2010009_2" {
                #----- divide building types: general, industrial-commercial, day-night 24/7
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE { SELECT * FROM $file WHERE function NOT IN "10,11,14,18,23,31,37" }
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE { SELECT * FROM $filename WHERE function NOT IN (10,11,14,18,23,31,37) }
 #               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE { SELECT * FROM $file WHERE function="9" }
                # voir nouvelle nomenclature : https://wiki.cmc.ec.gc.ca/wiki/SPI/Doc/OGR
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $layer (general buildings) as VFEATURE2KEEP$j with priority value $value"
