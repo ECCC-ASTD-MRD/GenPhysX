@@ -51,107 +51,107 @@ namespace eval UrbanX { } {
 #NOTE : VA-T-ON FAIRE UN TRI SUR CERTAINS ATTRIBUTS? EXEMPLE BS_20100009 = BUILDINGS, MAIS POUR INDUSTRX, ON VEUT LES DIFFÉRENTS TYPES (USINE, HOPITAL, ETC.)
 
    set Param(Layers) { BS_1250009_0 BS_1370009_2 BS_2000009_0 BS_2010009_0 BS_2010009_2
-      #BS_2060009_0 ;# Chimney, point
-      #BS_2080009_0 ;# Tank, point
-      #BS_2080009_2 ;# Tank, polygon
-      #BS_2120009_0 ;# Cross, point
-      #BS_2230009_1 ;# Transmission line, line
-      #BS_2240009_1 ;# Wall / fence, line
-      #BS_2310009_1 ;# Pipeline (Sewage / liquid waste), line
-      #BS_2350009_0 ;# Well, point
-      #BS_2380009_0 ;# Underground reservoir, point
-      #BS_2380009_2 ;# Underground reservoir, polygon
-      #BS_2440009_0 ;# Silo, point
-      #BS_2530009_0 ;# Tower, point
-      #EN_1120009_1 ;# Power transmission line, line
-      #EN_1180009_1 ;# Pipeline, line
-      #EN_1340009_0 ;# Valve, point
-      #EN_1360049_0 ;# Gas and oil facilities, point
-      #EN_1360049_2 ;# Gas and oil facilities, polygon
-      #EN_1360059_0 ;# Transformer station, point
-      #EN_1360059_2 ;# Transformer station, polygon
-      #EN_2170009_0 ;# Wind-operated device, point
-      #FO_1030009_1 ;# Contour, line
-      #FO_1080019_2 ;# Landform, polygon
-      #FO_1080029_1 ;# Esker, line
-      #FO_1080038_2 ;# Glacial debris undifferentiated, polygon
-      #FO_1080049_2 ;# Moraine, polygon
-      #FO_1080059_2 ;# Sand, polygon
-      #FO_1080069_2 ;# Tundra, polygon
-      #FO_1080079_0 ;# Pingo, point
-      #FO_1200009_0 ;# Elevation point, point
-      #FO_2570009_1 ;# Contour imperial, line
-      #FO_2610009_0 ;# Elevation point imperial, point
-      #HD_1140009_2 ;# Permanent snow and ice, polygon
-      #HD_1450009_0 ;# Manmade hydrographic entity [Geobase], point
-      #HD_1450009_1 ;# Manmade hydrographic entity [Geobase], line
-      #HD_1450009_2 ;# Manmade hydrographic entity [Geobase], polygon
-      #HD_1460009_0 ;# Hydrographic obstacle entity [Geobase], point
-      #HD_1460009_1 ;# Hydrographic obstacle entity [Geobase], line
-      #HD_1460009_2 ;# Hydrographic obstacle entity [Geobase], polygon
-      #HD_1470009_1 ;# Single line watercourse [Geobase], line
-      #HD_1480009_2 ;# Waterbody [Geobase], polygon
-      #HD_1490009_2 ;# Island [Geobase], polygon
-      #IC_1350019_2 ;# Pit, polygon
-      #IC_1350029_2 ;# Quarry, polygon
-      #IC_1350039_0 ;# Extraction area, point
-      #IC_1350039_2 ;# Extraction area, polygon
-      #IC_1350049_0 ;# Mine, point
-      #IC_1350049_2 ;# Mine, polygon
-      #IC_1350059_2 ;# Peat cutting, polygon
-      #IC_1360019_2 ;# Domestic waste, polygon
-      #IC_1360029_0 ;# Industrial solid waste, point
-      #IC_1360029_2 ;# Industrial solid waste, polygon
-      #IC_1360039_0 ;# Industrial and commercial area, point
-      #IC_1360039_2 ;# Industrial and commercial area, polygon
-      #IC_2110009_2 ;# Lumber yard, polygon
-      #IC_2360009_2 ;# Auto wrecker, polygon
-      #IC_2600009_0 ;# Mining area, point
-      #LI_1210009_2 ;# NTS50K boundary polygon, polygon
-      #LX_1000019_0 ;# Lookout, point
-      #LX_1000019_2 ;# Lookout, polygon
-      #LX_1000029_0 ;# Ski centre, point
-      #LX_1000039_0 ;# Cemetery, point
-      #LX_1000039_2 ;# Cemetery, polygon
-      #LX_1000049_2 ;# Fort, polygon
-      #LX_1000059_0 ;# Designated area, point
-      #LX_1000059_1 ;# Designated area, line
-      #LX_1000059_2 ;# Designated area, polygon
-      #LX_1000069_0 ;# Marina, point
-      #LX_1000079_1 ;# Sport track / Race track, line
-      #LX_1000079_2 ;# Sport track / Race track, polygon
-      #LX_1000089_2 ;# Golf course, polygon
-      #LX_2030009_0 ;# Camp, point
-      #LX_2070009_0 ;# Drive-in theatre, point
-      #LX_2070009_2 ;# Drive-in theatre, polygon
-      #LX_2200009_2 ;# Botanical garden, polygon
-      #LX_2210009_0 ;# Shrine, point
-      #LX_2220009_0 ;# Historical site / Point of interest, point
-      #LX_2260009_2 ;# Amusement park, polygon
-      #LX_2270009_2 ;# Park / sports field, polygon
-      #LX_2280009_1 ;# Footbridge, line
-      #LX_2400009_0 ;# Ruins, point
-      #LX_2400009_2 ;# Ruins, polygon
-      #LX_2420009_1 ;# Trail, line
-      #LX_2460009_2 ;# Stadium, polygon
-      #LX_2480009_0 ;# Campground, point
-      #LX_2480009_2 ;# Campground, polygon
-      #LX_2490009_0 ;# Picnic site, point
-      #LX_2490009_2 ;# Picnic site, polygon
-      #LX_2500009_0 ;# Golf drining range, point
-      #LX_2500009_2 ;# Golf drining range, polygon
-      #LX_2510009_2 ;# Exhibition ground, polygon
-      #LX_2560009_2 ;# Zoo, polygon
-      #SS_1320019_2 ;# Tundra pond, polygon
-      #SS_1320029_2 ;# Palsa bog, polygon
-      #SS_1320039_2 ;# Saturated soil, polygon
-      #SS_1320049_2 ;# Wetland, polygon
-      #SS_1320059_2 ;# Sting bog, polygon
-      #TO_1580009_0 ;# Named feature, point
-      #TO_1580009_1 ;# Named feature, line
-      #TO_1580009_2 ;# Named feature, polygon
-      #TR_1020009_1 ;# Railway, line
-      #TR_1190009_0 ;# Runway, point
+      #BS_2060009_0
+      #BS_2080009_0
+      #BS_2080009_2
+      #BS_2120009_0
+      #BS_2230009_1
+      #BS_2240009_1
+      #BS_2310009_1
+      #BS_2350009_0
+      #BS_2380009_0
+      #BS_2380009_2
+      #BS_2440009_0
+      #BS_2530009_0
+      #EN_1120009_1
+      #EN_1180009_1
+      #EN_1340009_0
+      #EN_1360049_0
+      #EN_1360049_2
+      #EN_1360059_0
+      #EN_1360059_2
+      #EN_2170009_0
+      #FO_1030009_1
+      #FO_1080019_2
+      #FO_1080029_1
+      #FO_1080038_2
+      #FO_1080049_2
+      #FO_1080059_2
+      #FO_1080069_2
+      #FO_1080079_0
+      #FO_1200009_0
+      #FO_2570009_1
+      #FO_2610009_0
+      #HD_1140009_2
+      #HD_1450009_0
+      #HD_1450009_1
+      #HD_1450009_2
+      #HD_1460009_0
+      #HD_1460009_1
+      #HD_1460009_2
+      #HD_1470009_1
+      #HD_1480009_2
+      #HD_1490009_2
+      #IC_1350019_2
+      #IC_1350029_2
+      #IC_1350039_0
+      #IC_1350039_2
+      #IC_1350049_0
+      #IC_1350049_2
+      #IC_1350059_2
+      #IC_1360019_2
+      #IC_1360029_0
+      #IC_1360029_2
+      #IC_1360039_0
+      #IC_1360039_2
+      #IC_2110009_2
+      #IC_2360009_2
+      #IC_2600009_0
+      #LI_1210009_2
+      #LX_1000019_0
+      #LX_1000019_2
+      #LX_1000029_0
+      #LX_1000039_0
+      #LX_1000039_2
+      #LX_1000049_2
+      #LX_1000059_0
+      #LX_1000059_1
+      #LX_1000059_2
+      #LX_1000069_0
+      #LX_1000079_1
+      #LX_1000079_2
+      #LX_1000089_2
+      #LX_2030009_0
+      #LX_2070009_0
+      #LX_2070009_2
+      #LX_2200009_2
+      #LX_2210009_0
+      #LX_2220009_0
+      #LX_2260009_2
+      #LX_2270009_2
+      #LX_2280009_1
+      #LX_2400009_0
+      #LX_2400009_2
+      #LX_2420009_1
+      #LX_2460009_2
+      #LX_2480009_0
+      #LX_2480009_2
+      #LX_2490009_0
+      #LX_2490009_2
+      #LX_2500009_0
+      #LX_2500009_2
+      #LX_2510009_2
+      #LX_2560009_2
+      #SS_1320019_2
+      #SS_1320029_2
+      #SS_1320039_2
+      #SS_1320049_2
+      #SS_1320059_2
+      #TO_1580009_0
+      #TO_1580009_1
+      #TO_1580009_2
+      #TR_1020009_1
+      #TR_1190009_0
       TR_1190009_2 TR_1750009_1 TR_1760009_1 TR_1770009_0 TR_1780009_0 TR_1790009_0 TR_2320009_0 VE_1240009_2 VE_2290009_1 }
 
 
@@ -272,8 +272,8 @@ namespace eval UrbanX { } {
       #VE_2290009_1 ;# Cut line, line
 
 #List of priority valies associated with BNDT Layers, to modifiy for CanVec Layers
-   set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of values for the NTDB layers to be processed
-   #set Param(Priorities)           { } ;# LUT of values for the CanVec layers to be processed
+   #set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of values for the NTDB layers to be processed
+   set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of values for the CanVec layers to be processed
 
 #List of specific layers from BNDT, to modify with layers from CanVec.
    set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
@@ -699,14 +699,11 @@ proc UrbanX::SandwichCanVec { } {
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
    gdalband define RSANDWICH -georef UTMREF
 
-#puts "Trying to locate Canvec Files"
-   # Identify all CanVec layers paths
+   GenX::Log INFO "Locating CanVec Files" ;#added by Lucie
+
    set Param(Files) {}
    set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Layers)]
-   #Param(Files) will contain a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
-   #Should we declare an empty list as we did in UrbanX::FindNTSSheets with set Data(Sheets) {} and set Data(Paths) {} ?
-#puts "Canvec Files were found"
-#to modify with GenX::Log INFO ?
+   #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
 
    # VEUT-ON REFAIRE CETTE VÉRIFICATION ? ELLE SERAIT UTILE - VOIR APRES
    #----- Vérification des shapefiles présents afin de ne pas en manquer un hors-liste
@@ -726,55 +723,64 @@ proc UrbanX::SandwichCanVec { } {
 #      }
 #   }
 
-   set j 0
+   set j 0 ;# Increment of VFEATURE2KEEP$j required to re-use the object
 
    #----- Rasterization of CanVec layers
 
    foreach file $Param(Files) {
       set layer [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
-      set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
-puts $filename
-      set value [lindex $Param(Priorities) [lsearch -exact $Param(Layers) $layer]]
-      ogrfile open SHAPE read $file
-puts [ogrfile open SHAPE read $file]
+      #layer contains an element of the form AA_9999999_9
+      #puts $layer
 
+      set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
+      #filename contains an element of the form 999a99_9_9_AA_9999999_9
+
+      set indexcanvec [lsearch -exact $Param(Layers) $layer]
+      set value [lindex $Param(Priorities) [lsearch -exact $Param(Layers) $layer]]
+      #puts $indexcanvec
+      #value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Layers)
+
+      ogrfile open SHAPE read $file
+      #read the shapefile and stock it in the object SHAPE
+
+      #the following if/else evaluates if the layer requires some post-processing prior to rasterization or if it is rasterized with the general procedure
       if { [lsearch -exact $Param(LayersPostPro) $layer] !=-1} {
          switch $layer {
             AA_9999999_0 { ;# layer 1 from the list Param(LayersPostPro)
-#                 ;# insert procedure
+#              ;# insert procedure
             }
             AA_9999999_1 { ;# layer 2 from the list Param(LayersPostPro)
-#                 ;# insert procedure
+#              ;# insert procedure
             }
             "BS_2010009_2" {
+               #CanVec Entity : Building, polygon
                #----- divide building types: general, industrial-commercial, day-night 24/7
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE { SELECT * FROM $filename WHERE function NOT IN (10,11,14,18,23,31,37) }
-#               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE { SELECT * FROM $file WHERE function="9" }
-               # voir nouvelle nomenclature : https://wiki.cmc.ec.gc.ca/wiki/SPI/Doc/OGR
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (10,11,14,18,23,31,37) "
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $layer (general buildings) as VFEATURE2KEEP$j with priority value $value"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
                #----- industrial-commercial buildings converted to priority 301
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $file WHERE (function IN (11,13,14,16,18,23,27,31,33,35,37)) "
-               GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from $layer to priority value 301"
-               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 301
+              # ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $file WHERE (function IN (11,13,14,16,18,23,27,31,33,35,37)) "
+               #GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from $layer to priority value 301"
+               #gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 301
                #----- day-night 24/7 buildings converted to priority 302
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $file WHERE (function IN (9,12,17,19,26,39,40)) "
-               GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from $layer to priority value 302"
-               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 302
+               #ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $file WHERE (function IN (9,12,17,19,26,39,40)) "
+               #GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from $layer to priority value 302"
+               #gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 302
             }
             default {
+               #the layer is part of Param(LayersPostPro) but no case has been defined for it
                GenX::Log WARNING "Post-processing for $file not found"
             }
-         } ;# end of the switch procedure
-         ogrlayer free VFEATURE2KEEP$j ;# Nécessaire?
-         incr j ;# Nécessaire?
+         } 
+         ogrlayer free VFEATURE2KEEP$j
+         incr j ;# Increment of VFEATURE2KEEP$j required to re-use the object
       } else {
-         ;# procedure pour les layers n'étant pas inclus dans Param(LayersPostPro)
+         puts "Layer $layer rasterized with general procedure"
          eval ogrlayer read LAYER$j SHAPE 0
          GenX::Log INFO "Rasterizing [ogrlayer define LAYER$j -nb] features from file $file as LAYER$j with priority value $value"
          gdalband gridinterp RSANDWICH LAYER$j $Param(Mode) $value
          ogrlayer free LAYER$j
-      } ;# end of the else procedure
+      }
       ogrfile close SHAPE
    }
 
