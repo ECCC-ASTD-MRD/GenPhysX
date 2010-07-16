@@ -47,7 +47,7 @@ namespace eval UrbanX { } {
 
 #List of CanVec entities, general form AA_9999999_9,
 #where AA is the theme code (BS = Building and structures, EN = Energy, FO = Relief and landforms, HD - Hydrography, IC = Industrial and commercial areas, LI = Administrative boundaries, LX = Places of interest, SS = Water saturated soils, TO = Toponymy, TR = Transportation, VE = Vegetation) ,
-#9999999 a generic code
+#9999999 is a generic code
 #and the last digit indicates the geometry (0 = point, 1 = line, 2 = polygon)
    #---------Lucie : renamed Param(Layers) to Param(Entities)
    set Param(Entities) {
@@ -158,135 +158,145 @@ namespace eval UrbanX { } {
       TR_1020009_1
       TR_1190009_0
       TR_1190009_2
-      TR_1750009_1 
-      TR_1760009_1 
-      TR_1770009_0 
-      TR_1780009_0 
-      TR_1790009_0 
-      TR_2320009_0 
-      VE_1240009_2 
+      TR_1750009_1
+      TR_1760009_1
+      TR_1770009_0
+      TR_1780009_0
+      TR_1790009_0
+      TR_2320009_0
+      VE_1240009_2
       VE_2290009_1 }
 
+   #List of CanVec entities, of general form AA_9999999_9,
+      #where AA is the theme code (BS = Building and structures, EN = Energy, FO = Relief and landforms, HD - Hydrography, IC = Industrial and commercial areas, LI = Administrative boundaries, LX = Places of interest, SS = Water saturated soils, TO = Toponymy, TR = Transportation, VE = Vegetation) ,
+      #9999999 is a generic code
+      #and the last digit indicates the geometry (0 = point, 1 = line, 2 = polygon)
+   #with associated parameters :
+      #PRI = priority for rasterizarion set within Param(Priorities)
+      #TEB = classes for TEB set within Param(TEBClasses)
+      #SMO = classes for SMOKE set within Param(SMOKEClasses)
+      #Description = indicates what is represented by the entity
+      #Note = gives information if the entity is particular and is therefore set within Param(LayersPostPro), Param(Excluded) or another specific category
 
-      #BS_1250009_0 ;# Navigation aid, point
-      #BS_1370009_2 ;# Residential area, polygon
-      #BS_2000009_0 ;# Parabolic antenna, point
-      #BS_2010009_0 ;# Building, point
-      #BS_2010009_2 ;# Building, polygon
-      #BS_2060009_0 ;# Chimney, point
-      #BS_2080009_0 ;# Tank, point
-      #BS_2080009_2 ;# Tank, polygon
-      #BS_2120009_0 ;# Cross, point
-      #BS_2230009_1 ;# Transmission line, line
-      #BS_2240009_1 ;# Wall / fence, line
-      #BS_2310009_1 ;# Pipeline (Sewage / liquid waste), line
-      #BS_2350009_0 ;# Well, point
-      #BS_2380009_0 ;# Underground reservoir, point
-      #BS_2380009_2 ;# Underground reservoir, polygon
-      #BS_2440009_0 ;# Silo, point
-      #BS_2530009_0 ;# Tower, point
-      #EN_1120009_1 ;# Power transmission line, line
-      #EN_1180009_1 ;# Pipeline, line
-      #EN_1340009_0 ;# Valve, point
-      #EN_1360049_0 ;# Gas and oil facilities, point
-      #EN_1360049_2 ;# Gas and oil facilities, polygon
-      #EN_1360059_0 ;# Transformer station, point
-      #EN_1360059_2 ;# Transformer station, polygon
-      #EN_2170009_0 ;# Wind-operated device, point
-      #FO_1030009_1 ;# Contour, line
-      #FO_1080019_2 ;# Landform, polygon
-      #FO_1080029_1 ;# Esker, line
-      #FO_1080038_2 ;# Glacial debris undifferentiated, polygon
-      #FO_1080049_2 ;# Moraine, polygon
-      #FO_1080059_2 ;# Sand, polygon
-      #FO_1080069_2 ;# Tundra, polygon
-      #FO_1080079_0 ;# Pingo, point
-      #FO_1200009_0 ;# Elevation point, point
-      #FO_2570009_1 ;# Contour imperial, line
-      #FO_2610009_0 ;# Elevation point imperial, point
-      #HD_1140009_2 ;# Permanent snow and ice, polygon
-      #HD_1450009_0 ;# Manmade hydrographic entity [Geobase], point
-      #HD_1450009_1 ;# Manmade hydrographic entity [Geobase], line
-      #HD_1450009_2 ;# Manmade hydrographic entity [Geobase], polygon
-      #HD_1460009_0 ;# Hydrographic obstacle entity [Geobase], point
-      #HD_1460009_1 ;# Hydrographic obstacle entity [Geobase], line
-      #HD_1460009_2 ;# Hydrographic obstacle entity [Geobase], polygon
-      #HD_1470009_1 ;# Single line watercourse [Geobase], line
-      #HD_1480009_2 ;# Waterbody [Geobase], polygon
-      #HD_1490009_2 ;# Island [Geobase], polygon
-      #IC_1350019_2 ;# Pit, polygon
-      #IC_1350029_2 ;# Quarry, polygon
-      #IC_1350039_0 ;# Extraction area, point
-      #IC_1350039_2 ;# Extraction area, polygon
-      #IC_1350049_0 ;# Mine, point
-      #IC_1350049_2 ;# Mine, polygon
-      #IC_1350059_2 ;# Peat cutting, polygon
-      #IC_1360019_2 ;# Domestic waste, polygon
-      #IC_1360029_0 ;# Industrial solid waste, point
-      #IC_1360029_2 ;# Industrial solid waste, polygon
-      #IC_1360039_0 ;# Industrial and commercial area, point
-      #IC_1360039_2 ;# Industrial and commercial area, polygon
-      #IC_2110009_2 ;# Lumber yard, polygon
-      #IC_2360009_2 ;# Auto wrecker, polygon
-      #IC_2600009_0 ;# Mining area, point
-      #LI_1210009_2 ;# NTS50K boundary polygon, polygon
-      #LX_1000019_0 ;# Lookout, point
-      #LX_1000019_2 ;# Lookout, polygon
-      #LX_1000029_0 ;# Ski centre, point
-      #LX_1000039_0 ;# Cemetery, point
-      #LX_1000039_2 ;# Cemetery, polygon
-      #LX_1000049_2 ;# Fort, polygon
-      #LX_1000059_0 ;# Designated area, point
-      #LX_1000059_1 ;# Designated area, line
-      #LX_1000059_2 ;# Designated area, polygon
-      #LX_1000069_0 ;# Marina, point
-      #LX_1000079_1 ;# Sport track / Race track, line
-      #LX_1000079_2 ;# Sport track / Race track, polygon
-      #LX_1000089_2 ;# Golf course, polygon
-      #LX_2030009_0 ;# Camp, point
-      #LX_2070009_0 ;# Drive-in theatre, point
-      #LX_2070009_2 ;# Drive-in theatre, polygon
-      #LX_2200009_2 ;# Botanical garden, polygon
-      #LX_2210009_0 ;# Shrine, point
-      #LX_2220009_0 ;# Historical site / Point of interest, point
-      #LX_2260009_2 ;# Amusement park, polygon
-      #LX_2270009_2 ;# Park / sports field, polygon
-      #LX_2280009_1 ;# Footbridge, line
-      #LX_2400009_0 ;# Ruins, point
-      #LX_2400009_2 ;# Ruins, polygon
-      #LX_2420009_1 ;# Trail, line
-      #LX_2460009_2 ;# Stadium, polygon
-      #LX_2480009_0 ;# Campground, point
-      #LX_2480009_2 ;# Campground, polygon
-      #LX_2490009_0 ;# Picnic site, point
-      #LX_2490009_2 ;# Picnic site, polygon
-      #LX_2500009_0 ;# Golf drining range, point
-      #LX_2500009_2 ;# Golf drining range, polygon
-      #LX_2510009_2 ;# Exhibition ground, polygon
-      #LX_2560009_2 ;# Zoo, polygon
-      #SS_1320019_2 ;# Tundra pond, polygon
-      #SS_1320029_2 ;# Palsa bog, polygon
-      #SS_1320039_2 ;# Saturated soil, polygon
-      #SS_1320049_2 ;# Wetland, polygon
-      #SS_1320059_2 ;# Sting bog, polygon
-      #TO_1580009_0 ;# Named feature, point
-      #TO_1580009_1 ;# Named feature, line
-      #TO_1580009_2 ;# Named feature, polygon
-      #TR_1020009_1 ;# Railway, line
-      #TR_1190009_0 ;# Runway, point
-      #TR_1190009_2 ;# Runway, polygon
-      #TR_1750009_1 ;# Ferry connection segment [Geobase], line
-      #TR_1760009_1 ;# Road segment [Geobase], line
-      #TR_1770009_0 ;# Junction [Geobase], point
-      #TR_1780009_0 ;# Blocked passage [Geobase], point
-      #TR_1790009_0 ;# Toll point [Geobase], point
-      #TR_2320009_0 ;# Turntable, point
-      #VE_1240009_2 ;# Wooded area, polygon
-      #VE_2290009_1 ;# Cut line, line
+      #Entity        Pri   TEB   SMO   Description                                           Note
+      #BS_1250009_0  000   000   000   "Navigation aid, point"                               n
+      #BS_1370009_2  000   000   000   "Residential area, polygon"                           n
+      #BS_2000009_0  000   000   000   "Parabolic antenna, point"                            n
+      #BS_2010009_0  000   000   000   "Building, point"                                     n
+      #BS_2010009_2  000   000   000   "Building, polygon"                                   n
+      #BS_2060009_0  000   000   000   "Chimney, point"                                      n
+      #BS_2080009_0  000   000   000   "Tank, point"                                         n
+      #BS_2080009_2  000   000   000   "Tank, polygon"                                       n
+      #BS_2120009_0  000   000   000   "Cross, point"                                        n
+      #BS_2230009_1  000   000   000   "Transmission line, line"                             n
+      #BS_2240009_1  000   000   000   "Wall / fence, line"                                  n
+      #BS_2310009_1  000   000   000   "Pipeline (Sewage / liquid waste), line"              n
+      #BS_2350009_0  000   000   000   "Well, point"                                         n
+      #BS_2380009_0  000   000   000   "Underground reservoir, point"                        n
+      #BS_2380009_2  000   000   000   "Underground reservoir, polygon"                      n
+      #BS_2440009_0  000   000   000   "Silo, point"                                         n
+      #BS_2530009_0  000   000   000   "Tower, point"                                        n
+      #EN_1120009_1  000   000   000   "Power transmission line, line"                       n
+      #EN_1180009_1  000   000   000   "Pipeline, line"                                      n
+      #EN_1340009_0  000   000   000   "Valve, point"                                        n
+      #EN_1360049_0  000   000   000   "Gas and oil facilities, point"                       n
+      #EN_1360049_2  000   000   000   "Gas and oil facilities, polygon"                     n
+      #EN_1360059_0  000   000   000   "Transformer station, point"                          n
+      #EN_1360059_2  000   000   000   "Transformer station, polygon"                        n
+      #EN_2170009_0  000   000   000   "Wind-operated device, point"                         n
+      #FO_1030009_1  000   000   000   "Contour, line"                                       n
+      #FO_1080019_2  000   000   000   "Landform, polygon"                                   n
+      #FO_1080029_1  000   000   000   "Esker, line"                                         n
+      #FO_1080038_2  000   000   000   "Glacial debris undifferentiated, polygon"            n
+      #FO_1080049_2  000   000   000   "Moraine, polygon"                                    n
+      #FO_1080059_2  000   000   000   "Sand, polygon"                                       n
+      #FO_1080069_2  000   000   000   "Tundra, polygon"                                     n
+      #FO_1080079_0  000   000   000   "Pingo, point"                                        n
+      #FO_1200009_0  000   000   000   "Elevation point, point"                              n
+      #FO_2570009_1  000   000   000   "Contour imperial, line"                              n
+      #FO_2610009_0  000   000   000   "Elevation point imperial, point"                     n
+      #HD_1140009_2  000   000   000   "Permanent snow and ice, polygon"                     n
+      #HD_1450009_0  000   000   000   "Manmade hydrographic entity [Geobase], point"        n
+      #HD_1450009_1  000   000   000   "Manmade hydrographic entity [Geobase], line"         n
+      #HD_1450009_2  000   000   000   "Manmade hydrographic entity [Geobase], polygon"      n
+      #HD_1460009_0  000   000   000   "Hydrographic obstacle entity [Geobase], point"       n
+      #HD_1460009_1  000   000   000   "Hydrographic obstacle entity [Geobase], line"        n
+      #HD_1460009_2  000   000   000   "Hydrographic obstacle entity [Geobase], polygon"     n
+      #HD_1470009_1  000   000   000   "Single line watercourse [Geobase], line"             n
+      #HD_1480009_2  000   000   000   "Waterbody [Geobase], polygon"                        n
+      #HD_1490009_2  000   000   000   "Island [Geobase], polygon"                           n
+      #IC_1350019_2  000   000   000   "Pit, polygon"                                        n
+      #IC_1350029_2  000   000   000   "Quarry, polygon"                                     n
+      #IC_1350039_0  000   000   000   "Extraction area, point"                              n
+      #IC_1350039_2  000   000   000   "Extraction area, polygon"                            n
+      #IC_1350049_0  000   000   000   "Mine, point"                                         n
+      #IC_1350049_2  000   000   000   "Mine, polygon"                                       n
+      #IC_1350059_2  000   000   000   "Peat cutting, polygon"                               n
+      #IC_1360019_2  000   000   000   "Domestic waste, polygon"                             n
+      #IC_1360029_0  000   000   000   "Industrial solid waste, point"                       n
+      #IC_1360029_2  000   000   000   "Industrial solid waste, polygon"                     n
+      #IC_1360039_0  000   000   000   "Industrial and commercial area, point"               n
+      #IC_1360039_2  000   000   000   "Industrial and commercial area, polygon"             n
+      #IC_2110009_2  000   000   000   "Lumber yard, polygon"                                n
+      #IC_2360009_2  000   000   000   "Auto wrecker, polygon"                               n
+      #IC_2600009_0  000   000   000   "Mining area, point"                                  n
+      #LI_1210009_2  000   000   000   "NTS50K boundary polygon, polygon"                    n
+      #LX_1000019_0  000   000   000   "Lookout, point"                                      n
+      #LX_1000019_2  000   000   000   "Lookout, polygon"                                    n
+      #LX_1000029_0  000   000   000   "Ski centre, point"                                   n
+      #LX_1000039_0  000   000   000   "Cemetery, point"                                     n
+      #LX_1000039_2  000   000   000   "Cemetery, polygon"                                   n
+      #LX_1000049_2  000   000   000   "Fort, polygon"                                       n
+      #LX_1000059_0  000   000   000   "Designated area, point"                              n
+      #LX_1000059_1  000   000   000   "Designated area, line"                               n
+      #LX_1000059_2  000   000   000   "Designated area, polygon"                            n
+      #LX_1000069_0  000   000   000   "Marina, point"                                       n
+      #LX_1000079_1  000   000   000   "Sport track / Race track, line"                      n
+      #LX_1000079_2  000   000   000   "Sport track / Race track, polygon"                   n
+      #LX_1000089_2  000   000   000   "Golf course, polygon"                                n
+      #LX_2030009_0  000   000   000   "Camp, point"                                         n
+      #LX_2070009_0  000   000   000   "Drive-in theatre, point"                             n
+      #LX_2070009_2  000   000   000   "Drive-in theatre, polygon"                           n
+      #LX_2200009_2  000   000   000   "Botanical garden, polygon"                           n
+      #LX_2210009_0  000   000   000   "Shrine, point"                                       n
+      #LX_2220009_0  000   000   000   "Historical site / Point of interest, point"          n
+      #LX_2260009_2  000   000   000   "Amusement park, polygon"                             n
+      #LX_2270009_2  000   000   000   "Park / sports field, polygon"                        n
+      #LX_2280009_1  000   000   000   "Footbridge, line"                                    n
+      #LX_2400009_0  000   000   000   "Ruins, point"                                        n
+      #LX_2400009_2  000   000   000   "Ruins, polygon"                                      n
+      #LX_2420009_1  000   000   000   "Trail, line"                                         n
+      #LX_2460009_2  000   000   000   "Stadium, polygon"                                    n
+      #LX_2480009_0  000   000   000   "Campground, point"                                   n
+      #LX_2480009_2  000   000   000   "Campground, polygon"                                 n
+      #LX_2490009_0  000   000   000   "Picnic site, point"                                  n
+      #LX_2490009_2  000   000   000   "Picnic site, polygon"                                n
+      #LX_2500009_0  000   000   000   "Golf drining range, point"                           n
+      #LX_2500009_2  000   000   000   "Golf drining range, polygon"                         n
+      #LX_2510009_2  000   000   000   "Exhibition ground, polygon"                          n
+      #LX_2560009_2  000   000   000   "Zoo, polygon"                                        n
+      #SS_1320019_2  000   000   000   "Tundra pond, polygon"                                n
+      #SS_1320029_2  000   000   000   "Palsa bog, polygon"                                  n
+      #SS_1320039_2  000   000   000   "Saturated soil, polygon"                             n
+      #SS_1320049_2  000   000   000   "Wetland, polygon"                                    n
+      #SS_1320059_2  000   000   000   "Sting bog, polygon"                                  n
+      #TO_1580009_0  000   000   000   "Named feature, point"                                n
+      #TO_1580009_1  000   000   000   "Named feature, line"                                 n
+      #TO_1580009_2  000   000   000   "Named feature, polygon"                              n
+      #TR_1020009_1  000   000   000   "Railway, line"                                       n
+      #TR_1190009_0  000   000   000   "Runway, point"                                       n
+      #TR_1190009_2  000   000   000   "Runway, polygon"                                     n
+      #TR_1750009_1  000   000   000   "Ferry connection segment [Geobase], line"            n
+      #TR_1760009_1  000   000   000   "Road segment [Geobase], line"                        n
+      #TR_1770009_0  000   000   000   "Junction [Geobase], point"                           n
+      #TR_1780009_0  000   000   000   "Blocked passage [Geobase], point"                    n
+      #TR_1790009_0  000   000   000   "Toll point [Geobase], point"                         n
+      #TR_2320009_0  000   000   000   "Turntable, point"                                    n
+      #VE_1240009_2  000   000   000   "Wooded area, polygon"                                n
+      #VE_2290009_1  000   000   000   "Cut line, line"                                      n
 
-#List of priority valies associated with BNDT Layers, to modifiy for CanVec Layers
-   #set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of values for the NTDB layers to be processed
-   set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of values for the CanVec layers to be processed
+   #set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the NTDB layers to be processed
+   set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the CanVec layers to be processed
 
 #List of specific layers from BNDT, to modify with layers from CanVec.
    set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
