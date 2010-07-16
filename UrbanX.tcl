@@ -42,117 +42,130 @@ namespace eval UrbanX { } {
    set Param(ShapeField)     ""
 
 #TO DELETE, Layers from BNDT
+#rename Param(Layers) to Param(Entities)
 #   set Param(Layers)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
 
-#List of CanVec layers, general form AA_9999999_9,
+#List of CanVec entities, general form AA_9999999_9,
 #where AA is the theme code (BS = Building and structures, EN = Energy, FO = Relief and landforms, HD - Hydrography, IC = Industrial and commercial areas, LI = Administrative boundaries, LX = Places of interest, SS = Water saturated soils, TO = Toponymy, TR = Transportation, VE = Vegetation) ,
 #9999999 a generic code
 #and the last digit indicates the geometry (0 = point, 1 = line, 2 = polygon)
-#NOTE : VA-T-ON FAIRE UN TRI SUR CERTAINS ATTRIBUTS? EXEMPLE BS_20100009 = BUILDINGS, MAIS POUR INDUSTRX, ON VEUT LES DIFFÉRENTS TYPES (USINE, HOPITAL, ETC.)
-
-   set Param(Layers) { BS_1250009_0 BS_1370009_2 BS_2000009_0 BS_2010009_0 BS_2010009_2
-      #BS_2060009_0
-      #BS_2080009_0
-      #BS_2080009_2
-      #BS_2120009_0
-      #BS_2230009_1
-      #BS_2240009_1
-      #BS_2310009_1
-      #BS_2350009_0
-      #BS_2380009_0
-      #BS_2380009_2
-      #BS_2440009_0
-      #BS_2530009_0
-      #EN_1120009_1
-      #EN_1180009_1
-      #EN_1340009_0
-      #EN_1360049_0
-      #EN_1360049_2
-      #EN_1360059_0
-      #EN_1360059_2
-      #EN_2170009_0
-      #FO_1030009_1
-      #FO_1080019_2
-      #FO_1080029_1
-      #FO_1080038_2
-      #FO_1080049_2
-      #FO_1080059_2
-      #FO_1080069_2
-      #FO_1080079_0
-      #FO_1200009_0
-      #FO_2570009_1
-      #FO_2610009_0
-      #HD_1140009_2
-      #HD_1450009_0
-      #HD_1450009_1
-      #HD_1450009_2
-      #HD_1460009_0
-      #HD_1460009_1
-      #HD_1460009_2
-      #HD_1470009_1
-      #HD_1480009_2
-      #HD_1490009_2
-      #IC_1350019_2
-      #IC_1350029_2
-      #IC_1350039_0
-      #IC_1350039_2
-      #IC_1350049_0
-      #IC_1350049_2
-      #IC_1350059_2
-      #IC_1360019_2
-      #IC_1360029_0
-      #IC_1360029_2
-      #IC_1360039_0
-      #IC_1360039_2
-      #IC_2110009_2
-      #IC_2360009_2
-      #IC_2600009_0
-      #LI_1210009_2
-      #LX_1000019_0
-      #LX_1000019_2
-      #LX_1000029_0
-      #LX_1000039_0
-      #LX_1000039_2
-      #LX_1000049_2
-      #LX_1000059_0
-      #LX_1000059_1
-      #LX_1000059_2
-      #LX_1000069_0
-      #LX_1000079_1
-      #LX_1000079_2
-      #LX_1000089_2
-      #LX_2030009_0
-      #LX_2070009_0
-      #LX_2070009_2
-      #LX_2200009_2
-      #LX_2210009_0
-      #LX_2220009_0
-      #LX_2260009_2
-      #LX_2270009_2
-      #LX_2280009_1
-      #LX_2400009_0
-      #LX_2400009_2
-      #LX_2420009_1
-      #LX_2460009_2
-      #LX_2480009_0
-      #LX_2480009_2
-      #LX_2490009_0
-      #LX_2490009_2
-      #LX_2500009_0
-      #LX_2500009_2
-      #LX_2510009_2
-      #LX_2560009_2
-      #SS_1320019_2
-      #SS_1320029_2
-      #SS_1320039_2
-      #SS_1320049_2
-      #SS_1320059_2
-      #TO_1580009_0
-      #TO_1580009_1
-      #TO_1580009_2
-      #TR_1020009_1
-      #TR_1190009_0
-      TR_1190009_2 TR_1750009_1 TR_1760009_1 TR_1770009_0 TR_1780009_0 TR_1790009_0 TR_2320009_0 VE_1240009_2 VE_2290009_1 }
+   #---------Lucie : renamed Param(Layers) to Param(Entities)
+   set Param(Entities) {
+      BS_1250009_0
+      BS_1370009_2
+      BS_2000009_0
+      BS_2010009_0
+      BS_2010009_2
+      BS_2060009_0
+      BS_2080009_0
+      BS_2080009_2
+      BS_2120009_0
+      BS_2230009_1
+      BS_2240009_1
+      BS_2310009_1
+      BS_2350009_0
+      BS_2380009_0
+      BS_2380009_2
+      BS_2440009_0
+      BS_2530009_0
+      EN_1120009_1
+      EN_1180009_1
+      EN_1340009_0
+      EN_1360049_0
+      EN_1360049_2
+      EN_1360059_0
+      EN_1360059_2
+      EN_2170009_0
+      FO_1030009_1
+      FO_1080019_2
+      FO_1080029_1
+      FO_1080038_2
+      FO_1080049_2
+      FO_1080059_2
+      FO_1080069_2
+      FO_1080079_0
+      FO_1200009_0
+      FO_2570009_1
+      FO_2610009_0
+      HD_1140009_2
+      HD_1450009_0
+      HD_1450009_1
+      HD_1450009_2
+      HD_1460009_0
+      HD_1460009_1
+      HD_1460009_2
+      HD_1470009_1
+      HD_1480009_2
+      HD_1490009_2
+      IC_1350019_2
+      IC_1350029_2
+      IC_1350039_0
+      IC_1350039_2
+      IC_1350049_0
+      IC_1350049_2
+      IC_1350059_2
+      IC_1360019_2
+      IC_1360029_0
+      IC_1360029_2
+      IC_1360039_0
+      IC_1360039_2
+      IC_2110009_2
+      IC_2360009_2
+      IC_2600009_0
+      LI_1210009_2
+      LX_1000019_0
+      LX_1000019_2
+      LX_1000029_0
+      LX_1000039_0
+      LX_1000039_2
+      LX_1000049_2
+      LX_1000059_0
+      LX_1000059_1
+      LX_1000059_2
+      LX_1000069_0
+      LX_1000079_1
+      LX_1000079_2
+      LX_1000089_2
+      LX_2030009_0
+      LX_2070009_0
+      LX_2070009_2
+      LX_2200009_2
+      LX_2210009_0
+      LX_2220009_0
+      LX_2260009_2
+      LX_2270009_2
+      LX_2280009_1
+      LX_2400009_0
+      LX_2400009_2
+      LX_2420009_1
+      LX_2460009_2
+      LX_2480009_0
+      LX_2480009_2
+      LX_2490009_0
+      LX_2490009_2
+      LX_2500009_0
+      LX_2500009_2
+      LX_2510009_2
+      LX_2560009_2
+      SS_1320019_2
+      SS_1320029_2
+      SS_1320039_2
+      SS_1320049_2
+      SS_1320059_2
+      TO_1580009_0
+      TO_1580009_1
+      TO_1580009_2
+      TR_1020009_1
+      TR_1190009_0
+      TR_1190009_2
+      TR_1750009_1 
+      TR_1760009_1 
+      TR_1770009_0 
+      TR_1780009_0 
+      TR_1790009_0 
+      TR_2320009_0 
+      VE_1240009_2 
+      VE_2290009_1 }
 
 
       #BS_1250009_0 ;# Navigation aid, point
@@ -551,7 +564,7 @@ proc UrbanX::SandwichBNDT { } {
    foreach sheet $Data(Sheets) path $Data(Paths) {
       foreach file [glob -nocomplain -tails -directory $path *.shp] {
          set file [string range [file rootname [file tail $file]] 7 end]
-         if { [lsearch -exact $Param(Layers) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
+         if { [lsearch -exact $Param(Entities) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
                GenX::Log WARNING "File '${sheet}_$file.shp' has no priority value and won't be processed"
          }
       }
@@ -561,7 +574,7 @@ proc UrbanX::SandwichBNDT { } {
 
    #----- Rasterization of NTDB layers
    foreach sheet $Data(Sheets) path $Data(Paths) {
-      foreach file $Param(Layers) value $Param(Priorities) {
+      foreach file $Param(Entities) value $Param(Priorities) {
          if { [file exists $path/${sheet}_$file.shp] } {
             set layer [lindex [ogrfile open SHAPE read $path/${sheet}_$file.shp] 0]
             if { [lsearch -exact Param(LayersPostPro) $file]!=-1 } {
@@ -702,7 +715,7 @@ proc UrbanX::SandwichCanVec { } {
    GenX::Log INFO "Locating CanVec Files" ;#added by Lucie
 
    set Param(Files) {}
-   set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Layers)]
+   set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
    #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
 
    # VEUT-ON REFAIRE CETTE VÉRIFICATION ? ELLE SERAIT UTILE - VOIR APRES
@@ -710,7 +723,7 @@ proc UrbanX::SandwichCanVec { } {
 #   foreach sheet $Data(Sheets) path $Data(Paths) {
 #      foreach file [glob -nocomplain -tails -directory $path *.shp] {
 #         set file [string range [file rootname [file tail $file]] 7 end]
-#         if { [lsearch -exact $Param(Layers) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
+#         if { [lsearch -exact $Param(Entities) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
 #               GenX::Log WARNING "File '${sheet}_$file.shp' has no priority value and won't be processed"
 #         }
 #      }
@@ -718,7 +731,7 @@ proc UrbanX::SandwichCanVec { } {
 # NEW CODE TO FIX
 #   foreach file $Param(Files) {
 #      set file [string range [file rootname [file tail $file]] 7 end]
-#      if { [lsearch -exact $Param(Layers) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
+#      if { [lsearch -exact $Param(Entities) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
 #            GenX::Log WARNING "File '$Param(Files)' has no priority value and won't be processed"
 #      }
 #   }
@@ -728,24 +741,21 @@ proc UrbanX::SandwichCanVec { } {
    #----- Rasterization of CanVec layers
 
    foreach file $Param(Files) {
-      set layer [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
-      #layer contains an element of the form AA_9999999_9
-      #puts $layer
+      set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
+      #entity contains an element of the form AA_9999999_9
 
       set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
       #filename contains an element of the form 999a99_9_9_AA_9999999_9
 
-      set indexcanvec [lsearch -exact $Param(Layers) $layer]
-      set value [lindex $Param(Priorities) [lsearch -exact $Param(Layers) $layer]]
-      #puts $indexcanvec
-      #value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Layers)
+      set priority [lindex $Param(Priorities) [lsearch -exact $Param(Entities) $entity]]
+      #value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Entities)
 
       ogrfile open SHAPE read $file
       #read the shapefile and stock it in the object SHAPE
 
       #the following if/else evaluates if the layer requires some post-processing prior to rasterization or if it is rasterized with the general procedure
-      if { [lsearch -exact $Param(LayersPostPro) $layer] !=-1} {
-         switch $layer {
+      if { [lsearch -exact $Param(LayersPostPro) $entity] !=-1} {
+         switch $entity {
             AA_9999999_0 { ;# layer 1 from the list Param(LayersPostPro)
 #              ;# insert procedure
             }
@@ -756,16 +766,16 @@ proc UrbanX::SandwichCanVec { } {
                #CanVec Entity : Building, polygon
                #----- divide building types: general, industrial-commercial, day-night 24/7
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (10,11,14,18,23,31,37) "
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $layer (general buildings) as VFEATURE2KEEP$j with priority value $value"
-               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general buildings) as VFEATURE2KEEP$j with priority value $priority"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
                #----- industrial-commercial buildings converted to priority 301
-              # ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $file WHERE (function IN (11,13,14,16,18,23,27,31,33,35,37)) "
-               #GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from $layer to priority value 301"
-               #gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 301
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $filename WHERE function IN (11,13,14,16,18,23,27,31,33,35,37) "
+               GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from $entity to priority value 301"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 301
                #----- day-night 24/7 buildings converted to priority 302
-               #ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $file WHERE (function IN (9,12,17,19,26,39,40)) "
-               #GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from $layer to priority value 302"
-               #gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 302
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM $filename WHERE function IN (9,12,17,19,26,39,40) "
+               GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from $entity to priority value 302"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 302
             }
             default {
                #the layer is part of Param(LayersPostPro) but no case has been defined for it
@@ -775,20 +785,24 @@ proc UrbanX::SandwichCanVec { } {
          ogrlayer free VFEATURE2KEEP$j
          incr j ;# Increment of VFEATURE2KEEP$j required to re-use the object
       } else {
-         puts "Layer $layer rasterized with general procedure"
+         #general procedure for rasterization : entities are not part of Param(LayersPostPro)
+         puts "Layer $entity rasterized with general procedure"
          eval ogrlayer read LAYER$j SHAPE 0
-         GenX::Log INFO "Rasterizing [ogrlayer define LAYER$j -nb] features from file $file as LAYER$j with priority value $value"
-         gdalband gridinterp RSANDWICH LAYER$j $Param(Mode) $value
+         GenX::Log INFO "Rasterizing [ogrlayer define LAYER$j -nb] features from file $file as LAYER$j with priority value $priority"
+         gdalband gridinterp RSANDWICH LAYER$j $Param(Mode) $priority
          ogrlayer free LAYER$j
       }
       ogrfile close SHAPE
    }
 
+   #creating the output file
    file delete -force $GenX::Param(OutFile)_sandwich.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich.tif GeoTiff
    gdalband write RSANDWICH FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
    gdalband free RSANDWICH
+
+   GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich.tif was generated"
 
 puts "Fin de UrbanX::SandwichCanVec"
 
@@ -825,7 +839,7 @@ proc UrbanX::ScaleBuffers { } {
       foreach layer $Param(BufferLayers) {
          set path [glob -nocomplain $Data(Path$i)${sheet}_$layer.shp]
          if { [file exists $path] } {
-            set value [lindex $Param(Priorities) [lsearch -exact $Param(Layers) $layer]]
+            set value [lindex $Param(Priorities) [lsearch -exact $Param(Entities) $layer]]
             set layer2 [lindex [ogrfile open SHAPE read $path] 0]
             eval ogrlayer read LAYER$j $layer2
             # 1m = 0.000008999280057595392 degre
