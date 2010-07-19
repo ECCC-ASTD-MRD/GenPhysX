@@ -51,7 +51,7 @@ namespace eval UrbanX { } {
 #and the last digit indicates the geometry (0 = point, 1 = line, 2 = polygon)
    #---------Lucie : renamed Param(Layers) to Param(Entities)
    set Param(Entities) {
-      BS_1250009_0
+      #BS_1250009_0
       BS_1370009_2
       BS_2000009_0
       BS_2010009_0
@@ -59,24 +59,24 @@ namespace eval UrbanX { } {
       BS_2060009_0
       BS_2080009_0
       BS_2080009_2
-      BS_2120009_0
+      #BS_2120009_0
       BS_2230009_1
       BS_2240009_1
       BS_2310009_1
-      BS_2350009_0
-      BS_2380009_0
-      BS_2380009_2
+      #BS_2350009_0
+      #BS_2380009_0
+      #BS_2380009_2
       BS_2440009_0
-      BS_2530009_0
-      EN_1120009_1
+      #BS_2530009_0
+      #EN_1120009_1
       EN_1180009_1
-      EN_1340009_0
+      #EN_1340009_0
       EN_1360049_0
       EN_1360049_2
       EN_1360059_0
       EN_1360059_2
       EN_2170009_0
-      FO_1030009_1
+      #FO_1030009_1
       FO_1080019_2
       FO_1080029_1
       FO_1080038_2
@@ -85,8 +85,8 @@ namespace eval UrbanX { } {
       FO_1080069_2
       FO_1080079_0
       FO_1200009_0
-      FO_2570009_1
-      FO_2610009_0
+      #FO_2570009_1
+      #FO_2610009_0
       HD_1140009_2
       HD_1450009_0
       HD_1450009_1
@@ -112,7 +112,7 @@ namespace eval UrbanX { } {
       IC_2110009_2
       IC_2360009_2
       IC_2600009_0
-      LI_1210009_2
+      #LI_1210009_2
       LX_1000019_0
       LX_1000019_2
       LX_1000029_0
@@ -152,20 +152,21 @@ namespace eval UrbanX { } {
       SS_1320039_2
       SS_1320049_2
       SS_1320059_2
-      TO_1580009_0
-      TO_1580009_1
-      TO_1580009_2
+      #TO_1580009_0
+      #TO_1580009_1
+      #TO_1580009_2
       TR_1020009_1
       TR_1190009_0
       TR_1190009_2
-      TR_1750009_1
+      #TR_1750009_1
       TR_1760009_1
       TR_1770009_0
-      TR_1780009_0
+      #TR_1780009_0
       TR_1790009_0
       TR_2320009_0
       VE_1240009_2
-      VE_2290009_1 }
+      #VE_2290009_1 
+      }
 
    #List of CanVec entities, of general form AA_9999999_9,
       #where AA is the theme code (BS = Building and structures, EN = Energy, FO = Relief and landforms, HD - Hydrography, IC = Industrial and commercial areas, LI = Administrative boundaries, LX = Places of interest, SS = Water saturated soils, TO = Toponymy, TR = Transportation, VE = Vegetation) ,
@@ -179,42 +180,42 @@ namespace eval UrbanX { } {
       #Note = gives information if the entity is particular and is therefore set within Param(LayersPostPro), Param(Excluded) or another specific category
 
       #Entity        Pri   TEB   SMO   Description                                           Note
-      #BS_1250009_0  000   000   000   "Navigation aid, point"                               n
+      #BS_1250009_0  000   000   000   "Navigation aid, point"                               Excluded
       #BS_1370009_2  000   000   000   "Residential area, polygon"                           n
-      #BS_2000009_0  000   000   000   "Parabolic antenna, point"                            n
+      #BS_2000009_0  120   420   000   "Parabolic antenna, point"                            Ajouter un post-traitement sur type? (1=radar, 2=radio telescope)
       #BS_2010009_0  000   000   000   "Building, point"                                     n
       #BS_2010009_2  000   000   000   "Building, polygon"                                   n
-      #BS_2060009_0  000   000   000   "Chimney, point"                                      n
-      #BS_2080009_0  000   000   000   "Tank, point"                                         n
-      #BS_2080009_2  000   000   000   "Tank, polygon"                                       n
-      #BS_2120009_0  000   000   000   "Cross, point"                                        n
+      #BS_2060009_0   35   420   000   "Chimney, point"                                      Ajouter un post-traitement sur type? (-1=unknown, 1=burner, 2=industrial, 3=flare stack)
+      #BS_2080009_0   65   410   000   "Tank, point"                                         Ajouter un post-traitement sur type?(-1=unknown,1=horizontal,2=vertical) Ajouter un post-traitement sur use?(-1=unknown,1=other,2=water)
+      #BS_2080009_2  665   410   000   "Tank, polygon"                                       Ajouter un post-traitement sur type?(-1=unknown,1=horizontal,2=vertical) Ajouter un post-traitement sur use?(-1=unknown,1=other,2=water)
+      #BS_2120009_0  000   000   000   "Cross, point"                                        Excluded
       #BS_2230009_1  000   000   000   "Transmission line, line"                             n
-      #BS_2240009_1  000   000   000   "Wall / fence, line"                                  n
+      #BS_2240009_1  570   450   000   "Wall / fence, line"                                  Ajouter un post-traitement sur type? (1=fence, 2=wall)
       #BS_2310009_1  000   000   000   "Pipeline (Sewage / liquid waste), line"              n
-      #BS_2350009_0  000   000   000   "Well, point"                                         n
-      #BS_2380009_0  000   000   000   "Underground reservoir, point"                        n
-      #BS_2380009_2  000   000   000   "Underground reservoir, polygon"                      n
-      #BS_2440009_0  000   000   000   "Silo, point"                                         n
-      #BS_2530009_0  000   000   000   "Tower, point"                                        n
-      #EN_1120009_1  000   000   000   "Power transmission line, line"                       n
+      #BS_2350009_0  000   000   000   "Well, point"                                         Excluded
+      #BS_2380009_0  000   000   000   "Underground reservoir, point"                        Excluded
+      #BS_2380009_2  000   000   000   "Underground reservoir, polygon"                      Excluded
+      #BS_2440009_0  100   140   000   "Silo, point"                                         Aucun post-traitement particulier
+      #BS_2530009_0   30   420   000   "Tower, point"                                        Ajouter un post-traitement sur function? (1=communication, 2=control, 3=clearance, 4=fire, 5=lookout)
+      #EN_1120009_1  000   000   000   "Power transmission line, line"                       Excluded
       #EN_1180009_1  000   000   000   "Pipeline, line"                                      n
-      #EN_1340009_0  000   000   000   "Valve, point"                                        n
-      #EN_1360049_0  000   000   000   "Gas and oil facilities, point"                       n
-      #EN_1360049_2  000   000   000   "Gas and oil facilities, polygon"                     n
-      #EN_1360059_0  000   000   000   "Transformer station, point"                          n
-      #EN_1360059_2  000   000   000   "Transformer station, polygon"                        n
-      #EN_2170009_0  000   000   000   "Wind-operated device, point"                         n
-      #FO_1030009_1  000   000   000   "Contour, line"                                       n
+      #EN_1340009_0  000   000   000   "Valve, point"                                        Excluded
+      #EN_1360049_0  130   110   000   "Gas and oil facilities, point"                       Aucun post-traitement particulier
+      #EN_1360049_2  780   320   000   "Gas and oil facilities, polygon"                     Aucun post-traitement particulier
+      #EN_1360059_0  050   360   000   "Transformer station, point"                          Aucun post-traitement particulier
+      #EN_1360059_2  710   360   000   "Transformer station, polygon"                        Aucun post-traitement particulier
+      #EN_2170009_0  230   420   000   "Wind-operated device, point"                         Aucun post-traitement particulier
+      #FO_1030009_1  000   000   000   "Contour, line"                                       Excluded
       #FO_1080019_2  000   000   000   "Landform, polygon"                                   n
-      #FO_1080029_1  000   000   000   "Esker, line"                                         n
+      #FO_1080029_1  640   830   000   "Esker, line"                                         Aucun post-traitement particulier
       #FO_1080038_2  000   000   000   "Glacial debris undifferentiated, polygon"            n
-      #FO_1080049_2  000   000   000   "Moraine, polygon"                                    n
+      #FO_1080049_2  999   830   000   "Moraine, polygon"                                    Aucun post-traitement particulier
       #FO_1080059_2  000   000   000   "Sand, polygon"                                       n
-      #FO_1080069_2  000   000   000   "Tundra, polygon"                                     n
+      #FO_1080069_2  999   820   000   "Tundra, polygon"                                     Aucun post-traitement particulier
       #FO_1080079_0  000   000   000   "Pingo, point"                                        n
-      #FO_1200009_0  000   000   000   "Elevation point, point"                              n
-      #FO_2570009_1  000   000   000   "Contour imperial, line"                              n
-      #FO_2610009_0  000   000   000   "Elevation point imperial, point"                     n
+      #FO_1200009_0  000   000   000   "Elevation point, point"                              Excluded
+      #FO_2570009_1  000   000   000   "Contour imperial, line"                              Excluded
+      #FO_2610009_0  000   000   000   "Elevation point imperial, point"                     Excluded
       #HD_1140009_2  000   000   000   "Permanent snow and ice, polygon"                     n
       #HD_1450009_0  000   000   000   "Manmade hydrographic entity [Geobase], point"        n
       #HD_1450009_1  000   000   000   "Manmade hydrographic entity [Geobase], line"         n
@@ -231,77 +232,95 @@ namespace eval UrbanX { } {
       #IC_1350039_2  000   000   000   "Extraction area, polygon"                            n
       #IC_1350049_0  000   000   000   "Mine, point"                                         n
       #IC_1350049_2  000   000   000   "Mine, polygon"                                       n
-      #IC_1350059_2  000   000   000   "Peat cutting, polygon"                               n
+      #IC_1350059_2  840   840   000   "Peat cutting, polygon"                               Aucun post-traitement particulier
       #IC_1360019_2  000   000   000   "Domestic waste, polygon"                             n
       #IC_1360029_0  000   000   000   "Industrial solid waste, point"                       n
       #IC_1360029_2  000   000   000   "Industrial solid waste, polygon"                     n
       #IC_1360039_0  000   000   000   "Industrial and commercial area, point"               n
       #IC_1360039_2  000   000   000   "Industrial and commercial area, polygon"             n
-      #IC_2110009_2  000   000   000   "Lumber yard, polygon"                                n
-      #IC_2360009_2  000   000   000   "Auto wrecker, polygon"                               n
+      #IC_2110009_2  770   450   000   "Lumber yard, polygon"                                Aucun post-traitement particulier
+      #IC_2360009_2  775   410   000   "Auto wrecker, polygon"                               Aucun post-traitement particulier
       #IC_2600009_0  000   000   000   "Mining area, point"                                  n
-      #LI_1210009_2  000   000   000   "NTS50K boundary polygon, polygon"                    n
-      #LX_1000019_0  000   000   000   "Lookout, point"                                      n
-      #LX_1000019_2  000   000   000   "Lookout, polygon"                                    n
-      #LX_1000029_0  000   000   000   "Ski centre, point"                                   n
-      #LX_1000039_0  000   000   000   "Cemetery, point"                                     n
-      #LX_1000039_2  000   000   000   "Cemetery, polygon"                                   n
-      #LX_1000049_2  000   000   000   "Fort, polygon"                                       n
+      #LI_1210009_2  000   000   000   "NTS50K boundary polygon, polygon"                    Excluded (note : changement de géométrie, de linéaire (BNDT) à surfacique (CanVec))
+      #LX_1000019_0  140   360   000   "Lookout, point"                                      Aucun post-traitement particulier
+      #LX_1000019_2  670   360   000   "Lookout, polygon"                                    Aucun post-traitement particulier
+      #LX_1000029_0   60   110   000   "Ski centre, point"                                   Aucun post-traitement particulier
+      #LX_1000039_0  070   720   000   "Cemetery, point"                                     Aucun post-traitement particulier
+      #LX_1000039_2  890   520   000   "Cemetery, polygon"                                   Aucun post-traitement particulier
+      #LX_1000049_2  810   120   000   "Fort, polygon"                                       Aucun post-traitement particulier
       #LX_1000059_0  000   000   000   "Designated area, point"                              n
       #LX_1000059_1  000   000   000   "Designated area, line"                               n
       #LX_1000059_2  000   000   000   "Designated area, polygon"                            n
-      #LX_1000069_0  000   000   000   "Marina, point"                                       n
+      #LX_1000069_0  244   110   000   "Marina, point"                                       Aucun post-traitement particulier
       #LX_1000079_1  000   000   000   "Sport track / Race track, line"                      n
       #LX_1000079_2  000   000   000   "Sport track / Race track, polygon"                   n
-      #LX_1000089_2  000   000   000   "Golf course, polygon"                                n
-      #LX_2030009_0  000   000   000   "Camp, point"                                         n
-      #LX_2070009_0  000   000   000   "Drive-in theatre, point"                             n
-      #LX_2070009_2  000   000   000   "Drive-in theatre, polygon"                           n
-      #LX_2200009_2  000   000   000   "Botanical garden, polygon"                           n
-      #LX_2210009_0  000   000   000   "Shrine, point"                                       n
-      #LX_2220009_0  000   000   000   "Historical site / Point of interest, point"          n
-      #LX_2260009_2  000   000   000   "Amusement park, polygon"                             n
-      #LX_2270009_2  000   000   000   "Park / sports field, polygon"                        n
-      #LX_2280009_1  000   000   000   "Footbridge, line"                                    n
-      #LX_2400009_0  000   000   000   "Ruins, point"                                        n
-      #LX_2400009_2  000   000   000   "Ruins, polygon"                                      n
-      #LX_2420009_1  000   000   000   "Trail, line"                                         n
-      #LX_2460009_2  000   000   000   "Stadium, polygon"                                    n
-      #LX_2480009_0  000   000   000   "Campground, point"                                   n
-      #LX_2480009_2  000   000   000   "Campground, polygon"                                 n
-      #LX_2490009_0  000   000   000   "Picnic site, point"                                  n
-      #LX_2490009_2  000   000   000   "Picnic site, polygon"                                n
+      #LX_1000089_2  850   820   000   "Golf course, polygon"                                Aucun post-traitement particulier
+      #LX_2030009_0   90   520   000   "Camp, point"                                         Aucun post-traitement particulier
+      #LX_2070009_0   80   110   000   "Drive-in theatre, point"                             Aucun post-traitement particulier
+      #LX_2070009_2  760   320   000   "Drive-in theatre, polygon"                           Aucun post-traitement particulier
+      #LX_2200009_2  885   520   000   "Botanical garden, polygon"                           Aucun post-traitement particulier
+      #LX_2210009_0  000   000   000   "Shrine, point"                                       Excluded
+      #LX_2220009_0  150   530   000   "Historical site / Point of interest, point"          Aucun post-traitement particulier
+      #LX_2260009_2  865   450   000   "Amusement park, polygon"                             Aucun post-traitement particulier
+      #LX_2270009_2  870   820   000   "Park / sports field, polygon"                        Aucun post-traitement particulier
+      #LX_2280009_1  200   360   000   "Footbridge, line"                                    Aucun post-traitement particulier
+      #LX_2400009_0  110   530   000   "Ruins, point"                                        Aucun post-traitement particulier
+      #LX_2400009_2  800   530   000   "Ruins, polygon"                                      Aucun post-traitement particulier
+      #LX_2420009_1  240   520   000   "Trail, line"                                         Ajouter un post-traitement sur function? (-1=unknown, 1=other, 2-portage)
+      #LX_2460009_2  660   120   000   "Stadium, polygon"                                    Aucun post-traitement particulier
+      #LX_2480009_0   95   110   000   "Campground, point"                                   Aucun post-traitement particulier
+      #LX_2480009_2  860   820   000   "Campground, polygon"                                 Aucun post-traitement particulier
+      #LX_2490009_0   85   520   000   "Picnic site, point"                                  Aucun post-traitement particulier
+      #LX_2490009_2  875   520   000   "Picnic site, polygon"                                Aucun post-traitement particulier
       #LX_2500009_0  000   000   000   "Golf drining range, point"                           n
-      #LX_2500009_2  000   000   000   "Golf drining range, polygon"                         n
-      #LX_2510009_2  000   000   000   "Exhibition ground, polygon"                          n
-      #LX_2560009_2  000   000   000   "Zoo, polygon"                                        n
-      #SS_1320019_2  000   000   000   "Tundra pond, polygon"                                n
-      #SS_1320029_2  000   000   000   "Palsa bog, polygon"                                  n
+      #LX_2500009_2  852   820   000   "Golf drining range, polygon"                         Aucun post-traitement particulier
+      #LX_2510009_2  790   530   000   "Exhibition ground, polygon"                          Ajouter un post-traitement sur type? (1=other, 2=fairground)
+      #LX_2560009_2  880   520   000   "Zoo, polygon"                                        Aucun post-traitement particulier
+      #SS_1320019_2  999   840   000   "Tundra pond, polygon"                                Aucun post-traitement particulier
+      #SS_1320029_2  999   840   000   "Palsa bog, polygon"                                  Aucun post-traitement particulier
       #SS_1320039_2  000   000   000   "Saturated soil, polygon"                             n
-      #SS_1320049_2  000   000   000   "Wetland, polygon"                                    n
-      #SS_1320059_2  000   000   000   "Sting bog, polygon"                                  n
-      #TO_1580009_0  000   000   000   "Named feature, point"                                n
-      #TO_1580009_1  000   000   000   "Named feature, line"                                 n
-      #TO_1580009_2  000   000   000   "Named feature, polygon"                              n
+      #SS_1320049_2  690   840   000   "Wetland, polygon"                                    Aucun post-traitement particulier
+      #SS_1320059_2  999   840   000   "Sting bog, polygon"                                  Aucun post-traitement particulier
+      #TO_1580009_0  000   000   000   "Named feature, point"                                Excluded
+      #TO_1580009_1  000   000   000   "Named feature, line"                                 Excluded
+      #TO_1580009_2  000   000   000   "Named feature, polygon"                              Excluded
       #TR_1020009_1  000   000   000   "Railway, line"                                       n
       #TR_1190009_0  000   000   000   "Runway, point"                                       n
       #TR_1190009_2  000   000   000   "Runway, polygon"                                     n
-      #TR_1750009_1  000   000   000   "Ferry connection segment [Geobase], line"            n
+      #TR_1750009_1  000   000   000   "Ferry connection segment [Geobase], line"            Excluded
       #TR_1760009_1  000   000   000   "Road segment [Geobase], line"                        n
       #TR_1770009_0  000   000   000   "Junction [Geobase], point"                           n
-      #TR_1780009_0  000   000   000   "Blocked passage [Geobase], point"                    n
+      #TR_1780009_0  000   000   000   "Blocked passage [Geobase], point"                    Excluded
       #TR_1790009_0  000   000   000   "Toll point [Geobase], point"                         n
-      #TR_2320009_0  000   000   000   "Turntable, point"                                    n
-      #VE_1240009_2  000   000   000   "Wooded area, polygon"                                n
-      #VE_2290009_1  000   000   000   "Cut line, line"                                      n
+      #TR_2320009_0  000   000   000   "Turntable, point"                                    Excluded
+      #VE_1240009_2  700   810   000   "Wooded area, polygon"                                Ajouter un post-traitement sur type? (1=Extracted, 2=Interpreted, 3=CFS-EOSD, 4=Land Cover Circa 2000 Vector)
+      #VE_2290009_1  000   000   000   "Cut line, line"                                      Excluded
 
    #set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the NTDB layers to be processed
    set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the CanVec layers to be processed
 
 #List of specific layers from BNDT, to modify with layers from CanVec.
-   set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
-   #set Param(Excluded)         {} ;# Layers from CanVec ignored for rasterization
-   set Param(LayersPostPro)    { BS_1370009_2 BS_2010009_2 mininga_p railway_l road_l runway_a runway_p sport_t_l buildin_p buildin_a } ;# Layers from BNDT requiring postprocessing
+   #set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
+   set Param(Excluded) {
+      BS_1250009_0
+      BS_2120009_0
+      BS_2350009_0
+      BS_2380009_0
+      BS_2380009_2
+      EN_1120009_1
+      EN_1340009_0
+      FO_1030009_1
+      FO_2570009_1
+      LI_1210009_2
+      LX_2210009_0
+      TO_1580009_0
+      TO_1580009_1
+      TO_1580009_2
+      TR_1750009_1
+      TR_1780009_0
+      TR_2320009_0
+      VE_2290009_1 } ;# Layers from CanVec ignored for rasterization
+   set Param(LayersPostPro)    { mininga_p railway_l road_l runway_a runway_p sport_t_l buildin_p buildin_a } ;# Layers from BNDT requiring postprocessing
    #set Param(LayersPostPro)    { } ;# Layers from CanVec requiring postprocessing
    set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
    #set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from CanVec
