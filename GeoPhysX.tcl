@@ -1415,6 +1415,21 @@ proc GeoPhysX::AverageSand { Grid } {
    fstdfield free SANDTILE GPXJ1 GPXJ1SK
 }
 
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageSoilHWSD>
+# Creation : June 2006 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the sand percentage through averaging based on HWSD.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the sand percentage
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+
 proc GeoPhysX::AverageSoilHWSD { Grid } {
    variable Param
 
@@ -1445,7 +1460,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
       vector mem HWSDTABLE 20000
 
       GenX::Log INFO "Reading HWSD correspondance table"
-      set f [open /cnfs/ops/production/cmoe/geo/HWSD/hwsd.csv]
+      set f [open $GenX::Path(HWSD)/hwsd.csv]
 
       gets $f line
       while { ![eof $f] } {
@@ -1460,7 +1475,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
 
       GenX::Log INFO "Building HWSD lookup table"
       lappend params(0) { 0 0 0 0 0 0 0 0 0 0 0 0 }
-      foreach name [lsort [array names params]] {
+      foreach name [lsort -integer -increasing [array names params]] {
 
          #----- Reset counts
          foreach type $types {
@@ -1494,23 +1509,22 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
             GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
             gdalband read HWSDTILE { { HWSDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
-            gdalband stats HWSDTILE -nodata 0 -celldim $GenX::Param(Cell)
-
             foreach type $types field $fields {
 
-               #----- Apply lookup table for soil type
+               #----- Apply lookup table for soil type (Cast to Float since HWSDTILE is Integer and we need %)
                vexpr (Float32)$type slut(HWSDTILE,HWSDTABLE.mu,HWSDTABLE.$type)
+               gdalband stats $type -nodata 0 -celldim $GenX::Param(Cell)
 
-               #----- If the tile contains soil of this type
-               if { [lindex [lindex [gdalband stats $type -max] 0] 0]!=0.0 } {
-                  #----- Average on each output grid
+               #----- If the tile contains soil of this type then average it
+               GenX::Log DEBUG "      Processing $type (max: [lindex [lindex [gdalband stats $type -max] 0] 0])" False
+               if { [lindex [lindex [gdalband stats $type -max] 0] 0]>0.0 } {
                   fstdfield gridinterp $field $type AVERAGE False
                }
             }
          }
       }
-      gdalfile close HWSDFILE
    }
+   gdalfile close HWSDFILE
 
    #----- Finalize the averaging
    foreach field $fields {
@@ -1524,11 +1538,11 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
    fstdfield define GPXBULKT -NOMVAR J4 -IP1 1199
    fstdfield define GPXOCT   -NOMVAR J5 -IP1 1199
 
-   fstdfield write GPXSANDT GPXAUXFILE -24 True
-   fstdfield write GPXCLAYT GPXAUXFILE -24 True
-   fstdfield write GPXGRAVT GPXAUXFILE -24 True
-   fstdfield write GPXBULKT GPXAUXFILE -24 True
-   fstdfield write GPXOCT   GPXAUXFILE -24 True
+   fstdfield write GPXSANDT GPXAUXFILE -32 True
+   fstdfield write GPXCLAYT GPXAUXFILE -32 True
+   fstdfield write GPXGRAVT GPXAUXFILE -32 True
+   fstdfield write GPXBULKT GPXAUXFILE -32 True
+   fstdfield write GPXOCT   GPXAUXFILE -32 True
 
    #----- Copy sub-surface data into 4 layers (needed by GEM)
    foreach ip1 { 1198 1197 1196 1195 } {
@@ -1538,11 +1552,11 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
       fstdfield define GPXBULKS -NOMVAR J4 -IP1 $ip1
       fstdfield define GPXOCS   -NOMVAR J5 -IP1 $ip1
 
-      fstdfield write GPXSANDS GPXAUXFILE -24 True
-      fstdfield write GPXCLAYS GPXAUXFILE -24 True
-      fstdfield write GPXGRAVS GPXAUXFILE -24 True
-      fstdfield write GPXBULKS GPXAUXFILE -24 True
-      fstdfield write GPXOCS   GPXAUXFILE -24 True
+      fstdfield write GPXSANDS GPXAUXFILE -32 True
+      fstdfield write GPXCLAYS GPXAUXFILE -32 True
+      fstdfield write GPXGRAVS GPXAUXFILE -32 True
+      fstdfield write GPXBULKS GPXAUXFILE -32 True
+      fstdfield write GPXOCS   GPXAUXFILE -32 True
    }
 
    vector free HWSDTABLE
