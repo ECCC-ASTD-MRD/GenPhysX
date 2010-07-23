@@ -40,8 +40,10 @@
 #   GeoPhysX::AverageVegeCCRS      { Grid }
 #   GeoPhysX::DominantVege         { Grid }
 #
+#   GeoPhysX::AverageSoil          { Grid }
 #   GeoPhysX::AverageSand          { Grid }
 #   GeoPhysX::AverageClay          { Grid }
+#   GeoPhysX::AverageSoilHWSD      { Grid }
 #
 #   GeoPhysX::SubCorrectionFilter  { FieldRes FieldDX FieldDY DBR C1 C2 }
 #   GeoPhysX::SubCorrectionFactor  { }
@@ -59,7 +61,7 @@ namespace eval GeoPhysX { } {
    variable Const
    global env
 
-   set Param(Version)   1.1
+   set Param(Version)   1.2
 
    #----- Specific data information
 
@@ -716,8 +718,8 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
-            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr GLOBTILE ifelse(GLOBTILE==210,0.0,1.0)
@@ -773,8 +775,8 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
-            gdalband read GLCTILE { { GLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read GLCTILE { { GLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLCTILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr GLCTILE ifelse(GLCTILE==20,0.0,1.0)
@@ -1109,8 +1111,8 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
-            gdalband read CORINETILE { { CORINEFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read CORINETILE { { CORINEFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats CORINETILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr CORINETILE lut(CORINETILE,FROMCORINE,TORPN)
@@ -1171,8 +1173,8 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
-            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr GLOBTILE lut(GLOBTILE,FROMGLOB,TORPN)
@@ -1233,8 +1235,8 @@ proc GeoPhysX::AverageVegeGLC2000 { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
-            gdalband read GLCTILE { { GLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read GLCTILE { { GLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLCTILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr GLCTILE lut(GLCTILE,FROMGLC,TORPN)
@@ -1295,8 +1297,8 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]" False
-            gdalband read CCRSTILE { { CCRSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)] [expr $y+$GenX::Param(TileSize)]
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read CCRSTILE { { CCRSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats CCRSTILE -nodata 255 -celldim $GenX::Param(Cell)
 
             vexpr CCRSTILE lut(CCRSTILE,FROMCCRS,TORPN)
@@ -1314,6 +1316,44 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
       vector free FROMCCRS TORPN
    }
    gdalfile close CCRSFILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageSoil>
+# Creation : June 2006 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the soil types types through averaging.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the soil
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+
+proc GeoPhysX::AverageSoil { Grid } {
+   variable Param
+
+   GenX::Procs
+
+   if { [lindex $GenX::Param(Soil) 0]=="HWSD" } {
+      GeoPhysX::AverageSoilHWSD $Grid
+   } else {
+      GeoPhysX::AverageSand $Grid
+      GeoPhysX::AverageClay $Grid
+   }
+
+#   foreach soil $GenX::Param(Soil) {
+#      switch $soil {
+#         "USDA" -
+#         "AGRC" -
+#         "FAO"  { GeoPhysX::AverageSand $Grid          ;#----- USGS global vege averaging method
+#                  GeoPhysX::AverageClay $Grid  }
+#         "HWSD" { GeoPhysX::AverageSoilHWSD $Grid ;#----- GLOBCOVER global vege averaging method }
+#      }
+#   }
 }
 
 #----------------------------------------------------------------------------
@@ -1373,6 +1413,141 @@ proc GeoPhysX::AverageSand { Grid } {
       fstdfield write GPXJ1 GPXAUXFILE -24 True
    }
    fstdfield free SANDTILE GPXJ1 GPXJ1SK
+}
+
+proc GeoPhysX::AverageSoilHWSD { Grid } {
+   variable Param
+
+   GenX::Procs
+
+   set fields { GPXGRAVT GPXSANDT GPXCLAYT GPXBULKT GPXOCT GPXGRAVS GPXSANDS GPXCLAYS GPXBULKS GPXOCS }
+   set types  { tgrav tsand tclay tref toc sgrav ssand sclay sref soc }
+   set idxs   { 2 3 5 6 7 8 9 11 12 13 }
+
+   #----- Create the RPN fields
+   foreach field $fields {
+      fstdfield copy $field $Grid
+   }
+   GenX::GridClear $fields 0.0
+
+   #----- Open the file
+   gdalfile open HWSDFILE read $GenX::Path(HWSD)/hwsd.bil
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef HWSDFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with HWSD database, vegetation will not be calculated"
+   } else {
+
+      #----- Create lookup table (LUT) for the various types
+      vector create HWSDTABLE
+      vector dim HWSDTABLE { mu tgrav tsand tclay tref toc sgrav ssand sclay sref soc }
+
+      #----- Set max memory right now, it'll speed up the allocation
+      vector mem HWSDTABLE 20000
+
+      GenX::Log INFO "Reading HWSD correspondance table"
+      set f [open /cnfs/ops/production/cmoe/geo/HWSD/hwsd.csv]
+
+      gets $f line
+      while { ![eof $f] } {
+         set line [split [gets $f] ,]
+
+         #----- Skip empty lines
+         if { [lindex $line 0]!="" } {
+            lappend params([lindex $line 0]) [lrange $line 1 end]
+         }
+      }
+      close $f
+
+      GenX::Log INFO "Building HWSD lookup table"
+      lappend params(0) { 0 0 0 0 0 0 0 0 0 0 0 0 }
+      foreach name [lsort [array names params]] {
+
+         #----- Reset counts
+         foreach type $types {
+            set $type 0
+         }
+
+         #----- There might be multiple types so we have to calculate the % per types
+         #      ex: SAND = [SHARE(1)*SAND(1) + SHARE(2)*SAND(2) + SHARE(3)*SAND(3) ...]/100.
+         foreach param $params($name) {
+            set per   [lindex $param 0]
+            foreach type $types idx $idxs {
+               if { [set p [lindex $param $idx]]!="" } {
+                  eval set $type \[expr \$$type+$per*$p\]
+               }
+            }
+         }
+         foreach type $types {
+            eval set $type \[expr \$$type/100.0\]
+         }
+         vector append HWSDTABLE [list $name $tgrav $tsand $tclay $tref $toc $sgrav $ssand $sclay $sref $soc]
+      }
+
+      GenX::Log INFO "Grid intersection with HWSD database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read HWSDTILE { { HWSDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats HWSDTILE -nodata 0 -celldim $GenX::Param(Cell)
+
+            foreach type $types field $fields {
+
+               #----- Apply lookup table for soil type
+               vexpr (Float32)$type slut(HWSDTILE,HWSDTABLE.mu,HWSDTABLE.$type)
+
+               #----- If the tile contains soil of this type
+               if { [lindex [lindex [gdalband stats $type -max] 0] 0]!=0.0 } {
+                  #----- Average on each output grid
+                  fstdfield gridinterp $field $type AVERAGE False
+               }
+            }
+         }
+      }
+      gdalfile close HWSDFILE
+   }
+
+   #----- Finalize the averaging
+   foreach field $fields {
+      fstdfield gridinterp $field - NOP True
+   }
+
+   #----- Save output
+   fstdfield define GPXSANDT -NOMVAR J1 -IP1 1199
+   fstdfield define GPXCLAYT -NOMVAR J2 -IP1 1199
+   fstdfield define GPXGRAVT -NOMVAR J3 -IP1 1199
+   fstdfield define GPXBULKT -NOMVAR J4 -IP1 1199
+   fstdfield define GPXOCT   -NOMVAR J5 -IP1 1199
+
+   fstdfield write GPXSANDT GPXAUXFILE -24 True
+   fstdfield write GPXCLAYT GPXAUXFILE -24 True
+   fstdfield write GPXGRAVT GPXAUXFILE -24 True
+   fstdfield write GPXBULKT GPXAUXFILE -24 True
+   fstdfield write GPXOCT   GPXAUXFILE -24 True
+
+   #----- Copy sub-surface data into 4 layers (needed by GEM)
+   foreach ip1 { 1198 1197 1196 1195 } {
+      fstdfield define GPXSANDS -NOMVAR J1 -IP1 $ip1
+      fstdfield define GPXCLAYS -NOMVAR J2 -IP1 $ip1
+      fstdfield define GPXGRAVS -NOMVAR J3 -IP1 $ip1
+      fstdfield define GPXBULKS -NOMVAR J4 -IP1 $ip1
+      fstdfield define GPXOCS   -NOMVAR J5 -IP1 $ip1
+
+      fstdfield write GPXSANDS GPXAUXFILE -24 True
+      fstdfield write GPXCLAYS GPXAUXFILE -24 True
+      fstdfield write GPXGRAVS GPXAUXFILE -24 True
+      fstdfield write GPXBULKS GPXAUXFILE -24 True
+      fstdfield write GPXOCS   GPXAUXFILE -24 True
+   }
+
+   vector free HWSDTABLE
+   eval fstdfield free $fields
+   eval gdalband free HWSDTILE $types
 }
 
 #----------------------------------------------------------------------------

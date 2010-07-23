@@ -89,7 +89,7 @@ namespace eval GenX { } {
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD CORINE }
-   set Param(Soils)     { USDA AGRC FAO }
+   set Param(Soils)     { USDA AGRC FAO HWSD }
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
@@ -127,6 +127,7 @@ namespace eval GenX { } {
    set Path(VegeUSGS)  $Path(DBase)/db/vg_usgs2002
    set Path(TopoLow)   $Path(DBase)/db/data_lres
    set Path(Grad)      $Path(DBase)/db/data_grad
+   set Path(HWSD)      $Path(DBase)/HWSD
    set Path(SRTM)      $Path(DBase)/SRTMv4
    set Path(CDED)      $Path(DBase)/CDED
    set Path(ASTERGDEM) $Path(DBase)/ASTGTM_V1.1
@@ -207,8 +208,7 @@ proc GenX::Process { Grid } {
 
       #----- Soil type
       if { $GenX::Param(Soil)!="" } {
-         GeoPhysX::AverageSand $Grid
-         GeoPhysX::AverageClay $Grid
+         GeoPhysX::AverageSoil $Grid
       }
 
       #----- Consistency checks
