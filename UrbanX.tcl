@@ -523,7 +523,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } } {
 #
 # Return:
 #
-# Remarks :
+# Remarks :  THIS PROC WILL BE DELETED - WON'T BE USED ANYMORE
 #
 #----------------------------------------------------------------------------
 proc UrbanX::FindNTSSheets { } {
@@ -720,13 +720,15 @@ proc UrbanX::SandwichBNDT { } {
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::AreaDefine>
 # Creation : July 2010 - Alexandre Leroux - CMC/CMOE
+#            July 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     : Finds CanVec Files
-#	     Rasterize and flatten CanVec layers
+#            Rasterize and flatten CanVec layers, either with a general
+#            procedure or with some post-processing
 #
 # Parameters :
 #
-# Return:
+# Return: output genphysx_sandwich.tif
 #
 # Remarks :
 #
@@ -1479,6 +1481,7 @@ proc UrbanX::Values2TEB { } {
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::Values2SMOKE>
 # Creation : July 2010 - Alexandre Leroux - CMC/CMOE
+#            July 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     : Applies LUT to all processing result to generate SMOKE classes
 #
@@ -1502,7 +1505,7 @@ proc UrbanX::Values2SMOKE { } {
    vector create LUT
    vector dim LUT { FROM TO }
    vector set LUT.FROM $Param(Priorities)
-   vector set LUT.TO $Param(SMOKEClasses) ;#SMOKEValues n'existe pas, of course ça plante
+   vector set LUT.TO $Param(SMOKEClasses) ;#SMOKEClasses n'existe pas, of course ça plante
    vexpr RTEB lut(RSANDWICH,LUT.FROM,LUT.TO)
    vector free LUT
 
