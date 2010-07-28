@@ -65,14 +65,14 @@ namespace eval UrbanX { } {
       #BS_2120009_0  000   000   000   "Cross, point"                                        Excluded    "Aucun post-traitement particulier"
       #BS_2230009_1  000   000   000   "Transmission line, line"                             Excluded    "Ajouter un post-traitement sur location? (1=other)  Ajouter un post-traitemen tusr function (1=telephone)"
       #BS_2240009_1  570   450   000   "Wall / fence, line"                                  Regular     "Ajouter un post-traitement sur type? (1=fence, 2=wall)"
-      #BS_2310009_1  550   430   000   "Pipeline (Sewage / liquid waste), line"              Regular     "Ajouter un post-traitement sur relation2ground? (1 = aboveground)"
+      #BS_2310009_1  550   430   000   "Pipeline (Sewage / liquid waste), line"              PostPro     "if relation2ground !=1 (aboveground), excluded.  else, general value"
       #BS_2350009_0  000   000   000   "Well, point"                                         Excluded    "Ajouter un post-traitement sur type? (-1=unknown, 1=water, 2=petroleum)"
       #BS_2380009_0  000   000   000   "Underground reservoir, point"                        Excluded    "Aucun post-traitement particulier"
       #BS_2380009_2  000   000   000   "Underground reservoir, polygon"                      Excluded    "Aucun post-traitement particulier"
       #BS_2440009_0  100   140   000   "Silo, point"                                         Regular     "Aucun post-traitement particulier"
       #BS_2530009_0   30   420   000   "Tower, point"                                        Regular     "Ajouter un post-traitement sur function? (1=communication, 2=control, 3=clearance, 4=fire, 5=lookout)"
       #EN_1120009_1  000   000   000   "Power transmission line, line"                       Excluded    "Ajouter un post-traitement sur type? (1=overhead, 2=submarine)"
-      #EN_1180009_1  550   430   000   "Pipeline, line"                                      Regular     "Ajouter un post-traitement sur product? (-1=unknown, 1=natural gaz, 2=oil, 3=multiuse) Ajouter un post-traitement sur relation2ground? (1=aboveground, 2=underground)
+      #EN_1180009_1  550   430   000   "Pipeline, line"                                      PostPro     "Ajouter un post-traitement sur product? (-1=unknown, 1=natural gaz, 2=oil, 3=multiuse) Ajouter un post-traitement sur relation2ground? (1=aboveground, 2=underground)
       #EN_1340009_0  000   000   000   "Valve, point"                                        Excluded    "Aucun post-traitement particulier"
       #EN_1360049_0  130   110   000   "Gas and oil facilities, point"                       Regular     "Aucun post-traitement particulier"
       #EN_1360049_2  780   320   000   "Gas and oil facilities, polygon"                     Regular     "Aucun post-traitement particulier"
@@ -82,7 +82,7 @@ namespace eval UrbanX { } {
       #FO_1030009_1  000   000   000   "Contour, line"                                       Excluded    "Ajouter un post-traitement sur generation? (-1=unknown, 1=collected, 2=derived) Ajouter un post-traitement sur type?" (1=depression, 2=elevation)
       #FO_1080019_2  000   000   000   "Landform, polygon"                                   Excluded    "Aucun post-traitement particulier"
       #FO_1080029_1  640   830   000   "Esker, line"                                         Regular     "Aucun post-traitement particulier"
-      #FO_1080039_2  900   902   000   "Glacial debris undifferentiated, polygon"            Regular     "Aucun post-traitement particulier"
+      #FO_1080039_2  990   902   000   "Glacial debris undifferentiated, polygon"            Regular     "Aucun post-traitement particulier"
       #FO_1080049_2  999   830   000   "Moraine, polygon"                                    Regular     "Aucun post-traitement particulier"
       #FO_1080059_2  990   903   000   "Sand, polygon"                                       Regular     "Aucun post-traitement particulier"
       #FO_1080069_2  999   820   000   "Tundra, polygon"                                     Regular     "Aucun post-traitement particulier"
@@ -90,7 +90,7 @@ namespace eval UrbanX { } {
       #FO_1200009_0  000   000   000   "Elevation point, point"                              Excluded    "Ajouter un post-traitement sur type? (1=precise altitude, 2=cartographic spot height, 3=spot height)"
       #FO_2570009_1  000   000   000   "Contour imperial, line"                              Excluded    "Ajouter un post-traitement sur generation? (-1=unknown, 1=collected, 2=derived) Ajouter un post-traitement sur type?"
       #FO_2610009_0  000   000   000   "Elevation point imperial, point"                     Excluded    "Ajouter un post-traitement sur type? (1=precise altitude, 2=spot height)"
-      #HD_1140009_2  990   902   000   "Permanent snow and ice, polygon"                     Regular     "Aucun post-traitement particulier"
+      #HD_1140009_2  991   902   000   "Permanent snow and ice, polygon"                     Regular     "Aucun post-traitement particulier"
       #HD_1450009_0  180   440   000   "Manmade hydrographic entity [Geobase], point"        PostPro     "if type!=8 (exclus fish_la), valeur générale; if type=7, PRI=170, TEB=320 (boat_ra); if type=1, PRI=242, TEB=440 (dam); if type=6, PRI=190, TEB=440 (lock gate)"
       #HD_1450009_1  610   440   000   "Manmade hydrographic entity [Geobase], line"         PostPro     "if type=1 PRI=400 TEB=440 (dam); if type=3 PRI=290 TEB=320 (wharf); if type=4 PRI=645 TEB=440 (breakwa); if type=5 PRI=630 TEB=830 (dyke & seawall); if type=6 PRI=280 TEB=440 (lock gate); else general"
       #HD_1450009_2  910   440   000   "Manmade hydrographic entity [Geobase], polygon"      PostPro     "if type=1, PRi=910 TEB=440 (dam); if type=9 PRI=765 TEB=410 (slip); else general"
@@ -180,12 +180,13 @@ namespace eval UrbanX { } {
       SS_1320059_2
       SS_1320029_2
       SS_1320019_2
+      FO_1080079_0
       FO_1080069_2
       FO_1080049_2
       HD_1140009_2
       FO_1080059_2
-      HD_1450009_2
       FO_1080039_2
+      HD_1450009_2
       LX_1000039_2
       LX_2200009_2
       LX_2560009_2
@@ -265,7 +266,7 @@ namespace eval UrbanX { } {
       }
 
    #set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the NTDB layers to be processed
-   set Param(Priorities)           { 999 999 999 999 999 990 990 910 900 890 885 880 875 870 865 860 860 860 852 852 850 840 820 820 820 820 810 800 790 780 775 770 760 740 740 710 700 690 670 665 660 650 640 610 605 600 590 580 570 550 550 310 300 270 270 244 240 230 210 200 185 180 160 160 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 30 20 } ;# LUT of priority values for the CanVec layers to be processed
+   set Param(Priorities)           { 999 999 999 999 999 999 991 990 990 910 890 885 880 875 870 865 860 860 860 852 852 850 840 820 820 820 820 810 800 790 780 775 770 760 740 740 710 700 690 670 665 660 650 640 610 605 600 590 580 570 551 550 310 300 271 270 244 240 230 210 200 185 180 160 160 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 30 20 } ;# LUT of priority values for the CanVec layers to be processed
 
 #List of specific layers from BNDT, to modify with layers from CanVec.
    #set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
@@ -307,6 +308,8 @@ namespace eval UrbanX { } {
    set Param(LayersPostPro)    { 
       BS_2010009_0
       BS_2010009_2
+      BS_2310009_1
+      EN_1180009_1
       HD_1450009_0
       HD_1450009_1
       HD_1450009_2
@@ -324,8 +327,10 @@ namespace eval UrbanX { } {
 
    set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
    #set Param(WaterLayers)      {  } ;# Water layers from CanVec
-   set Param(BufferLayers)     { bridge_l buildin_p road_l } ;# Layers from BNDT required for buffer
-   #set Param(BufferLayers)     { } ;# Layers from CanVec required for buffer
+
+#   set Param(BufferLayers)     { bridge_l buildin_p road_l } ;# Layers from BNDT required for buffer
+   set Param(BufferLayers)     { BS_2010009_0 TR_1760009_1 } ;# Layers from CanVec required for buffer
+
    set Param(BufferFuncLayers) { buildin_p buildin_a } ;# Layers from BNDT required for buffer func
    #set Param(BufferFuncLayers) { } ;# Layers from CanVec required for buffer func
 
@@ -333,7 +338,7 @@ namespace eval UrbanX { } {
 
    #set Param(TEBClasses)         { 902 830 830 830 410 440 903 520 520 520 520 820 450 820 820 820 840 820 830 120 530 530 320 410 450 410 320 901 830 360 810 840 440 901 360 410 120 310 440 830 830 450 901 200 901 830 450 430 440 420 430 430 340 100 100 120 320 440 320 320 330 330 410 901 420 110 440 520 420 420 330 330 310 320 350 360 440 830 901 440 320 110 830 530 360 110 420 530 140 110 520 520 110 520 410 110 360 440 330 310 420 420 112 111 110 }  ;# TEB classes for BNDT
 
-   set Param(TEBClasses)         { 840 840 840 820 830 902 903 440 902 520 520 520 520 820 450 820 440 440 820 820 820 840 830 830 830 830 120 530 530 320 410 450 320 830 830 360 810 840 360 410 120 310 830 440 200 400 901 830 450 430 430 340 120 330 330 110 520 420 320 360 830 440 830 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 110 } ;#TEB Classes for CanVec
+   set Param(TEBClasses)         { 840 840 840 820 820 830 902 903 902 440 520 520 520 520 820 450 820 440 440 820 820 820 840 830 830 830 830 120 530 530 320 410 450 320 830 830 360 810 840 360 410 120 310 830 440 200 400 901 830 450 430 430 340 120 330 330 110 520 420 320 360 830 440 830 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 110 } ;#TEB Classes for CanVec
 
    #TO ADD :
    #set Param(SMOKEClasses) : list of values related to the SMOKE output, for use in UrbanX::Values2SMOKE
@@ -791,7 +796,7 @@ proc UrbanX::SandwichCanVec { } {
       if { [lsearch -exact $Param(LayersPostPro) $entity] !=-1} {
          switch $entity {
 
-            BS_2010009_0 { ;# layer 1 from the list Param(LayersPostPro)
+            BS_2010009_0 {
                # entity : Building, points
                # function in (11, 16, 23, 27, 37) Pri=21 TEB=111 ; function in (9, 12, 17, 19, 26, 39) PRI= 22 TEB= 112; else general
                GenX::Log INFO "Post-processing for Building, point"
@@ -808,7 +813,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (day-night 24/7 buildings) as VFEATURE2KEEP$j with priority value 22"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 22
             }
-            BS_2010009_2 { ;# layer 2 from the list Param(LayersPostPro)
+            BS_2010009_2 {
                # entity : Building, polygons
                # function in (11, 16, 23, 27, 37) Pri=301 TEB=100 ; function in (9, 12, 17, 19, 26, 39) PRI=302 TEB=100; else general
                GenX::Log INFO "Post-processing for Building, polygons"
@@ -825,7 +830,23 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (day-night 24/7 buildings) as VFEATURE2KEEP$j with priority value 302"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 302
             }
-            HD_1450009_0 { ;# layer 2 from the list Param(LayersPostPro)
+            BS_2310009_1 {
+               #entity : Pipeline (Sewage / liquid waste), line
+               #if relation2ground != 1 (aboveground), exclus; else, valeur générale
+               GenX::Log INFO "Post-processing for Pipelines (Sewage / liquid waste), lines"
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (aboveground pipeline entity) as VFEATURE2KEEP$j with priority value $priority"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
+            }
+            EN_1180009_1 {
+               #entity : Pipelines, lines
+               #if relation to ground != 1 (aboveground) exclus; else valeur générale
+               GenX::Log INFO "Post-processing for Pipelines, lines"
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (aboveground pipeline entity) as VFEATURE2KEEP$j with priority value $priority"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
+            }
+            HD_1450009_0 {
                # entity : Manmade hydrographic entity [Geobase], point
                # if type!=8 (exclus fish_la), valeur générale; if type=7, PRI=170, TEB=320 (boat_ra); if type=1, PRI=242, TEB=440 (dam); if type=6, PRI=190, TEB=440 (lock gate)
                GenX::Log INFO "Post-processing for Manmade hydrographic entity, point"
@@ -847,7 +868,7 @@ proc UrbanX::SandwichCanVec { } {
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 190
 
             }
-            HD_1450009_1 { ;# layer 2 from the list Param(LayersPostPro)
+            HD_1450009_1 {
                # entity : Manmade hydrographic entity [Geobase], line
                # if type=1 PRI=400 TEB=440 (dam); if type=3 PRI=290 TEB=320 (wharf); if type=4 PRI=645 TEB=440 (breakwa); if type=5 PRI=630 TEB=830 (dyke & seawall); if type=6 PRI=280 TEB=440 (lock gate); else general
                GenX::Log INFO "Post-processing for Manmade hydrographic entity, line"
@@ -876,7 +897,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 280"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 280
             }
-            HD_1450009_2 { ;# layer 2 from the list Param(LayersPostPro)
+            HD_1450009_2 {
                # entity : Manmade hydrographic entity [Geobase], polygons
                # if type=1, PRi=910 TEB=440 (dam); if type=9 PRI=765 TEB=410 (slip); else general
                GenX::Log INFO "Post-processing for Manmade hydrographic entity, polygons"
@@ -893,7 +914,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (slip hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 765"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 765
             }
-            HD_1460009_0 { ;# layer 2 from the list Param(LayersPostPro)
+            HD_1460009_0 {
                # entity : Hydrographic obstacle entity [Geobase], point
                # if type=7, valeur generale
                GenX::Log INFO "Post-processing for Hydrographic obstacle entity, point"
@@ -902,7 +923,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value $priority"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
             }
-            HD_1460009_1 { ;# layer 2 from the list Param(LayersPostPro)
+            HD_1460009_1 {
                # entity : Hydrographic obstacle entity [Geobase], line
                # if type=7, valeur generale
                GenX::Log INFO "Post-processing for Hydrographic obstacle entity, line"
@@ -911,7 +932,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value $priority"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
             }
-            HD_1460009_2 { ;# layer 2 from the list Param(LayersPostPro)
+            HD_1460009_2 {
                # entity : Hydrographic obstacle entity [Geobase], polygon
                # if type in (3, 103), valeur générale
                GenX::Log INFO "Post-processing for Hydrographic obstacle entity, polygon"
@@ -920,7 +941,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value $priority"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
             }
-            HD_1470009_1 { ;# layer 2 from the list Param(LayersPostPro)
+            HD_1470009_1 {
                # entity : Single line watercourse [Geobase], line
                # if def=1 PRI=250 TEB=901; if def=2 PRI=320 TEB=430 ; if def=6 PRI=590 TEB=901; else general
                GenX::Log INFO "Post-processing for Single line watercourse, line"
@@ -942,7 +963,7 @@ proc UrbanX::SandwichCanVec { } {
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 590
 
             }
-            HD_1480009_2 { ;# layer 2 from the list Param(LayersPostPro)
+            HD_1480009_2 {
                # entity : Waterbody [Geobase], polygon
                # if permanency=2 PRI = 970, TEB=830; if waterdef=1 PRI=610 TEB=440; if waterdef=5 PRI=860 TEB=440; if waterdef=8 PRI=860 TEB=440; else general value
                GenX::Log INFO "Post-processing for Waterbody, polygon"
@@ -967,7 +988,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (liquid waste waterbodies) as VFEATURE2KEEP$j with priority value 860"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 860
             }
-            IC_2600009_0 { ;# layer 2 from the list Param(LayersPostPro)
+            IC_2600009_0 {
                # entity : Mining area, point
                # Si type = 1 (underground), PRI = 161, TEB=110; else general
                GenX::Log INFO "Post-processing for Mining area, point"
@@ -980,7 +1001,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (underground mines) as VFEATURE2KEEP$j with priority value 161"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 161
             }
-            TR_1020009_1 { ;# layer 2 from the list Param(LayersPostPro)
+            TR_1020009_1 {
                # entity : Railway, line
                # if support != 4, general (exclusion des tunnels)
                GenX::Log INFO "Post-processing for Railway, line"
@@ -989,7 +1010,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general railway) as VFEATURE2KEEP$j with priority value $priority"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
             }
-            TR_1190009_0 { ;# layer 2 from the list Param(LayersPostPro)
+            TR_1190009_0 {
                # entity : Runway, point
                # if type = 4 (sea) PRI = 180 TEB = 440; else general
                GenX::Log INFO "Post-processing for Runway, point"
@@ -1002,7 +1023,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general runway) as VFEATURE2KEEP$j with priority value 180"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 180
             }
-            TR_1190009_2 { ;# layer 2 from the list Param(LayersPostPro)
+            TR_1190009_2 {
                # entity : Runway, polygon
                # if type = 4 (sea) PRI = 180 TEB = 440; else general
                GenX::Log INFO "Post-processing for Runway, polygon"
@@ -1015,7 +1036,7 @@ proc UrbanX::SandwichCanVec { } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general runway) as VFEATURE2KEEP$j with priority value 180"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 180
             }
-            TR_1760009_1 { ;# layer 2 from the list Param(LayersPostPro)
+            TR_1760009_1 {
                # entity : Road segment [Geobase], line
                # if structure type not in (5,6), general; if structure type in (1,2,3,4) PRI=205 TEB=350 (bridge); if structure type = 7, PRI=242, TEB=440 (dam); if pavement status = 2, PRI=212, TEB=320 (unpaved); if class in (1,2), PRI=211 TEB=320 (freeway, highway)
                GenX::Log INFO "Post-processing for Road segment, line"
@@ -1033,7 +1054,8 @@ proc UrbanX::SandwichCanVec { } {
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 242
                #roadclass in (1,2) : freeway/highway, priority 211
                #ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE roadclass IN (1,2)"
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE roadclass IN (1, 2)"
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE roadclass in (1,2)"
+#               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (NATRDCLASS == 1,2)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highways road segments) as VFEATURE2KEEP$j with priority value 201"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 201
                #pavstatus = 2 : unpaved
@@ -1076,7 +1098,7 @@ puts "Fin de UrbanX::SandwichCanVec"
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::ScaleBuffers>
+# Name     : <UrbanX::ScaleBuffersBNDT>
 # Creation : date? - Alexandre Leroux - CMC/CMOE
 #
 # Goal     : Buffers on selected point and line features
@@ -1089,7 +1111,7 @@ puts "Fin de UrbanX::SandwichCanVec"
 #
 #----------------------------------------------------------------------------
 # Buffers on selected point and line features
-proc UrbanX::ScaleBuffers { } {
+proc UrbanX::ScaleBuffersBNDT { } {
    variable Param
 
    if { !$Param(Resolution)<=5 || !$Param(Mode)=="FAST" } {
@@ -1163,6 +1185,132 @@ proc UrbanX::ScaleBuffers { } {
    gdalfile close FILEOUT
    gdalband free RBUFFERS RSANDWICH
    gdalfile close FSANDWICH
+}
+
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::ScaleBuffersCanVec>
+# Creation : date? - Alexandre Leroux - CMC/CMOE
+#            
+#
+# Goal     : Buffers on selected point and line features
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks : THIS PROC WILL BE DELETED.  TO BE REPLACED BY CANVEC DATA
+#
+#----------------------------------------------------------------------------
+# Buffers on selected point and line features
+proc UrbanX::ScaleBuffersCanVec { } {
+
+puts "Début de la proc ScaleBuffersCanVec"
+
+   variable Param
+
+   if { $Param(Resolution)>5 || $Param(Mode)!="FAST" } {
+      puts "Pas de ScaleBuffer: resolution = $Param(Resolution), mode = $Param(Mode)"
+      return
+   }
+
+   GenX::Log INFO "Buffers for scale representation at resolution <= 5m ($Param(BufferLayers))"
+
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband create RBUFFERS $Param(Width) $Param(Height) 1 UInt16
+   gdalband define RBUFFERS -georef UTMREF
+
+   set j 0
+   set Param(FilesScaleBuffer) {}
+   set Param(FilesScaleBuffer) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(BufferLayers)]
+   #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
+
+   foreach file $Param(FilesScaleBuffer) {
+      set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
+      #entity contains an element of the form AA_9999999_9
+      puts $entity
+      set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
+      #filename contains an element of the form 999a99_9_9_AA_9999999_9
+      puts $filename
+      set priority [lindex $Param(Priorities) [lsearch -exact $Param(Entities) $entity]]
+      #value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Entities)
+      puts $priority
+      ogrfile open SHAPE read $file
+      #read the shapefile and stock it in the object SHAPE
+      #the following if/else evaluates if the layer requires some post-processing prior to rasterization or if it is rasterized with the general procedure
+
+      if { [lsearch -exact $Param(BufferLayers) $entity] !=-1} {
+         switch $entity {
+            BS_2010009_0 {
+            #bla
+            puts "Scalebuffer pour bâtiments"
+               ogrlayer sqlselect LAYER$j SHAPE "SELECT * FROM $filename" ;#la fonction cabin n'existe plus, donc pas d'exclusion
+               puts "Ça bogue ici pour cause de segmentation fault sur ogrlayer stats LAYER -buffer"
+#               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
+               #effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+               GenX::Log INFO "Buffering all point buildings to 12m: [ogrlayer define LAYER$j -nb] features from $filename as LAYER$j with buffer value $priority"
+               gdalband gridinterp RBUFFERS LAYER$j $Param(Mode) $priority
+
+               #NOTE : PROBLÈME REPÉRÉ :
+               #LA PROC INITIALE FAIT LE BUFFER SUR UNE SEULE VALEUR DE PRIORITÉ.  OR, LE LAYER A ÉTÉ DIVISÉ EN 3 ÉLÉMENTS DANS LA SANDWICH, ET CES 3 ÉLÉMENTS
+               #ONT DES VALEURS DE PRIORITÉ DIFFÉRENTES.  IL FAUT DONC REPRENDRE LA DIVISION EFFECTUÉE DANS LA SANDWICH POUR EFFECTUER UN BUFFER AVEC LES 
+               #BONNES VALEURS
+
+            }
+            TR_1760009_1 {
+            #BLA
+            puts "Scalebuffer pour routes"
+
+#                 #ROUTES
+#                  ogrlayer sqlselect LAYER$j SHAPE " SELECT * FROM ${sheet}_$layer WHERE (support != 2) AND (surface != 2) "
+#                  ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
+#                  GenX::Log INFO "Buffering surface paved roads to 12m: [ogrlayer define LAYER$j -nb] features from ${sheet}_$layer.shp as LAYER$j with buffer value $value"
+#                  gdalband gridinterp RBUFFERS LAYER$j $Param(Mode) $value
+#                  ogrlayer free LAYER$j ;# CES TROIS PROCHAINES LIGNES SONT-ELLES NÉCESSAIRES ??
+#                  incr j
+#                  eval ogrlayer read LAYER$j $layer2
+#                  ogrlayer sqlselect LAYER$j SHAPE " SELECT * FROM ${sheet}_$layer WHERE (support != 2) AND (classifica = 1) "
+#                  ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+#                  GenX::Log INFO "Buffering surface highways to 22m: [ogrlayer define LAYER$j -nb] features from ${sheet}_$layer.shp as LAYER$j with buffer value 211"
+#                  gdalband gridinterp RBUFFERS LAYER$j $Param(Mode) 211
+#                 #BRIDGES
+#   #puts stderr 777
+#                  #ogrlayer sqlselect LAYER$j SHAPE " SELECT * FROM ${sheet}_$layer " #; that one was already commented
+#   # La prochaine ligne ne devrait pas être commenté... à mettre à jour en janvier avec le nouveau GEOS et GDAL
+#   #               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2, comme pour les routes
+#   #puts stderr 888
+
+#                  GenX::Log INFO "Buffering point bridges to 12m: [ogrlayer define LAYER$j -nb] features from ${sheet}_$layer.shp as LAYER$j with buffer value $value"
+#                  gdalband gridinterp RBUFFERS LAYER$j $Param(Mode) $value
+
+            }
+            default {
+               GenX::Log WARNING "Buffer processing for $layer not found"
+            }
+         }
+         ogrlayer free LAYER$j
+         incr j
+      }
+      ogrfile close SHAPE
+   }
+
+
+
+
+   GenX::Log INFO "Overwriting sandwich with scale representation buffers ($Param(BufferLayers))"
+
+   vector create VCALCU
+   vector set VCALCU { 0 605 610 690 700 750 870 } ;#these are priority values which may be overwritten by the buffer
+   vexpr RSANDWICH ifelse(((in(RSANDWICH, VCALCU) || RSANDWICH>=920) && RBUFFERS!=0),RBUFFERS,RSANDWICH)
+
+   file delete -force $GenX::Param(OutFile)_sandwich.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich.tif GeoTiff
+   gdalband write RSANDWICH FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   gdalfile close FILEOUT
+   gdalband free RBUFFERS RSANDWICH
+   gdalfile close FSANDWICH
+
+puts "Fin de la proc ScaleBuffersCanVec"
+
 }
 
 #----------------------------------------------------------------------------
@@ -1791,7 +1939,8 @@ puts "Début d'UrbanX"
    #----- Rasterize and flattens all NTDB layers
    #UrbanX::SandwichBNDT
    UrbanX::SandwichCanVec
-   #UrbanX::ScaleBuffers
+   #UrbanX::ScaleBuffersBNDT
+   #UrbanX::ScaleBuffersCanVec
 
    #-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
    #UrbanX::Shp2Height
