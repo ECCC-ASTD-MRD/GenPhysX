@@ -335,17 +335,17 @@ namespace eval UrbanX { } {
    set Param(BufferFuncValues) { 1 2 }
 
    #set Param(TEBClasses)         { 902 830 830 830 410 440 903 520 520 520 520 820 450 820 820 820 840 820 830 120 530 530 320 410 450 410 320 901 830 360 810 840 440 901 360 410 120 310 440 830 830 450 901 200 901 830 450 430 440 420 430 430 340 100 100 120 320 440 320 320 330 330 410 901 420 110 440 520 420 420 330 330 310 320 350 360 440 830 901 440 320 110 830 530 360 110 420 530 140 110 520 520 110 520 410 110 360 440 330 310 420 420 112 111 110 }  ;# TEB classes for BNDT
-
    set Param(TEBClasses)         { 840 840 840 820 820 830 902 903 902 440 520 520 520 520 820 450 820 440 440 820 820 820 840 830 830 830 830 120 530 530 320 410 450 320 830 830 360 810 840 360 410 120 310 830 440 200 400 901 830 450 430 430 340 120 330 330 110 520 420 320 360 830 440 830 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 110 } ;#TEB Classes for CanVec
 
-   #TO ADD :
-   #set Param(SMOKEClasses) : list of values related to the SMOKE output, for use in UrbanX::Values2SMOKE
+   #TO ADD :list of values related to the SMOKE output, for use in UrbanX::Priorities2SMOKE
+   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0} ;#SMOKE Classes for CanVec
 
    set Param(VegeFilterType) LOWPASS
    set Param(VegeFilterSize) 99
 
    #CE PATH DOIT ÊTRE MIS À JOUR AVEC LES DONNÉES DE 2006
    set Param(PopFile) /data/cmoex7/afsralx/canyon-urbain/global_data/statcan/traitements/da2001ca_socio_eco.shp
+   set Param(PopFile2006) /data/aqli04/afsulub/StatCan2006/da2006_pop_labour.shp
 }
 
 #----------------------------------------------------------------------------
@@ -1502,7 +1502,8 @@ GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
 
    #récupération du fichier de données socio-économiques
-   set layer [lindex [ogrfile open SHAPE read $Param(PopFile)] 0]
+   #set layer [lindex [ogrfile open SHAPE read $Param(PopFile)] 0]
+   set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006)] 0]
    eval ogrlayer read VPOPDENS $layer
 
    #----- Selecting only the required polygons - next is only useful to improve the speed of the layer substraction
@@ -1526,7 +1527,8 @@ GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
    GenX::Log INFO "Calculating population density values"
    ogrlayer stats VPOPDENS -transform UTMREF
    foreach n $features {
-      set pop  [ogrlayer define VPOPDENS -feature $n TOTPOPUL]
+      #set pop  [ogrlayer define VPOPDENS -feature $n TOTPOPUL]
+      set pop  [ogrlayer define VPOPDENS -feature $n DAPOP2006]
       set geom [ogrlayer define VPOPDENS -geometry $n]
       #ogrgeometry stats $geom -transform UTMREF
       set area  [expr ([ogrgeometry stats $geom -area]/1000000.0)]
@@ -1747,7 +1749,7 @@ proc UrbanX::Priorities2TEB { } {
 #
 # Return:
 #
-# Remarks : Param(SMOKEClasses) n'existe pas encore !  Of course, ça plante.
+# Remarks :
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Priorities2SMOKE { } {
@@ -1756,29 +1758,29 @@ proc UrbanX::Priorities2SMOKE { } {
    GenX::Log INFO "Converting values to TEB classes"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
-   #gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
-   #gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
+   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
    #gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
 
    vector create LUT
    vector dim LUT { FROM TO }
    vector set LUT.FROM $Param(Priorities)
-   vector set LUT.TO $Param(SMOKEClasses) ;#SMOKEClasses n'existe pas, of course ça plante
+   vector set LUT.TO $Param(SMOKEClasses)
    vexpr RTEB lut(RSANDWICH,LUT.FROM,LUT.TO)
    vector free LUT
 
-   #vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
+   vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
    #vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
-   #vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
+   vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
 
    file delete -force $GenX::Param(OutFile)_TEB.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB.tif GeoTiff
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE.tif GeoTiff
    gdalband write RTEB FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 
    gdalfile close FILEOUT
    gdalfile close FSANDWICH
-   #gdalfile close FPOPDENSCUT
-   #gdalfile close FCHAMPS
+   gdalfile close FPOPDENSCUT
+   gdalfile close FCHAMPS
    #gdalfile close FHAUTEURCLASS
    gdalband free RTEB RSANDWICH ;#RPOPDENSCUT RCHAMPS RHAUTEURCLASS
 }
@@ -2040,31 +2042,36 @@ puts "Début d'UrbanX"
    UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
 #   UrbanX::FindNTSSheets ;# Useless now since we use GenX::CANVECFindFiles
 
-   #----- Find CanVec files, rasterize and flattens all CanVec layers
+   #----- Finds CanVec files, rasterize and flattens all CanVec layers
    #UrbanX::SandwichBNDT
    UrbanX::SandwichCanVec
 
+   #----- Applies buffer to linear and ponctual elements such as buildings and roads
    #UrbanX::ScaleBuffersBNDT
    #UrbanX::ScaleBuffersCanVec
 
    #-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
    #UrbanX::Shp2Height
 
-   #----- Create the fields and building vicinity output using spatial buffers
+   #----- Creates the fields and building vicinity output using spatial buffers
    #UrbanX::ChampsBuffers
 
-
+   #----- Calculates the population density
    #UrbanX::PopDens2BuiltupBNDT
    UrbanX::PopDens2BuiltupCanVec
 
-
+   #----- Calculates building heights
    #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
    #UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
 
    #----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
    #UrbanX::Priorities2TEB
-   #UrbanX::Priorities2SMOKE
 
+   #----- Applies LUT to all processing results to generate SMOKE classes.
+   #UrbanX::Priorities2SMOKE
+   #----- TO CREATE : procedures to go from the SMOKE Classes to the assignation in DA polygons
+   #UrbanX::FindDA
+   #UrbanX::SMOKE2DA
 
    #----- Optional outputs:
    #UrbanX::VegeMask
