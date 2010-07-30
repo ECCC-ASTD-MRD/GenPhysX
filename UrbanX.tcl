@@ -265,93 +265,7 @@ namespace eval UrbanX { } {
       }
 
    #set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the NTDB layers to be processed
-   set Param(Priorities)           { 999
-999
-999
-999
-999
-999
-991
-990
-990
-910
-890
-885
-880
-875
-870
-865
-860
-860
-860
-852
-852
-850
-840
-823
-822
-821
-820
-810
-800
-790
-780
-775
-770
-760
-740
-740
-710
-700
-690
-670
-665
-660
-650
-640
-610
-605
-600
-590
-580
-570
-551
-550
-310
-300
-271
-270
-244
-240
-230
-210
-200
-185
-180
-163
-161
-160
-150
-140
-130
-120
-110
-100
-95
-90
-85
-80
-70
-65
-60
-60
-50
-45
-40
-35
-30
-20
- } ;# LUT of priority values for the CanVec layers to be processed
+   set Param(Priorities)           { 999 999 999 999 999 999 991 990 990 910 890 885 880 875 870 865 860 860 860 852 852 850 840 823 822 821 820 810 800 790 780 775 770 760 740 740 710 700 690 670 665 660 650 640 610 605 600 590 580 570 551 550 310 300 271 270 244 240 230 210 200 185 180 163 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 30 20 } ;# LUT of priority values for the CanVec layers to be processed
 
    #set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
    #Aucun tri particulier nécessaire pour cette liste d'entités
@@ -409,8 +323,8 @@ namespace eval UrbanX { } {
       TR_1760009_1 } ;# Layers from CanVec requiring postprocessing
 
 
-   set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
-   #set Param(WaterLayers)      {  } ;# Water layers from CanVec
+   #set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
+   set Param(WaterLayers)      { HD_1480009_2 } ;# Water layers from CanVec
 
 #   set Param(BufferLayers)     { bridge_l buildin_p road_l } ;# Layers from BNDT required for buffer
    set Param(BufferLayers)     { BS_2010009_0 TR_1760009_1 } ;# Layers from CanVec required for buffer
@@ -422,93 +336,7 @@ namespace eval UrbanX { } {
 
    #set Param(TEBClasses)         { 902 830 830 830 410 440 903 520 520 520 520 820 450 820 820 820 840 820 830 120 530 530 320 410 450 410 320 901 830 360 810 840 440 901 360 410 120 310 440 830 830 450 901 200 901 830 450 430 440 420 430 430 340 100 100 120 320 440 320 320 330 330 410 901 420 110 440 520 420 420 330 330 310 320 350 360 440 830 901 440 320 110 830 530 360 110 420 530 140 110 520 520 110 520 410 110 360 440 330 310 420 420 112 111 110 }  ;# TEB classes for BNDT
 
-   set Param(TEBClasses)         { 840
-840
-840
-820
-820
-830
-902
-903
-902
-440
-520
-520
-520
-520
-820
-450
-820
-440
-440
-820
-820
-820
-840
-830
-830
-830
-830
-120
-530
-530
-320
-410
-450
-320
-830
-830
-360
-810
-840
-360
-410
-120
-310
-830
-440
-200
-400
-901
-830
-450
-430
-430
-340
-120
-330
-330
-110
-520
-420
-320
-360
-830
-440
-830
-830
-830
-530
-360
-110
-420
-530
-140
-110
-520
-520
-110
-720
-410
-110
-400
-360
-440
-310
-420
-420
-110
- } ;#TEB Classes for CanVec
+   set Param(TEBClasses)         { 840 840 840 820 820 830 902 903 902 440 520 520 520 520 820 450 820 440 440 820 820 820 840 830 830 830 830 120 530 530 320 410 450 320 830 830 360 810 840 360 410 120 310 830 440 200 400 901 830 450 430 430 340 120 330 330 110 520 420 320 360 830 440 830 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 110 } ;#TEB Classes for CanVec
 
    #TO ADD :
    #set Param(SMOKEClasses) : list of values related to the SMOKE output, for use in UrbanX::Values2SMOKE
@@ -516,6 +344,7 @@ namespace eval UrbanX { } {
    set Param(VegeFilterType) LOWPASS
    set Param(VegeFilterSize) 99
 
+   #CE PATH N'EST PLUS VALIDE !!!
    set Param(PopFile) /data/cmoex7/afsralx/canyon-urbain/global_data/statcan/traitements/da2001ca_socio_eco.shp
 }
 
@@ -752,7 +581,7 @@ proc UrbanX::FindNTSSheets { } {
 #
 # Parameters :
 #
-# Return:
+# Return: output genphysx_sandwich.tif
 #
 # Remarks : THIS PROC WILL BE DELETED.  TO BE REPLACED BY CANVEC DATA
 #
@@ -896,7 +725,7 @@ proc UrbanX::SandwichBNDT { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::AreaDefine>
+# Name     : <UrbanX::SandwichCanVec>
 # Creation : July 2010 - Alexandre Leroux - CMC/CMOE
 #            July 2010 - Lucie Boucher - CMC/AQMAS
 #
@@ -906,7 +735,7 @@ proc UrbanX::SandwichBNDT { } {
 #
 # Parameters :
 #
-# Return: 
+# Return: output genphysx_sandwich.tif
 #
 # Remarks :
 #
@@ -1272,12 +1101,11 @@ puts "Fin de UrbanX::SandwichCanVec"
 #
 # Parameters :
 #
-# Return:
+# Return: output genphysx_sandwich.tif
 #
-# Remarks :
+# Remarks : THIS PROC WILL BE DELETED.  TO BE REPLACED BY CANVEC DATA
 #
 #----------------------------------------------------------------------------
-# Buffers on selected point and line features
 proc UrbanX::ScaleBuffersBNDT { } {
    variable Param
 
@@ -1356,8 +1184,8 @@ proc UrbanX::ScaleBuffersBNDT { } {
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::ScaleBuffersCanVec>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
-#            
+# Creation : July 2010 - Alexandre Leroux - CMC/CMOE
+#            July 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     : This proc loads the tif file generated after the sandwichCanVec proc,
 #            applies buffer on specific point and line features, and overwrites the
@@ -1551,19 +1379,19 @@ proc UrbanX::ChampsBuffers { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::PopDens2Builtup>
+# Name     : <UrbanX::PopDens2BuiltupBNDT>
 # Creation : date? - Alexandre Leroux - CMC/CMOE
 #
 # Goal     :
 #
 # Parameters :
 #
-# Return:
+# Return: output file genphysx_popdens-builtup.tif
 #
-# Remarks :
+# Remarks : THIS PROC WILL BE DELETED.  TO BE REPLACED BY CANVEC DATA
 #
 #----------------------------------------------------------------------------
-proc UrbanX::PopDens2Builtup { } {
+proc UrbanX::PopDens2BuiltupBNDT { } {
    variable Param
    variable Data
 
@@ -1578,6 +1406,111 @@ proc UrbanX::PopDens2Builtup { } {
    ogrlayer define VPOPDENS -featureselect [list [list index # $features]]
 
    GenX::Log INFO "Cropping population shapefile and substracting water ($Param(WaterLayers))"
+
+   #----- Both layers must have the same projection!
+   foreach sheet $Data(Sheets) path $Data(Paths) {
+      foreach layer $Param(WaterLayers) {
+         set path [glob -nocomplain $path/${sheet}_$layer.shp]
+         if { [file exists $path] } {
+            set water_layer [lindex [ogrfile open SHAPE2 read $path] 0]
+            eval ogrlayer read VWATER $water_layer
+            ogrlayer stats VPOPDENS -difference VWATER
+            ogrfile close SHAPE2
+            ogrlayer free VWATER
+         }
+      }
+   }
+
+   GenX::Log INFO "Calculating population density values"
+   ogrlayer stats VPOPDENS -transform UTMREF
+   foreach n $features {
+      set pop  [ogrlayer define VPOPDENS -feature $n TOTPOPUL]
+      set geom [ogrlayer define VPOPDENS -geometry $n]
+      #ogrgeometry stats $geom -transform UTMREF
+      set area  [expr ([ogrgeometry stats $geom -area]/1000000.0)]
+      ogrlayer define VPOPDENS -feature $n POP_DENS [expr $area==0.0?0.0:($pop/$area)]
+      if {[expr $area==0.0?0.0:($pop/$area)] > 10000000 || [expr $area==0.0?0.0:($pop/$area)] < 0 } {
+         set dens [expr $area==0.0?0.0:($pop/$area)]
+         GenX::Log WARNING "Potential problem n=$n, pop=$pop, area=$area, dens=$dens"
+      }
+   }
+   unset features
+
+   gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
+   eval gdalband define RPOPDENS -georef UTMREF
+   gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) POP_DENS
+
+   file delete -force $GenX::Param(OutFile)_popdens.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens.tif GeoTiff
+   gdalband write RPOPDENS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   gdalfile close FILEOUT
+   ogrlayer free VPOPDENS
+   ogrfile close SHAPE
+
+   #file delete -force $GenX::Param(OutFile)_popdens.shp
+   #ogrfile open VPOPDENSFILE write $GenX::Param(OutFile)_popdens.shp "ESRI Shapefile"
+   #ogrlayer write VPOPDENS VPOPDENSFILE
+   #ogrfile close VPOPDENSFILE
+
+   GenX::Log INFO "Cookie cutting population density and setting TEB values"
+   gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
+   gdalband define RPOPDENSCUT -georef UTMREF
+   vexpr RTEMP RSANDWICH==605
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
+
+   gdalband free RSANDWICH ;# move this above once vexpr works
+   gdalfile close FSANDWICH
+   gdalband free RPOPDENS
+   gdalband free RTEMP
+
+   file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
+   gdalband write RPOPDENSCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   gdalfile close FILEOUT
+   gdalband free RPOPDENSCUT
+}
+
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::PopDens2BuiltupCanVec>
+# Creation : July 2010 - Alexandre Leroux - CMC/CMOE
+#            July 2010 - Lucie Boucher - CMC/AQMAS
+#
+# Goal     :
+#
+# Parameters :
+#
+# Return: output file genphysx_popdens-builtup.tif
+#
+# Remarks : 
+#
+#----------------------------------------------------------------------------
+proc UrbanX::PopDens2BuiltupCanVec { } {
+
+puts "Début de la proc PopDens2BuiltupCanVec"
+
+   variable Param
+   variable Data
+
+   GenX::Log INFO "Processing population density"
+
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+
+puts "On se rend au point A !"
+
+   set layer [lindex [ogrfile open SHAPE read $Param(PopFile)] 0]
+   eval ogrlayer read VPOPDENS $layer
+
+   #----- Selecting only the required polygons - next is only useful to improve the speed of the layer substraction
+   set features [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
+   ogrlayer define VPOPDENS -featureselect [list [list index # $features]]
+
+   GenX::Log INFO "Cropping population shapefile and substracting water ($Param(WaterLayers))"
+
+
 
    #----- Both layers must have the same projection!
    foreach sheet $Data(Sheets) path $Data(Paths) {
@@ -1758,7 +1691,7 @@ proc UrbanX::BuildingHeight { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::Values2TEB>
+# Name     : <UrbanX::Priorities2TEB>
 # Creation : date? - Alexandre Leroux - CMC/CMOE
 #
 # Goal     : Applies LUT to all processing results to generate TEB classes
@@ -1770,7 +1703,7 @@ proc UrbanX::BuildingHeight { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Values2TEB { } {
+proc UrbanX::Priorities2TEB { } {
    variable Param
 
    GenX::Log INFO "Converting values to TEB classes"
@@ -1804,7 +1737,7 @@ proc UrbanX::Values2TEB { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::Values2SMOKE>
+# Name     : <UrbanX::Priorities2SMOKE>
 # Creation : July 2010 - Alexandre Leroux - CMC/CMOE
 #            July 2010 - Lucie Boucher - CMC/AQMAS
 #
@@ -1817,7 +1750,7 @@ proc UrbanX::Values2TEB { } {
 # Remarks : Param(SMOKEClasses) n'existe pas encore !  Of course, ça plante.
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Values2SMOKE { } {
+proc UrbanX::Priorities2SMOKE { } {
    variable Param
 
    GenX::Log INFO "Converting values to TEB classes"
@@ -2098,6 +2031,7 @@ proc UrbanX::FilterGen { Type Size } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Process { Coverage } {
+
    variable Param
 
 puts "Début d'UrbanX"
@@ -2106,9 +2040,10 @@ puts "Début d'UrbanX"
    UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
 #   UrbanX::FindNTSSheets ;# Useless now since we use GenX::CANVECFindFiles
 
-   #----- Rasterize and flattens all NTDB layers
+   #----- Find CanVec files, rasterize and flattens all CanVec layers
    #UrbanX::SandwichBNDT
    UrbanX::SandwichCanVec
+
    #UrbanX::ScaleBuffersBNDT
    #UrbanX::ScaleBuffersCanVec
 
@@ -2117,13 +2052,18 @@ puts "Début d'UrbanX"
 
    #----- Create the fields and building vicinity output using spatial buffers
    #UrbanX::ChampsBuffers
-   #UrbanX::PopDens2Builtup
+
+
+   #UrbanX::PopDens2BuiltupBNDT
+   UrbanX::PopDens2BuiltupCanVec
+
+
    #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
    #UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
 
    #----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
-   #UrbanX::Values2TEB
-   #UrbanX::Values2SMOKE
+   #UrbanX::Priorities2TEB
+   #UrbanX::Priorities2SMOKE
 
 
    #----- Optional outputs:
