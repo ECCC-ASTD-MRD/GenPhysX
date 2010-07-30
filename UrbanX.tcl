@@ -344,7 +344,7 @@ namespace eval UrbanX { } {
    set Param(VegeFilterType) LOWPASS
    set Param(VegeFilterSize) 99
 
-   #CE PATH N'EST PLUS VALIDE !!!
+   #CE PATH DOIT ÊTRE MIS À JOUR AVEC LES DONNÉES DE 2006
    set Param(PopFile) /data/cmoex7/afsralx/canyon-urbain/global_data/statcan/traitements/da2001ca_socio_eco.shp
 }
 
@@ -1479,28 +1479,29 @@ proc UrbanX::PopDens2BuiltupBNDT { } {
 # Creation : July 2010 - Alexandre Leroux - CMC/CMOE
 #            July 2010 - Lucie Boucher - CMC/AQMAS
 #
-# Goal     :
+# Goal     : Reclassify the builtup areas with several thresholds related
+#            to population density
 #
 # Parameters :
 #
-# Return: output file genphysx_popdens-builtup.tif
+# Return: output files : 
+#             genphysx_popdens.tif
+#             genphysx_popdens-builtup.tif
 #
 # Remarks : 
 #
 #----------------------------------------------------------------------------
 proc UrbanX::PopDens2BuiltupCanVec { } {
 
-puts "Début de la proc PopDens2BuiltupCanVec"
+GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 
    variable Param
    variable Data
 
-   GenX::Log INFO "Processing population density"
-
+   #récupération de genphysx_sandwich.tif
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
 
-puts "On se rend au point A !"
-
+   #récupération du fichier de données socio-économiques
    set layer [lindex [ogrfile open SHAPE read $Param(PopFile)] 0]
    eval ogrlayer read VPOPDENS $layer
 
@@ -1508,24 +1509,20 @@ puts "On se rend au point A !"
    set features [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
    ogrlayer define VPOPDENS -featureselect [list [list index # $features]]
 
+   #Subtraction of water zone from VPOPDENS
    GenX::Log INFO "Cropping population shapefile and substracting water ($Param(WaterLayers))"
-
-
-
-   #----- Both layers must have the same projection!
-   foreach sheet $Data(Sheets) path $Data(Paths) {
-      foreach layer $Param(WaterLayers) {
-         set path [glob -nocomplain $path/${sheet}_$layer.shp]
-         if { [file exists $path] } {
-            set water_layer [lindex [ogrfile open SHAPE2 read $path] 0]
-            eval ogrlayer read VWATER $water_layer
-            ogrlayer stats VPOPDENS -difference VWATER
-            ogrfile close SHAPE2
-            ogrlayer free VWATER
-         }
-      }
+   set Param(FilesWater) {}
+   set Param(FilesWater) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(WaterLayers)]
+   foreach file $Param(FilesWater) {
+      GenX::Log INFO "Substracting water file $file"
+      set water_layer [lindex [ogrfile open SHAPE2 read $file] 0]
+      eval ogrlayer read VWATER $water_layer
+      ogrlayer stats VPOPDENS -difference VWATER
+      ogrfile close SHAPE2
+      ogrlayer free VWATER
    }
 
+   #Calcul de la densité de population
    GenX::Log INFO "Calculating population density values"
    ogrlayer stats VPOPDENS -transform UTMREF
    foreach n $features {
@@ -1541,22 +1538,21 @@ puts "On se rend au point A !"
    }
    unset features
 
+   #Conversion de la densité de population en raster
    gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
    eval gdalband define RPOPDENS -georef UTMREF
    gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) POP_DENS
 
+   #écriture du fichier genphysx_popdens.tif contenant la densité de population
    file delete -force $GenX::Param(OutFile)_popdens.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens.tif GeoTiff
    gdalband write RPOPDENS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
    ogrlayer free VPOPDENS
    ogrfile close SHAPE
+   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens.tif was generated"
 
-   #file delete -force $GenX::Param(OutFile)_popdens.shp
-   #ogrfile open VPOPDENSFILE write $GenX::Param(OutFile)_popdens.shp "ESRI Shapefile"
-   #ogrlayer write VPOPDENS VPOPDENSFILE
-   #ogrfile close VPOPDENSFILE
-
+   #Cookie cutting population density and setting TEB values
    GenX::Log INFO "Cookie cutting population density and setting TEB values"
    gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
    gdalband define RPOPDENSCUT -georef UTMREF
@@ -1566,17 +1562,21 @@ puts "On se rend au point A !"
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
-
    gdalband free RSANDWICH ;# move this above once vexpr works
    gdalfile close FSANDWICH
    gdalband free RPOPDENS
    gdalband free RTEMP
 
+   #écriture du fichier genphysx_popdens-builtup.tif
    file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
    gdalband write RPOPDENSCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
    gdalband free RPOPDENSCUT
+   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup.tif was generated"
+
+GenX::Log INFO "Fin de la proc PopDens2BuiltupCanVec"
+
 }
 
 #----------------------------------------------------------------------------
