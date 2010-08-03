@@ -459,6 +459,12 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
          set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
+      "IPE" {
+         set Param(Lon1)   -61.98
+         set Param(Lat1)    47.06
+         set Param(Lon0)   -64.42
+         set Param(Lat0)    45.94
+      }
       default {
          set Param(Lon1)   -71.10
          set Param(Lat1)    46.94
@@ -2058,7 +2064,7 @@ puts "Début d'UrbanX"
 
    #----- Calculates the population density
    #UrbanX::PopDens2BuiltupBNDT
-   UrbanX::PopDens2BuiltupCanVec
+   #UrbanX::PopDens2BuiltupCanVec
 
    #----- Calculates building heights
    #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
