@@ -338,7 +338,7 @@ namespace eval UrbanX { } {
    set Param(TEBClasses)         { 840 840 840 820 820 830 902 903 902 440 520 520 520 520 820 450 820 440 440 820 820 820 840 830 830 830 830 120 530 530 320 410 450 320 830 830 360 810 840 360 410 120 310 830 440 200 400 901 830 450 430 430 340 120 330 330 110 520 420 320 360 830 440 830 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 110 } ;#TEB Classes for CanVec
 
    #TO ADD :list of values related to the SMOKE output, for use in UrbanX::Priorities2SMOKE
-   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0} ;#SMOKE Classes for CanVec
+   set Param(SMOKEClasses)       { 90 90 90 90 90 90 90 90 90 90 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 70 70 70 70 70 70 70 70 70 60 60 60 60 60 60 60 60 60 50 50 50 50 50 40 40 30 30 30 30 30 30 30 20 20 20 20 20 20 20 20 20 20 20 10 10 10 10 10 10 10 10 10 10 10 10 10 10 } ;#SMOKE Classes for CanVec
 
    set Param(VegeFilterType) LOWPASS
    set Param(VegeFilterSize) 99
@@ -464,6 +464,7 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat1)    47.06
          set Param(Lon0)   -64.42
          set Param(Lat0)    45.94
+         set Param(ProvinceCode) 11 ;# code for StatCan
       }
       default {
          set Param(Lon1)   -71.10
@@ -1583,7 +1584,7 @@ GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
    gdalband free RPOPDENSCUT
    GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup.tif was generated"
 
-GenX::Log INFO "Fin de la proc PopDens2BuiltupCanVec"
+   GenX::Log INFO "Fin de la proc PopDens2BuiltupCanVec"
 
 }
 
@@ -1759,36 +1760,40 @@ proc UrbanX::Priorities2TEB { } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Priorities2SMOKE { } {
+   GenX::Log INFO "Début de la proc Priorities2SMOKE"
+
    variable Param
 
-   GenX::Log INFO "Converting values to TEB classes"
+   GenX::Log INFO "Converting values to SMOKE classes"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
-   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+  #gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
    #gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
 
    vector create LUT
    vector dim LUT { FROM TO }
    vector set LUT.FROM $Param(Priorities)
    vector set LUT.TO $Param(SMOKEClasses)
-   vexpr RTEB lut(RSANDWICH,LUT.FROM,LUT.TO)
+   vexpr RSMOKE lut(RSANDWICH,LUT.FROM,LUT.TO)
    vector free LUT
 
-   vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
+   vexpr RSMOKE ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RSMOKE)
    #vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
-   vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
+   #vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RSMOKE)
 
-   file delete -force $GenX::Param(OutFile)_TEB.tif
+   file delete -force $GenX::Param(OutFile)_SMOKE.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE.tif GeoTiff
-   gdalband write RTEB FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   gdalband write RSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 
    gdalfile close FILEOUT
    gdalfile close FSANDWICH
    gdalfile close FPOPDENSCUT
-   gdalfile close FCHAMPS
+   #gdalfile close FCHAMPS
    #gdalfile close FHAUTEURCLASS
-   gdalband free RTEB RSANDWICH ;#RPOPDENSCUT RCHAMPS RHAUTEURCLASS
+   gdalband free RSMOKE RSANDWICH ;#RPOPDENSCUT RCHAMPS RHAUTEURCLASS
+
+   GenX::Log INFO "Fin de la proc Priorities2SMOKE"
 }
 
 #----------------------------------------------------------------------------
@@ -2024,6 +2029,66 @@ proc UrbanX::FilterGen { Type Size } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <UrbanX::SMOKE2DA>
+# Creation : August 2010 - Alexandre Leroux - CMC/CMOE
+#            August 2010 - Lucie Boucher - CMC/CMOE
+#
+# Goal     : Finds the dissemination area polygons for the target province
+#            Proceeds to counting and averaging of SMOKE classes for each
+#            DA polygon.
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::SMOKE2DA { } {
+
+   GenX::Log INFO "Début de la proc SMOKE2DA"
+
+   variable Param
+
+   puts "Le code de province est $Param(ProvinceCode)"
+
+   #récupération du fichier des polygones de dissemination area
+   set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006)] 0]
+   eval ogrlayer read VDAPOLYGONS $layer
+
+   #récupération du nom de fichier, utile pour la sélection par attribut ?
+   set statcanfilename [string range [file tail $Param(PopFile2006)] 0 16] ;# required by ogrlayer sqlselect
+   #statcanfilename contains an element of the form da2006_pop_labour
+
+   #sélection des polygones de dissemination area selon le code de province
+
+   #REMPLACER LA LISTE DES PARAMS(LAT/LON) PAR LA GÉOMÉTRIE DE LA PROVINCE
+   #AJOUTER DANS DEFINEAREA UNE VARIABLE PARAM(GEOMFILE) QUI POINTE VERS LE SHAPEFILE DE GÉOMÉTRIE
+   #ON AURA DONC QQCH DU GENRE 
+   #set dapolygons [ogrlayer pick VDAPOLYGONS $Param(GeomFile) True]
+
+   set dapolygons [ogrlayer pick VDAPOLYGONS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
+   #Les deux lignes suivantes sont à supprimer : test d'interrogation du fichier
+   set maxpop [ogrlayer stats VDAPOLYGONS -max DAPOP2006] ;# ligne à supprimer
+   puts $maxpop ;# ligne à supprimer
+   puts "On passe le point A"
+
+   #pour chaque polygone de DA, compter les éléments de chaque SMOKE class
+   ogrlayer define VDAPOLYGONS -featureselect [list [list index # $dapolygons]]
+   set j 0
+   puts "On passe le point B"
+   foreach n $dapolygons {
+      set pop [ogrlayer define VDAPOLYGONS -feature $n DAPOP2006]
+      puts "La population du polygone $j est $pop"
+      incr j
+   }
+   puts "On passe le point C"
+
+
+   GenX::Log INFO "Fin de la proc SMOKE2DA"
+}
+
+#----------------------------------------------------------------------------
 # Name     : <UrbanX::Process>
 # Creation : date? - Alexandre Leroux - CMC/CMOE
 #
@@ -2040,17 +2105,17 @@ proc UrbanX::FilterGen { Type Size } {
 #----------------------------------------------------------------------------
 proc UrbanX::Process { Coverage } {
 
-   variable Param
+   GenX::Log INFO "Début d'UrbanX"
 
-puts "Début d'UrbanX"
+   variable Param
 
    UrbanX::AreaDefine    $Coverage
    UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
-#   UrbanX::FindNTSSheets ;# Useless now since we use GenX::CANVECFindFiles
+   #UrbanX::FindNTSSheets ;# Useless now since we use GenX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers
    #UrbanX::SandwichBNDT
-   UrbanX::SandwichCanVec
+#   UrbanX::SandwichCanVec
 
    #----- Applies buffer to linear and ponctual elements such as buildings and roads
    #UrbanX::ScaleBuffersBNDT
@@ -2064,7 +2129,7 @@ puts "Début d'UrbanX"
 
    #----- Calculates the population density
    #UrbanX::PopDens2BuiltupBNDT
-   #UrbanX::PopDens2BuiltupCanVec
+#   UrbanX::PopDens2BuiltupCanVec
 
    #----- Calculates building heights
    #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
@@ -2074,14 +2139,13 @@ puts "Début d'UrbanX"
    #UrbanX::Priorities2TEB
 
    #----- Applies LUT to all processing results to generate SMOKE classes.
-   #UrbanX::Priorities2SMOKE
+#   UrbanX::Priorities2SMOKE
    #----- TO CREATE : procedures to go from the SMOKE Classes to the assignation in DA polygons
-   #UrbanX::FindDA
-   #UrbanX::SMOKE2DA
+   UrbanX::SMOKE2DA
 
    #----- Optional outputs:
    #UrbanX::VegeMask
    ##UrbanX::TEB2FSTD
 
-puts "Fin d'UrbanX.  Retour à GenPhysX"
+   GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
 }
