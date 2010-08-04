@@ -1750,7 +1750,7 @@ proc UrbanX::Priorities2TEB { } {
 # Creation : July 2010 - Alexandre Leroux - CMC/CMOE
 #            July 2010 - Lucie Boucher - CMC/AQMAS
 #
-# Goal     : Applies LUT to all processing result to generate SMOKE classes
+# Goal     : Applies LUT to all processing results to generate SMOKE classes
 #
 # Parameters :
 #
@@ -2050,39 +2050,83 @@ proc UrbanX::SMOKE2DA { } {
 
    variable Param
 
-   puts "Le code de province est $Param(ProvinceCode)"
+  # puts "Le code de province est $Param(ProvinceCode)"
 
-   #récupération du fichier des polygones de dissemination area
+   #récupération du fichier LULC
+   #tests avec la sandwich, à remplacer par Param(OutFile)_SMOKE.tif
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+
+   #récupération du fichier des polygones de dissemination area pour tout le Canada
    set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006)] 0]
    eval ogrlayer read VDAPOLYGONS $layer
 
-   #récupération du nom de fichier, utile pour la sélection par attribut ?
-   set statcanfilename [string range [file tail $Param(PopFile2006)] 0 16] ;# required by ogrlayer sqlselect
+   #récupération du nom de fichier, utile pour la sélection par attribut ?  peut-être à supprimer
+   set statcanfilename [string range [file tail $Param(PopFile2006)] 0 16] 
    #statcanfilename contains an element of the form da2006_pop_labour
 
-   #sélection des polygones de dissemination area selon le code de province
-
+   #sélection des polygones situés à l'intérieur de la zone traitée
+   set dapolygons [ogrlayer pick VDAPOLYGONS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
+   #dapolygons contient une liste d'ids de forme 99999, identifiant les polygones de VDAPOLYGONS se trouvant à l'intérieur de la zone définie
+   #--------todo------------
    #REMPLACER LA LISTE DES PARAMS(LAT/LON) PAR LA GÉOMÉTRIE DE LA PROVINCE
    #AJOUTER DANS DEFINEAREA UNE VARIABLE PARAM(GEOMFILE) QUI POINTE VERS LE SHAPEFILE DE GÉOMÉTRIE
    #ON AURA DONC QQCH DU GENRE 
    #set dapolygons [ogrlayer pick VDAPOLYGONS $Param(GeomFile) True]
+   #attente pour obtention de la géométrie des provinces :
+   #  demande à Mourad : il n'a pas de fichier complété
+   #  exploration dans QuantumGIS mais besoin de pluggins?
+   #  license ArcGIS : devrait débloquer le 4 août, mais ensuite installation?
+   #  bref, sur la glace en attendant, tests avec IPE pour la zone entière
 
-   set dapolygons [ogrlayer pick VDAPOLYGONS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
    #Les deux lignes suivantes sont à supprimer : test d'interrogation du fichier
-   set maxpop [ogrlayer stats VDAPOLYGONS -max DAPOP2006] ;# ligne à supprimer
-   puts $maxpop ;# ligne à supprimer
-   puts "On passe le point A"
+   #set maxpop [ogrlayer stats VDAPOLYGONS -max DAPOP2006] ;# ligne à supprimer
+   #puts "La population maximale d'un DA sur la zone est $maxpop" ;# ligne à supprimer
 
-   #pour chaque polygone de DA, compter les éléments de chaque SMOKE class
-   ogrlayer define VDAPOLYGONS -featureselect [list [list index # $dapolygons]]
-   set j 0
-   puts "On passe le point B"
+
+   #ogrlayer interp dapolygons RSANDWICH comptage NORMALIZED_CONSERVATIVE 0 final liste ;#génère une segmentation fault
+
+
+   set j 0 ;#incrément sur le nombre de polygones de la zone traitée
    foreach n $dapolygons {
-      set pop [ogrlayer define VDAPOLYGONS -feature $n DAPOP2006]
-      puts "La population du polygone $j est $pop"
-      incr j
+      #test d'interrogation du polygone : les 3 lignes suivantes sont à supprimer
+      #set pop [ogrlayer define VDAPOLYGONS -feature $n DAPOP2006] ;# à supprimer
+      #puts "La population du polygone $j est $pop" ;# à supprimer
+
+      #boucle if/else ne servant qu'à rouler sur un petit nombre de polygones.
+      #supprimer le if/else, ne conserver que le contenu de la partie else
+      if {$j > 2} {
+         return
+      } else {
+         puts "Counts smoke classes in DA polygon $j"
+
+         #------- todo -------------
+         #sélectionner le polygone de VDAPOLYGONS ayant l'id $dapolygons
+         #pour chaque classe SMOKE :
+            #compter le nombre de pixels de RSANDWICH intersectant le polygone et ayant la valeur de classe SMOKE
+            #écrire cette valeur dans le champ de la classe SMOKE pour le polygone sélectionné
+
+         #définir une géométrie pour le polygone
+         set geom [ogrlayer define VDAPOLYGONS -geometry $n]
+
+         #test à supprimer 
+         #if { [ogrlayer is VDAPOLYGONS] } { 
+         #   puts "VDAPOLYGONS est un layer"
+         #} else {
+         #   puts "VDAPOLYGONS n'est pas un layer"
+         #}
+
+         #if { [gdalband is RSANDWICH] } {
+         #   puts "RSANDWICH est une bande"
+         #} else {
+         #   puts "RSANDWICH n'est pas une bande"
+         #}
+
+         #ogrlayer interp geom RSANDWICH comptage NORMALIZED_CONSERVATIVE 0 final liste ;# génère une segmentation fault
+
+         puts "L'interpolation ne se fait pas pour cause de segmentation fault; à corriger"
+         incr j ;# à supprimer
+      }
    }
-   puts "On passe le point C"
 
 
    GenX::Log INFO "Fin de la proc SMOKE2DA"
@@ -2107,6 +2151,8 @@ proc UrbanX::Process { Coverage } {
 
    GenX::Log INFO "Début d'UrbanX"
 
+   GenX::Log INFO "Coverage = $Coverage"
+
    variable Param
 
    UrbanX::AreaDefine    $Coverage
@@ -2115,7 +2161,7 @@ proc UrbanX::Process { Coverage } {
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers
    #UrbanX::SandwichBNDT
-#   UrbanX::SandwichCanVec
+   UrbanX::SandwichCanVec
 
    #----- Applies buffer to linear and ponctual elements such as buildings and roads
    #UrbanX::ScaleBuffersBNDT
@@ -2129,7 +2175,7 @@ proc UrbanX::Process { Coverage } {
 
    #----- Calculates the population density
    #UrbanX::PopDens2BuiltupBNDT
-#   UrbanX::PopDens2BuiltupCanVec
+   UrbanX::PopDens2BuiltupCanVec
 
    #----- Calculates building heights
    #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
@@ -2139,8 +2185,7 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::Priorities2TEB
 
    #----- Applies LUT to all processing results to generate SMOKE classes.
-#   UrbanX::Priorities2SMOKE
-   #----- TO CREATE : procedures to go from the SMOKE Classes to the assignation in DA polygons
+   UrbanX::Priorities2SMOKE
    UrbanX::SMOKE2DA
 
    #----- Optional outputs:
