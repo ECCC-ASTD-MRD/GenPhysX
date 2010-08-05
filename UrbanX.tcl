@@ -173,7 +173,7 @@ namespace eval UrbanX { } {
 #TO DELETE, Layers from BNDT
 #rename Param(Layers) to Param(Entities)
 #   set Param(Layers)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
-   
+
    #Ces entités sont classés par ordre décroissant de priorité
    set Param(Entities) {
       SS_1320059_2
@@ -781,11 +781,11 @@ proc UrbanX::SandwichCanVec { Coverage } {
 
       ogrfile open SHAPEPROV read $Param(ProvincesGeom)
       ogrlayer sqlselect VGEOMPROV SHAPEPROV "SELECT * FROM Param(ProvincesGeom) WHERE (PR = $Param(ProvinceCode))"
-
+      set n [ogrlayer sqlselect VGEOMPROV SHAPEPROV "SELECT * FROM Param(ProvincesGeom) WHERE (PR = $Param(ProvinceCode))"]
+      puts $n
       puts "On passe le point A"
 
-      set geom [ogrlayer define VGEOMPROV -geometry 0]
-
+      set geom [ogrlayer define VGEOMPROV -geometry $n]
       puts "On passe le point B"
 
       set ids [ogrlayer pick NTSLAYER50K geom True]
@@ -853,7 +853,7 @@ proc UrbanX::SandwichCanVec { Coverage } {
                # entity : Building, points
                # function in (11, 16, 23, 27, 37) Pri=21 TEB=111 ; function in (9, 12, 17, 19, 26, 39) PRI= 22 TEB= 112; else general
                GenX::Log INFO "Post-processing for Building, point"
-               # function not in (9, 11, 12, 16, 17, 19, 23, 26, 27, 37, 39) : valeur générale 
+               # function not in (9, 11, 12, 16, 17, 19, 23, 26, 27, 37, 39) : valeur générale
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (9,11,12,16,17,19,23,26,27,37,39)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general buildings) as VFEATURE2KEEP$j with priority value $priority"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
@@ -870,7 +870,7 @@ proc UrbanX::SandwichCanVec { Coverage } {
                # entity : Building, polygons
                # function in (11, 16, 23, 27, 37) Pri=301 TEB=100 ; function in (9, 12, 17, 19, 26, 39) PRI=302 TEB=100; else general
                GenX::Log INFO "Post-processing for Building, polygons"
-               # function not in (9, 11, 12, 16, 17, 19, 23, 26, 27, 37, 39) : valeur générale 
+               # function not in (9, 11, 12, 16, 17, 19, 23, 26, 27, 37, 39) : valeur générale
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (9,11,12,16,17,19,23,26,27,37,39)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general buildings) as VFEATURE2KEEP$j with priority value $priority"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
@@ -1120,7 +1120,7 @@ proc UrbanX::SandwichCanVec { Coverage } {
                #the layer is part of Param(LayersPostPro) but no case has been defined for it
                GenX::Log WARNING "Post-processing for $file not found"
             }
-         } 
+         }
          ogrlayer free VFEATURE2KEEP$j
          incr j ;# Increment of VFEATURE2KEEP$j required to re-use the object
       } else {
@@ -1304,7 +1304,7 @@ puts "Début de la proc ScaleBuffersCanVec"
 
                #NOTE : PROBLÈME REPÉRÉ :
                #LA PROC INITIALE FAIT LE BUFFER SUR UNE SEULE VALEUR DE PRIORITÉ.  OR, LE LAYER A ÉTÉ DIVISÉ EN 3 ÉLÉMENTS DANS LA SANDWICH, ET CES 3 ÉLÉMENTS
-               #ONT DES VALEURS DE PRIORITÉ DIFFÉRENTES.  IL FAUT DONC REPRENDRE LA DIVISION EFFECTUÉE DANS LA SANDWICH POUR EFFECTUER UN BUFFER AVEC LES 
+               #ONT DES VALEURS DE PRIORITÉ DIFFÉRENTES.  IL FAUT DONC REPRENDRE LA DIVISION EFFECTUÉE DANS LA SANDWICH POUR EFFECTUER UN BUFFER AVEC LES
                #BONNES VALEURS
 
             }
@@ -1538,11 +1538,11 @@ proc UrbanX::PopDens2BuiltupBNDT { } {
 #
 # Parameters :
 #
-# Return: output files : 
+# Return: output files :
 #             genphysx_popdens.tif
 #             genphysx_popdens-builtup.tif
 #
-# Remarks : 
+# Remarks :
 #
 #----------------------------------------------------------------------------
 proc UrbanX::PopDens2BuiltupCanVec { } {
@@ -1562,6 +1562,7 @@ GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 
    #----- Selecting only the required polygons - next is only useful to improve the speed of the layer substraction
    set features [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
+puts $features
    ogrlayer define VPOPDENS -featureselect [list [list index # $features]]
 
    #Subtraction of water zone from VPOPDENS
@@ -2108,7 +2109,7 @@ proc UrbanX::SMOKE2DA { } {
    eval ogrlayer read VDAPOLYGONS $layer
 
    #récupération du nom de fichier, utile pour la sélection par attribut ?  peut-être à supprimer
-   set statcanfilename [string range [file tail $Param(PopFile2006)] 0 16] 
+   set statcanfilename [string range [file tail $Param(PopFile2006)] 0 16]
    #statcanfilename contains an element of the form da2006_pop_labour
 
    #sélection des polygones situés à l'intérieur de la zone traitée
@@ -2117,7 +2118,7 @@ proc UrbanX::SMOKE2DA { } {
    #--------todo------------
    #REMPLACER LA LISTE DES PARAMS(LAT/LON) PAR LA GÉOMÉTRIE DE LA PROVINCE
    #AJOUTER DANS DEFINEAREA UNE VARIABLE PARAM(GEOMFILE) QUI POINTE VERS LE SHAPEFILE DE GÉOMÉTRIE
-   #ON AURA DONC QQCH DU GENRE 
+   #ON AURA DONC QQCH DU GENRE
    #set dapolygons [ogrlayer pick VDAPOLYGONS $Param(GeomFile) True]
    #attente pour obtention de la géométrie des provinces :
    #  demande à Mourad : il n'a pas de fichier complété
@@ -2129,8 +2130,13 @@ proc UrbanX::SMOKE2DA { } {
    #set maxpop [ogrlayer stats VDAPOLYGONS -max DAPOP2006] ;# ligne à supprimer
    #puts "La population maximale d'un DA sur la zone est $maxpop" ;# ligne à supprimer
 
-
-   #ogrlayer interp dapolygons RSANDWICH comptage NORMALIZED_CONSERVATIVE 0 final liste ;#génère une segmentation fault
+# CREER UN NOUVEAU FIELD AVEC "ogrlayer define -field" ?
+# TESTER AVEC DA2006_PEI only.... ça va etre pas mal plus vite !
+puts "Avant le ogrlayer interp"
+#   ogrlayer interp dapolygons RSANDWICH comptage NORMALIZED_CONSERVATIVE 0 final liste ;#génère une segmentation fault
+   ogrlayer interp VDAPOLYGONS RSANDWICH pop_dens WITHIN 1
+puts "Après le ogrlayer interp"
+# Attention - ogrlayer write layerid fileid est probablement requis (avec un open avant ?)
 
 
    set j 0 ;#incrément sur le nombre de polygones de la zone traitée
@@ -2155,8 +2161,8 @@ proc UrbanX::SMOKE2DA { } {
          #définir une géométrie pour le polygone
          set geom [ogrlayer define VDAPOLYGONS -geometry $n]
 
-         #test à supprimer 
-         #if { [ogrlayer is VDAPOLYGONS] } { 
+         #test à supprimer
+         #if { [ogrlayer is VDAPOLYGONS] } {
          #   puts "VDAPOLYGONS est un layer"
          #} else {
          #   puts "VDAPOLYGONS n'est pas un layer"
@@ -2208,7 +2214,7 @@ proc UrbanX::Process { Coverage } {
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers
    #UrbanX::SandwichBNDT ;# to be deleted, replaced with UrbanX::SandwichCanVec
-   UrbanX::SandwichCanVec $Coverage
+#   UrbanX::SandwichCanVec $Coverage
 
    #----- Applies buffer to linear and ponctual elements such as buildings and roads
    #UrbanX::ScaleBuffersBNDT ;# to be deleted, replaced with UrbanX::ScaleBuffersCanVec
@@ -2222,7 +2228,7 @@ proc UrbanX::Process { Coverage } {
 
    #----- Calculates the population density
    #UrbanX::PopDens2BuiltupBNDT ;# to be deleted, replaced with UrbanX::PopDens2BuiltupCanVec
-#   UrbanX::PopDens2BuiltupCanVec
+   UrbanX::PopDens2BuiltupCanVec
 
    #----- Calculates building heights
    #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
