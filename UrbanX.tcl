@@ -346,6 +346,15 @@ namespace eval UrbanX { } {
    #CE PATH DOIT ÊTRE MIS À JOUR AVEC LES DONNÉES DE 2006
    set Param(PopFile) /data/cmoex7/afsralx/canyon-urbain/global_data/statcan/traitements/da2001ca_socio_eco.shp
    set Param(PopFile2006) /data/aqli04/afsulub/StatCan2006/da2006_pop_labour.shp
+
+
+   set Param(ProvincesGeom) /data/aqli04/afsulub/StatCan2006/da2006_provinces.shp
+
+   #gobé à GenX
+   set Path(DBase) /cnfs/ops/production/cmoe/geo
+   set Path(NTS)       $Path(DBase)/NTS
+
+
 }
 
 #----------------------------------------------------------------------------
@@ -464,7 +473,7 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat1)    47.06
          set Param(Lon0)   -64.42
          set Param(Lat0)    45.94
-         set Param(ProvinceCode) 11 ;# code for StatCan
+         set Param(ProvinceCode) 11 ;# PR code for StatCan
       }
       default {
          set Param(Lon1)   -71.10
@@ -558,7 +567,6 @@ proc UrbanX::FindNTSSheets { } {
    foreach indexnts $ids {
       set sheet    [string tolower [ogrlayer define NTSLAYER -feature $indexnts snrc]]
       set sheetpath /data/cmoex7/afsralx/canyon-urbain/global_data/bndt-geonet/$sheet
-#      set sheetpath /data/cmoex7/afsralx/canyon-urbain/global_data/bndt-geonet/$sheet
       if { [file exists $sheetpath] } {
          set path [glob -nocomplain $sheetpath/*_nts_lim_l.shp]
          lappend Data(Sheets) [lindex [split [file tail $path] _] 0]
@@ -747,9 +755,10 @@ proc UrbanX::SandwichBNDT { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::SandwichCanVec { } {
+proc UrbanX::SandwichCanVec { Coverage } {
    variable Param
    variable Data
+   variable Path
 
    GenX::Procs
    GenX::Log INFO "Generating Sandwich"
@@ -760,8 +769,46 @@ proc UrbanX::SandwichCanVec { } {
    GenX::Log INFO "Locating CanVec Files" ;#added by Lucie
 
    set Param(Files) {}
-   set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
-   #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
+
+   if {$Coverage == "IPE"} {
+      puts "Localisation par feuillets NTS"
+
+       #--------- code adapté de GenX::CANVECFindFiles
+      if { ![ogrlayer is NTSLAYER50K] } {
+         set nts_layer [lindex [ogrfile open SHAPE50K read $Path(NTS)/decoupage50k_2.shp] 0]
+         eval ogrlayer read NTSLAYER50K $nts_layer
+      }
+
+      ogrfile open SHAPEPROV read $Param(ProvincesGeom)
+      ogrlayer sqlselect VGEOMPROV SHAPEPROV "SELECT * FROM Param(ProvincesGeom) WHERE (PR = $Param(ProvinceCode))"
+
+      puts "On passe le point A"
+
+      set geom [ogrlayer define VGEOMPROV -geometry 0]
+
+      puts "On passe le point B"
+
+      set ids [ogrlayer pick NTSLAYER50K geom True]
+      foreach tuile ids {
+         set coordtuile [ogrgeometry stats tuile -extent] ;#x0 y0 x1 y1
+         set tuilelat0 [lindex $coordtuile 0] ;#x0
+         set tuilelon0 [lindex $coordtuile 1] ;#y0
+         set tuilelat1 [lindex $coordtuile 2] ;#x1
+         set tuilelon1 [lindex $coordtuile 3] ;#y1
+         puts "On passe le point c"
+
+         set files [GenX::CANVECFindFiles $Param(tuilelat0) $Param(tuilelon0) $Param(tuilelat1) $Param(tuilelon1) $Param(Entities)]
+         set Param(Files) [concat $Param(Files) $files]
+
+         puts "On passe le point d"
+      }
+      #--------- fin du code adapté de GenX::CANVECFindFiles
+
+   } else {
+      puts "Localisation des fichiers CanVec standard (lat lon de la zone)"
+      set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
+      #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
+   }
 
    # VEUT-ON REFAIRE CETTE VÉRIFICATION ? ELLE SERAIT UTILE - VOIR APRES
    #----- Vérification des shapefiles présents afin de ne pas en manquer un hors-liste
@@ -1791,7 +1838,7 @@ proc UrbanX::Priorities2SMOKE { } {
    gdalfile close FPOPDENSCUT
    #gdalfile close FCHAMPS
    #gdalfile close FHAUTEURCLASS
-   gdalband free RSMOKE RSANDWICH ;#RPOPDENSCUT RCHAMPS RHAUTEURCLASS
+   gdalband free RSMOKE RSANDWICH RPOPDENSCUT ;# RCHAMPS RHAUTEURCLASS
 
    GenX::Log INFO "Fin de la proc Priorities2SMOKE"
 }
@@ -2160,11 +2207,11 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::FindNTSSheets ;# Useless now since we use GenX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers
-   #UrbanX::SandwichBNDT
-   UrbanX::SandwichCanVec
+   #UrbanX::SandwichBNDT ;# to be deleted, replaced with UrbanX::SandwichCanVec
+   UrbanX::SandwichCanVec $Coverage
 
    #----- Applies buffer to linear and ponctual elements such as buildings and roads
-   #UrbanX::ScaleBuffersBNDT
+   #UrbanX::ScaleBuffersBNDT ;# to be deleted, replaced with UrbanX::ScaleBuffersCanVec
    #UrbanX::ScaleBuffersCanVec
 
    #-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
@@ -2174,8 +2221,8 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::ChampsBuffers
 
    #----- Calculates the population density
-   #UrbanX::PopDens2BuiltupBNDT
-   UrbanX::PopDens2BuiltupCanVec
+   #UrbanX::PopDens2BuiltupBNDT ;# to be deleted, replaced with UrbanX::PopDens2BuiltupCanVec
+#   UrbanX::PopDens2BuiltupCanVec
 
    #----- Calculates building heights
    #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
@@ -2185,12 +2232,12 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::Priorities2TEB
 
    #----- Applies LUT to all processing results to generate SMOKE classes.
-   UrbanX::Priorities2SMOKE
-   UrbanX::SMOKE2DA
+#   UrbanX::Priorities2SMOKE
+#   UrbanX::SMOKE2DA
 
    #----- Optional outputs:
    #UrbanX::VegeMask
-   ##UrbanX::TEB2FSTD
+   #UrbanX::TEB2FSTD
 
    GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
 }
