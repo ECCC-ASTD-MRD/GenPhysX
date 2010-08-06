@@ -537,7 +537,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::FindNTSSheets>
+# Name     : <UrbanX::FindNTSSheetsBNDT>
 # Creation : date? - Alexandre Leroux - CMC/CMOE
 #
 # Goal     : Find the NTS Sheets and paths
@@ -549,7 +549,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } } {
 # Remarks :  THIS PROC WILL BE DELETED - WON'T BE USED ANYMORE
 #
 #----------------------------------------------------------------------------
-proc UrbanX::FindNTSSheets { } {
+proc UrbanX::FindNTSSheetsBNDT { } {
 # THIS PROC WILL BE DELETED - WON'T BE USED ANYMORE
    variable Param
    variable Data
@@ -586,6 +586,36 @@ proc UrbanX::FindNTSSheets { } {
       GenX::Continue
    }
 
+}
+
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::FindNTSSheetsCanVec>
+# Creation : August 2010 - Alexandre Leroux - CMC/CMOE
+#            August 2010 - Lucie Boucher - CMC/AQMAS
+# Goal     : Find the NTS Sheets that intersect the province polygon
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::FindNTSSheetsCanVec { } {
+
+   #finds NTS Sheets that intersect with province polygon
+   #les NTS sheets sont prises par l'index 
+      #set  layers [lindex [ogrfile open SHAPE read $GenX::Path(NTS)/50kindex.shp] 0]
+      #eval ogrlayer read NTSLAYER $layers
+
+   #le polygone de province vient d'un sqlselect sur le fichier Param(ProvincesGeom)
+   #avec PR=X
+
+   #switch le polygone province en géométrie pour pouvoir faire
+   #ogrlayer pick layerid geomid INTERSECT ?
+   #ou bien intersect 2 layers?
+
+   #puts the list in a variable Param(NTSSheets) ?
 }
 
 #----------------------------------------------------------------------------
@@ -758,7 +788,7 @@ proc UrbanX::SandwichBNDT { } {
 proc UrbanX::SandwichCanVec { Coverage } {
    variable Param
    variable Data
-   variable Path
+#   variable Path
 
    GenX::Procs
    GenX::Log INFO "Generating Sandwich"
@@ -766,49 +796,12 @@ proc UrbanX::SandwichCanVec { Coverage } {
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
    gdalband define RSANDWICH -georef UTMREF
 
-   GenX::Log INFO "Locating CanVec Files" ;#added by Lucie
+   GenX::Log INFO "Locating CanVec Files"
 
    set Param(Files) {}
+   set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
+   #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
 
-   if {$Coverage == "IPE"} {
-      puts "Localisation par feuillets NTS"
-
-       #--------- code adapté de GenX::CANVECFindFiles
-      if { ![ogrlayer is NTSLAYER50K] } {
-         set nts_layer [lindex [ogrfile open SHAPE50K read $Path(NTS)/decoupage50k_2.shp] 0]
-         eval ogrlayer read NTSLAYER50K $nts_layer
-      }
-
-      ogrfile open SHAPEPROV read $Param(ProvincesGeom)
-      ogrlayer sqlselect VGEOMPROV SHAPEPROV "SELECT * FROM Param(ProvincesGeom) WHERE (PR = $Param(ProvinceCode))"
-      set n [ogrlayer sqlselect VGEOMPROV SHAPEPROV "SELECT * FROM Param(ProvincesGeom) WHERE (PR = $Param(ProvinceCode))"]
-      puts $n
-      puts "On passe le point A"
-
-      set geom [ogrlayer define VGEOMPROV -geometry $n]
-      puts "On passe le point B"
-
-      set ids [ogrlayer pick NTSLAYER50K geom True]
-      foreach tuile ids {
-         set coordtuile [ogrgeometry stats tuile -extent] ;#x0 y0 x1 y1
-         set tuilelat0 [lindex $coordtuile 0] ;#x0
-         set tuilelon0 [lindex $coordtuile 1] ;#y0
-         set tuilelat1 [lindex $coordtuile 2] ;#x1
-         set tuilelon1 [lindex $coordtuile 3] ;#y1
-         puts "On passe le point c"
-
-         set files [GenX::CANVECFindFiles $Param(tuilelat0) $Param(tuilelon0) $Param(tuilelat1) $Param(tuilelon1) $Param(Entities)]
-         set Param(Files) [concat $Param(Files) $files]
-
-         puts "On passe le point d"
-      }
-      #--------- fin du code adapté de GenX::CANVECFindFiles
-
-   } else {
-      puts "Localisation des fichiers CanVec standard (lat lon de la zone)"
-      set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
-      #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
-   }
 
    # VEUT-ON REFAIRE CETTE VÉRIFICATION ? ELLE SERAIT UTILE - VOIR APRES
    #----- Vérification des shapefiles présents afin de ne pas en manquer un hors-liste
@@ -1619,6 +1612,7 @@ puts $features
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
+
    gdalband free RSANDWICH ;# move this above once vexpr works
    gdalfile close FSANDWICH
    gdalband free RPOPDENS
@@ -2103,6 +2097,7 @@ proc UrbanX::SMOKE2DA { } {
    #récupération du fichier LULC
    #tests avec la sandwich, à remplacer par Param(OutFile)_SMOKE.tif
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSMOKE [gdalfile open FSMOKE read $GenX::Param(OutFile)_SMOKE.tif]
 
    #récupération du fichier des polygones de dissemination area pour tout le Canada
    set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006)] 0]
@@ -2130,27 +2125,55 @@ proc UrbanX::SMOKE2DA { } {
    #set maxpop [ogrlayer stats VDAPOLYGONS -max DAPOP2006] ;# ligne à supprimer
    #puts "La population maximale d'un DA sur la zone est $maxpop" ;# ligne à supprimer
 
+
+
+
+
+   #--------CETTE BOUCLE SERA PROBABLEMENT À RECODER ENTIÈRMENT : SOLUTION DE DÉPANNAGE
+   set Param(PopFile2006_PEI) /data/aqli04/afsulub/StatCan2006/da2006_pei.shp
+   set layerpei [lindex [ogrfile open SHAPE read $Param(PopFile2006_PEI)] 0]
+   eval ogrlayer read VDAPOLYGONSPEI $layer
+
+   foreach i $Param(SmokeClasses) {
+   gdalband create RSMOKEBIN $Param(Width) $Param(Height) 1 Byte
+   gdalband define RSMOKEBIN -georef UTMREF
+   vexpr RSMOKEBIN ifelse((RSMOKE=$i),1,0)
+
+   ogrlayer define VDAPOLYGONSPEI -field cl$i
+   ogrlayer interp VDAPOLYGONSPEI RSMOKEBIN cl$i WITHIN 1
+   }
+
+   #écriture des valeurs dans le shapefile
+   ogrlayer write VDAPOLYGONSPEI $Param(popFile2006_PEI)
+   #--------FIN DE LA BOUCLE À RECODER ENTIÈREMENT
+
+
+
+
+
 # CREER UN NOUVEAU FIELD AVEC "ogrlayer define -field" ?
 # TESTER AVEC DA2006_PEI only.... ça va etre pas mal plus vite !
-puts "Avant le ogrlayer interp"
+#puts "Avant le ogrlayer interp"
 #   ogrlayer interp dapolygons RSANDWICH comptage NORMALIZED_CONSERVATIVE 0 final liste ;#génère une segmentation fault
-   ogrlayer interp VDAPOLYGONS RSANDWICH pop_dens WITHIN 1
-puts "Après le ogrlayer interp"
+#   ogrlayer interp VDAPOLYGONS RSANDWICH pop_dens WITHIN 1
+#puts "Après le ogrlayer interp"
 # Attention - ogrlayer write layerid fileid est probablement requis (avec un open avant ?)
 
 
-   set j 0 ;#incrément sur le nombre de polygones de la zone traitée
-   foreach n $dapolygons {
+   #---------------SCRAP CETTE SECTION -----------
+
+#   set j 0 ;#incrément sur le nombre de polygones de la zone traitée
+#   foreach n $dapolygons {
       #test d'interrogation du polygone : les 3 lignes suivantes sont à supprimer
       #set pop [ogrlayer define VDAPOLYGONS -feature $n DAPOP2006] ;# à supprimer
       #puts "La population du polygone $j est $pop" ;# à supprimer
 
       #boucle if/else ne servant qu'à rouler sur un petit nombre de polygones.
       #supprimer le if/else, ne conserver que le contenu de la partie else
-      if {$j > 2} {
-         return
-      } else {
-         puts "Counts smoke classes in DA polygon $j"
+#      if {$j > 2} {
+#         return
+#      } else {
+#         puts "Counts smoke classes in DA polygon $j"
 
          #------- todo -------------
          #sélectionner le polygone de VDAPOLYGONS ayant l'id $dapolygons
@@ -2159,7 +2182,7 @@ puts "Après le ogrlayer interp"
             #écrire cette valeur dans le champ de la classe SMOKE pour le polygone sélectionné
 
          #définir une géométrie pour le polygone
-         set geom [ogrlayer define VDAPOLYGONS -geometry $n]
+#         set geom [ogrlayer define VDAPOLYGONS -geometry $n]
 
          #test à supprimer
          #if { [ogrlayer is VDAPOLYGONS] } {
@@ -2176,10 +2199,12 @@ puts "Après le ogrlayer interp"
 
          #ogrlayer interp geom RSANDWICH comptage NORMALIZED_CONSERVATIVE 0 final liste ;# génère une segmentation fault
 
-         puts "L'interpolation ne se fait pas pour cause de segmentation fault; à corriger"
-         incr j ;# à supprimer
-      }
-   }
+#         puts "L'interpolation ne se fait pas pour cause de segmentation fault; à corriger"
+#         incr j ;# à supprimer
+#      }
+
+   #---------------FIN : SCRAP CETTE SECTION -----------
+#   }
 
 
    GenX::Log INFO "Fin de la proc SMOKE2DA"
@@ -2204,17 +2229,86 @@ proc UrbanX::Process { Coverage } {
 
    GenX::Log INFO "Début d'UrbanX"
 
-   GenX::Log INFO "Coverage = $Coverage"
-
    variable Param
 
-   UrbanX::AreaDefine    $Coverage
-   UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
+   GenX::Log INFO "Coverage = $Coverage"
+
+   if {$Coverage == "IPE"} {
+      puts "Traitement d'une province : IndustrX"
+      #----- TODO 
+      #Finds a list of nts 50k sheets that intersect with province polygon
+      #UrbanX::FindNTSSheetsCanvec ;#va avoir besoin du code de province, retourne Param(NTSSheets)
+      #foreach n $Param(NTSSheets)
+         #if les fichiers raster existent déjà, skip
+         #else, détermine les lat lon de la feuille, puis go :
+            #----- Defines the extents of the zone to be process
+            UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
+            #----- Finds CanVec files, rasterize and flattens all CanVec layers
+            #UrbanX::SandwichBNDT ;# to be deleted, replaced with UrbanX::SandwichCanVec
+            UrbanX::SandwichCanVec $Coverage
+            #----- Applies buffer to linear and ponctual elements such as buildings and roads
+            #UrbanX::ScaleBuffersCanVec
+            #----- Creates the fields and building vicinity output using spatial buffers
+            #UrbanX::ChampsBuffers
+            #----- Calculates the population density
+            #UrbanX::PopDens2BuiltupBNDT ;# to be deleted, replaced with UrbanX::PopDens2BuiltupCanVec
+            UrbanX::PopDens2BuiltupCanVec
+            #----- Applies LUT to all processing results to generate SMOKE classes.
+            #UrbanX::Priorities2SMOKE
+            #UrbanX::SMOKE2DA
+
+   } else {
+      puts "Traitement d'une ville : UrbanX"
+      #----- Defines the extents of the zone to be process
+      UrbanX::AreaDefine    $Coverage
+      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
+ 
+      #----- Finds CanVec files, rasterize and flattens all CanVec layers
+      UrbanX::SandwichCanVec $Coverage
+
+      #----- Applies buffer to linear and ponctual elements such as buildings and roads
+      #UrbanX::ScaleBuffersCanVec
+
+      #-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
+      #UrbanX::Shp2Height
+
+      #----- Creates the fields and building vicinity output using spatial buffers
+      #UrbanX::ChampsBuffers
+
+      #----- Calculates the population density
+      UrbanX::PopDens2BuiltupCanVec
+
+      #----- Calculates building heights
+      #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
+      #UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
+
+      #----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
+      #UrbanX::Priorities2TEB
+
+      #----- TO DELETE FROM THE URBANX PROCESSING : JUSTE LÀ POUR FAIRE DES TESTS SUR DE PETITES ZONES
+      #----- Applies LUT to all processing results to generate SMOKE classes.
+      #UrbanX::Priorities2SMOKE
+      #UrbanX::SMOKE2DA
+      #----- FIN DU TO DELETE FROM THE URBANX PROCESSING
+
+      #----- Optional outputs:
+      #UrbanX::VegeMask
+      #UrbanX::TEB2FSTD
+   }
+
+return
+
+
+   #------------- MAIN ORIGINAGL, À SUPPRIMER SI ON GARDE LE IF/ELSE SUR COVERAGE ------------
+
+   #----- Defines the extents of the zone to be process
+   #UrbanX::AreaDefine    $Coverage
+   #UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
    #UrbanX::FindNTSSheets ;# Useless now since we use GenX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers
    #UrbanX::SandwichBNDT ;# to be deleted, replaced with UrbanX::SandwichCanVec
-#   UrbanX::SandwichCanVec $Coverage
+   #UrbanX::SandwichCanVec $Coverage
 
    #----- Applies buffer to linear and ponctual elements such as buildings and roads
    #UrbanX::ScaleBuffersBNDT ;# to be deleted, replaced with UrbanX::ScaleBuffersCanVec
@@ -2228,7 +2322,7 @@ proc UrbanX::Process { Coverage } {
 
    #----- Calculates the population density
    #UrbanX::PopDens2BuiltupBNDT ;# to be deleted, replaced with UrbanX::PopDens2BuiltupCanVec
-   UrbanX::PopDens2BuiltupCanVec
+   #UrbanX::PopDens2BuiltupCanVec
 
    #----- Calculates building heights
    #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
@@ -2238,12 +2332,14 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::Priorities2TEB
 
    #----- Applies LUT to all processing results to generate SMOKE classes.
-#   UrbanX::Priorities2SMOKE
-#   UrbanX::SMOKE2DA
+   #UrbanX::Priorities2SMOKE
+   #UrbanX::SMOKE2DA
 
    #----- Optional outputs:
    #UrbanX::VegeMask
    #UrbanX::TEB2FSTD
+
+   #------------- FIN DU MAIN ORIGINAGL, À SUPPRIMER SI ON GARDE LE IF/ELSE SUR COVERAGE ---------
 
    GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
 }
