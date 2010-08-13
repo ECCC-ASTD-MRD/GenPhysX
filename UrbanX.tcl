@@ -93,12 +93,12 @@ namespace eval UrbanX { } {
       #HD_1140009_2  991   902   000   "Permanent snow and ice, polygon"                     Regular     "Aucun post-traitement particulier"
       #HD_1450009_0  180   440   000   "Manmade hydrographic entity [Geobase], point"        PostPro     "if type!=8 (exclus fish_la), valeur générale; if type=7, PRI=170, TEB=320 (boat_ra); if type=1, PRI=242, TEB=440 (dam); if type=6, PRI=190, TEB=440 (lock gate)"
       #HD_1450009_1  610   440   000   "Manmade hydrographic entity [Geobase], line"         PostPro     "if type=1 PRI=400 TEB=440 (dam); if type=3 PRI=290 TEB=320 (wharf); if type=4 PRI=645 TEB=440 (breakwa); if type=5 PRI=630 TEB=830 (dyke & seawall); if type=6 PRI=280 TEB=440 (lock gate); else general"
-      #HD_1450009_2  910   440   000   "Manmade hydrographic entity [Geobase], polygon"      PostPro     "if type=1, PRi=910 TEB=440 (dam); if type=9 PRI=765 TEB=410 (slip); else general"
+      #HD_1450009_2  910   440   000   "Manmade hydrographic entity [Geobase], polygon"      PostPro     "if type=1, PRi=911 TEB=440 (dam); if type=9 PRI=765 TEB=410 (slip); else general"
       #HD_1460009_0  185   830   000   "Hydrographic obstacle entity [Geobase], point"       PostPro     "if type=7, valeur generale"
       #HD_1460009_1  580   830   000   "Hydrographic obstacle entity [Geobase], line"        PostPro     "if type=7, valeur generale"
       #HD_1460009_2  740   830   000   "Hydrographic obstacle entity [Geobase], polygon"     PostPro     "if type in (3, 103), valeur générale"
       #HD_1470009_1  590   901   000   "Single line watercourse [Geobase], line"             PostPro     "if def=1 PRI=250 TEB=901; if def=2 PRI=320 TEB=430 ; if def=6 PRI=590 TEB=901; else general"
-      #HD_1480009_2  740   830   000   "Waterbody [Geobase], polygon"                        PostPro     "if permanency=2 PRI = 970, TEB=830; if waterdef=1 PRI=610 TEB=440; if waterdef=5 PRI=860 TEB=440; if waterdef=8 PRI=860 TEB=440; else general value"
+      #HD_1480009_2  740   830   000   "Waterbody [Geobase], polygon"                        PostPro     "if permanency=2 PRI = 970, TEB=830; if waterdef=1 PRI=610 TEB=440; if waterdef=5 PRI=860 TEB=440; if waterdef=8 PRI=861 TEB=440; else general value"
       #HD_1490009_2  000   000   000   "Island [Geobase], polygon"                           Excluded    "Aucun post-traitement particulier"
       #IC_1350019_2  821   830   000   "Pit, polygon"                                        Regular     "Aucun post-traitement particulier"
       #IC_1350029_2  822   830   000   "Quarry, polygon"                                     Regular     "Aucun post-traitement particulier"
@@ -159,9 +159,9 @@ namespace eval UrbanX { } {
       #TO_1580009_1  000   000   000   "Named feature, line"                                 Excluded    "Aucun post-traitement particulier"
       #TO_1580009_2  000   000   000   "Named feature, polygon"                              Excluded    "Aucun post-traitement particulier"
       #TR_1020009_1  310   340   000   "Railway, line"                                       PostPro     "if support != 4, general (exclusion des tunnels)"
-      #TR_1190009_0   40   310   000   "Runway, point"                                       PostPro     "if type = 4 (sea) PRI = 180 TEB = 440; else general"
-      #TR_1190009_2  650   310   000   "Runway, polygon"                                     PostPro     "if type = 4 (sea) PRI = 180 TEB = 440; else general"
-      #TR_1750009_1  000   000   000   "Ferry connection segment [Geobase], line"            Excluded    "Ajout d'un post-traitement sur road class? (1=freeway, 2=exrpressway/highway, 3=arterial, 4=collector, 5=local/street, 6=local/strata, 7=local/unknown, 8=alleyway/lane, 9=ramp, 10=resource/recreation, 11=rapid transit, 12=service lane, 13=winter)"
+      #TR_1190009_0   40   310   000   "Runway, point"                                       PostPro     "if type = 4 (sea) PRI = 181 TEB = 440; else general"
+      #TR_1190009_2  650   310   000   "Runway, polygon"                                     PostPro     "if type = 4 (sea) PRI = 181 TEB = 440; else general"
+      #TR_1750009_1  220   000   000   "Ferry connection segment [Geobase], line"            Regular     "Ajout d'un post-traitement sur road class? (1=freeway, 2=exrpressway/highway, 3=arterial, 4=collector, 5=local/street, 6=local/strata, 7=local/unknown, 8=alleyway/lane, 9=ramp, 10=resource/recreation, 11=rapid transit, 12=service lane, 13=winter)"
       #TR_1760009_1  210   320   000   "Road segment [Geobase], line"                        PostPro     "if structure type not in (5,6), general; if structure type in (1,2,3,4) PRI=205 TEB=350 (bridge); if structure type = 7, PRI=242, TEB=440 (dam); if pavement status = 2, PRI=212, TEB=320 (unpaved); if class in (1,2), PRI=211 TEB=320 (freeway, highway)
       #TR_1770009_0  000   000   000   "Junction [Geobase], point"                           Excluded    "Ajout d'un post-traitement sur type? (-1=intersection, 2=dead end, 3=ferry, 4=NavProvTer)"
       #TR_1780009_0  000   000   000   "Blocked passage [Geobase], point"                    Excluded    "Ajout d'un post-traitement sur type? (-1=unknown, 1=removable, 2=permanently fixed)"
@@ -171,10 +171,12 @@ namespace eval UrbanX { } {
       #VE_2290009_1  000   000   000   "Cut line, line"                                      Excluded    "Ajouter un post-traitement sur type? (-1=unknown, 1=firebreak, 2=other)"
 
 #TO DELETE, Layers from BNDT
-#rename Param(Layers) to Param(Entities)
 #   set Param(Layers)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
 
    #Ces entités sont classés par ordre décroissant de priorité
+   #Note : les entités dont le nom commence par pp_ ne sont pas des entités originant de CanVec, mais plutôt des résultats de la sandwich.
+   #Ils sont inclus dans cette liste pour que leurs valeurs de priorités apparaisent dans la variable Param(Priorities), afin de faire la
+   #correspondance avec les valeurs de TEB et de SMOKE.
    set Param(Entities) {
       SS_1320059_2
       SS_1320029_2
@@ -185,6 +187,8 @@ namespace eval UrbanX { } {
       HD_1140009_2
       FO_1080059_2
       FO_1080039_2
+      pp_HD_1480009_2
+      pp_HD_1450009_2
       HD_1450009_2
       LX_1000039_2
       LX_2200009_2
@@ -192,6 +196,8 @@ namespace eval UrbanX { } {
       LX_2490009_2
       LX_2270009_2
       LX_2260009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
       LX_2480009_2
       IC_1360029_2
       IC_1360019_2
@@ -205,6 +211,7 @@ namespace eval UrbanX { } {
       IC_1350049_2
       LX_1000049_2
       LX_2400009_2
+      pp_HD_1450009_2
       LX_2510009_2
       EN_1360049_2
       IC_2360009_2
@@ -219,27 +226,45 @@ namespace eval UrbanX { } {
       BS_2080009_2
       LX_2460009_2
       TR_1190009_2
+      pp_HD_1450009_1
       FO_1080029_1
+      pp_HD_1450009_1
+      pp_HD_1480009_2
       HD_1450009_1
       BS_1370009_2
       IC_1360039_2
+      pp_HD_1470009_1
       HD_1470009_1
       HD_1460009_1
       BS_2240009_1
       EN_1180009_1
       BS_2310009_1
+      pp_HD_1450009_1
+      pp_HD_1470009_1
       TR_1020009_1
+      pp_BS_2010009_2
+      pp_BS_2010009_2
       BS_2010009_2
+      pp_HD_1450009_1
+      pp_HD_1450009_1
       LX_1000079_2
       LX_1000079_1
+      pp_HD_1470009_1
       LX_1000069_0
+      pp_HD_1450009_0
       LX_2420009_1
       EN_2170009_0
+      TR_1750009_1
       TR_1760009_1
       LX_2280009_1
+      pp_HD_1450009_0
       HD_1460009_0
+      pp_TR_1190009_2
+      pp_TR_1190009_0
       HD_1450009_0
+      pp_HD_1450009_0
       IC_1350039_0
+      pp_IC_2600009_0
       IC_2600009_0
       IC_1350049_0
       LX_2220009_0
@@ -261,11 +286,13 @@ namespace eval UrbanX { } {
       TR_1190009_0
       BS_2060009_0
       BS_2530009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
       BS_2010009_0
       }
 
    #set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the NTDB layers to be processed
-   set Param(Priorities)           { 999 999 999 999 999 999 991 990 990 910 890 885 880 875 870 865 860 860 860 852 852 850 840 823 822 821 820 810 800 790 780 775 770 760 740 740 710 700 690 670 665 660 650 640 610 605 600 590 580 570 551 550 310 300 271 270 244 240 230 210 200 185 180 163 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 30 20 } ;# LUT of priority values for the CanVec layers to be processed
+   set Param(Priorities)           { 999 999 999 999 999 999 991 990 990 970 911 910 890 885 880 875 870 865 861 860 859 858 857 852 852 850 840 823 822 821 820 810 800 795 790 780 775 770 760 740 740 710 700 690 670 665 660 650 645 640 630 610 610 605 600 590 590 580 570 551 550 400 320 310 302 301 300 290 280 271 270 250 244 242 240 230 220 210 200 190 185 181 181 180 170 163 162 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 30 22 21 20 } ;# LUT of priority values for the CanVec layers to be processed
 
    #set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
    #Aucun tri particulier nécessaire pour cette liste d'entités
@@ -294,12 +321,12 @@ namespace eval UrbanX { } {
       TO_1580009_0
       TO_1580009_1
       TO_1580009_2
-      TR_1750009_1
       TR_1770009_0
       TR_1780009_0
       TR_1790009_0
       TR_2320009_0
       VE_2290009_1 } ;# Layers from CanVec ignored for rasterization
+
 
    #set Param(LayersPostPro)    { mininga_p railway_l road_l runway_a runway_p sport_t_l buildin_p buildin_a } ;# Layers from BNDT requiring postprocessing
    #Aucun tri particulier nécessaire pour cette liste d'entités
@@ -334,26 +361,32 @@ namespace eval UrbanX { } {
 
    set Param(BufferFuncValues) { 1 2 }
 
+   #------TO DELETE------------------
    #set Param(TEBClasses)         { 902 830 830 830 410 440 903 520 520 520 520 820 450 820 820 820 840 820 830 120 530 530 320 410 450 410 320 901 830 360 810 840 440 901 360 410 120 310 440 830 830 450 901 200 901 830 450 430 440 420 430 430 340 100 100 120 320 440 320 320 330 330 410 901 420 110 440 520 420 420 330 330 310 320 350 360 440 830 901 440 320 110 830 530 360 110 420 530 140 110 520 520 110 520 410 110 360 440 330 310 420 420 112 111 110 }  ;# TEB classes for BNDT
-   set Param(TEBClasses)         { 840 840 840 820 820 830 902 903 902 440 520 520 520 520 820 450 820 440 440 820 820 820 840 830 830 830 830 120 530 530 320 410 450 320 830 830 360 810 840 360 410 120 310 830 440 200 400 901 830 450 430 430 340 120 330 330 110 520 420 320 360 830 440 830 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 110 } ;#TEB Classes for CanVec
+   #------FIN DU : TO DELETE---------
 
-   #TO ADD :list of values related to the SMOKE output, for use in UrbanX::Priorities2SMOKE
-   set Param(SMOKEClasses)       { 90 90 90 90 90 90 90 90 90 90 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 70 70 70 70 70 70 70 70 70 60 60 60 60 60 60 60 60 60 50 50 50 50 50 40 40 30 30 30 30 30 30 30 20 20 20 20 20 20 20 20 20 20 20 10 10 10 10 10 10 10 10 10 10 10 10 10 10 } ;#SMOKE Classes for CanVec
+   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
+   set Param(TEBClasses)         { 840 840 840 820 820 830 902 903 902 830 440 440 520 520 520 520 820 450 440 440 820 440 440 820 820 820 840 830 830 830 830 120 530 410 530 320 410 450 320 830 830 360 810 840 360 410 120 310 440 830 830 440 440 200 400 901 901 830 450 430 430 440 430 340 100 100 120 320 440 330 330 901 110 440 520 420 320 360 440 830 440 440 440 320 830 110 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 112 111 110 } ;#TEB Classes for CanVec
+
+   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
+   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 1 2 3 0 4 0 0 0 0 5 6 7 8 9 10 11 12 13 14 15 16 17 0 0 18 0 19 20 21 0 22 0 23 0 0 0 0 24 25 26 0 27 28 29 30 31 32 33 0 0 0 0 34 35 0 36 37 38 39 40 41 42 43 44 45 46 0 47 0 0 48 0 49 50 51 52 53 54 55 56 0 0 57 0 0 0 58 59 0 0 0 0 0 60 61 62 63 64 0 65 66 67 } ;#SMOKE Classes for CanVec
 
    set Param(VegeFilterType) LOWPASS
    set Param(VegeFilterSize) 99
 
+   #------TO DELETE------------------
    #CE PATH DOIT ÊTRE MIS À JOUR AVEC LES DONNÉES DE 2006
-   set Param(PopFile) /data/cmoex7/afsralx/canyon-urbain/global_data/statcan/traitements/da2001ca_socio_eco.shp
-   set Param(PopFile2006) /data/aqli04/afsulub/StatCan2006/da2006_pop_labour.shp
+   #set Param(PopFile) /data/cmoex7/afsralx/canyon-urbain/global_data/statcan/traitements/da2001ca_socio_eco.shp
+   #------FIN DU : TO DELETE---------
 
+   #fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
+   set Param(PopFile2006) /data/aqli04/afsulub/StatCan2006/da2006-nts_lcc-nad83.shp
 
-   set Param(ProvincesGeom) /data/aqli04/afsulub/StatCan2006/da2006_provinces.shp
+   #fichier contenanant 1 polygone pour chaque province ou territoire du Canada
+   set Param(ProvincesGeom) /data/aqli04/afsulub/StatCan2006/Provinces_lcc-nad83.shp
 
-   #gobé à GenX
-   set Path(DBase) /cnfs/ops/production/cmoe/geo
-   set Path(NTS)       $Path(DBase)/NTS
-
+   #fichier contenant l'index NTS à l'échelle 1:50000
+   set Param(NTSFile) /cnfs/ops/production/cmoe/geo/NTS/decoupage50k_2.shp
 
 }
 
@@ -473,7 +506,10 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat1)    47.06
          set Param(Lon0)   -64.42
          set Param(Lat0)    45.94
+         set Param(LatCentrale) 46.3
+         set Param(LonCentrale) -63.4
          set Param(ProvinceCode) 11 ;# PR code for StatCan
+         set Param(ProvincePolygonFile) /data/aqli04/afsulub/StatCan2006/PEI_lcc-nad83.shp
       }
       default {
          set Param(Lon1)   -71.10
@@ -592,6 +628,7 @@ proc UrbanX::FindNTSSheetsBNDT { } {
 # Name     : <UrbanX::FindNTSSheetsCanVec>
 # Creation : August 2010 - Alexandre Leroux - CMC/CMOE
 #            August 2010 - Lucie Boucher - CMC/AQMAS
+#
 # Goal     : Find the NTS Sheets that intersect the province polygon
 #
 # Parameters :
@@ -603,19 +640,130 @@ proc UrbanX::FindNTSSheetsBNDT { } {
 #----------------------------------------------------------------------------
 proc UrbanX::FindNTSSheetsCanVec { } {
 
-   #finds NTS Sheets that intersect with province polygon
-   #les NTS sheets sont prises par l'index 
-      #set  layers [lindex [ogrfile open SHAPE read $GenX::Path(NTS)/50kindex.shp] 0]
-      #eval ogrlayer read NTSLAYER $layers
+   variable Param
 
-   #le polygone de province vient d'un sqlselect sur le fichier Param(ProvincesGeom)
-   #avec PR=X
 
-   #switch le polygone province en géométrie pour pouvoir faire
-   #ogrlayer pick layerid geomid INTERSECT ?
-   #ou bien intersect 2 layers?
+puts "debut du bloc qui bogue"
 
-   #puts the list in a variable Param(NTSSheets) ?
+   #ouverture du shapefile index NTS 50K
+   if { ![ogrlayer is NTSLAYER50K] } {
+      set nts_layer [lindex [ogrfile open SHAPE50K read $Param(NTSFile)] 0]
+      eval ogrlayer read NTSLAYER50K $nts_layer
+   }
+   #ogrlayer stats NTSLAYER50K -transform UTMREF
+#   puts "On passe A"
+
+   #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être gros +- 20000)
+   puts "On compte [ogrlayer define NTSLAYER50K -nb] polygones dans le fichier NTS50K"
+
+#   puts "On passe B"
+
+#-------- Ce bloc est une tentative de sélectionner le polygone correspondant
+#         à la province via un attribut PR.  Problème pour transformer cet
+#         unique polygone en géométrie à intersecter avec l'index NTS50K.
+#         Solution temporaire : un shapefile différent pour chaque province,
+#         du coup pas de sélection à faire.
+
+   #ouverture du shapefile des provinces
+#   set prov_layer [lindex [ogrfile open SHAPEPROVINCES read $Param(ProvincesGeom)] 0]
+#   eval ogrlayer read VPROVINCES $prov_layer
+#   ogrlayer stats VPROVINCES -transform UTMREF
+
+#   set provlayer_name [ogrlayer define VPROVINCES -name]
+   #prov_layer_name contient un élément de type decoupage50k_2
+
+   #test à supprimer : comptage du nombre de polygones dans le shapefile des provinces canadiennes (devrait être 13)
+#   puts "On compte [ogrlayer define VPROVINCES -nb] polygones dans le fichier $provlayer_name"
+
+   #sélection du polygone correspondant à la province visée
+#   ogrlayer sqlselect PROV2KEEP SHAPEPROVINCES "SELECT * FROM $provlayer_name WHERE (pr = $Param(ProvinceCode))"
+   #test à supprimer : comptage du nombre de polygones sélectionnés (devrait être 1)
+#   puts "On compte [ogrlayer define PROV2KEEP -nb] polygones de province sélectionnés"
+
+#   set features [ogrlayer pick VPROVINCES [list $Param(LatCentrale) $Param(LonCentrale)] True]
+#   ogrlayer define VPROVINCES -featureselect [list [list index # $features]]
+#   puts "On compte [ogrlayer define VPROVINCES -nb] polygones de province conservés"
+
+#   ogrlayer define VPROVINCES -featureselect [] ;# j'ai besoin d'une liste d'éléments
+#   puts "On compte [ogrlayer define VPROVINCES -nb] polygones de province conservés"
+
+   #ogrlayer define VPROVINCES -featureselect { "PR == $Param(ProvinceCode)" }
+   #ogrlayer define VPROVINCES -featureselect [ "SELECT * FROM VPROVINCES WHERE (PR=11)" ]
+
+   #test à supprimer : comptage du nombre de polygones conservés (devrait être 1)
+   #puts "On compte [ogrlayer define VPROVINCES -nb] polygones conservés pour dans le fichier des provinces"
+
+#   puts "On passe C"
+
+   #définition d'une géométrie pour le polygone de province
+   #set geom [ogrlayer define VPROVINCES -geometry 0]
+#   set geom [ogrlayer define PROV2KEEP -geometry 0]
+
+#   puts "On passe D"
+
+   #sélection des fichiers NTS à l'intérieur de la box de présélection
+#   set ntssheets_pre [ogrlayer pick NTSLAYER50K [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
+#   puts $ntssheets_pre
+
+#   puts "On passe E"
+
+#   ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
+
+#   puts "On passe F"
+
+#   set ntssheets [ogrlayer pick NTSLAYER50K $geom]
+#   puts $ntssheets
+
+#   puts "On passe G"
+
+
+#-------- Fin du bloc d'essai, début de la solution temporaire
+
+   #ouverture du shapefile des provinces
+   set prov_layer [lindex [ogrfile open SHAPEPROVINCES read $Param(ProvincePolygonFile)] 0]
+   eval ogrlayer read VPROVINCE $prov_layer
+   ogrlayer stats VPROVINCE -transform UTMREF
+
+#   puts "On passe C"
+
+   #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être 1)
+   puts "On compte [ogrlayer define VPROVINCE -nb] polygones dans le fichier de géométrie provinciale"
+
+   #définition d'une géométrie pour le polygone de province
+   set geom [ogrlayer define VPROVINCE -geometry 0]
+
+ #  puts "On passe D"
+
+   #sélection des fichiers NTS à l'intérieur de la box de présélection
+   set ntssheets_pre [ogrlayer pick NTSLAYER50K [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
+   puts $ntssheets_pre
+
+#   puts "On passe E"
+
+   #ramener l'index à la sélection des fichiers à l'intérieur de la box de présélection
+   ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
+
+#   puts "On passe F"
+
+   #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être 36)
+   puts "On compte [ogrlayer define NTSLAYER50K -nb] polygones dans le fichier"
+
+#   puts "On passe G"
+
+   set ntssheets [ogrlayer pick NTSLAYER50K $geom True INTERSECT]
+   puts $ntssheets
+
+#   puts "On passe H"
+
+   foreach i $ntssheets {
+      puts $i
+   }
+
+#   puts "On passe I"
+
+puts "fin du bloc qui bogue"
+
+
 }
 
 #----------------------------------------------------------------------------
@@ -749,9 +897,9 @@ proc UrbanX::SandwichBNDT { } {
                      GenX::Log WARNING "Post-processing for $file not found"
                   }
                }
-              ogrlayer free VFEATURE2KEEP$j
-              incr j
-           } else {
+               ogrlayer free VFEATURE2KEEP$j
+               incr j
+            } else {
                eval ogrlayer read LAYER$j $layer
                GenX::Log INFO "Rasterizing [ogrlayer define LAYER$j -nb] features from file ${sheet}_$file.shp as LAYER$j with priority value $value"
                gdalband gridinterp RSANDWICH LAYER$j $Param(Mode) $value
@@ -954,7 +1102,7 @@ proc UrbanX::SandwichCanVec { Coverage } {
                #type = 1 : dam
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 910"
-               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 910
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 911
                #type = 9 : slip
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 9)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (slip hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 765"
@@ -1026,13 +1174,13 @@ proc UrbanX::SandwichCanVec { Coverage } {
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (canal waterbodies) as VFEATURE2KEEP$j with priority value 610"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 610
                #definition = 5 : reservoir
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 1)"
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 5)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (canal waterbodies) as VFEATURE2KEEP$j with priority value 860"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 860
                #definition = 8 : liquid waste
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 1)"
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 8)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (liquid waste waterbodies) as VFEATURE2KEEP$j with priority value 860"
-               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 860
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 861
             }
             IC_2600009_0 {
                # entity : Mining area, point
@@ -1555,7 +1703,6 @@ GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 
    #----- Selecting only the required polygons - next is only useful to improve the speed of the layer substraction
    set features [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
-puts $features
    ogrlayer define VPOPDENS -featureselect [list [list index # $features]]
 
    #Subtraction of water zone from VPOPDENS
@@ -1576,7 +1723,7 @@ puts $features
    ogrlayer stats VPOPDENS -transform UTMREF
    foreach n $features {
       #set pop  [ogrlayer define VPOPDENS -feature $n TOTPOPUL]
-      set pop  [ogrlayer define VPOPDENS -feature $n DAPOP2006]
+      set pop  [ogrlayer define VPOPDENS -feature $n POP_NEW]
       set geom [ogrlayer define VPOPDENS -geometry $n]
       #ogrgeometry stats $geom -transform UTMREF
       set area  [expr ([ogrgeometry stats $geom -area]/1000000.0)]
@@ -2110,21 +2257,12 @@ proc UrbanX::SMOKE2DA { } {
    #sélection des polygones situés à l'intérieur de la zone traitée
    set dapolygons [ogrlayer pick VDAPOLYGONS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
    #dapolygons contient une liste d'ids de forme 99999, identifiant les polygones de VDAPOLYGONS se trouvant à l'intérieur de la zone définie
-   #--------todo------------
-   #REMPLACER LA LISTE DES PARAMS(LAT/LON) PAR LA GÉOMÉTRIE DE LA PROVINCE
-   #AJOUTER DANS DEFINEAREA UNE VARIABLE PARAM(GEOMFILE) QUI POINTE VERS LE SHAPEFILE DE GÉOMÉTRIE
-   #ON AURA DONC QQCH DU GENRE
-   #set dapolygons [ogrlayer pick VDAPOLYGONS $Param(GeomFile) True]
-   #attente pour obtention de la géométrie des provinces :
-   #  demande à Mourad : il n'a pas de fichier complété
-   #  exploration dans QuantumGIS mais besoin de pluggins?
-   #  license ArcGIS : devrait débloquer le 4 août, mais ensuite installation?
-   #  bref, sur la glace en attendant, tests avec IPE pour la zone entière
+
+
 
    #Les deux lignes suivantes sont à supprimer : test d'interrogation du fichier
    #set maxpop [ogrlayer stats VDAPOLYGONS -max DAPOP2006] ;# ligne à supprimer
    #puts "La population maximale d'un DA sur la zone est $maxpop" ;# ligne à supprimer
-
 
 
 
@@ -2235,24 +2373,26 @@ proc UrbanX::Process { Coverage } {
 
    if {$Coverage == "IPE"} {
       puts "Traitement d'une province : IndustrX"
+      UrbanX::AreaDefine    $Coverage
+      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
       #----- TODO 
       #Finds a list of nts 50k sheets that intersect with province polygon
-      #UrbanX::FindNTSSheetsCanvec ;#va avoir besoin du code de province, retourne Param(NTSSheets)
+      UrbanX::FindNTSSheetsCanVec ;#va avoir besoin du code de province, retourne Param(NTSSheets)
       #foreach n $Param(NTSSheets)
          #if les fichiers raster existent déjà, skip
          #else, détermine les lat lon de la feuille, puis go :
             #----- Defines the extents of the zone to be process
-            UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
+            #UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
             #----- Finds CanVec files, rasterize and flattens all CanVec layers
             #UrbanX::SandwichBNDT ;# to be deleted, replaced with UrbanX::SandwichCanVec
-            UrbanX::SandwichCanVec $Coverage
+            #UrbanX::SandwichCanVec $Coverage
             #----- Applies buffer to linear and ponctual elements such as buildings and roads
             #UrbanX::ScaleBuffersCanVec
             #----- Creates the fields and building vicinity output using spatial buffers
             #UrbanX::ChampsBuffers
             #----- Calculates the population density
             #UrbanX::PopDens2BuiltupBNDT ;# to be deleted, replaced with UrbanX::PopDens2BuiltupCanVec
-            UrbanX::PopDens2BuiltupCanVec
+            #UrbanX::PopDens2BuiltupCanVec
             #----- Applies LUT to all processing results to generate SMOKE classes.
             #UrbanX::Priorities2SMOKE
             #UrbanX::SMOKE2DA
@@ -2287,7 +2427,7 @@ proc UrbanX::Process { Coverage } {
 
       #----- TO DELETE FROM THE URBANX PROCESSING : JUSTE LÀ POUR FAIRE DES TESTS SUR DE PETITES ZONES
       #----- Applies LUT to all processing results to generate SMOKE classes.
-      #UrbanX::Priorities2SMOKE
+      UrbanX::Priorities2SMOKE
       #UrbanX::SMOKE2DA
       #----- FIN DU TO DELETE FROM THE URBANX PROCESSING
 
@@ -2295,8 +2435,6 @@ proc UrbanX::Process { Coverage } {
       #UrbanX::VegeMask
       #UrbanX::TEB2FSTD
    }
-
-return
 
 
    #------------- MAIN ORIGINAGL, À SUPPRIMER SI ON GARDE LE IF/ELSE SUR COVERAGE ------------
