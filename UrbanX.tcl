@@ -53,125 +53,122 @@ namespace eval UrbanX { } {
       #Traitement = indicates if the entity is regular or particular (excluded, post-pro...)
       #Note = gives information about possible post-processing
 
-      #Entity        Pri   TEB   SMO   Description                                           Traitement  Note
-      #BS_1250009_0  000   000   000   "Navigation aid, point"                               Excluded    "Ajouter un post-traitement sur aid? (-1=unknown, 1=navigation beacon, 2= navigation light)"
-      #BS_1370009_2  605   200   000   "Residential area, polygon"                           Regular     "Aucun post-traitement particulier"
-      #BS_2000009_0  120   420   000   "Parabolic antenna, point"                            Regular     "Ajouter un post-traitement sur type? (1=radar, 2=radio telescope)"
-      #BS_2010009_0   20   110   000   "Building, point"                                     PostPro     "function in (11, 16, 23, 27, 37) Pri=21 TEB=111 ; function in (9, 12, 17, 19, 26, 39) PRI= 22 TEB= 112; else general"
-      #BS_2010009_2  300   120   000   "Building, polygon"                                   PostPro     "function in (11, 16, 23, 27, 37) Pri=301 TEB=100 ; function in (9, 12, 17, 19, 26, 39) PRI=302 TEB=100; else general"
-      #BS_2060009_0   35   420   000   "Chimney, point"                                      Regular     "Ajouter un post-traitement sur type? (-1=unknown, 1=burner, 2=industrial, 3=flare stack)"
-      #BS_2080009_0   65   410   000   "Tank, point"                                         Regular     "Ajouter un post-traitement sur type?(-1=unknown,1=horizontal,2=vertical) Ajouter un post-traitement sur use?(-1=unknown,1=other,2=water)"
-      #BS_2080009_2  665   410   000   "Tank, polygon"                                       Regular     "Ajouter un post-traitement sur type?(-1=unknown,1=horizontal,2=vertical) Ajouter un post-traitement sur use?(-1=unknown,1=other,2=water)"
-      #BS_2120009_0  000   000   000   "Cross, point"                                        Excluded    "Aucun post-traitement particulier"
-      #BS_2230009_1  000   000   000   "Transmission line, line"                             Excluded    "Ajouter un post-traitement sur location? (1=other)  Ajouter un post-traitemen tusr function (1=telephone)"
-      #BS_2240009_1  570   450   000   "Wall / fence, line"                                  Regular     "Ajouter un post-traitement sur type? (1=fence, 2=wall)"
-      #BS_2310009_1  550   430   000   "Pipeline (Sewage / liquid waste), line"              PostPro     "if relation2ground !=1 (aboveground), excluded.  else, general value"
-      #BS_2350009_0  000   000   000   "Well, point"                                         Excluded    "Ajouter un post-traitement sur type? (-1=unknown, 1=water, 2=petroleum)"
-      #BS_2380009_0  000   000   000   "Underground reservoir, point"                        Excluded    "Aucun post-traitement particulier"
-      #BS_2380009_2  000   000   000   "Underground reservoir, polygon"                      Excluded    "Aucun post-traitement particulier"
-      #BS_2440009_0  100   140   000   "Silo, point"                                         Regular     "Aucun post-traitement particulier"
-      #BS_2530009_0   30   420   000   "Tower, point"                                        Regular     "Ajouter un post-traitement sur function? (1=communication, 2=control, 3=clearance, 4=fire, 5=lookout)"
-      #EN_1120009_1  000   000   000   "Power transmission line, line"                       Excluded    "Ajouter un post-traitement sur type? (1=overhead, 2=submarine)"
-      #EN_1180009_1  550   430   000   "Pipeline, line"                                      PostPro     "if relation2ground !=1 (aboveground), excluded; else, general value.  Ajouter un post-traitement sur product? (-1=unknown, 1=natural gaz, 2=oil, 3=multiuse)"
-      #EN_1340009_0  000   000   000   "Valve, point"                                        Excluded    "Aucun post-traitement particulier"
-      #EN_1360049_0  130   110   000   "Gas and oil facilities, point"                       Regular     "Aucun post-traitement particulier"
-      #EN_1360049_2  780   320   000   "Gas and oil facilities, polygon"                     Regular     "Aucun post-traitement particulier"
-      #EN_1360059_0  050   360   000   "Transformer station, point"                          Regular     "Aucun post-traitement particulier"
-      #EN_1360059_2  710   360   000   "Transformer station, polygon"                        Regular     "Aucun post-traitement particulier"
-      #EN_2170009_0  230   420   000   "Wind-operated device, point"                         Regular     "Aucun post-traitement particulier"
-      #FO_1030009_1  000   000   000   "Contour, line"                                       Excluded    "Ajouter un post-traitement sur generation? (-1=unknown, 1=collected, 2=derived) Ajouter un post-traitement sur type?" (1=depression, 2=elevation)
-      #FO_1080019_2  000   000   000   "Landform, polygon"                                   Excluded    "Aucun post-traitement particulier"
-      #FO_1080029_1  640   830   000   "Esker, line"                                         Regular     "Aucun post-traitement particulier"
-      #FO_1080039_2  990   902   000   "Glacial debris undifferentiated, polygon"            Regular     "Aucun post-traitement particulier"
-      #FO_1080049_2  999   830   000   "Moraine, polygon"                                    Regular     "Aucun post-traitement particulier"
-      #FO_1080059_2  990   903   000   "Sand, polygon"                                       Regular     "Aucun post-traitement particulier"
-      #FO_1080069_2  999   820   000   "Tundra, polygon"                                     Regular     "Aucun post-traitement particulier"
-      #FO_1080079_0  000   000   000   "Pingo, point"                                        Excluded    "Aucun post-traitement particulier"
-      #FO_1200009_0  000   000   000   "Elevation point, point"                              Excluded    "Ajouter un post-traitement sur type? (1=precise altitude, 2=cartographic spot height, 3=spot height)"
-      #FO_2570009_1  000   000   000   "Contour imperial, line"                              Excluded    "Ajouter un post-traitement sur generation? (-1=unknown, 1=collected, 2=derived) Ajouter un post-traitement sur type?"
-      #FO_2610009_0  000   000   000   "Elevation point imperial, point"                     Excluded    "Ajouter un post-traitement sur type? (1=precise altitude, 2=spot height)"
-      #HD_1140009_2  991   902   000   "Permanent snow and ice, polygon"                     Regular     "Aucun post-traitement particulier"
-      #HD_1450009_0  180   440   000   "Manmade hydrographic entity [Geobase], point"        PostPro     "if type!=8 (exclus fish_la), valeur générale; if type=7, PRI=170, TEB=320 (boat_ra); if type=1, PRI=242, TEB=440 (dam); if type=6, PRI=190, TEB=440 (lock gate)"
-      #HD_1450009_1  610   440   000   "Manmade hydrographic entity [Geobase], line"         PostPro     "if type=1 PRI=400 TEB=440 (dam); if type=3 PRI=290 TEB=320 (wharf); if type=4 PRI=645 TEB=440 (breakwa); if type=5 PRI=630 TEB=830 (dyke & seawall); if type=6 PRI=280 TEB=440 (lock gate); else general"
-      #HD_1450009_2  910   440   000   "Manmade hydrographic entity [Geobase], polygon"      PostPro     "if type=1, PRi=911 TEB=440 (dam); if type=9 PRI=765 TEB=410 (slip); else general"
-      #HD_1460009_0  185   830   000   "Hydrographic obstacle entity [Geobase], point"       PostPro     "if type=7, valeur generale"
-      #HD_1460009_1  580   830   000   "Hydrographic obstacle entity [Geobase], line"        PostPro     "if type=7, valeur generale"
-      #HD_1460009_2  740   830   000   "Hydrographic obstacle entity [Geobase], polygon"     PostPro     "if type in (3, 103), valeur générale"
-      #HD_1470009_1  590   901   000   "Single line watercourse [Geobase], line"             PostPro     "if def=1 PRI=250 TEB=901; if def=2 PRI=320 TEB=430 ; if def=6 PRI=590 TEB=901; else general"
-      #HD_1480009_2  740   830   000   "Waterbody [Geobase], polygon"                        PostPro     "if permanency=2 PRI = 970, TEB=830; if waterdef=1 PRI=610 TEB=440; if waterdef=5 PRI=860 TEB=440; if waterdef=8 PRI=861 TEB=440; else general value"
-      #HD_1490009_2  000   000   000   "Island [Geobase], polygon"                           Excluded    "Aucun post-traitement particulier"
-      #IC_1350019_2  821   830   000   "Pit, polygon"                                        Regular     "Aucun post-traitement particulier"
-      #IC_1350029_2  822   830   000   "Quarry, polygon"                                     Regular     "Aucun post-traitement particulier"
-      #IC_1350039_0  163   830   000   "Extraction area, point"                              Regular     "Aucun post-traitement particulier"
-      #IC_1350039_2  823   830   000   "Extraction area, polygon"                            Regular     "Aucun post-traitement particulier"
-      #IC_1350049_0  160   830   000   "Mine, point"                                         Regular     "Aucun post-traitement particulier"
-      #IC_1350049_2  820   830   000   "Mine, polygon"                                       Regular     "Aucun post-traitement particulier"
-      #IC_1350059_2  840   840   000   "Peat cutting, polygon"                               Regular     "Aucun post-traitement particulier"
-      #IC_1360019_2  860   440   000   "Domestic waste, polygon"                             Regular     "Aucun post-traitement particulier"
-      #IC_1360029_0   45   440   000   "Industrial solid waste, point"                       Regular     "Aucun post-traitement particulier"
-      #IC_1360029_2  860   440   000   "Industrial solid waste, polygon"                     Regular     "Aucun post-traitement particulier"
-      #IC_1360039_0   60   400   000   "Industrial and commercial area, point"               Regular     "Aucun post-traitement particulier"
-      #IC_1360039_2  600   400   000   "Industrial and commercial area, polygon"             Regular     "Aucun post-traitement particulier"
-      #IC_2110009_2  770   450   000   "Lumber yard, polygon"                                Regular     "Aucun post-traitement particulier"
-      #IC_2360009_2  775   410   000   "Auto wrecker, polygon"                               Regular     "Aucun post-traitement particulier"
-      #IC_2600009_0  161   830   000   "Mining area, point"                                  PostPro     "if type = 1 (underground), PRI = 162, TEB=110; else general"
-      #LI_1210009_2  000   000   000   "NTS50K boundary polygon, polygon"                    Excluded    "Changement de géométrie, de linéaire (BNDT) à surfacique (CanVec). Ajout d'un post-traitement sur tiling? (1=extended, 2=multiple, 3=simple, 4=theoretical) Ajout d'un post-traitement sur flooded? (1=partly flooded, 2=totally flooded)"
-      #LX_1000019_0  140   360   000   "Lookout, point"                                      Regular     "Aucun post-traitement particulier"
-      #LX_1000019_2  670   360   000   "Lookout, polygon"                                    Regular     "Aucun post-traitement particulier"
-      #LX_1000029_0   60   110   000   "Ski centre, point"                                   Regular     "Aucun post-traitement particulier"
-      #LX_1000039_0  070   720   000   "Cemetery, point"                                     Regular     "Aucun post-traitement particulier"
-      #LX_1000039_2  890   520   000   "Cemetery, polygon"                                   Regular     "Aucun post-traitement particulier"
-      #LX_1000049_2  810   120   000   "Fort, polygon"                                       Regular     "Aucun post-traitement particulier"
-      #LX_1000059_0  000   000   000   "Designated area, point"                              Excluded    "Aucun post-traitement particulier"
-      #LX_1000059_1  000   000   000   "Designated area, line"                               Excluded    "Aucun post-traitement particulier"
-      #LX_1000059_2  000   000   000   "Designated area, polygon"                            Excluded    "Aucun post-traitement particulier"
-      #LX_1000069_0  244   110   000   "Marina, point"                                       Regular     "Aucun post-traitement particulier"
-      #LX_1000079_1  270   330   000   "Sport track / Race track, line"                      Regular     "Aucun post-traitement particulier"
-      #LX_1000079_2  270   330   000   "Sport track / Race track, polygon"                   Regular     "Aucun post-traitement particulier"
-      #LX_1000089_2  850   820   000   "Golf course, polygon"                                Regular     "Aucun post-traitement particulier"
-      #LX_2030009_0   90   520   000   "Camp, point"                                         Regular     "Aucun post-traitement particulier"
-      #LX_2070009_0   80   110   000   "Drive-in theatre, point"                             Regular     "Aucun post-traitement particulier"
-      #LX_2070009_2  760   320   000   "Drive-in theatre, polygon"                           Regular     "Aucun post-traitement particulier"
-      #LX_2200009_2  885   520   000   "Botanical garden, polygon"                           Regular     "Aucun post-traitement particulier"
-      #LX_2210009_0  000   000   000   "Shrine, point"                                       Excluded    "Aucun post-traitement particulier"
-      #LX_2220009_0  150   530   000   "Historical site / Point of interest, point"          Regular     "Aucun post-traitement particulier"
-      #LX_2260009_2  865   450   000   "Amusement park, polygon"                             Regular     "Aucun post-traitement particulier"
-      #LX_2270009_2  870   820   000   "Park / sports field, polygon"                        Regular     "Aucun post-traitement particulier"
-      #LX_2280009_1  200   360   000   "Footbridge, line"                                    Regular     "Aucun post-traitement particulier"
-      #LX_2400009_0  110   530   000   "Ruins, point"                                        Regular     "Aucun post-traitement particulier"
-      #LX_2400009_2  800   530   000   "Ruins, polygon"                                      Regular     "Aucun post-traitement particulier"
-      #LX_2420009_1  240   520   000   "Trail, line"                                         Regular     "Ajouter un post-traitement sur function? (-1=unknown, 1=other, 2-portage)"
-      #LX_2460009_2  660   120   000   "Stadium, polygon"                                    Regular     "Aucun post-traitement particulier"
-      #LX_2480009_0   95   110   000   "Campground, point"                                   Regular     "Aucun post-traitement particulier"
-      #LX_2480009_2  860   820   000   "Campground, polygon"                                 Regular     "Aucun post-traitement particulier"
-      #LX_2490009_0   85   520   000   "Picnic site, point"                                  Regular     "Aucun post-traitement particulier"
-      #LX_2490009_2  875   520   000   "Picnic site, polygon"                                Regular     "Aucun post-traitement particulier"
-      #LX_2500009_0  852   820   000   "Golf drining range, point"                           Regular     "Aucun post-traitement particulier"
-      #LX_2500009_2  852   820   000   "Golf drining range, polygon"                         Regular     "Aucun post-traitement particulier"
-      #LX_2510009_2  790   530   000   "Exhibition ground, polygon"                          Regular     "Ajouter un post-traitement sur type? (1=other, 2=fairground)"
-      #LX_2560009_2  880   520   000   "Zoo, polygon"                                        Regular     "Aucun post-traitement particulier"
-      #SS_1320019_2  999   840   000   "Tundra pond, polygon"                                Regular     "Aucun post-traitement particulier"
-      #SS_1320029_2  999   840   000   "Palsa bog, polygon"                                  Regular     "Aucun post-traitement particulier"
-      #SS_1320039_2  000   000   000   "Saturated soil, polygon"                             Excluded    "Aucun post-traitement particulier"
-      #SS_1320049_2  690   840   000   "Wetland, polygon"                                    Regular     "Aucun post-traitement particulier"
-      #SS_1320059_2  999   840   000   "Sting bog, polygon"                                  Regular     "Aucun post-traitement particulier"
-      #TO_1580009_0  000   000   000   "Named feature, point"                                Excluded    "Aucun post-traitement particulier"
-      #TO_1580009_1  000   000   000   "Named feature, line"                                 Excluded    "Aucun post-traitement particulier"
-      #TO_1580009_2  000   000   000   "Named feature, polygon"                              Excluded    "Aucun post-traitement particulier"
-      #TR_1020009_1  310   340   000   "Railway, line"                                       PostPro     "if support != 4, general (exclusion des tunnels)"
-      #TR_1190009_0   40   310   000   "Runway, point"                                       PostPro     "if type = 4 (sea) PRI = 181 TEB = 440; else general"
-      #TR_1190009_2  650   310   000   "Runway, polygon"                                     PostPro     "if type = 4 (sea) PRI = 181 TEB = 440; else general"
-      #TR_1750009_1  220   000   000   "Ferry connection segment [Geobase], line"            Regular     "Ajout d'un post-traitement sur road class? (1=freeway, 2=exrpressway/highway, 3=arterial, 4=collector, 5=local/street, 6=local/strata, 7=local/unknown, 8=alleyway/lane, 9=ramp, 10=resource/recreation, 11=rapid transit, 12=service lane, 13=winter)"
-      #TR_1760009_1  210   320   000   "Road segment [Geobase], line"                        PostPro     "if structure type not in (5,6), general; if structure type in (1,2,3,4) PRI=205 TEB=350 (bridge); if structure type = 7, PRI=242, TEB=440 (dam); if pavement status = 2, PRI=212, TEB=320 (unpaved); if class in (1,2), PRI=211 TEB=320 (freeway, highway)
-      #TR_1770009_0  000   000   000   "Junction [Geobase], point"                           Excluded    "Ajout d'un post-traitement sur type? (-1=intersection, 2=dead end, 3=ferry, 4=NavProvTer)"
-      #TR_1780009_0  000   000   000   "Blocked passage [Geobase], point"                    Excluded    "Ajout d'un post-traitement sur type? (-1=unknown, 1=removable, 2=permanently fixed)"
-      #TR_1790009_0  000   000   000   "Toll point [Geobase], point"                         Excluded    "Ajouter un post-traitement sur type? (-1=unknown, 1-physical toll booth, 2=virtual toll booth, 3=hybrid)"
-      #TR_2320009_0  000   000   000   "Turntable, point"                                    Excluded    "Aucun post-traitement particulier"
-      #VE_1240009_2  700   810   000   "Wooded area, polygon"                                Regular     "Ajouter un post-traitement sur type? (1=Extracted, 2=Interpreted, 3=CFS-EOSD, 4=Land Cover Circa 2000 Vector)"
-      #VE_2290009_1  000   000   000   "Cut line, line"                                      Excluded    "Ajouter un post-traitement sur type? (-1=unknown, 1=firebreak, 2=other)"
-
-#TO DELETE, Layers from BNDT
-#   set Param(Layers)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
+      #Entity							Pri		TEB		SMO	Description																							Traitement		Note
+      #BS_1250009_0		000	000	000	"Navigation aid, point"																	Excluded			"Ajouter un post-traitement sur aid? (-1=unknown, 1=navigation beacon, 2= navigation light)"
+      #BS_1370009_2		605	200	000	"Residential area, polygon"														Regular			"Aucun post-traitement particulier"
+      #BS_2000009_0		120	420	000	"Parabolic antenna, point"															Regular			"Ajouter un post-traitement sur type? (1=radar, 2=radio telescope)"
+      #BS_2010009_0		020	110	000	"Building, point"																				PostPro				"function in (11, 16, 23, 27, 37) Pri=21 TEB=111 ; function in (9, 12, 17, 19, 26, 39) PRI= 22 TEB= 112; else general"
+      #BS_2010009_2		300	120	000	"Building, polygon"																			PostPro				"function in (11, 16, 23, 27, 37) Pri=301 TEB=100 ; function in (9, 12, 17, 19, 26, 39) PRI=302 TEB=100; else general"
+      #BS_2060009_0		035	420	000	"Chimney, point"																				PostPro				"if type=1 (burner) PRI=34 TEB=420; if type=2 (industrial) PRI=33 TEB=420; if type =3 (flare stack) PRI=32 TEB=420; else general value"
+      #BS_2080009_0		065	410	000	"Tank, point"																						Regular			"Ajouter un post-traitement sur type?(-1=unknown,1=horizontal,2=vertical) Ajouter un post-traitement sur use?(-1=unknown,1=other,2=water)"
+      #BS_2080009_2		665	410	000	"Tank, polygon"																				Regular			"Ajouter un post-traitement sur type?(-1=unknown,1=horizontal,2=vertical) Ajouter un post-traitement sur use?(-1=unknown,1=other,2=water)"
+      #BS_2120009_0		000	000	000	"Cross, point"																					Excluded			"Aucun post-traitement particulier"
+      #BS_2230009_1		000	000	000	"Transmission line, line"																Excluded			"Ajouter un post-traitement sur location? (1=other)  Ajouter un post-traitemen tusr function (1=telephone)"
+      #BS_2240009_1		570	450	000	"Wall / fence, line"																			Regular			"Ajouter un post-traitement sur type? (1=fence, 2=wall)"
+      #BS_2310009_1		550	430	000	"Pipeline (Sewage / liquid waste), line"								PostPro				"if relation2ground !=1 (aboveground), excluded.  else, general value"
+      #BS_2350009_0		000	000	000	"Well, point"																						Excluded			"Ajouter un post-traitement sur type? (-1=unknown, 1=water, 2=petroleum)"
+      #BS_2380009_0		000	000	000	"Underground reservoir, point"												Excluded			"Aucun post-traitement particulier"
+      #BS_2380009_2		000	000	000	"Underground reservoir, polygon"											Excluded			"Aucun post-traitement particulier"
+      #BS_2440009_0		100	140	000	"Silo, point"																						Regular			"Aucun post-traitement particulier"
+      #BS_2530009_0		030	420	000	"Tower, point"																					Regular			"Ajouter un post-traitement sur function? (1=communication, 2=control, 3=clearance, 4=fire, 5=lookout)"
+      #EN_1120009_1		000	000	000	"Power transmission line, line"													Excluded			"Ajouter un post-traitement sur type? (1=overhead, 2=submarine)"
+      #EN_1180009_1		550	430	000	"Pipeline, line"																					PostPro				"if relation2ground !=1 (aboveground), excluded; else, general value.  Ajouter un post-traitement sur product? (-1=unknown, 1=natural gaz, 2=oil, 3=multiuse)"
+      #EN_1340009_0		000	000	000	"Valve, point"																					Excluded			"Aucun post-traitement particulier"
+      #EN_1360049_0		130	110	000	"Gas and oil facilities, point"														Regular			"Aucun post-traitement particulier"
+      #EN_1360049_2		780	320	000	"Gas and oil facilities, polygon"												Regular			"Aucun post-traitement particulier"
+      #EN_1360059_0		050	360	000	"Transformer station, point"														Regular			"Aucun post-traitement particulier"
+      #EN_1360059_2		710	360	000	"Transformer station, polygon"													Regular			"Aucun post-traitement particulier"
+      #EN_2170009_0		230	420	000	"Wind-operated device, point"													Regular			"Aucun post-traitement particulier"
+      #FO_1030009_1		000	000	000	"Contour, line"																					Excluded			"Ajouter un post-traitement sur generation? (-1=unknown, 1=collected, 2=derived) Ajouter un post-traitement sur type?" (1=depression, 2=elevation)
+      #FO_1080019_2		000	000	000	"Landform, polygon"																		Excluded			"Aucun post-traitement particulier"
+      #FO_1080029_1		640	830	000	"Esker, line"																						Regular			"Aucun post-traitement particulier"
+      #FO_1080039_2		990	902	000	"Glacial debris undifferentiated, polygon"							Regular			"Aucun post-traitement particulier"
+      #FO_1080049_2		999	830	000	"Moraine, polygon"																		Regular			"Aucun post-traitement particulier"
+      #FO_1080059_2		990	903	000	"Sand, polygon"																				Regular			"Aucun post-traitement particulier"
+      #FO_1080069_2		999	820	000	"Tundra, polygon"																			Regular			"Aucun post-traitement particulier"
+      #FO_1080079_0		000	000	000	"Pingo, point"																					Excluded			"Aucun post-traitement particulier"
+      #FO_1200009_0		000	000	000	"Elevation point, point"																Excluded			"Ajouter un post-traitement sur type? (1=precise altitude, 2=cartographic spot height, 3=spot height)"
+      #FO_2570009_1		000	000	000	"Contour imperial, line"																Excluded			"Ajouter un post-traitement sur generation? (-1=unknown, 1=collected, 2=derived) Ajouter un post-traitement sur type?"
+      #FO_2610009_0		000	000	000	"Elevation point imperial, point"												Excluded			"Ajouter un post-traitement sur type? (1=precise altitude, 2=spot height)"
+      #HD_1140009_2		991	902	000	"Permanent snow and ice, polygon"										Regular 			"Aucun post-traitement particulier"
+      #HD_1450009_0		180	440	000	"Manmade hydrographic entity [Geobase], point"			PostPro				"if type!=8 (exclus fish_la), valeur générale; if type=7, PRI=170, TEB=320 (boat_ra); if type=1, PRI=242, TEB=440 (dam); if type=6, PRI=190, TEB=440 (lock gate)"
+      #HD_1450009_1		610	440	000	"Manmade hydrographic entity [Geobase], line"				PostPro				"if type=1 PRI=400 TEB=440 (dam); if type=3 PRI=290 TEB=320 (wharf); if type=4 PRI=645 TEB=440 (breakwa); if type=5 PRI=630 TEB=830 (dyke & seawall); if type=6 PRI=280 TEB=440 (lock gate); else general"
+      #HD_1450009_2		910	440	000	"Manmade hydrographic entity [Geobase], polygon"	PostPro				"if type=1, PRi=911 TEB=440 (dam); if type=9 PRI=765 TEB=410 (slip); else general"
+      #HD_1460009_0		185	830	000	"Hydrographic obstacle entity [Geobase], point"			PostPro				"if type=7, valeur generale"
+      #HD_1460009_1		580	830	000	"Hydrographic obstacle entity [Geobase], line"				PostPro     "if type=7, valeur generale"
+      #HD_1460009_2		740	830	000	"Hydrographic obstacle entity [Geobase], polygon"		PostPro     "if type in (3, 103), valeur générale"
+      #HD_1470009_1		590	901	000	"Single line watercourse [Geobase], line"							PostPro     "if def=1 PRI=250 TEB=901; if def=2 PRI=320 TEB=430 ; if def=6 PRI=590 TEB=901; else general"
+      #HD_1480009_2		740   830	000	"Waterbody [Geobase], polygon"											PostPro     "if permanency=2 PRI = 970, TEB=830; if waterdef=1 PRI=610 TEB=440; if waterdef=5 PRI=860 TEB=440; if waterdef=8 PRI=861 TEB=440; else general value"
+      #HD_1490009_2		000	000	000	"Island [Geobase], polygon"														Excluded    "Aucun post-traitement particulier"
+      #IC_1350019_2		821	830	000	"Pit, polygon"																					Regular     "Aucun post-traitement particulier"
+      #IC_1350029_2		822	830	000	"Quarry, polygon"																			Regular     "Aucun post-traitement particulier"
+      #IC_1350039_0		163	830	000	"Extraction area, point"																Regular     "Aucun post-traitement particulier"
+      #IC_1350039_2		823	830	000	"Extraction area, polygon"															Regular     "Aucun post-traitement particulier"
+      #IC_1350049_0		160	830	000	"Mine, point"																						Regular     "Aucun post-traitement particulier"
+      #IC_1350049_2		820	830	000	"Mine, polygon"																				Regular     "Aucun post-traitement particulier"
+      #IC_1350059_2		840	840	000	"Peat cutting, polygon"																Regular     "Aucun post-traitement particulier"
+      #IC_1360019_2		860	440	000	"Domestic waste, polygon"														Regular     "Aucun post-traitement particulier"
+      #IC_1360029_0 		045	440	000	"Industrial solid waste, point"													Regular     "Aucun post-traitement particulier"
+      #IC_1360029_2		860	440	000	"Industrial solid waste, polygon"												Regular     "Aucun post-traitement particulier"
+      #IC_1360039_0		060	400	000	"Industrial and commercial area, point"								Regular     "Aucun post-traitement particulier"
+      #IC_1360039_2		600	400	000	"Industrial and commercial area, polygon"						Regular     "Aucun post-traitement particulier"
+      #IC_2110009_2		770	450	000	"Lumber yard, polygon"																Regular     "Aucun post-traitement particulier"
+      #IC_2360009_2		775	410	000	"Auto wrecker, polygon"																Regular     "Aucun post-traitement particulier"
+      #IC_2600009_0		161	830	000	"Mining area, point"																		PostPro     "if type = 1 (underground), PRI = 162, TEB=110; else general"
+      #LI_1210009_2		000	000	000	"NTS50K boundary polygon, polygon"									Excluded    "Changement de géométrie, de linéaire (BNDT) à surfacique (CanVec). Ajout d'un post-traitement sur tiling? (1=extended, 2=multiple, 3=simple, 4=theoretical) Ajout d'un post-traitement sur flooded? (1=partly flooded, 2=totally flooded)"
+      #LX_1000019_0		140	360	000	"Lookout, point"																				Regular     "Aucun post-traitement particulier"
+      #LX_1000019_2		670	360	000	"Lookout, polygon"																		Regular     "Aucun post-traitement particulier"
+      #LX_1000029_0		060	110	000	"Ski centre, point"																			Regular     "Aucun post-traitement particulier"
+      #LX_1000039_0		070	720	000	"Cemetery, point"																			Regular     "Aucun post-traitement particulier"
+      #LX_1000039_2		890	520	000	"Cemetery, polygon"																		Regular     "Aucun post-traitement particulier"
+      #LX_1000049_2		810	120	000	"Fort, polygon"																					Regular     "Aucun post-traitement particulier"
+      #LX_1000059_0		000	000	000	"Designated area, point"															Excluded    "Aucun post-traitement particulier"
+      #LX_1000059_1		000	000	000	"Designated area, line"																Excluded    "Aucun post-traitement particulier"
+      #LX_1000059_2		000	000	000	"Designated area, polygon"														Excluded    "Aucun post-traitement particulier"
+      #LX_1000069_0		244	110	000	"Marina, point"																					Regular     "Aucun post-traitement particulier"
+      #LX_1000079_1		270	330	000	"Sport track / Race track, line"													Regular     "Aucun post-traitement particulier"
+      #LX_1000079_2		270	330	000	"Sport track / Race track, polygon"										Regular     "Aucun post-traitement particulier"
+      #LX_1000089_2		850	820	000	"Golf course, polygon"																	Regular     "Aucun post-traitement particulier"
+      #LX_2030009_0		090	520	000	"Camp, point"                                         Regular     "Aucun post-traitement particulier"
+      #LX_2070009_0		080	110	000	"Drive-in theatre, point"                             Regular     "Aucun post-traitement particulier"
+      #LX_2070009_2		760	320	000	"Drive-in theatre, polygon"                           Regular     "Aucun post-traitement particulier"
+      #LX_2200009_2		885	520	000	"Botanical garden, polygon"                           Regular     "Aucun post-traitement particulier"
+      #LX_2210009_0		000	000	000	"Shrine, point"                                       Excluded    "Aucun post-traitement particulier"
+      #LX_2220009_0		150	530	000	"Historical site / Point of interest, point"          Regular     "Aucun post-traitement particulier"
+      #LX_2260009_2		865	450	000	"Amusement park, polygon"                             Regular     "Aucun post-traitement particulier"
+      #LX_2270009_2		870	820	000	"Park / sports field, polygon"                        Regular     "Aucun post-traitement particulier"
+      #LX_2280009_1		200	360	000	"Footbridge, line"                                    Regular     "Aucun post-traitement particulier"
+      #LX_2400009_0		110	530	000	"Ruins, point"                                        Regular     "Aucun post-traitement particulier"
+      #LX_2400009_2		800	530	000	"Ruins, polygon"                                      Regular     "Aucun post-traitement particulier"
+      #LX_2420009_1		240	520	000	"Trail, line"                                         Regular     "Ajouter un post-traitement sur function? (-1=unknown, 1=other, 2-portage)"
+      #LX_2460009_2		660	120	000	"Stadium, polygon"                                    Regular     "Aucun post-traitement particulier"
+      #LX_2480009_0		095	110	000	"Campground, point"                                   Regular     "Aucun post-traitement particulier"
+      #LX_2480009_2		860	820	000	"Campground, polygon"                                 Regular     "Aucun post-traitement particulier"
+      #LX_2490009_0		085	520	000	"Picnic site, point"                                  Regular     "Aucun post-traitement particulier"
+      #LX_2490009_2		875	520	000	"Picnic site, polygon"                                Regular     "Aucun post-traitement particulier"
+      #LX_2500009_0		852	820	000	"Golf drining range, point"                           Regular     "Aucun post-traitement particulier"
+      #LX_2500009_2		852	820	000	"Golf drining range, polygon"                         Regular     "Aucun post-traitement particulier"
+      #LX_2510009_2		790	530	000	"Exhibition ground, polygon"                          Regular     "Ajouter un post-traitement sur type? (1=other, 2=fairground)"
+      #LX_2560009_2		880	520	000	"Zoo, polygon"                                        Regular     "Aucun post-traitement particulier"
+      #SS_1320019_2		999	840	000	"Tundra pond, polygon"                                Regular     "Aucun post-traitement particulier"
+      #SS_1320029_2		999	840	000	"Palsa bog, polygon"                                  Regular     "Aucun post-traitement particulier"
+      #SS_1320039_2		000	000	000	"Saturated soil, polygon"                             Excluded    "Aucun post-traitement particulier"
+      #SS_1320049_2		690	840	000	"Wetland, polygon"                                    Regular     "Aucun post-traitement particulier"
+      #SS_1320059_2		999	840	000	"Sting bog, polygon"                                  Regular     "Aucun post-traitement particulier"
+      #TO_1580009_0		000	000	000	"Named feature, point"                                Excluded    "Aucun post-traitement particulier"
+      #TO_1580009_1		000	000	000	"Named feature, line"                                 Excluded    "Aucun post-traitement particulier"
+      #TO_1580009_2		000	000	000	"Named feature, polygon"                              Excluded    "Aucun post-traitement particulier"
+      #TR_1020009_1		310	340	000	"Railway, line"                                       PostPro     "if support != 4, general (exclusion des tunnels)"
+      #TR_1190009_0		040	310	000	"Runway, point"                                       PostPro     "if type = 4 (sea) PRI = 181 TEB = 440; else general"
+      #TR_1190009_2		650	310	000	"Runway, polygon"                                     PostPro     "if type = 4 (sea) PRI = 181 TEB = 440; else general"
+      #TR_1750009_1		220	000	000	"Ferry connection segment [Geobase], line"            Regular     "Ajout d'un post-traitement sur road class? (1=freeway, 2=exrpressway/highway, 3=arterial, 4=collector, 5=local/street, 6=local/strata, 7=local/unknown, 8=alleyway/lane, 9=ramp, 10=resource/recreation, 11=rapid transit, 12=service lane, 13=winter)"
+      #TR_1760009_1		210	320	000	"Road segment [Geobase], line"                        PostPro     "if structure type not in (5,6), general; if structure type in (1,2,3,4) PRI=205 TEB=350 (bridge); if structure type = 7, PRI=242, TEB=440 (dam); if pavement status = 2, PRI=212, TEB=320 (unpaved); if class in (1,2), PRI=211 TEB=320 (freeway, highway)
+      #TR_1770009_0		000	000	000	"Junction [Geobase], point"                           Excluded    "Ajout d'un post-traitement sur type? (-1=intersection, 2=dead end, 3=ferry, 4=NavProvTer)"
+      #TR_1780009_0		000	000	000	"Blocked passage [Geobase], point"                    Excluded    "Ajout d'un post-traitement sur type? (-1=unknown, 1=removable, 2=permanently fixed)"
+      #TR_1790009_0		000	000	000	"Toll point [Geobase], point"                         Excluded    "Ajouter un post-traitement sur type? (-1=unknown, 1-physical toll booth, 2=virtual toll booth, 3=hybrid)"
+      #TR_2320009_0		000	000	000	"Turntable, point"                                    Excluded    "Aucun post-traitement particulier"
+      #VE_1240009_2		700	810	000	"Wooded area, polygon"                                Regular     "Ajouter un post-traitement sur type? (1=Extracted, 2=Interpreted, 3=CFS-EOSD, 4=Land Cover Circa 2000 Vector)"
+      #VE_2290009_1		000	000	000	"Cut line, line"                                      Excluded    "Ajouter un post-traitement sur type? (-1=unknown, 1=firebreak, 2=other)"
 
    #Ces entités sont classés par ordre décroissant de priorité
    #Note : les entités dont le nom commence par pp_ ne sont pas des entités originant de CanVec, mais plutôt des résultats de la sandwich.
@@ -285,16 +282,19 @@ namespace eval UrbanX { } {
       IC_1360029_0
       TR_1190009_0
       BS_2060009_0
+      pp_BS_2060009_0
+      pp_BS_2060009_0
+      pp_BS_2060009_0
       BS_2530009_0
       pp_BS_2010009_0
       pp_BS_2010009_0
       BS_2010009_0
       }
 
-   #set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the NTDB layers to be processed
-   set Param(Priorities)           { 999 999 999 999 999 999 991 990 990 970 911 910 890 885 880 875 870 865 861 860 859 858 857 852 852 850 840 823 822 821 820 810 800 795 790 780 775 770 760 740 740 710 700 690 670 665 660 650 645 640 630 610 610 605 600 590 590 580 570 551 550 400 320 310 302 301 300 290 280 271 270 250 244 242 240 230 220 210 200 190 185 181 181 180 170 163 162 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 30 22 21 20 } ;# LUT of priority values for the CanVec layers to be processed
+   
+   set Param(Priorities)           { 999 999 999 999 999 999 991 990 990 970 911 910 890 885 880 875 870 865 861 860 859 858 857 852 852 850 840 823 822 821 820 810 800 795 790 780 775 770 760 740 740 710 700 690 670 665 660 650 645 640 630 610 610 605 600 590 590 580 570 551 550 400 320 310 302 301 300 290 280 271 270 250 244 242 240 230 220 210 200 190 185 181 181 180 170 163 162 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 34 33 32 30 22 21 20 } ;# LUT of priority values for the CanVec layers to be processed
 
-   #set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
+
    #Aucun tri particulier nécessaire pour cette liste d'entités
    set Param(Excluded) {
       BS_1250009_0
@@ -328,11 +328,12 @@ namespace eval UrbanX { } {
       VE_2290009_1 } ;# Layers from CanVec ignored for rasterization
 
 
-   #set Param(LayersPostPro)    { mininga_p railway_l road_l runway_a runway_p sport_t_l buildin_p buildin_a } ;# Layers from BNDT requiring postprocessing
+ 
    #Aucun tri particulier nécessaire pour cette liste d'entités
    set Param(LayersPostPro)    {
       BS_2010009_0
       BS_2010009_2
+      BS_2060009_0
       BS_2310009_1
       EN_1180009_1
       HD_1450009_0
@@ -350,26 +351,31 @@ namespace eval UrbanX { } {
       TR_1760009_1 } ;# Layers from CanVec requiring postprocessing
 
 
-   #set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
    set Param(WaterLayers)      { HD_1480009_2 } ;# Water layers from CanVec
 
-#   set Param(BufferLayers)     { bridge_l buildin_p road_l } ;# Layers from BNDT required for buffer
    set Param(BufferLayers)     { BS_2010009_0 TR_1760009_1 } ;# Layers from CanVec required for buffer
 
    set Param(BufferFuncLayers) { buildin_p buildin_a } ;# Layers from BNDT required for buffer func
-   #set Param(BufferFuncLayers) { } ;# Layers from CanVec required for buffer func
 
    set Param(BufferFuncValues) { 1 2 }
 
-   #------TO DELETE------------------
+
+   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
+   set Param(TEBClasses)         { 840 840 840 820 820 830 902 903 902 830 440 440 520 520 520 520 820 450 440 440 820 440 440 820 820 820 840 830 830 830 830 120 530 410 530 320 410 450 320 830 830 360 810 840 360 410 120 310 440 830 830 440 440 200 400 901 901 830 450 430 430 440 430 340 100 100 120 320 440 330 330 901 110 440 520 420 320 360 440 830 440 440 440 320 830 110 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 420 420 420 112 111 110 } ;#TEB Classes for CanVec
+
+   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
+   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 1 2 3 0 4 0 0 0 0 5 6 7 8 9 10 11 12 13 14 15 16 17 0 0 18 0 19 20 21 0 22 0 23 0 0 0 0 24 25 26 0 27 28 29 30 31 32 33 0 0 0 0 34 35 0 36 37 38 39 40 41 42 43 44 45 46 0 47 0 0 48 0 49 50 51 52 53 54 55 56 0 0 57 0 0 0 58 59 0 0 0 0 0 60 61 62 63 0 64 65 66 0 67 68 69 } ;#SMOKE Classes for CanVec
+
+   #------TO DELETE : LAYERS BNDT------------------
+	#set Param(Layers)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
+	#set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the NTDB layers to be processed   
+   #set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
+  #set Param(LayersPostPro)    { mininga_p railway_l road_l runway_a runway_p sport_t_l buildin_p buildin_a } ;# Layers from BNDT requiring postprocessing
+	#set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
+	#set Param(BufferLayers)     { bridge_l buildin_p road_l } ;# Layers from BNDT required for buffer
+   #set Param(BufferFuncLayers) { } ;# Layers from CanVec required for buffer func
    #set Param(TEBClasses)         { 902 830 830 830 410 440 903 520 520 520 520 820 450 820 820 820 840 820 830 120 530 530 320 410 450 410 320 901 830 360 810 840 440 901 360 410 120 310 440 830 830 450 901 200 901 830 450 430 440 420 430 430 340 100 100 120 320 440 320 320 330 330 410 901 420 110 440 520 420 420 330 330 310 320 350 360 440 830 901 440 320 110 830 530 360 110 420 530 140 110 520 520 110 520 410 110 360 440 330 310 420 420 112 111 110 }  ;# TEB classes for BNDT
    #------FIN DU : TO DELETE---------
-
-   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-   set Param(TEBClasses)         { 840 840 840 820 820 830 902 903 902 830 440 440 520 520 520 520 820 450 440 440 820 440 440 820 820 820 840 830 830 830 830 120 530 410 530 320 410 450 320 830 830 360 810 840 360 410 120 310 440 830 830 440 440 200 400 901 901 830 450 430 430 440 430 340 100 100 120 320 440 330 330 901 110 440 520 420 320 360 440 830 440 440 440 320 830 110 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 112 111 110 } ;#TEB Classes for CanVec
-
-   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 1 2 3 0 4 0 0 0 0 5 6 7 8 9 10 11 12 13 14 15 16 17 0 0 18 0 19 20 21 0 22 0 23 0 0 0 0 24 25 26 0 27 28 29 30 31 32 33 0 0 0 0 34 35 0 36 37 38 39 40 41 42 43 44 45 46 0 47 0 0 48 0 49 50 51 52 53 54 55 56 0 0 57 0 0 0 58 59 0 0 0 0 0 60 61 62 63 64 0 65 66 67 } ;#SMOKE Classes for CanVec
 
    set Param(VegeFilterType) LOWPASS
    set Param(VegeFilterSize) 99
@@ -501,6 +507,14 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
          set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
+      "TEST" {
+         set Param(Lon1)   -63.50
+         set Param(Lat1)    46.50
+         set Param(Lon0)   -64
+         set Param(Lat0)    46.25
+         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
+         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
+      }
       "IPE" {
          set Param(Lon1)   -61.98
          set Param(Lat1)    47.06
@@ -540,35 +554,37 @@ proc UrbanX::AreaDefine { Coverage } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } } {
+proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexUTMREF } {
    variable Param
 
    set zone     [expr int(ceil((180 + (($Lon1 + $Lon0)/2))/6))]
    set meridian [expr -((180-($zone*6))+3)]
 
-   eval georef create UTMREF \
-      \{PROJCS\[\"WGS_1984_UTM_Zone_${zone}N\",\
-         GEOGCS\[\"GCS_WGS_1984\",\
-            DATUM\[\"D_WGS_1984\",\
-               SPHEROID\[\"WGS_1984\",6378137.0,298.257223563\]\],\
-            PRIMEM\[\"Greenwich\",0.0\],\
-            UNIT\[\"Degree\",0.0174532925199433\]\],\
-         PROJECTION\[\"Transverse_Mercator\"\],\
-         PARAMETER\[\"False_Easting\",500000.0\],\
-         PARAMETER\[\"False_Northing\",0.0\],\
-         PARAMETER\[\"Central_Meridian\",$meridian\],\
-         PARAMETER\[\"Scale_Factor\",0.9996\],\
-         PARAMETER\[\"Latitude_Of_Origin\",0.0\],\
-         UNIT\[\"Meter\",1.0\]\]\}
+		eval georef create UTMREF$indexUTMREF \
+			\{PROJCS\[\"WGS_1984_UTM_Zone_${zone}N\",\
+				GEOGCS\[\"GCS_WGS_1984\",\
+					DATUM\[\"D_WGS_1984\",\
+						SPHEROID\[\"WGS_1984\",6378137.0,298.257223563\]\],\
+					PRIMEM\[\"Greenwich\",0.0\],\
+					UNIT\[\"Degree\",0.0174532925199433\]\],\
+				PROJECTION\[\"Transverse_Mercator\"\],\
+				PARAMETER\[\"False_Easting\",500000.0\],\
+				PARAMETER\[\"False_Northing\",0.0\],\
+				PARAMETER\[\"Central_Meridian\",$meridian\],\
+				PARAMETER\[\"Scale_Factor\",0.9996\],\
+				PARAMETER\[\"Latitude_Of_Origin\",0.0\],\
+				UNIT\[\"Meter\",1.0\]\]\}
 
-   set xy1 [georef unproject UTMREF $Lat1 $Lon1]
-   set xy0 [georef unproject UTMREF $Lat0 $Lon0]
+   set xy1 [georef unproject UTMREF$indexUTMREF $Lat1 $Lon1]
+   set xy0 [georef unproject UTMREF$indexUTMREF $Lat0 $Lon0]
 
    set Param(Width)  [expr int(ceil(([lindex $xy1 0] - [lindex $xy0 0])/$Res))]
    set Param(Height) [expr int(ceil(([lindex $xy1 1] - [lindex $xy0 1])/$Res))]
 
-   georef define UTMREF -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
-
+#	if {$ini == 1} {
+		georef define UTMREF$indexUTMREF -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
+#	}
+   
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 }
 
@@ -638,132 +654,107 @@ proc UrbanX::FindNTSSheetsBNDT { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::FindNTSSheetsCanVec { } {
+proc UrbanX::FindNTSSheetsCanVec {indexUTMREF } {
+
+	GenX::Log INFO "debut de la proc FindNTSSheetsCanVec"
 
    variable Param
 
-
-puts "debut du bloc qui bogue"
-
-   #ouverture du shapefile index NTS 50K
+   #ouverture du shapefile index NTS50K
    if { ![ogrlayer is NTSLAYER50K] } {
       set nts_layer [lindex [ogrfile open SHAPE50K read $Param(NTSFile)] 0]
       eval ogrlayer read NTSLAYER50K $nts_layer
    }
-   #ogrlayer stats NTSLAYER50K -transform UTMREF
-#   puts "On passe A"
 
    #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être gros +- 20000)
-   puts "On compte [ogrlayer define NTSLAYER50K -nb] polygones dans le fichier NTS50K"
-
-#   puts "On passe B"
-
-#-------- Ce bloc est une tentative de sélectionner le polygone correspondant
-#         à la province via un attribut PR.  Problème pour transformer cet
-#         unique polygone en géométrie à intersecter avec l'index NTS50K.
-#         Solution temporaire : un shapefile différent pour chaque province,
-#         du coup pas de sélection à faire.
-
-   #ouverture du shapefile des provinces
-#   set prov_layer [lindex [ogrfile open SHAPEPROVINCES read $Param(ProvincesGeom)] 0]
-#   eval ogrlayer read VPROVINCES $prov_layer
-#   ogrlayer stats VPROVINCES -transform UTMREF
-
-#   set provlayer_name [ogrlayer define VPROVINCES -name]
-   #prov_layer_name contient un élément de type decoupage50k_2
-
-   #test à supprimer : comptage du nombre de polygones dans le shapefile des provinces canadiennes (devrait être 13)
-#   puts "On compte [ogrlayer define VPROVINCES -nb] polygones dans le fichier $provlayer_name"
-
-   #sélection du polygone correspondant à la province visée
-#   ogrlayer sqlselect PROV2KEEP SHAPEPROVINCES "SELECT * FROM $provlayer_name WHERE (pr = $Param(ProvinceCode))"
-   #test à supprimer : comptage du nombre de polygones sélectionnés (devrait être 1)
-#   puts "On compte [ogrlayer define PROV2KEEP -nb] polygones de province sélectionnés"
-
-#   set features [ogrlayer pick VPROVINCES [list $Param(LatCentrale) $Param(LonCentrale)] True]
-#   ogrlayer define VPROVINCES -featureselect [list [list index # $features]]
-#   puts "On compte [ogrlayer define VPROVINCES -nb] polygones de province conservés"
-
-#   ogrlayer define VPROVINCES -featureselect [] ;# j'ai besoin d'une liste d'éléments
-#   puts "On compte [ogrlayer define VPROVINCES -nb] polygones de province conservés"
-
-   #ogrlayer define VPROVINCES -featureselect { "PR == $Param(ProvinceCode)" }
-   #ogrlayer define VPROVINCES -featureselect [ "SELECT * FROM VPROVINCES WHERE (PR=11)" ]
-
-   #test à supprimer : comptage du nombre de polygones conservés (devrait être 1)
-   #puts "On compte [ogrlayer define VPROVINCES -nb] polygones conservés pour dans le fichier des provinces"
-
-#   puts "On passe C"
-
-   #définition d'une géométrie pour le polygone de province
-   #set geom [ogrlayer define VPROVINCES -geometry 0]
-#   set geom [ogrlayer define PROV2KEEP -geometry 0]
-
-#   puts "On passe D"
-
-   #sélection des fichiers NTS à l'intérieur de la box de présélection
-#   set ntssheets_pre [ogrlayer pick NTSLAYER50K [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
-#   puts $ntssheets_pre
-
-#   puts "On passe E"
-
-#   ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
-
-#   puts "On passe F"
-
-#   set ntssheets [ogrlayer pick NTSLAYER50K $geom]
-#   puts $ntssheets
-
-#   puts "On passe G"
-
-
-#-------- Fin du bloc d'essai, début de la solution temporaire
+   GenX::Log INFO "On compte [ogrlayer define NTSLAYER50K -nb] tuiles NTS dans le fichier NTS50K"
 
    #ouverture du shapefile des provinces
    set prov_layer [lindex [ogrfile open SHAPEPROVINCES read $Param(ProvincePolygonFile)] 0]
    eval ogrlayer read VPROVINCE $prov_layer
-   ogrlayer stats VPROVINCE -transform UTMREF
-
-#   puts "On passe C"
+   ogrlayer stats VPROVINCE -transform UTMREF$indexUTMREF
 
    #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être 1)
-   puts "On compte [ogrlayer define VPROVINCE -nb] polygones dans le fichier de géométrie provinciale"
+   GenX::Log INFO "On compte [ogrlayer define VPROVINCE -nb] polygones dans le fichier de géométrie provinciale"
 
    #définition d'une géométrie pour le polygone de province
    set geom [ogrlayer define VPROVINCE -geometry 0]
 
- #  puts "On passe D"
-
    #sélection des fichiers NTS à l'intérieur de la box de présélection
    set ntssheets_pre [ogrlayer pick NTSLAYER50K [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
-   puts $ntssheets_pre
-
-#   puts "On passe E"
+   GenX::Log INFO "Les tuiles NTS suivants sont conservées : $ntssheets_pre"
 
    #ramener l'index à la sélection des fichiers à l'intérieur de la box de présélection
    ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
 
-#   puts "On passe F"
+   #test à supprimer : comptage du nombre de polygones dans la présélection (devrait être 36)
+	GenX::Log INFO "On compte [llength $ntssheets_pre] tuiles NTS conservées après la présélection en lat lon"
 
-   #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être 36)
-   puts "On compte [ogrlayer define NTSLAYER50K -nb] polygones dans le fichier"
+	#conversion de l'index NTS50K en UTMREF.  ATTENTION: cette conversion doit se faire APRÈS la présélection suivant une boîte lat/lon, mais AVANT la sélection avec une géométrie UTMREF
+   ogrlayer stats NTSLAYER50K -transform UTMREF$indexUTMREF
 
-#   puts "On passe G"
+	#sélection, parmi les fichiers NTS présélectionnés, de ceux qui sont en intersection avec la géométrie provinciale
+   set Param(NTSSheets) [ogrlayer pick NTSLAYER50K $geom True INTERSECT]
+   GenX::Log INFO "Les tuiles NTS suivants sont conservées : $Param(NTSSheets)"
 
-   set ntssheets [ogrlayer pick NTSLAYER50K $geom True INTERSECT]
-   puts $ntssheets
+	#test à supprimer : comptage du nombre de polygones conservés (devrait être 19)
+	GenX::Log INFO "On compte [llength $Param(NTSSheets)] tuiles NTS conservées suite à l'interesection avec la géométrie"
 
-#   puts "On passe H"
+	#nettoyage de mémoire
+	ogrfile close SHAPE50K
+	ogrfile close SHAPEPROVINCES
+	ogrlayer free NTSLAYER50K
+	ogrlayer free VPROVINCE
 
-   foreach i $ntssheets {
-      puts $i
+	GenX::Log INFO "fin de la proc FindNTSSheetsCanVec"
+}
+
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::NTSLatLonDefine>
+# Creation : August 2010 - Alexandre Leroux - CMC/CMOE
+#            August 2010 - Lucie Boucher - CMC/AQMAS
+#
+# Goal     :  Finds the extent (lat lon) of one NTS Sheet
+#
+# Parameters : NTSid : identifiant d'une tuile NTS50K
+#   <NTSid>    : ID of 1 NTS sheet
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::NTSLatLonDefine { NTSid } {
+
+	GenX::Log INFO "debut de la proc NTSLatLonDefine"
+
+   variable Param
+
+   #ouverture du shapefile index NTS50K
+   if { ![ogrlayer is NTSLAYER50K] } {
+      set nts_layer [lindex [ogrfile open SHAPE50K read $Param(NTSFile)] 0]
+      eval ogrlayer read NTSLAYER50K $nts_layer
    }
 
-#   puts "On passe I"
+	#sélection de la tuile NTS correspondant à l'ID passé en input
+	ogrlayer define NTSLAYER50K -featureselect [list [list index # $NTSid]]
 
-puts "fin du bloc qui bogue"
+	#NOTE : ON NE TRANSFORME PAS NTSLAYER50K EN UTMREF CAR ON VEUT DES LAT/LON
 
+	#trouve les limites lat/lon de la tuile NTS sélectionnée
+	set latlon [ogrlayer stats NTSLAYER50K -extent True]
 
+	#affecte les valeurs latlon aux divers paramètres Lon0, Lon1, Lat0, Lat1
+	set Param(Lon0) [lindex $latlon 0]
+	set Param(Lat0) [lindex $latlon 1]
+	set Param(Lon1) [lindex $latlon 2]
+	set Param(Lat1) [lindex $latlon 3]
+
+	#nettoyage de mémoire
+	ogrfile close SHAPE50K
+	ogrlayer free NTSLAYER50K
+
+	GenX::Log INFO "fin de la proc NTSLatLonDefine"
 }
 
 #----------------------------------------------------------------------------
@@ -933,7 +924,7 @@ proc UrbanX::SandwichBNDT { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::SandwichCanVec { Coverage } {
+proc UrbanX::SandwichCanVec { NTSid indexUTMREF } {
    variable Param
    variable Data
 #   variable Path
@@ -942,7 +933,7 @@ proc UrbanX::SandwichCanVec { Coverage } {
    GenX::Log INFO "Generating Sandwich"
 
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
-   gdalband define RSANDWICH -georef UTMREF
+   gdalband define RSANDWICH -georef UTMREF$indexUTMREF
 
    GenX::Log INFO "Locating CanVec Files"
 
@@ -1023,6 +1014,30 @@ proc UrbanX::SandwichCanVec { Coverage } {
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function IN (9,12,17,19,26,39)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (day-night 24/7 buildings) as VFEATURE2KEEP$j with priority value 302"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 302
+            }
+            BS_2060009_0 {
+               #entity : Chimney, points
+               #if type=1 (burner) PRI=34 TEB=420; if type=2 (industrial) PRI=33 TEB=420; if type =3 (flare stack) PRI=32 TEB=420; else general value
+               #general value for unknown type
+               GenX::Log INFO "Post-processing for Chimneys (unknown type), points"
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type NOT IN (1, 2, 3)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - general) as VFEATURE2KEEP$j with priority value $priority"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
+               #type = 1 : burner
+               GenX::Log INFO "Post-processing for Chimneys (burners), points"
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - burners) as VFEATURE2KEEP$j with priority value 34"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 34
+               #type = 2 : industrial
+               GenX::Log INFO "Post-processing for Chimneys (industrial), points"
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 2)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - industrial) as VFEATURE2KEEP$j with priority value 33"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 33
+               #type = 3 : flare stack
+               GenX::Log INFO "Post-processing for Chimneys (flare stack), points"
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 3)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - flare stack) as VFEATURE2KEEP$j with priority value 32"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 32
             }
             BS_2310009_1 {
                #entity : Pipeline (Sewage / liquid waste), line
@@ -1277,14 +1292,14 @@ proc UrbanX::SandwichCanVec { Coverage } {
 
    #creating the output file
    file delete -force $GenX::Param(OutFile)_sandwich.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich.tif GeoTiff
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich_$NTSid.tif GeoTiff
    gdalband write RSANDWICH FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
    gdalband free RSANDWICH
 
-   GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich.tif was generated"
+   GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich_$NTSid.tif was generated"
 
-puts "Fin de UrbanX::SandwichCanVec"
+	GenX::Log INFO "Fin de UrbanX::SandwichCanVec"
 
 }
 
@@ -1395,7 +1410,7 @@ proc UrbanX::ScaleBuffersBNDT { } {
 #
 #----------------------------------------------------------------------------
 # Buffers on selected point and line features
-proc UrbanX::ScaleBuffersCanVec { } {
+proc UrbanX::ScaleBuffersCanVec {indexUTMREF } {
 
 puts "Début de la proc ScaleBuffersCanVec"
 
@@ -1410,7 +1425,7 @@ puts "Début de la proc ScaleBuffersCanVec"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband create RBUFFERS $Param(Width) $Param(Height) 1 UInt16
-   gdalband define RBUFFERS -georef UTMREF
+   gdalband define RBUFFERS -georef UTMREF$indexUTMREF
 
    set j 0
    set Param(FilesScaleBuffer) {}
@@ -1519,7 +1534,7 @@ puts "Fin de la proc ScaleBuffersCanVec"
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::ChampsBuffers { } {
+proc UrbanX::ChampsBuffers {indexUTMREF } {
    variable Param
    variable Data
 
@@ -1528,7 +1543,7 @@ proc UrbanX::ChampsBuffers { } {
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
 
    gdalband create RBUFFER $Param(Width) $Param(Height) 1 Byte
-   eval gdalband define RBUFFER -georef UTMREF
+   eval gdalband define RBUFFER -georef UTMREF$indexUTMREF
    set i 0
    foreach sheet $Data(Sheets) path $Data(Paths) {
       foreach layer $Param(BufferFuncLayers) value $Param(BufferFuncValues) {
@@ -1553,7 +1568,7 @@ proc UrbanX::ChampsBuffers { } {
    }
    GenX::Log INFO "Cookie cutting grass and fields buffers and setting grass and fields and building vicinity values"
    gdalband create RBUFFERCUT $Param(Width) $Param(Height) 1 UInt16
-   gdalband define RBUFFERCUT -georef UTMREF
+   gdalband define RBUFFERCUT -georef UTMREF$indexUTMREF
    vexpr RBUFFERCUT ifelse(((RSANDWICH==0) && (RBUFFER==0)),820,RBUFFERCUT)
    vexpr RBUFFERCUT ifelse(((RSANDWICH==0) && (RBUFFER!=0)),510,RBUFFERCUT)
 
@@ -1686,15 +1701,15 @@ proc UrbanX::PopDens2BuiltupBNDT { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::PopDens2BuiltupCanVec { } {
+proc UrbanX::PopDens2BuiltupCanVec {NTSid indexUTMREF } {
 
-GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
+	GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 
    variable Param
    variable Data
 
    #récupération de genphysx_sandwich.tif
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$NTSid.tif]
 
    #récupération du fichier de données socio-économiques
    #set layer [lindex [ogrfile open SHAPE read $Param(PopFile)] 0]
@@ -1720,7 +1735,7 @@ GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 
    #Calcul de la densité de population
    GenX::Log INFO "Calculating population density values"
-   ogrlayer stats VPOPDENS -transform UTMREF
+   ogrlayer stats VPOPDENS -transform UTMREF$indexUTMREF
    foreach n $features {
       #set pop  [ogrlayer define VPOPDENS -feature $n TOTPOPUL]
       set pop  [ogrlayer define VPOPDENS -feature $n POP_NEW]
@@ -1737,22 +1752,22 @@ GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 
    #Conversion de la densité de population en raster
    gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
-   eval gdalband define RPOPDENS -georef UTMREF
+   eval gdalband define RPOPDENS -georef UTMREF$indexUTMREF
    gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) POP_DENS
 
    #écriture du fichier genphysx_popdens.tif contenant la densité de population
    file delete -force $GenX::Param(OutFile)_popdens.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens.tif GeoTiff
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens_$NTSid.tif GeoTiff
    gdalband write RPOPDENS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
    ogrlayer free VPOPDENS
    ogrfile close SHAPE
-   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens.tif was generated"
+   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens_$NTSid.tif was generated"
 
    #Cookie cutting population density and setting TEB values
    GenX::Log INFO "Cookie cutting population density and setting TEB values"
    gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
-   gdalband define RPOPDENSCUT -georef UTMREF
+   gdalband define RPOPDENSCUT -georef UTMREF$indexUTMREF
    vexpr RTEMP RSANDWICH==605
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
    vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
@@ -1767,11 +1782,11 @@ GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 
    #écriture du fichier genphysx_popdens-builtup.tif
    file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup_$NTSid.tif GeoTiff
    gdalband write RPOPDENSCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
    gdalband free RPOPDENSCUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup.tif was generated"
+   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup_$NTSid.tif was generated"
 
    GenX::Log INFO "Fin de la proc PopDens2BuiltupCanVec"
 
@@ -1797,7 +1812,7 @@ proc UrbanX::HeightGain { } {
 
    gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
    gdalband create RHAUTEURPROJ $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURPROJ -georef UTMREF
+   gdalband define RHAUTEURPROJ -georef UTMREF$indexUTMREF
 
    #----- La vérification pourrait être fait dans un proc avec vérification des 4 points de la source
    gdalband read RHAUTEUR [gdalfile open FHAUTEUR read $Param(HeightFile)]
@@ -1845,7 +1860,7 @@ proc UrbanX::HeightGain { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::BuildingHeight { } {
+proc UrbanX::BuildingHeight {indexUTMREF } {
    variable Param
 
    GenX::Log INFO "Cookie cutting building heights and adding gain"
@@ -1854,7 +1869,7 @@ proc UrbanX::BuildingHeight { } {
    gdalband read RHAUTEURWMASK [gdalfile open FHAUTEUR read $Param(HeightMaskFile)]
 
    gdalband create RHAUTEURWMASKPROJ $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURWMASKPROJ -georef UTMREF
+   gdalband define RHAUTEURWMASKPROJ -georef UTMREF$indexUTMREF
 
    gdalband gridinterp RHAUTEURWMASKPROJ RHAUTEURWMASK
    gdalband free RHAUTEURWMASK
@@ -1948,15 +1963,15 @@ proc UrbanX::Priorities2TEB { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Priorities2SMOKE { } {
+proc UrbanX::Priorities2SMOKE {NTSid } {
    GenX::Log INFO "Début de la proc Priorities2SMOKE"
 
    variable Param
 
    GenX::Log INFO "Converting values to SMOKE classes"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
-   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$NTSid.tif]
+   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$NTSid.tif]
   #gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
    #gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
 
@@ -1972,8 +1987,10 @@ proc UrbanX::Priorities2SMOKE { } {
    #vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RSMOKE)
 
    file delete -force $GenX::Param(OutFile)_SMOKE.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE.tif GeoTiff
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE_$NTSid.tif GeoTiff
    gdalband write RSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+
+   GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$NTSid.tif was generated"
 
    gdalfile close FILEOUT
    gdalfile close FSANDWICH
@@ -2145,7 +2162,7 @@ proc UrbanX::Shp2Height { } {
    GenX::Log INFO "Converting $GenX::Param(Urban) building shapefile to raster"
 
    gdalband create RHAUTEURSHP $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURSHP -georef UTMREF
+   gdalband define RHAUTEURSHP -georef UTMREF$indexUTMREF
 
    set shp_layer [lindex [ogrfile open SHAPE read $Param(Shape)] 0]
    eval ogrlayer read LAYER $shp_layer
@@ -2233,7 +2250,7 @@ proc UrbanX::FilterGen { Type Size } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::SMOKE2DA { } {
+proc UrbanX::SMOKE2DA {indexUTMREF } {
 
    GenX::Log INFO "Début de la proc SMOKE2DA"
 
@@ -2274,7 +2291,7 @@ proc UrbanX::SMOKE2DA { } {
 
    foreach i $Param(SmokeClasses) {
    gdalband create RSMOKEBIN $Param(Width) $Param(Height) 1 Byte
-   gdalband define RSMOKEBIN -georef UTMREF
+   gdalband define RSMOKEBIN -georef UTMREF$indexUTMREF
    vexpr RSMOKEBIN ifelse((RSMOKE=$i),1,0)
 
    ogrlayer define VDAPOLYGONSPEI -field cl$i
@@ -2372,54 +2389,60 @@ proc UrbanX::Process { Coverage } {
    GenX::Log INFO "Coverage = $Coverage"
 
    if {$Coverage == "IPE"} {
-      puts "Traitement d'une province : IndustrX"
+      GenX::Log INFO "Traitement d'une province : IndustrX"
       UrbanX::AreaDefine    $Coverage
-      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
+      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
       #----- TODO 
       #Finds a list of nts 50k sheets that intersect with province polygon
-      UrbanX::FindNTSSheetsCanVec ;#va avoir besoin du code de province, retourne Param(NTSSheets)
-      #foreach n $Param(NTSSheets)
-         #if les fichiers raster existent déjà, skip
-         #else, détermine les lat lon de la feuille, puis go :
-            #----- Defines the extents of the zone to be process
-            #UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
-            #----- Finds CanVec files, rasterize and flattens all CanVec layers
-            #UrbanX::SandwichBNDT ;# to be deleted, replaced with UrbanX::SandwichCanVec
-            #UrbanX::SandwichCanVec $Coverage
-            #----- Applies buffer to linear and ponctual elements such as buildings and roads
-            #UrbanX::ScaleBuffersCanVec
-            #----- Creates the fields and building vicinity output using spatial buffers
-            #UrbanX::ChampsBuffers
-            #----- Calculates the population density
-            #UrbanX::PopDens2BuiltupBNDT ;# to be deleted, replaced with UrbanX::PopDens2BuiltupCanVec
-            #UrbanX::PopDens2BuiltupCanVec
-            #----- Applies LUT to all processing results to generate SMOKE classes.
-            #UrbanX::Priorities2SMOKE
-            #UrbanX::SMOKE2DA
+      UrbanX::FindNTSSheetsCanVec 0;#va avoir besoin du code de province, retourne Param(NTSSheets)
+		
+		foreach m $Param(NTSSheets) {
+			   GenX::Log INFO "Traitement de la tuile NTS ayant l'ID $m"
+			#----- Finds the extents of the zone to be process
+			UrbanX::NTSLatLonDefine $m
+			GenX::Log INFO "La latitude de la tuile va de $Param(Lat0) à $Param(Lat1)"
+			GenX::Log INFO "La longitude de la tuile va de $Param(Lon0) à $Param(Lon1)"
+			#----- Defines the extents of the zone to be process
+			UrbanX::UTMZoneDefine  $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $m
+			#----- Finds CanVec files, rasterize and flattens all CanVec layers
+			UrbanX::SandwichCanVec $m $m
+			#----- Applies buffer to linear and ponctual elements such as buildings and roads
+			#UrbanX::ScaleBuffersCanVec $m
+			#----- Creates the fields and building vicinity output using spatial buffers
+			#UrbanX::ChampsBuffers $m
+			#----- Calculates the population density
+			UrbanX::PopDens2BuiltupCanVec $m $m
+			#----- Applies LUT to all processing results to generate SMOKE classes.
+			UrbanX::Priorities2SMOKE  $m
+			#UrbanX::SMOKE2DA
+		}
+
+
+
 
    } else {
-      puts "Traitement d'une ville : UrbanX"
+      GenX::Log INFO "Traitement d'une ville : UrbanX"
       #----- Defines the extents of the zone to be process
       UrbanX::AreaDefine    $Coverage
-      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
+      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
  
       #----- Finds CanVec files, rasterize and flattens all CanVec layers
-      UrbanX::SandwichCanVec $Coverage
+      UrbanX::SandwichCanVec $Coverage 0
 
       #----- Applies buffer to linear and ponctual elements such as buildings and roads
-      #UrbanX::ScaleBuffersCanVec
+      #UrbanX::ScaleBuffersCanVec 0
 
       #-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
       #UrbanX::Shp2Height
 
       #----- Creates the fields and building vicinity output using spatial buffers
-      #UrbanX::ChampsBuffers
+      #UrbanX::ChampsBuffers 0
 
       #----- Calculates the population density
-      UrbanX::PopDens2BuiltupCanVec
+      UrbanX::PopDens2BuiltupCanVec $Coverage 0
 
       #----- Calculates building heights
-      #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
+      #UrbanX::HeightGain 0               ;# Requires UrbanX::ChampsBuffers to have run
       #UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
 
       #----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
@@ -2427,8 +2450,8 @@ proc UrbanX::Process { Coverage } {
 
       #----- TO DELETE FROM THE URBANX PROCESSING : JUSTE LÀ POUR FAIRE DES TESTS SUR DE PETITES ZONES
       #----- Applies LUT to all processing results to generate SMOKE classes.
-      UrbanX::Priorities2SMOKE
-      #UrbanX::SMOKE2DA
+      UrbanX::Priorities2SMOKE $Coverage
+      #UrbanX::SMOKE2DA 0
       #----- FIN DU TO DELETE FROM THE URBANX PROCESSING
 
       #----- Optional outputs:
