@@ -396,6 +396,9 @@ namespace eval UrbanX { } {
    #fichier contenant l'index NTS à l'échelle 1:50000
    set Param(NTSFile) /cnfs/ops/production/cmoe/geo/NTS/decoupage50k_2.shp
 
+	#entité CanVec déterminant la bordure des polygones NTS50K
+	set Param(NTSLayer) {LI_1210009_2 }
+
 }
 
 #----------------------------------------------------------------------------
@@ -509,23 +512,96 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
          set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
-      "TEST" {
-         set Param(Lon1)   -63.50
-         set Param(Lat1)    46.50
-         set Param(Lon0)   -64
-         set Param(Lat0)    46.25
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
+      "TN" {
+         set Param(Lon1)   -52.5
+         set Param(Lat1)    46.5
+         set Param(Lon0)   -68.0
+         set Param(Lat0)    60.8
+         set Param(ProvinceCode) 10 ;# PR code from StatCan
       }
-      "IPE" {
+      "PEI" {
          set Param(Lon1)   -61.98
          set Param(Lat1)    47.06
          set Param(Lon0)   -64.42
          set Param(Lat0)    45.94
-         set Param(LatCentrale) 46.3
-         set Param(LonCentrale) -63.4
-         set Param(ProvinceCode) 11 ;# PR code for StatCan
-         set Param(ProvincePolygonFile) /data/aqli04/afsulub/StatCan2006/PEI_lcc-nad83.shp
+         set Param(ProvinceCode) 11 ;# PR code from StatCan
+      }
+		"NS" {
+         set Param(Lon1)   -59.5
+         set Param(Lat1)    47.5
+         set Param(Lon0)   -67.0
+         set Param(Lat0)    43.0
+         set Param(ProvinceCode) 12 ;# PR code from StatCan
+		}
+		"NB" {
+         set Param(Lon1)   -63.5
+         set Param(Lat1)    48.5
+         set Param(Lon0)   -69.5
+         set Param(Lat0)    44.5
+         set Param(ProvinceCode) 13 ;# PR code from StatCan
+		}
+      "QC" {
+         set Param(Lon1)   -56.5
+         set Param(Lat1)    63.0
+         set Param(Lon0)   -80.0
+         set Param(Lat0)    44.5
+         set Param(ProvinceCode) 24 ;# PR code from StatCan
+      }
+      "ON" {
+         set Param(Lon1)   -74.0
+         set Param(Lat1)    57.0
+         set Param(Lon0)   -96.0
+         set Param(Lat0)    41.0
+         set Param(ProvinceCode) 35 ;# PR code from StatCan
+      }
+      "MN" {
+         set Param(Lon1)   -88.5
+         set Param(Lat1)    60.5
+         set Param(Lon0)   -102.5
+         set Param(Lat0)    48.5
+         set Param(ProvinceCode) 46 ;# PR code from StatCan
+      }
+      "SK" {
+         set Param(Lon1)   -101.0
+         set Param(Lat1)    60.5
+         set Param(Lon0)   -110.5
+         set Param(Lat0)    48.5
+         set Param(ProvinceCode) 47 ;# PR code from StatCan
+      }
+      "AB" {
+         set Param(Lon1)   -109.5
+         set Param(Lat1)    60.5
+         set Param(Lon0)   -120.5
+         set Param(Lat0)    48.5
+         set Param(ProvinceCode) 48 ;# PR code from StatCan
+      }
+      "BC" {
+         set Param(Lon1)   -113.5
+         set Param(Lat1)    60.5
+         set Param(Lon0)   -140
+         set Param(Lat0)    47.0
+         set Param(ProvinceCode) 59 ;# PR code from StatCan
+      }
+      "YK" {
+         set Param(Lon1)   -123.0
+         set Param(Lat1)    70.0
+         set Param(Lon0)   -142.0
+         set Param(Lat0)    59.5
+         set Param(ProvinceCode) 60 ;# PR code from StatCan
+      }
+      "TNO" {
+         set Param(Lon1)   -101.5
+         set Param(Lat1)    79.0
+         set Param(Lon0)   -137.5
+         set Param(Lat0)    59.5
+         set Param(ProvinceCode) 61 ;# PR code from StatCan
+      }
+      "NV" {
+         set Param(Lon1)   -60.0
+         set Param(Lat1)    51.0
+         set Param(Lon0)   -122.0
+         set Param(Lat0)    85.0
+         set Param(ProvinceCode) 62 ;# PR code from StatCan
       }
       default {
          set Param(Lon1)   -71.10
@@ -583,9 +659,9 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexUTMREF } {
    set Param(Width)  [expr int(ceil(([lindex $xy1 0] - [lindex $xy0 0])/$Res))]
    set Param(Height) [expr int(ceil(([lindex $xy1 1] - [lindex $xy0 1])/$Res))]
 
-#	if {$ini == 1} {
-		georef define UTMREF$indexUTMREF -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
-#	}
+
+	georef define UTMREF$indexUTMREF -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
+
    
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 }
@@ -650,6 +726,7 @@ proc UrbanX::FindNTSSheetsBNDT { } {
 # Goal     : Find the NTS Sheets that intersect the province polygon
 #
 # Parameters :
+#		<indexUTMREF>		: index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -667,68 +744,75 @@ proc UrbanX::FindNTSSheetsCanVec {indexUTMREF } {
       set nts_layer [lindex [ogrfile open SHAPE50K read $Param(NTSFile)] 0]
       eval ogrlayer read NTSLAYER50K $nts_layer
    }
+	GenX::Log INFO "On compte [ogrlayer define NTSLAYER50K -nb] tuiles NTS dans le fichier NTS50K"
 
-   #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être gros +- 20000)
-   GenX::Log INFO "On compte [ogrlayer define NTSLAYER50K -nb] tuiles NTS dans le fichier NTS50K"
+   #ouverture du shapefile du Canada
+   set prov_layer [lindex [ogrfile open SHAPECANADA read $Param(ProvincesGeom)] 0]
+   eval ogrlayer read VCANADA $prov_layer
+   ogrlayer stats VCANADA -transform UTMREF$indexUTMREF
+   GenX::Log INFO "On compte [ogrlayer define VCANADA -nb] polygones dans le fichier de géométrie canadienne"
 
-   #ouverture du shapefile des provinces
-   set prov_layer [lindex [ogrfile open SHAPEPROVINCES read $Param(ProvincePolygonFile)] 0]
-   eval ogrlayer read VPROVINCE $prov_layer
-   ogrlayer stats VPROVINCE -transform UTMREF$indexUTMREF
+	#index de la géométrie de province
+	set idxprovince [ogrlayer define VCANADA -featureselect [list [list PR == $Param(ProvinceCode) ] ] ]
 
-   #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être 1)
-   GenX::Log INFO "On compte [ogrlayer define VPROVINCE -nb] polygones dans le fichier de géométrie provinciale"
-
-   #définition d'une géométrie pour le polygone de province
-   set geom [ogrlayer define VPROVINCE -geometry 0]
+	#conversion de la géométrie pour la province sélectionnée 
+	set geom [ogrlayer define VCANADA -geometry $idxprovince]
 
    #sélection des fichiers NTS à l'intérieur de la box de présélection
    set ntssheets_pre [ogrlayer pick NTSLAYER50K [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
-   GenX::Log INFO "Les tuiles NTS suivantes sont conservées : $ntssheets_pre"
+   GenX::Log INFO "Les [llength $ntssheets_pre] tuiles NTS ayant les ID suivants sont présélectionnées avec les lat lon : $ntssheets_pre"
 
-   #ramener l'index à la sélection des fichiers à l'intérieur de la box de présélection
+   #ramener NTSLAYER50K à la sélection des fichiers à l'intérieur de la box de présélection
    ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
 
-   #test à supprimer : comptage du nombre de polygones dans la présélection (devrait être 36)
-	GenX::Log INFO "On compte [llength $ntssheets_pre] tuiles NTS conservées après la présélection en lat lon"
-
-	#conversion de l'index NTS50K en UTMREF.  ATTENTION: cette conversion doit se faire APRÈS la présélection suivant une boîte lat/lon, mais AVANT la sélection avec une géométrie UTMREF
+	#conversion de NTSLAYER50K en UTMREF.  ATTENTION: cette conversion doit se faire APRÈS la présélection suivant une boîte lat/lon, mais AVANT la sélection avec une géométrie UTMREF
    ogrlayer stats NTSLAYER50K -transform UTMREF$indexUTMREF
 
-	#sélection, parmi les fichiers NTS présélectionnés, de ceux qui sont en intersection avec la géométrie provinciale
-   set Param(NTSSheets) [ogrlayer pick NTSLAYER50K $geom True INTERSECT]
-   GenX::Log INFO "Les tuiles NTS suivantes sont conservées : $Param(NTSSheets)"
+	GenX::Log INFO "Intersection des fichiers NTS présélectionnés avec le polygone de province.  Cette opération peut prendre plusieurs minutes!"
 
-	#test à supprimer : comptage du nombre de polygones conservés (devrait être 19)
-	GenX::Log INFO "On compte [llength $Param(NTSSheets)] tuiles NTS conservées suite à l'interesection avec la géométrie"
+	#sélection, parmi les fichiers NTS présélectionnés, de ceux qui sont en intersection avec la géométrie provinciale
+   set Param(NTSIds) [ogrlayer pick NTSLAYER50K $geom True INTERSECT]
+   GenX::Log INFO "Les [llength $Param(NTSIds)] tuiles NTS ayant les ID suivants sont conservées suite à l'intersection avec la géométrie : $Param(NTSIds)"
+
+	#remplacement des ids des tuiles par le no de feuillet NTS, de format 999A99
+	set Param(NTSSheets) { }
+   foreach id $Param(NTSIds) {
+      set Param(NTSSheets)  [concat $Param(NTSSheets) [ogrlayer define NTSLAYER50K -feature $id IDENTIFIAN] ]
+	}
+   GenX::Log INFO "Les [llength $Param(NTSSheets)] tuiles NTS ayant les no de feuillets suivants sont conservées : $Param(NTSSheets)"
 
 	#nettoyage de mémoire
 	ogrfile close SHAPE50K
-	ogrfile close SHAPEPROVINCES
+	ogrfile close SHAPECANADA
 	ogrlayer free NTSLAYER50K
-	ogrlayer free VPROVINCE
+	ogrlayer free VCANADA
 
 	GenX::Log INFO "fin de la proc FindNTSSheetsCanVec"
+
+return
+
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::NTSLatLonDefine>
+# Name     : <UrbanX::NTSExtent>
 # Creation : August 2010 - Alexandre Leroux - CMC/CMOE
 #            August 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     :  Finds the extent (lat lon) of one NTS Sheet
+#						Finds the extent (xy in UTM) of one NTS Sheets
+#						Reset the UTMREF with the appropriate index
 #
 # Parameters : NTSid : identifiant d'une tuile NTS50K
-#   <NTSid>    : ID of 1 NTS sheet
+#   <NTSfeuillet>    : No de feuillet of 1 NTS sheet (format 999A99)
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::NTSLatLonDefine { NTSid } {
+proc UrbanX::NTSExtent { NTSfeuillet } {
 
-	GenX::Log INFO "debut de la proc NTSLatLonDefine"
+	GenX::Log INFO "debut de la proc NTSExtent"
 
    variable Param
 
@@ -738,25 +822,88 @@ proc UrbanX::NTSLatLonDefine { NTSid } {
       eval ogrlayer read NTSLAYER50K $nts_layer
    }
 
-	#sélection de la tuile NTS correspondant à l'ID passé en input
-	ogrlayer define NTSLAYER50K -featureselect [list [list index # $NTSid]]
-
 	#NOTE : ON NE TRANSFORME PAS NTSLAYER50K EN UTMREF CAR ON VEUT DES LAT/LON
+
+	#sélection de la tuile NTS correspondant à l'ID passé en input
+	set ntsid [lindex $Param(NTSIds) [lsearch -exact $Param(NTSSheets) $NTSfeuillet ]]
+	ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntsid]]
 
 	#trouve les limites lat/lon de la tuile NTS sélectionnée
 	set latlon [ogrlayer stats NTSLAYER50K -extent True]
 
 	#affecte les valeurs latlon aux divers paramètres Lon0, Lon1, Lat0, Lat1
-	set Param(Lon0) [lindex $latlon 0]
-	set Param(Lat0) [lindex $latlon 1]
-	set Param(Lon1) [lindex $latlon 2]
-	set Param(Lat1) [lindex $latlon 3]
+	set Param(Lon0) [expr [lindex $latlon 0] + 0.01]
+	set Param(Lat0) [expr [lindex $latlon 1] + 0.01]
+	set Param(Lon1) [expr [lindex $latlon 2] - 0.01]
+	set Param(Lat1) [expr [lindex $latlon 3] - 0.01]
+
+	#recherche du fichier CanVec correspondant au layer NTS
+	set Param(CanVecNTSFiles) {}
+   set Param(CanVecNTSFiles) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(NTSLayer)]
+   #Param(CanVecNTSFiles) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
+
+	GenX::Log INFO "CanVec NTS50K file : $Param(CanVecNTSFiles)"
+
+	
+	#ouverture du shapefile index NTS50K
+   if { ![ogrlayer is CANVECNTSLAYER] } {
+      set canvec_nts_layer [lindex [ogrfile open SHAPECANVECNTSLAYER read $Param(CanVecNTSFiles)] 0]
+      eval ogrlayer read CANVECNTSLAYER $canvec_nts_layer
+   }
+
+   #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être 1)
+   GenX::Log INFO "On compte [ogrlayer define CANVECNTSLAYER -nb] tuiles NTS dans le fichier CanVec NTS Layer"
+
+	UTMZoneDefine  $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 1_$NTSfeuillet
+
+	#conversion de l'index NTS50K en UTMREF pour obtenir des coordonnées xy
+   ogrlayer stats CANVECNTSLAYER -transform UTMREF1_$NTSfeuillet
+
+	#trouve les limites xy en coordonnées UTM de la tuile NTS sélectionnée
+	set xy [ogrlayer stats CANVECNTSLAYER -extent True]
+
+	#affecte les valeurs latlon aux divers paramètres x0, y0, x1, y1
+	set Param(x0) [lindex $xy 0]
+	set Param(y0) [lindex $xy 1]
+	set Param(x1) [lindex $xy 2]
+	set Param(y1) [lindex $xy 3]
+
+	#calcul des dimensions xy de la zone
+   set Param(Width)  [expr int(ceil(($Param(x1) - $Param(x0))/$Param(Resolution)))]
+   set Param(Height) [expr int(ceil(($Param(y1) - $Param(y0))/$Param(Resolution)))]
+
+	#ajustement de la zone UTM et du méridien
+   set zone     [expr int(ceil((180 + (($Param(Lon1) + $Param(Lon0))/2))/6))]
+   set meridian [expr -((180-($zone*6))+3)]
+
+	#ajustement du UTMREF
+	eval georef create UTMREF$NTSfeuillet \
+		\{PROJCS\[\"WGS_1984_UTM_Zone_${zone}N\",\
+			GEOGCS\[\"GCS_WGS_1984\",\
+				DATUM\[\"D_WGS_1984\",\
+					SPHEROID\[\"WGS_1984\",6378137.0,298.257223563\]\],\
+				PRIMEM\[\"Greenwich\",0.0\],\
+				UNIT\[\"Degree\",0.0174532925199433\]\],\
+			PROJECTION\[\"Transverse_Mercator\"\],\
+			PARAMETER\[\"False_Easting\",500000.0\],\
+			PARAMETER\[\"False_Northing\",0.0\],\
+			PARAMETER\[\"Central_Meridian\",$meridian\],\
+			PARAMETER\[\"Scale_Factor\",0.9996\],\
+			PARAMETER\[\"Latitude_Of_Origin\",0.0\],\
+			UNIT\[\"Meter\",1.0\]\]\}
+	georef define UTMREF$NTSfeuillet -transform [list $Param(x0) $Param(Resolution) 0.000000000000000 $Param(y0) 0.000000000000000 $Param(Resolution)]
+
+puts "On passe C"
+
+   GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 
 	#nettoyage de mémoire
 	ogrfile close SHAPE50K
+	ogrfile close SHAPECANVECNTSLAYER
 	ogrlayer free NTSLAYER50K
+	ogrlayer free CANVECNTSLAYER
 
-	GenX::Log INFO "fin de la proc NTSLatLonDefine"
+	GenX::Log INFO "fin de la proc NTSExtent"
 }
 
 #----------------------------------------------------------------------------
@@ -1283,7 +1430,7 @@ proc UrbanX::SandwichCanVec { NTSid indexUTMREF } {
          incr j ;# Increment of VFEATURE2KEEP$j required to re-use the object
       } else {
          #general procedure for rasterization : entities are not part of Param(LayersPostPro)
-         puts "Layer $entity rasterized with general procedure"
+         GenX::Log INFO "Layer $entity rasterized with general procedure"
          eval ogrlayer read LAYER$j SHAPE 0
          GenX::Log INFO "Rasterizing [ogrlayer define LAYER$j -nb] features from file $file as LAYER$j with priority value $priority"
          gdalband gridinterp RSANDWICH LAYER$j $Param(Mode) $priority
@@ -1724,8 +1871,10 @@ proc UrbanX::PopDens2BuiltupCanVec {NTSid indexUTMREF } {
 
    #Subtraction of water zone from VPOPDENS
    GenX::Log INFO "Cropping population shapefile and substracting water ($Param(WaterLayers))"
+
    set Param(FilesWater) {}
    set Param(FilesWater) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(WaterLayers)]
+
    foreach file $Param(FilesWater) {
       GenX::Log INFO "Substracting water file $file"
       set water_layer [lindex [ogrfile open SHAPE2 read $file] 0]
@@ -2390,98 +2539,237 @@ proc UrbanX::Process { Coverage } {
 
    GenX::Log INFO "Coverage = $Coverage"
 
-   if {$Coverage == "IPE"} {
-      GenX::Log INFO "Traitement d'une province : IndustrX"
-      UrbanX::AreaDefine    $Coverage
-      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
-      #----- TODO 
-      #Finds a list of nts 50k sheets that intersect with province polygon
-      UrbanX::FindNTSSheetsCanVec 0;#va avoir besoin du code de province, retourne Param(NTSSheets)
-		
-		foreach m $Param(NTSSheets) {
-			GenX::Log INFO "Traitement de la tuile NTS ayant l'ID $m"
+	switch $Coverage {
 
-			#----- Finds the extents of the zone to be process
-			UrbanX::NTSLatLonDefine $m
-			GenX::Log INFO "La latitude de la tuile va de $Param(Lat0) à $Param(Lat1)"
-			GenX::Log INFO "La longitude de la tuile va de $Param(Lon0) à $Param(Lon1)"
-			#----- Defines the extents of the zone to be process
-			UrbanX::UTMZoneDefine  $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $m
+		"TN" -
+		"PEI" -
+		"NS" -
+		"NB" -
+		"QC" -
+		"ON" -
+		"MN" -
+		"SK" -
+		"AB" -
+		"BC" -
+		"YK" -
+		"TNO" -
+		"NV" {
 
-			#----- Finds CanVec files, rasterize and flattens all CanVec layers
-			if { ![file exists $GenX::Param(OutFile)_sandwich_$m.tif] } {
-				UrbanX::SandwichCanVec $m $m
-			} else {
-				GenX::Log INFO "Le fichier $GenX::Param(OutFile)_sandwich_$m.tif existe déjà."
+			GenX::Log INFO "Traitement d'une province : IndustrX"
+			UrbanX::AreaDefine    $Coverage
+			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
+
+			UrbanX::FindNTSSheetsCanVec 0 
+			# au terme de cette proc, on a
+			#Param(NTSIds) : liste des ids des feuillets NTS : format 9999
+			#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
+return
+			foreach feuillet $Param(NTSSheets) {
+				GenX::Log INFO "Traitement de la tuile NTS ayant le numéro de feuillet $feuillet"
+
+				#----- Finds the extents of the zone to be process
+				UrbanX::NTSExtent $feuillet
+				GenX::Log INFO "La latitude de la tuile va de $Param(Lat0) à $Param(Lat1)"
+				GenX::Log INFO "La longitude de la tuile va de $Param(Lon0) à $Param(Lon1)"
+				GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe X  vont de $Param(x0) à $Param(x1)"
+				GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe Y  vont de $Param(y0) à $Param(y1)"
+
+				#----- Defines the extents of the zone to be process
+	#			UrbanX::UTMZoneDefine  $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $feuillet
+
+				#----- Finds CanVec files, rasterize and flattens all CanVec layers
+				if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
+					UrbanX::SandwichCanVec $feuillet $feuillet
+				} else {
+					GenX::Log INFO "Le fichier $GenX::Param(OutFile)_sandwich_$feuillet.tif existe déjà."
+				}
+
+				#----------TO MODIFY FOR CANVEC LAYERS
+				#----- Applies buffer to linear and ponctual elements such as buildings and roads
+				#UrbanX::ScaleBuffersCanVec $m
+				#----- Creates the fields and building vicinity output using spatial buffers
+				#UrbanX::ChampsBuffers $m
+				#----------END OF : TO MODIFY FOR CANVEC LAYERS
+
+				#----- Calculates the population density
+	#			if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
+	#				UrbanX::PopDens2BuiltupCanVec $feuillet $feuillet
+	#			} else {
+	#				GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_popdens_$feuillet.tif et $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif existent déjà."
+	#			}
+
+				#----- Applies LUT to all processing results to generate SMOKE classes.
+	#			if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
+	#				UrbanX::Priorities2SMOKE  $feuillet
+	#			} else {
+	#				GenX::Log INFO "Le fichier $GenX::Param(OutFile)_SMOKE_$feuillet.tif existe déjà."
+	#			}
+
+				#----- PROC TO DEVELOP !
+				#UrbanX::SMOKE2DA
 			}
-
-			#----------TO MODIFY FOR CANVEC LAYERS
-			#----- Applies buffer to linear and ponctual elements such as buildings and roads
-			#UrbanX::ScaleBuffersCanVec $m
-			#----- Creates the fields and building vicinity output using spatial buffers
-			#UrbanX::ChampsBuffers $m
-			#----------END OF : TO MODIFY FOR CANVEC LAYERS
-
-			#----- Calculates the population density
-			if { ![file exists $GenX::Param(OutFile)_popdens_$m.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$m.tif] } {
-				UrbanX::PopDens2BuiltupCanVec $m $m
-			} else {
-				GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_popdens_$m.tif et $GenX::Param(OutFile)_popdens-builtup_$m.tif existent déjà."
-			}
-
-			#----- Applies LUT to all processing results to generate SMOKE classes.
-			if { ![file exists $GenX::Param(OutFile)_SMOKE_$m.tif] } {
-				UrbanX::Priorities2SMOKE  $m
-			} else {
-				GenX::Log INFO "Le fichier $GenX::Param(OutFile)_SMOKE_$m.tif existe déjà."
-			}
-
-			#----- PROC TO DEVELOP !
-			#UrbanX::SMOKE2DA
 
 		}
 
+		"VANCOUVER" -
+		"MONTREAL" -
+		"TORONTO" -
+		"OTTAWA" -
+		"WINNIPEG" -
+		"CALGARY" -
+		"HALIFAX" -
+		"REGINA" -
+		"EDMONTON" -
+		"VICTORIA" -
+		"QUEBEC" {
+
+			GenX::Log INFO "Traitement d'une ville : UrbanX"
+			#----- Defines the extents of the zone to be process
+			UrbanX::AreaDefine    $Coverage
+			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
+	
+			#----- Finds CanVec files, rasterize and flattens all CanVec layers
+			UrbanX::SandwichCanVec $Coverage 0
+
+			#----- Applies buffer to linear and ponctual elements such as buildings and roads
+			#UrbanX::ScaleBuffersCanVec 0
+
+			#-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
+			#UrbanX::Shp2Height
+
+			#----- Creates the fields and building vicinity output using spatial buffers
+			#UrbanX::ChampsBuffers 0
+
+			#----- Calculates the population density
+			UrbanX::PopDens2BuiltupCanVec $Coverage 0
+
+			#----- Calculates building heights
+			#UrbanX::HeightGain 0               ;# Requires UrbanX::ChampsBuffers to have run
+			#UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
+
+			#----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
+			#UrbanX::Priorities2TEB
+
+			#----- TO DELETE FROM THE URBANX PROCESSING : JUSTE LÀ POUR FAIRE DES TESTS SUR DE PETITES ZONES
+			#----- Applies LUT to all processing results to generate SMOKE classes.
+			UrbanX::Priorities2SMOKE $Coverage
+			#UrbanX::SMOKE2DA 0
+			#----- FIN DU TO DELETE FROM THE URBANX PROCESSING
+
+			#----- Optional outputs:
+			#UrbanX::VegeMask
+			#UrbanX::TEB2FSTD
 
 
 
-   } else {
-      GenX::Log INFO "Traitement d'une ville : UrbanX"
-      #----- Defines the extents of the zone to be process
-      UrbanX::AreaDefine    $Coverage
-      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
- 
-      #----- Finds CanVec files, rasterize and flattens all CanVec layers
-      UrbanX::SandwichCanVec $Coverage 0
+		}
+		default {
+			puts "Zone non définie"
+		}
+	}
 
-      #----- Applies buffer to linear and ponctual elements such as buildings and roads
-      #UrbanX::ScaleBuffersCanVec 0
+return
 
-      #-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
-      #UrbanX::Shp2Height
 
-      #----- Creates the fields and building vicinity output using spatial buffers
-      #UrbanX::ChampsBuffers 0
 
-      #----- Calculates the population density
-      UrbanX::PopDens2BuiltupCanVec $Coverage 0
+#---------- TO DELETE, WAS REPLACED BY SWITCH CONDITION
+#		
+#   if { $Coverage == "TN" || $Coverage == "PEI" || $Coverage == "NS" || $Coverage == "NB" || $Coverage == "QC" || $Coverage == "ON" || $Coverage == "MN" || $Coverage == "SK" || $Coverage == "AB" || $Coverage == "BC" || $Coverage == "YK" || $Coverage == "TNO" || $Coverage == "NV" } {
+#      GenX::Log INFO "Traitement d'une province : IndustrX"
+#      UrbanX::AreaDefine    $Coverage
+#      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
+#
+#      UrbanX::FindNTSSheetsCanVec 0 
+#		# au terme de cette proc, on a
+#		#Param(NTSIds) : liste des ids des feuillets NTS : format 9999
+#		#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
+#
+#		foreach feuillet $Param(NTSSheets) {
+#			GenX::Log INFO "Traitement de la tuile NTS ayant le numéro de feuillet $feuillet"
+#
+#			#----- Finds the extents of the zone to be process
+#			UrbanX::NTSExtent $feuillet
+#			GenX::Log INFO "La latitude de la tuile va de $Param(Lat0) à $Param(Lat1)"
+#			GenX::Log INFO "La longitude de la tuile va de $Param(Lon0) à $Param(Lon1)"
+#			GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe X  vont de $Param(x0) à $Param(x1)"
+#			GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe Y  vont de $Param(y0) à $Param(y1)"
+#
+#			#----- Defines the extents of the zone to be process
+#			UrbanX::UTMZoneDefine  $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $feuillet
+#
+#			#----- Finds CanVec files, rasterize and flattens all CanVec layers
+#			if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
+#				UrbanX::SandwichCanVec $feuillet $feuillet
+#			} else {
+#				GenX::Log INFO "Le fichier $GenX::Param(OutFile)_sandwich_$feuillet.tif existe déjà."
+#			}
+#
+#			#----------TO MODIFY FOR CANVEC LAYERS
+#			#----- Applies buffer to linear and ponctual elements such as buildings and roads
+#			#UrbanX::ScaleBuffersCanVec $m
+#			#----- Creates the fields and building vicinity output using spatial buffers
+#			#UrbanX::ChampsBuffers $m
+#			#----------END OF : TO MODIFY FOR CANVEC LAYERS
+#
+#			#----- Calculates the population density
+#			if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
+#				UrbanX::PopDens2BuiltupCanVec $feuillet $feuillet
+#			} else {
+#				GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_popdens_$feuillet.tif et $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif existent déjà."
+#			}
+#
+#			#----- Applies LUT to all processing results to generate SMOKE classes.
+#			if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
+#				UrbanX::Priorities2SMOKE  $feuillet
+#			} else {
+#				GenX::Log INFO "Le fichier $GenX::Param(OutFile)_SMOKE_$feuillet.tif existe déjà."
+#			}
+#
+#			#----- PROC TO DEVELOP !
+#			#UrbanX::SMOKE2DA
+#
+#		}
+#
+#   } else {
+#      GenX::Log INFO "Traitement d'une ville : UrbanX"
+#      #----- Defines the extents of the zone to be process
+#      UrbanX::AreaDefine    $Coverage
+#      UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
+# 
+#      #----- Finds CanVec files, rasterize and flattens all CanVec layers
+#      UrbanX::SandwichCanVec $Coverage 0
+#
+#      #----- Applies buffer to linear and ponctual elements such as buildings and roads
+#      #UrbanX::ScaleBuffersCanVec 0
+#
+#      #-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
+#      #UrbanX::Shp2Height
+#
+#      #----- Creates the fields and building vicinity output using spatial buffers
+#      #UrbanX::ChampsBuffers 0
+#
+#      #----- Calculates the population density
+#      UrbanX::PopDens2BuiltupCanVec $Coverage 0
+#
+#      #----- Calculates building heights
+#      #UrbanX::HeightGain 0               ;# Requires UrbanX::ChampsBuffers to have run
+#      #UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
+#
+#      #----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
+#      #UrbanX::Priorities2TEB
+#
+#      #----- TO DELETE FROM THE URBANX PROCESSING : JUSTE LÀ POUR FAIRE DES TESTS SUR DE PETITES ZONES
+#      #----- Applies LUT to all processing results to generate SMOKE classes.
+#      UrbanX::Priorities2SMOKE $Coverage
+#      #UrbanX::SMOKE2DA 0
+#      #----- FIN DU TO DELETE FROM THE URBANX PROCESSING
+#
+#      #----- Optional outputs:
+#      #UrbanX::VegeMask
+#      #UrbanX::TEB2FSTD
+#   }
 
-      #----- Calculates building heights
-      #UrbanX::HeightGain 0               ;# Requires UrbanX::ChampsBuffers to have run
-      #UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
-
-      #----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
-      #UrbanX::Priorities2TEB
-
-      #----- TO DELETE FROM THE URBANX PROCESSING : JUSTE LÀ POUR FAIRE DES TESTS SUR DE PETITES ZONES
-      #----- Applies LUT to all processing results to generate SMOKE classes.
-      UrbanX::Priorities2SMOKE $Coverage
-      #UrbanX::SMOKE2DA 0
-      #----- FIN DU TO DELETE FROM THE URBANX PROCESSING
-
-      #----- Optional outputs:
-      #UrbanX::VegeMask
-      #UrbanX::TEB2FSTD
-   }
+	#----------------- FIN DU TO DELETE REMPLACEMENT PAR SWITCH CONDITION
 
 
    #------------- MAIN ORIGINAGL, À SUPPRIMER SI ON GARDE LE IF/ELSE SUR COVERAGE ------------
