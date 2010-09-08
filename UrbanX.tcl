@@ -170,7 +170,7 @@ namespace eval UrbanX { } {
       #VE_1240009_2		700	810	000	"Wooded area, polygon"																Regular			"Ajouter un post-traitement sur type? (1=Extracted, 2=Interpreted, 3=CFS-EOSD, 4=Land Cover Circa 2000 Vector)"
       #VE_2290009_1		000	000	000	"Cut line, line"																					Excluded			"Ajouter un post-traitement sur type? (-1=unknown, 1=firebreak, 2=other)"
 
-	#Liste des entités CanVec qui doivent être rasterisées.  
+	#Liste des entités CanVec qui doivent être rasterisées.
    #Ces entités sont classés par ordre décroissant de priorité
    #Note : les entités dont le nom commence par pp_ ne sont pas des entités originant de CanVec, mais plutôt des conséquences du post-traitement.
    #Ils sont inclus dans cette liste pour que leurs valeurs de priorités apparaisent dans la variable Param(Priorities), afin de faire la
@@ -327,8 +327,8 @@ namespace eval UrbanX { } {
       TR_1780009_0
       TR_1790009_0
       TR_2320009_0
-      VE_2290009_1 } 
- 
+      VE_2290009_1 }
+
 	# Layers from CanVec requiring postprocessing
    #Aucun tri particulier nécessaire pour cette liste d'entités
    set Param(LayersPostPro)    {
@@ -349,7 +349,7 @@ namespace eval UrbanX { } {
       TR_1020009_1
       TR_1190009_0
       TR_1190009_2
-      TR_1760009_1 } 
+      TR_1760009_1 }
 
 
    set Param(WaterLayers)      { HD_1480009_2 } ;# Water layers from CanVec
@@ -370,7 +370,7 @@ namespace eval UrbanX { } {
 
    #------TO DELETE : LAYERS BNDT------------------
 	#set Param(Layers)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
-	#set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the NTDB layers to be processed   
+	#set Param(Priorities)           { 990 970 940 930 920 910 900 890 885 880 875 870 865 860 852 850 840 830 820 810 800 790 780 775 770 765 760 750 740 710 700 690 680 675 670 665 660 650 645 640 630 620 610 605 590 580 570 550 400 350 330 320 310 302 301 300 290 280 271 271 270 270 260 250 248 244 242 240 230 225 220 212 211 210 205 200 190 185 181 180 170 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 50 45 41 40 35 30 22 21 20 } ;# LUT of priority values for the NTDB layers to be processed
    #set Param(Excluded)         { a_cable_l barrier_p cave_en_p contour_l crane_p cross_p cut_lin_l dis_str_p disc_pt_p elev_pt_p ferry_r_l haz_nav_p highw_e_p nav_aid_p nts_lim_l oil_fie_p pond_pa_l shrine_p ski_jum_p spring_p toponym_p trans_l_l tunnel_l turntab_p u_reser_p u_reser_a valve_p wat_dis_a wat_dis_l wat_dis_p well_p } ;# Layers from BNDT ignored for rasterization
   #set Param(LayersPostPro)    { mininga_p railway_l road_l runway_a runway_p sport_t_l buildin_p buildin_a } ;# Layers from BNDT requiring postprocessing
 	#set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
@@ -390,6 +390,7 @@ namespace eval UrbanX { } {
    #fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
    set Param(PopFile2006) /data/aqli04/afsulub/StatCan2006/da2006-nts_lcc-nad83.shp
 	set Param(PopFile2006SMOKE) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
+   set Param(PopFile2006SMOKE) /data/goodenough/afsr005/Projects/GenPhysX/UrbanX/da2006-nts_lcc-nad83.shp
 
    #fichier contenanant 1 polygone pour chaque province ou territoire du Canada
    set Param(ProvincesGeom) /data/aqli04/afsulub/StatCan2006/Provinces_lcc-nad83.shp
@@ -663,7 +664,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
 
 	georef define UTMREF$indexCouverture -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
 
-   
+
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 }
 
@@ -757,7 +758,7 @@ proc UrbanX::FindNTSSheetsCanVec {indexCouverture } {
 	#index de la géométrie de province
 	set idxprovince [ogrlayer define VCANADA -featureselect [list [list PR == $Param(ProvinceCode) ] ] ]
 
-	#conversion de la géométrie pour la province sélectionnée 
+	#conversion de la géométrie pour la province sélectionnée
 	set geom [ogrlayer define VCANADA -geometry $idxprovince]
 
 	#conversion de NTSLAYER50K en UTMREF.  ATTENTION: cette conversion doit se faire APRÈS la présélection suivant une boîte lat/lon, mais AVANT la sélection avec une géométrie UTMREF
@@ -847,7 +848,7 @@ proc UrbanX::NTSExtent { indexCouverture } {
 
 	GenX::Log INFO "CanVec NTS50K file : $Param(CanVecNTSFiles)"
 
-	
+
 	#ouverture du shapefile index NTS50K
    if { ![ogrlayer is CANVECNTSLAYER] } {
       set canvec_nts_layer [lindex [ogrfile open SHAPECANVECNTSLAYER read $Param(CanVecNTSFiles)] 0]
@@ -2410,6 +2411,7 @@ proc UrbanX::FilterGen { Type Size } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
+
 proc UrbanX::SMOKE2DA {indexCouverture } {
 
    GenX::Log INFO "Début de la proc SMOKE2DA"
@@ -2419,63 +2421,43 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	#ouverture du fichier SMOKE.tif
 	gdalband read RSMOKE [gdalfile open FSMOKE read $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif]
 
-	#ouverture du fichier de polygones de DA Original
-	set da_layer_original [lindex [ogrfile open SHAPEDAORIGINAL read $Param(PopFile2006)] 0]
-   eval ogrlayer read VDAORIGINAL $da_layer_original
-	GenX::Log INFO "On compte [ogrlayer define VDAORIGINAL -nb] polygones dans le fichier des dissemination areas original"
-
 	#ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
-	set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
-   eval ogrlayer read VDASMOKE $da_layer_smoke
-	GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
+   if { ![ogrlayer is VDASMOKE] } {
+      set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
+      eval ogrlayer read VDASMOKE $da_layer_smoke
+	   GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
 
-	#NOTE : ON DOIT PROCÉDER AVEC 2 SHAPEFILES : RECHERCHE DANS LE FICHIER ORIGINAL, ÉCRITURE DANS LE FICHIER À MODIFIER
-	#CAR LA PROCÉDURE DÉPLACE LA GÉOMÉTRIE AVEC LA REPROJECTION...
+      foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
+         if { $classeid!=0 } {
+            ogrlayer clear VDASMOKE SMOKE$classeid
+         }
+      }
+   }
 
 	#sélection des polygones de DA ayant la valeur indexCouverture dans le champ SNRC
-	set da_select [ogrlayer define VDAORIGINAL -featureselect [list [list SNRC == $indexCouverture]] ]
+	set da_select [ogrlayer define VDASMOKE -featureselect [list [list SNRC == $indexCouverture]] ]
 	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
 
-	#conversion du fichier dans la référence UTMREF
-	ogrlayer stats VDAORIGINAL -transform UTMREF$indexCouverture
-	
 	#création d'un fichier de rasterization des polygones de DA
-   gdalband create RDA $Param(Width) $Param(Height) 1 UInt16
+   gdalband create RDA $Param(Width) $Param(Height) 1 Int16
    gdalband define RDA -georef UTMREF$indexCouverture
 
-	gdalband stats RDA -nodata -1
-	gdalband clear RDA
-
 	#rasterization des polygones de DA
-	gdalband gridinterp RDA VDAORIGINAL FAST FEATURE_ID
+	#changer FID_da2006 pour FEATURE_ID
+	gdalband gridinterp RDA VDASMOKE FAST FEATURE_ID
 
+	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
+	GenX::Log INFO "PolygonID ---- Classe SMOKE ---- Nombre de pixels"
 
-#to delete, sauvegarde temporaire pour voir où ça plante
-#    file delete -force $GenX::Param(OutFile)_GRIDINTERP_SMOKE2DA.tif
-#    gdalfile open FILEOUT write $GenX::Param(OutFile)__GRIDINTERP_SMOKE2DA.tif GeoTiff
-#    gdalband write RDA FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-#    GenX::Log INFO "The file $GenX::Param(OutFile)__GRIDINTERP_SMOKE2DA.tif was generated"
+   foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
 
-#return
+      if { $classeid==0 } {
+         continue
+      }
 
-	#création de la raster de calcul
-#   gdalband create RCALCUL $Param(Width) $Param(Height) 1 Float32
-#  eval gdalband define RCALCUL -georef UTMREF$indexCouverture
-
-	#comptage pour chaque classe SMOKE
-#	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
-#	GenX::Log INFO "PolygonID ---- Classe SMOKE ---- Nombre de pixels"
-	set sort_unique_smokeclasses [lsort -unique -integer $Param(SMOKEClasses)]
-	foreach classeid $sort_unique_smokeclasses {
-
-# 		#new code JP
-		if {$classeid == 0} {
-			continue
-		}
-
-		puts "1 VDASMOKE.SMOKE$classeid"
-		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,(RSMOKE==$classeid)*RDA)
-# 		#fin new code JP
+      set t [clock seconds]
+#      vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,(RSMOKE==$classeid)*RDA)
+      vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
 
 #-- à supprimer, remplacé par new code JP
 # 		foreach polygonid $da_select {
@@ -2485,22 +2467,20 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 # 				#calcul de la somme
 # 				set total_pixel [vexpr RCALCUL ssum(RCALCUL)]
 # 				GenX::Log INFO "$polygonid ---- $classeid ---- $total_pixel"
-# 
+#
 # 				#Écriture de la valeur $total_pixel dans le shapefile VDASMOKE, en ligne $polygonid et en colonne SMOKE$classeid
 # 				ogrlayer define VDASMOKE -feature $polygonid SMOKE$classeid $total_pixel ;#------------ ATTENTION : CETTE COMMANDE NE FONCTIONNE PAS COMPLÈTEMENT POUR L'INSTANT : PAS POSSIBLE DE FERMER LE FICHIER
-# 			} 
+# 			}
 # 		}
-
+      puts "$classeid [expr [clock seconds]-$t]"
 	}
 
+   ogrlayer sync VDASMOKE
+
 	#nettoyage de mémoire
-	gdalband free RSMOKE
-	gdalband free RCALCUL
-   gdalband free RDA
-	ogrlayer free VDAORIGINAL  ;# ne peut pas être fermé pour l'instant, la fonction plante
-	ogrlayer free VDASMOKE  ;# ne peut pas être fermé pour l'instant, la fonction plante
+	gdalband free RSMOKE RDA
+#	ogrlayer free VDASMOKE  ;# ne peut pas être fermé pour l'instant, la fonction plante
 	gdalfile close FSMOKE
-	ogrfile close SHAPEDAORIGINAL  ;# ne peut pas être fermé pour l'instant, la fonction plante
 	ogrfile close SHAPEDSMOKE  ;# ne peut pas être fermé pour l'instant, la fonction plante
 
    GenX::Log INFO "Fin de la proc SMOKE2DA"
@@ -2527,7 +2507,7 @@ proc UrbanX::Process { Coverage } {
    GenX::Log INFO "Début d'UrbanX"
 
    variable Param
- 
+
 # #	PETIT BOUT DE CODE À SUPPRIMER, JUSTE UN TEST POUR TROUVER TOUS LES FICHIERS CANVEC DU CANADA POUR UNE ENTITÉ
 # set Param(FilesCanada) {}
 # set Param(LayerATrouver) {BS_2000009}
@@ -2574,7 +2554,7 @@ proc UrbanX::Process { Coverage } {
 			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
 
 			#----- Ffinds all NTS Sheets that intersect with the province polygon
-			UrbanX::FindNTSSheetsCanVec 0 
+			UrbanX::FindNTSSheetsCanVec 0
 			# au terme de cette proc, on a
 			#Param(NTSIds) : liste des ids des feuillets NTS : format 9999
 			#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
@@ -2664,7 +2644,7 @@ return ;#coupure après 1 feuillet
 
 			#----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
 			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
-	
+
 			#----- Finds CanVec files, rasterize and flattens all CanVec layers
 			UrbanX::SandwichCanVec $Coverage
 
