@@ -389,6 +389,7 @@ namespace eval UrbanX { } {
 
    #fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
    set Param(PopFile2006) /data/aqli04/afsulub/StatCan2006/da2006-nts_lcc-nad83.shp
+	set Param(PopFile2006SMOKE) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
 
    #fichier contenanant 1 polygone pour chaque province ou territoire du Canada
    set Param(ProvincesGeom) /data/aqli04/afsulub/StatCan2006/Provinces_lcc-nad83.shp
@@ -759,24 +760,16 @@ proc UrbanX::FindNTSSheetsCanVec {indexCouverture } {
 	#conversion de la géométrie pour la province sélectionnée 
 	set geom [ogrlayer define VCANADA -geometry $idxprovince]
 
-	#-------- à remplacer par convexhull --------------
-#    #sélection des fichiers NTS à l'intérieur de la box de présélection
-#    set ntssheets_pre [ogrlayer pick NTSLAYER50K [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
-#    GenX::Log INFO "Les [llength $ntssheets_pre] tuiles NTS ayant les ID suivants sont présélectionnées avec les lat lon : $ntssheets_pre"
-#    #ramener NTSLAYER50K à la sélection des fichiers à l'intérieur de la box de présélection
-#    ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
-	#-------- fin du à remplacer par convexhull --------------
-
 	#conversion de NTSLAYER50K en UTMREF.  ATTENTION: cette conversion doit se faire APRÈS la présélection suivant une boîte lat/lon, mais AVANT la sélection avec une géométrie UTMREF
    ogrlayer stats NTSLAYER50K -transform UTMREF$indexCouverture
 
-	#-------- convexhull --------------
+	#Présélection des tuiles NTS à l'aide d'un convexhull
 	set hull [ogrgeometry stat $geom -convexhull]
 	set ntssheets_pre [ogrlayer pick NTSLAYER50K $hull True]
-	#ramener NTSLAYER50K à la sélection des fichiers à l'intérieur de la box de présélection
+
+	#ramener NTSLAYER50K à la sélection des fichiers présélectionnés
 	ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
-	puts "Hull Found Intersection : $ntssheets_pre"
-	#--------fin du convexhull --------------
+	puts "Les [llength $ntssheets_pre] tuiles NTS ayant les ID suivants ont été présélectionnées à l'aide du convex hull : $ntssheets_pre"
 
 	GenX::Log INFO "Intersection des fichiers NTS présélectionnés avec le polygone de province.  Cette opération peut prendre plusieurs minutes!"
 
@@ -793,16 +786,9 @@ proc UrbanX::FindNTSSheetsCanVec {indexCouverture } {
 
 	#nettoyage de mémoire
 	ogrfile close SHAPE50K
-	puts "On passe A"
-
 	ogrfile close SHAPECANADA
-	puts "On passe B"
-
 	ogrlayer free NTSLAYER50K
-	puts "On passe C"
-
 	ogrlayer free VCANADA
-	puts "On passe D"
 
 	GenX::Log INFO "fin de la proc FindNTSSheetsCanVec"
 
@@ -2433,57 +2419,89 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	#ouverture du fichier SMOKE.tif
 	gdalband read RSMOKE [gdalfile open FSMOKE read $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif]
 
-	#ouverture du fichier de polygones de DA
-	set da_layer [lindex [ogrfile open SHAPEDA append $Param(PopFile2006)] 0]
-   eval ogrlayer read VDA $da_layer
-	GenX::Log INFO "On compte [ogrlayer define VDA -nb] polygones dans le fichier des dissemination areas"
+	#ouverture du fichier de polygones de DA Original
+	set da_layer_original [lindex [ogrfile open SHAPEDAORIGINAL read $Param(PopFile2006)] 0]
+   eval ogrlayer read VDAORIGINAL $da_layer_original
+	GenX::Log INFO "On compte [ogrlayer define VDAORIGINAL -nb] polygones dans le fichier des dissemination areas original"
+
+	#ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
+	set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
+   eval ogrlayer read VDASMOKE $da_layer_smoke
+	GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
+
+	#NOTE : ON DOIT PROCÉDER AVEC 2 SHAPEFILES : RECHERCHE DANS LE FICHIER ORIGINAL, ÉCRITURE DANS LE FICHIER À MODIFIER
+	#CAR LA PROCÉDURE DÉPLACE LA GÉOMÉTRIE AVEC LA REPROJECTION...
 
 	#sélection des polygones de DA ayant la valeur indexCouverture dans le champ SNRC
-	set da_select [ogrlayer define VDA -featureselect [list [list SNRC == $indexCouverture]] ]
+	set da_select [ogrlayer define VDAORIGINAL -featureselect [list [list SNRC == $indexCouverture]] ]
 	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
 
 	#conversion du fichier dans la référence UTMREF
-	ogrlayer stats VDA -transform UTMREF$indexCouverture
+	ogrlayer stats VDAORIGINAL -transform UTMREF$indexCouverture
 	
 	#création d'un fichier de rasterization des polygones de DA
    gdalband create RDA $Param(Width) $Param(Height) 1 UInt16
    gdalband define RDA -georef UTMREF$indexCouverture
 
+	gdalband stats RDA -nodata -1
+	gdalband clear RDA
+
 	#rasterization des polygones de DA
-	#changer FID_da2006 pour FEATURE_ID
-	gdalband gridinterp RDA VDA FAST FEATURE_ID
+	gdalband gridinterp RDA VDAORIGINAL FAST FEATURE_ID
+
+
+#to delete, sauvegarde temporaire pour voir où ça plante
+#    file delete -force $GenX::Param(OutFile)_GRIDINTERP_SMOKE2DA.tif
+#    gdalfile open FILEOUT write $GenX::Param(OutFile)__GRIDINTERP_SMOKE2DA.tif GeoTiff
+#    gdalband write RDA FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+#    GenX::Log INFO "The file $GenX::Param(OutFile)__GRIDINTERP_SMOKE2DA.tif was generated"
+
+#return
 
 	#création de la raster de calcul
-   gdalband create RCALCUL $Param(Width) $Param(Height) 1 Float32
-   eval gdalband define RCALCUL -georef UTMREF$indexCouverture
+#   gdalband create RCALCUL $Param(Width) $Param(Height) 1 Float32
+#  eval gdalband define RCALCUL -georef UTMREF$indexCouverture
 
 	#comptage pour chaque classe SMOKE
-	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
-	GenX::Log INFO "PolygonID ---- Classe SMOKE ---- Nombre de pixels"
-	set unique_smokeclasses [lsort -unique $Param(SMOKEClasses)]
-	set sort_unique_smokeclasses [lsort -integer $unique_smokeclasses]
+#	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
+#	GenX::Log INFO "PolygonID ---- Classe SMOKE ---- Nombre de pixels"
+	set sort_unique_smokeclasses [lsort -unique -integer $Param(SMOKEClasses)]
 	foreach classeid $sort_unique_smokeclasses {
-		foreach polygonid $da_select {
-			if {$classeid != 0} {
-				#binariser l'image sur la classe et le polygone
-				vexpr RCALCUL ifelse (RSMOKE == $classeid && RDA == $polygonid, 1, 0)
-				#calcul de la somme
-				set total_pixel [vexpr RCALCUL ssum(RCALCUL)]
-				GenX::Log INFO "$polygonid ---- $classeid ---- $total_pixel"
 
-				#Écriture de la valeur $total_pixel dans le shapefile VDA, en ligne $polygonid et en colonne SMOKE$classeid
-				ogrlayer define VDA -feature $polygonid SMOKE$classeid $total_pixel ;#------------ ATTENTION : CETTE COMMANDE NE FONCTIONNE PAS COMPLÈTEMENT POUR L'INSTANT : PAS POSSIBLE DE FERMER LE FICHIER
-			} 
+# 		#new code JP
+		if {$classeid == 0} {
+			continue
 		}
+
+		puts "1 VDASMOKE.SMOKE$classeid"
+		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,(RSMOKE==$classeid)*RDA)
+# 		#fin new code JP
+
+#-- à supprimer, remplacé par new code JP
+# 		foreach polygonid $da_select {
+# 			if {$classeid != 0} {
+# 				#binariser l'image sur la classe et le polygone
+# 				vexpr RCALCUL ifelse (RSMOKE == $classeid && RDA == $polygonid, 1, 0)
+# 				#calcul de la somme
+# 				set total_pixel [vexpr RCALCUL ssum(RCALCUL)]
+# 				GenX::Log INFO "$polygonid ---- $classeid ---- $total_pixel"
+# 
+# 				#Écriture de la valeur $total_pixel dans le shapefile VDASMOKE, en ligne $polygonid et en colonne SMOKE$classeid
+# 				ogrlayer define VDASMOKE -feature $polygonid SMOKE$classeid $total_pixel ;#------------ ATTENTION : CETTE COMMANDE NE FONCTIONNE PAS COMPLÈTEMENT POUR L'INSTANT : PAS POSSIBLE DE FERMER LE FICHIER
+# 			} 
+# 		}
+
 	}
 
 	#nettoyage de mémoire
 	gdalband free RSMOKE
 	gdalband free RCALCUL
    gdalband free RDA
-	ogrlayer free VDA  ;# ne peut pas être fermé pour l'instant, la fonction plante
+	ogrlayer free VDAORIGINAL  ;# ne peut pas être fermé pour l'instant, la fonction plante
+	ogrlayer free VDASMOKE  ;# ne peut pas être fermé pour l'instant, la fonction plante
 	gdalfile close FSMOKE
-	ogrfile close SHAPEDA  ;# ne peut pas être fermé pour l'instant, la fonction plante
+	ogrfile close SHAPEDAORIGINAL  ;# ne peut pas être fermé pour l'instant, la fonction plante
+	ogrfile close SHAPEDSMOKE  ;# ne peut pas être fermé pour l'instant, la fonction plante
 
    GenX::Log INFO "Fin de la proc SMOKE2DA"
 }
@@ -2509,14 +2527,17 @@ proc UrbanX::Process { Coverage } {
    GenX::Log INFO "Début d'UrbanX"
 
    variable Param
-
+ 
 # #	PETIT BOUT DE CODE À SUPPRIMER, JUSTE UN TEST POUR TROUVER TOUS LES FICHIERS CANVEC DU CANADA POUR UNE ENTITÉ
 # set Param(FilesCanada) {}
-# set Param(LayerATrouver) {FO_1080049}
+# set Param(LayerATrouver) {BS_2000009}
+# puts "On passe A"
 # set Param(FilesCanada) [GenX::CANVECFindFiles 40 -50 88 -150 $Param(LayerATrouver)]
 # #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
+# puts "On passe B"
 # set unique_filescanada [lsort -unique $Param(FilesCanada)]
 # set sort_unique_filescanada [lsort $unique_filescanada]
+# puts "On passe C"
 # foreach file $sort_unique_filescanada {
 # 	set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
 # 	#filename contains an element of the form 999a99_9_9_AA_9999999_9
@@ -2610,10 +2631,11 @@ proc UrbanX::Process { Coverage } {
 				#----- Counts the SMOKE values and write the results in the dissemination area shapefile
 				UrbanX::SMOKE2DA $feuillet
 
-#return ;#coupure après 1 feuillet
+return ;#coupure après 1 feuillet
 
 				#à scrapper, juste pour rouler sur quelques feuillets
-				if { $i == 0 } {
+				if { $i == 2 } {
+					puts "Fin du traitement temporaire"
 					return
 				} else {
 					incr i
