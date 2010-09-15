@@ -366,7 +366,7 @@ namespace eval UrbanX { } {
 
 	#SMOKE Classes for CanVec
    #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 1 2 3 0 4 0 0 0 0 5 6 7 8 9 10 11 12 13 14 15 16 17 0 0 18 0 19 20 21 0 22 0 23 0 0 0 0 24 25 26 0 27 28 29 30 31 32 33 0 0 0 0 34 35 0 36 37 38 39 40 41 42 43 44 45 46 0 47 0 0 48 0 49 50 51 52 53 54 55 56 0 0 57 0 0 0 58 59 0 0 0 0 0 60 61 62 63 0 64 65 66 0 67 68 69 }
+   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 1 2 3 0 4 0 0 0 0 5 6 7 8 9 10 10 11 12 13 14 15 16 0 0 17 0 18 19 20 0 21 0 22 0 0 0 0 23 24 25 0 26 27 3 28 29 30 31 0 0 0 0 2 32 0 33 34 35 36 37 38 38 39 40 2 41 0 42 0 0 37 0 43 43 3 44 13 46 47 45 0 0 18 0 0 0 7 7 0 0 0 0 0 29 22 8 24 0 48 49 50 0 33 34 35 }
 
    #------TO DELETE : LAYERS BNDT------------------
 	#set Param(Layers)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
@@ -390,7 +390,7 @@ namespace eval UrbanX { } {
    #fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
    set Param(PopFile2006) /data/aqli04/afsulub/StatCan2006/da2006-nts_lcc-nad83.shp
 	set Param(PopFile2006SMOKE) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
-   set Param(PopFile2006SMOKE) /data/goodenough/afsr005/Projects/GenPhysX/UrbanX/da2006-nts_lcc-nad83.shp
+#   set Param(PopFile2006SMOKE) /data/goodenough/afsr005/Projects/GenPhysX/UrbanX/da2006-nts_lcc-nad83.shp
 
    #fichier contenanant 1 polygone pour chaque province ou territoire du Canada
    set Param(ProvincesGeom) /data/aqli04/afsulub/StatCan2006/Provinces_lcc-nad83.shp
@@ -2421,67 +2421,49 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	#ouverture du fichier SMOKE.tif
 	gdalband read RSMOKE [gdalfile open FSMOKE read $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif]
 
-	#ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
-   if { ![ogrlayer is VDASMOKE] } {
-      set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
-      eval ogrlayer read VDASMOKE $da_layer_smoke
-	   GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
-
-      foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
-         if { $classeid!=0 } {
-            ogrlayer clear VDASMOKE SMOKE$classeid
-         }
-      }
-   }
-
 	#sélection des polygones de DA ayant la valeur indexCouverture dans le champ SNRC
 	set da_select [ogrlayer define VDASMOKE -featureselect [list [list SNRC == $indexCouverture]] ]
 	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
 
+	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
+	foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
+		if { $classeid!=0 } {
+			ogrlayer clear VDASMOKE SMOKE$classeid
+		}
+	}
+
 	#création d'un fichier de rasterization des polygones de DA
-   gdalband create RDA $Param(Width) $Param(Height) 1 Int16
-   gdalband define RDA -georef UTMREF$indexCouverture
+	gdalband create RDA $Param(Width) $Param(Height) 1 Int16
+	gdalband define RDA -georef UTMREF$indexCouverture
 
 	#rasterization des polygones de DA
-	#changer FID_da2006 pour FEATURE_ID
 	gdalband gridinterp RDA VDASMOKE FAST FEATURE_ID
 
 	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
-	GenX::Log INFO "PolygonID ---- Classe SMOKE ---- Nombre de pixels"
 
    foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
 
-      if { $classeid==0 } {
-         continue
-      }
+		#éviter de compter les éléments mis à 0 dans Values2SMOKE
+		if { $classeid==0 } {
+			continue
+		}
 
-      set t [clock seconds]
-#      vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,(RSMOKE==$classeid)*RDA)
-      vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
+		#enregistrement du temps nécessaire pour faire le traitement de la classe i
+		set t [clock seconds]
 
-#-- à supprimer, remplacé par new code JP
-# 		foreach polygonid $da_select {
-# 			if {$classeid != 0} {
-# 				#binariser l'image sur la classe et le polygone
-# 				vexpr RCALCUL ifelse (RSMOKE == $classeid && RDA == $polygonid, 1, 0)
-# 				#calcul de la somme
-# 				set total_pixel [vexpr RCALCUL ssum(RCALCUL)]
-# 				GenX::Log INFO "$polygonid ---- $classeid ---- $total_pixel"
-#
-# 				#Écriture de la valeur $total_pixel dans le shapefile VDASMOKE, en ligne $polygonid et en colonne SMOKE$classeid
-# 				ogrlayer define VDASMOKE -feature $polygonid SMOKE$classeid $total_pixel ;#------------ ATTENTION : CETTE COMMANDE NE FONCTIONNE PAS COMPLÈTEMENT POUR L'INSTANT : PAS POSSIBLE DE FERMER LE FICHIER
-# 			}
-# 		}
-      puts "$classeid [expr [clock seconds]-$t]"
+		#comptage des pixels de chaque classe smoke pour chaque polygone de DA : increment de la table
+		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
+
+		#affichage du temps requis pour traiter la classe i
+		puts "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
 	}
 
-   ogrlayer sync VDASMOKE
+   ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
 
 	#nettoyage de mémoire
 	gdalband free RSMOKE RDA
-#	ogrlayer free VDASMOKE  ;# ne peut pas être fermé pour l'instant, la fonction plante
 	gdalfile close FSMOKE
-	ogrfile close SHAPEDSMOKE  ;# ne peut pas être fermé pour l'instant, la fonction plante
+	ogrfile close SHAPEDSMOKE 
 
    GenX::Log INFO "Fin de la proc SMOKE2DA"
 }
@@ -2510,7 +2492,7 @@ proc UrbanX::Process { Coverage } {
 
 # #	PETIT BOUT DE CODE À SUPPRIMER, JUSTE UN TEST POUR TROUVER TOUS LES FICHIERS CANVEC DU CANADA POUR UNE ENTITÉ
 # set Param(FilesCanada) {}
-# set Param(LayerATrouver) {BS_2000009}
+# set Param(LayerATrouver) {LX_2460009}
 # puts "On passe A"
 # set Param(FilesCanada) [GenX::CANVECFindFiles 40 -50 88 -150 $Param(LayerATrouver)]
 # #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
@@ -2559,17 +2541,44 @@ proc UrbanX::Process { Coverage } {
 			#Param(NTSIds) : liste des ids des feuillets NTS : format 9999
 			#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
 
+
+#			set i 0
+
+# 			#POUR OBTENIR SIMPLEMENT LES FEUILLETS NTS QUI SERONT TRAITÉS DANS LA ZONE CHOISIE, UNCOMMENT LE RETURN SUIVANT :
+#  			return
+
+# 			#traitement d'un feuillet, zone Montreal
+# 			set Param(NTSIds) 4862
+# 			set Param(NTSSheets) "031H05"
+
+# 			#traitement d'un feuillet, zone Toronto
+# 			set Param(NTSIds) 4739
+# 			set Param(NTSSheets) "030M12"
+
+# 			#traitement d'un feuillet, far far away
+# 			set Param(NTSIds) 18539
+# 			set Param(NTSSheets) "037E05"
+
+			#ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
+			if { ![ogrlayer is VDASMOKE] } {
+				set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
+				eval ogrlayer read VDASMOKE $da_layer_smoke
+				GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
+			}
+
+			set nbrfeuillets [llength $Param(NTSSheets) ] 
+			set i 1
+
+			puts "_______________________________________________________________________________________________________________________________"
+
 			#----- Process for each NTS Sheets that were previously selected
-
-			set i 0
-
-#return
-
-#test pour 1 feuillet Montreal
-#set Param(NTSIds) 4862
-#set Param(NTSSheets) "031H05"
-
 			foreach feuillet $Param(NTSSheets) {
+
+				#calcul du temps de traitement d'un feuillet NTS
+				set t_feuillet [clock seconds]
+
+				puts "Feuillet $i sur $nbrfeuillets"
+
 				GenX::Log INFO "Traitement de la tuile NTS ayant le numéro de feuillet $feuillet"
 
 				#----- Finds the extents of the zone (NTS Sheet) to be process
@@ -2603,27 +2612,34 @@ proc UrbanX::Process { Coverage } {
 				#----- Applies LUT to all processing results to generate SMOKE classes
 				if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
 					UrbanX::Priorities2SMOKE  $feuillet
+					#----- Counts the SMOKE values and write the results in the dissemination area shapefile
+					UrbanX::SMOKE2DA $feuillet
 				} else {
 					GenX::Log INFO "Le fichier $GenX::Param(OutFile)_SMOKE_$feuillet.tif existe déjà."
 				}
 
-				#----- PROC TO DEVELOP !
-				#----- Counts the SMOKE values and write the results in the dissemination area shapefile
-				UrbanX::SMOKE2DA $feuillet
+				#affichage du temps de traitement du feuillet
+				puts "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
 
-return ;#coupure après 1 feuillet
+				puts "__________________________________________________________________________________________________________________________"
 
-				#à scrapper, juste pour rouler sur quelques feuillets
-				if { $i == 2 } {
-					puts "Fin du traitement temporaire"
-					return
-				} else {
-					incr i
-					puts "____________________________________________________________________________________________"
-					puts "i = $i"
-				}
+				incr i
+
+# 				#TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
+# 				#coupure après 1 feuillet
+# 				return
+# 				#coupure après quelques feuillets
+# 				if { $i == 2 } {
+# 					return
+# 				} else {
+# 					incr i
+# 					puts "____________________________________________________________________________________________"
+# 				}
+# 				#FIN DU TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
+
 
 			} ;# fin du foreach feuillet
+		ogrlayer free VDASMOKE  
 		} ;# fin du traitement de province
 
 		"VANCOUVER" -
@@ -2681,7 +2697,7 @@ return
 
 
 
-   #------------- MAIN ORIGINAGL, À SUPPRIMER SI ON GARDE LE IF/ELSE SUR COVERAGE ------------
+   #------------- MAIN ORIGINAGL, À SUPPRIMER SI ON GARDE LE SWITCH SUR COVERAGE ------------
 
    #----- Defines the extents of the zone to be process
    #UrbanX::AreaDefine    $Coverage
