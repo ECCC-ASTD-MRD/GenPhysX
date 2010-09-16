@@ -242,6 +242,27 @@ namespace eval UrbanX { } {
       TR_1020009_1
       pp_BS_2010009_2
       pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
       BS_2010009_2
       pp_HD_1450009_1
       pp_HD_1450009_1
@@ -289,12 +310,33 @@ namespace eval UrbanX { } {
       BS_2530009_0
       pp_BS_2010009_0
       pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
+		pp_BS_2010009_0
       BS_2010009_0
       }
 
 	#LUT of priority values for the CanVec layers to be processed
 	#Les valeurs de priorité sont en ordre décroissant, et leur index dans la liste correspond à celui de l'entité qui leur est associée dans Param(Entities)
-   set Param(Priorities)           { 999 999 999 999 999 999 991 990 990 970 911 910 890 885 880 875 870 865 861 860 859 858 857 852 852 850 840 823 822 821 820 810 800 795 790 780 775 770 760 740 740 710 700 690 670 665 660 650 645 640 630 610 610 605 600 590 590 580 570 551 550 400 320 310 302 301 300 290 280 271 270 250 244 242 240 230 220 210 200 190 185 181 181 180 170 163 162 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 34 33 32 30 22 21 20 }
+   set Param(Priorities)           { 999 999 999 999 999 999 991 990 990 970 911 910 890 885 880 875 870 865 861 860 859 858 857 852 852 850 840 823 822 821 820 810 800 795 790 780 775 770 760 740 740 710 700 690 670 665 660 650 645 640 630 610 610 605 600 590 590 580 570 551 550 400 390 380 324 323 322 321 320 319 318 317 316 315 314 313 312 311 310 309 308 307 306 305 304 303 302 301 290 280 271 270 250 244 242 240 230 220 210 200 190 185 181 181 180 170 163 162 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 34 33 32 30 24 23 22 21 20 19 18 17 16 15 14 16 12 11 10 9 8 7 6 5 4 3 2 1 }
 
 	# Layers from CanVec ignored for rasterization
    #Aucun tri particulier nécessaire pour cette liste d'entités
@@ -366,7 +408,7 @@ namespace eval UrbanX { } {
 
 	#SMOKE Classes for CanVec
    #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 1 2 3 0 4 0 0 0 0 5 6 7 8 9 10 10 11 12 13 14 15 16 0 0 17 0 18 19 20 0 21 0 22 0 0 0 0 23 24 25 0 26 27 3 28 29 30 31 0 0 0 0 2 32 0 33 34 35 36 37 38 38 39 40 2 41 0 42 0 0 37 0 43 43 3 44 13 46 47 45 0 0 18 0 0 0 7 7 0 0 0 0 0 29 22 8 24 0 48 49 50 0 33 34 35 }
+   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 1 2 3 0 4 0 0 0 0 5 6 7 8 9 10 10 11 12 13 14 15 16 0 0 17 0 18 19 20 0 21 0 22 0 0 0 0 23 24 25 0 26 27 3 28 29 30 31 0 0 0 0 2 32 0 48 49 50 51 52 53 54 49 49 55 49 56 57 58 49 59 49 49 52 49 49 61 52 62 33 34 34 35 36 37 2 38 0 39 0 0 34 0 40 40 3 41 13 43 44 42 0 0 18 0 0 0 7 7 0 0 0 0 0 29 22 8 24 0 45 46 47 0 48 49 50 51 52 53 54 49 49 55 49 56 57 58 49 59 49 49 52 49 49 61 52 62 }
 
    #------TO DELETE : LAYERS BNDT------------------
 	#set Param(Layers)            { pe_snow_a dry_riv_a embankm_a cut_a so_depo_a dam_a sand_a cemeter_a bo_gard_a zoo_a picnic_a park_sp_a am_park_a campgro_a golf_dr_a golf_co_a peat_cu_a stockya_a mininga_a fort_a ruins_a exhib_g_a oil_fac_a auto_wr_a lu_yard_a slip_a drivein_a water_b_a rock_le_a trans_s_a vegetat_a wetland_a li_depo_a fish_po_a lookout_a tank_a stadium_a runway_a breakwa_l esker_l dyke_le_l seawall_l n_canal_a builtup_a water_c_l ford_l wall_fe_l pipelin_l dam_l haz_air_l conveyo_l conduit_l railway_l pp_buildin_a pp_buildin_a buildin_a wharf_l lock_ga_l pp_sports_t_l pp_sports_t_a sport_t_l sport_t_a so_depo_p n_canal_l haz_air_p marina_p dam_p trail_l wind_de_p crane_l li_road_l pp_road_l pp_road_l road_l bridge_l footbri_l lock_ga_p ford_p pp_seapl_b_p seapl_b_p boat_ra_p pp_mininga_p mininga_p hi_site_p lookout_p oil_fac_p p_anten_p ruins_p silo_p campgro_p camp_p picnic_p drivein_p cemeter_p tank_p ski_cen_p trans_s_p li_depo_p pp_runway_a+p runway_p chimney_p tower_p pp_buildin_p pp_buildin_p buildin_p } ;# NTDB layers to be processed
@@ -1135,37 +1177,201 @@ proc UrbanX::SandwichCanVec { indexCouverture } {
 
             BS_2010009_0 {
                # entity : Building, points
-               # function in (11, 16, 23, 27, 37) Pri=21 TEB=111 ; function in (9, 12, 17, 19, 26, 39) PRI= 22 TEB= 112; else general
-               GenX::Log INFO "Post-processing for Building, point"
-               # function not in (9, 11, 12, 16, 17, 19, 23, 26, 27, 37, 39) : valeur générale
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (9,11,12,16,17,19,23,26,27,37,39)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general buildings) as VFEATURE2KEEP$j with priority value $priority"
-               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
-               # function in (11, 16, 23, 27, 37) : industrial commercial
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function IN (11,16,23,27,37)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial/commercial buildings) as VFEATURE2KEEP$j with priority value 21"
+					#function = 1 : arena
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 1)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (arena) as VFEATURE2KEEP$j with priority value 2"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 2
+					#function = 2 : armoury
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 2)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (armoury) as VFEATURE2KEEP$j with priority value 3"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 3
+					#function = 5 : city hall
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 5)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (city hall) as VFEATURE2KEEP$j with priority value 4"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 4
+					#function = 6 : coast guard station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 6)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (coast guard station) as VFEATURE2KEEP$j with priority value 5"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 5
+					#function = 7 : community center
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 7)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (community center) as VFEATURE2KEEP$j with priority value 6"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 6
+					#function = 8 : courthouse
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 8)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (courthouse) as VFEATURE2KEEP$j with priority value 7"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 7
+					#function = 9 : custom post
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 9)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (custom post) as VFEATURE2KEEP$j with priority value 8"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 8
+					#function = 11 : electric power station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 11)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (electric power station) as VFEATURE2KEEP$j with priority value 9"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 9
+					#function = 12 : fire station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 12)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fire station) as VFEATURE2KEEP$j with priority value 10"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 10
+					#function = 16 : highway service center
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 16)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highway service center) as VFEATURE2KEEP$j with priority value 11"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 11
+					#function = 17 : hospital
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 17)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (hospital) as VFEATURE2KEEP$j with priority value 12"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 12
+					#function = 19 : medical center
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 19)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (medical center) as VFEATURE2KEEP$j with priority value 13"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 13
+					#function = 20 : municipal hall
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 20)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (municipal hall) as VFEATURE2KEEP$j with priority value 14"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 14
+					#function = 23 : gas and oil facilities building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 23)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (gas and oil facilities building) as VFEATURE2KEEP$j with priority value 15"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 15
+					#function = 25 : parliament building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 25)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (parliament building) as VFEATURE2KEEP$j with priority value 16"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 16
+					#function = 26 : police station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 26)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (police station) as VFEATURE2KEEP$j with priority value 17"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 17
+					#function = 27 : railway station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 27)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (railway station) as VFEATURE2KEEP$j with priority value 18"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 18
+					#function = 29 : satellite-tracking station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 29)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (satellite-tracking station) as VFEATURE2KEEP$j with priority value 19"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 19
+					#function = 32 : sportsplex
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 32)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (sportsplex) as VFEATURE2KEEP$j with priority value 20"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 20
+					#function = 37 : industrial building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 37)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial building) as VFEATURE2KEEP$j with priority value 21"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 21
-               # function in (9, 12, 17, 19, 26, 39) : day-night 24/7
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function IN (9,12,17,19,26,39)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (day-night 24/7 buildings) as VFEATURE2KEEP$j with priority value 22"
+					#function = 38 : religious building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 38)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (religious building) as VFEATURE2KEEP$j with priority value 22"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 22
+					#function = 39 : penal building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 39)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (penal building) as VFEATURE2KEEP$j with priority value 23"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 23
+					#function = 41 : educational building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 41)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (educational building) as VFEATURE2KEEP$j with priority value 24"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 24
+					#function = else
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (1,2,5,6,7,8,9,11,12,16,17,19,20,23,25,26,27,29,32,37,38,39,41)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general) as VFEATURE2KEEP$j with priority value 1"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 1
             }
             BS_2010009_2 {
                # entity : Building, polygons
-               # function in (11, 16, 23, 27, 37) Pri=301 TEB=100 ; function in (9, 12, 17, 19, 26, 39) PRI=302 TEB=100; else general
-               GenX::Log INFO "Post-processing for Building, polygons"
-               # function not in (9, 11, 12, 16, 17, 19, 23, 26, 27, 37, 39) : valeur générale
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (9,11,12,16,17,19,23,26,27,37,39)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general buildings) as VFEATURE2KEEP$j with priority value $priority"
-               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
-               # function in (11, 16, 23, 27, 37) : industrial commercial
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function IN (11,16,23,27,37)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial/commercial buildings) as VFEATURE2KEEP$j with priority value 301"
-               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 301
-               # function in (9, 12, 17, 19, 26, 39) : day-night 24/7
-               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function IN (9,12,17,19,26,39)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (day-night 24/7 buildings) as VFEATURE2KEEP$j with priority value 302"
+					#function = 1 : arena
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 1)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (arena) as VFEATURE2KEEP$j with priority value 302"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 302
+					#function = 2 : armoury
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 2)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (armoury) as VFEATURE2KEEP$j with priority value 303"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 303
+					#function = 5 : city hall
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 5)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (city hall) as VFEATURE2KEEP$j with priority value 304"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 304
+					#function = 6 : coast guard station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 6)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (coast guard station) as VFEATURE2KEEP$j with priority value 305"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 305
+					#function = 7 : community center
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 7)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (community center) as VFEATURE2KEEP$j with priority value 306"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 306
+					#function = 8 : courthouse
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 8)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (courthouse) as VFEATURE2KEEP$j with priority value 307"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 307
+					#function = 9 : custom post
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 9)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (custom post) as VFEATURE2KEEP$j with priority value 308"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 308
+					#function = 11 : electric power station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 11)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (electric power station) as VFEATURE2KEEP$j with priority value 309"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 309
+					#function = 12 : fire station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 12)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fire station) as VFEATURE2KEEP$j with priority value 310"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 310
+					#function = 16 : highway service center
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 16)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highway service center) as VFEATURE2KEEP$j with priority value 311"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 311
+					#function = 17 : hospital
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 17)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (hospital) as VFEATURE2KEEP$j with priority value 312"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 312
+					#function = 19 : medical center
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 19)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (medical center) as VFEATURE2KEEP$j with priority value 313"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 313
+					#function = 20 : municipal hall
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 20)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (municipal hall) as VFEATURE2KEEP$j with priority value 314"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 314
+					#function = 23 : gas and oil facilities building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 23)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (gas and oil facilities building) as VFEATURE2KEEP$j with priority value 315"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 315
+					#function = 25 : parliament building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 25)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (parliament building) as VFEATURE2KEEP$j with priority value 316"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 316
+					#function = 26 : police station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 26)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (police station) as VFEATURE2KEEP$j with priority value 317"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 317
+					#function = 27 : railway station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 27)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (railway station) as VFEATURE2KEEP$j with priority value 318"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 318
+					#function = 29 : satellite-tracking station
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 29)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (satellite-tracking station) as VFEATURE2KEEP$j with priority value 319"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 319
+					#function = 32 : sportsplex
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 32)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (sportsplex) as VFEATURE2KEEP$j with priority value 320"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 320
+					#function = 37 : industrial building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 37)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial building) as VFEATURE2KEEP$j with priority value 321"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 321
+					#function = 38 : religious building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 38)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (religious building) as VFEATURE2KEEP$j with priority value 322"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 322
+					#function = 39 : penal building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 39)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (penal building) as VFEATURE2KEEP$j with priority value 323"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 323
+					#function = 41 : educational building
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 41)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (educational building) as VFEATURE2KEEP$j with priority value 324"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 324
+					#function = else
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (1,2,5,6,7,8,9,11,12,16,17,19,20,23,25,26,27,29,32,37,38,39,41)"
+               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general) as VFEATURE2KEEP$j with priority value 301"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 301
             }
             BS_2060009_0 {
                #entity : Chimney, points
@@ -1317,7 +1523,7 @@ proc UrbanX::SandwichCanVec { indexCouverture } {
                #definition = 2 : canal
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 2)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (conduit watercourses) as VFEATURE2KEEP$j with priority value 320"
-               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 320
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 380
                #definition = 6 : watercourse
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 1)"
                GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (canal watercourses) as VFEATURE2KEEP$j with priority value 590"
@@ -2451,6 +2657,8 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
 		set t [clock seconds]
 
+		puts "On passe A"
+
 		#comptage des pixels de chaque classe smoke pour chaque polygone de DA : increment de la table
 		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
 
@@ -2507,6 +2715,26 @@ proc UrbanX::Process { Coverage } {
 # }
 # puts "Il y a [llength $sort_unique_filescanada] shapefiles trouvés."
 # break
+
+
+# # PETIT BOUT DE CODE À SUPPRIMER, QUI COPIE TOUTES LES FEATURE ID DANS LE CHAMP POLY_FID
+# #ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
+# if { ![ogrlayer is VDASMOKE] } {
+# 	set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
+# 	eval ogrlayer read VDASMOKE $da_layer_smoke
+# 	GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
+# 	set nbr_poly [expr ( [ogrlayer define VDASMOKE -nb] + 1) ]
+# }
+# #set les valeurs
+# for {set i 0} {$i < $nbr_poly } {incr i 1} {
+# 	puts $i
+# 	ogrlayer define VDASMOKE -feature $i POLY_FID $i
+# }
+# #ATTENTION, LA DERNIÈRE VALEUR N'EST PAS INSCRITE.  WHY???
+# ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
+# ogrlayer free VDASMOKE  
+# return
+
 
 
    GenX::Log INFO "Coverage = $Coverage"
@@ -2682,6 +2910,8 @@ proc UrbanX::Process { Coverage } {
 
 			#----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
 			#UrbanX::Priorities2TEB
+
+UrbanX::Priorities2SMOKE  $Coverage
 
 			#----- Optional outputs:
 			#UrbanX::VegeMask
