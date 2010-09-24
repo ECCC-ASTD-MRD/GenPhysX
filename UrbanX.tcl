@@ -2651,7 +2651,7 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 # 	}
 
 	#création d'un fichier de rasterization des polygones de DA
-	gdalband create RDA $Param(Width) $Param(Height) 1 Int16
+	gdalband create RDA $Param(Width) $Param(Height) 1 Int32
 	gdalband define RDA -georef UTMREF$indexCouverture
 
 	#rasterization des polygones de DA
@@ -2794,7 +2794,7 @@ proc UrbanX::Process { Coverage } {
 			#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
 
 # 			#POUR OBTENIR SIMPLEMENT LES FEUILLETS NTS QUI SERONT TRAITÉS DANS LA ZONE CHOISIE, UNCOMMENT LE RETURN SUIVANT :
-#  			return
+# 			return
 
 # 			#traitement d'un feuillet, zone Montreal
 # 			set Param(NTSIds) 4862
@@ -2870,21 +2870,21 @@ proc UrbanX::Process { Coverage } {
 				#affichage du temps de traitement du feuillet
 				puts "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
 
-#				puts "__________________________________________________________________________________________________________________________"
-#				incr i
+				puts "__________________________________________________________________________________________________________________________"
+				incr i
 
-				#TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
-				#coupure après 1 feuillet
-#				return
-				#coupure après quelques feuillets
-				if { $i == 3 } {
-					ogrlayer free VDASMOKE  
-					return
-				} else {
-					incr i
-					puts "____________________________________________________________________________________________"
-				}
-				#FIN DU TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
+# 				#TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
+# 				#coupure après 1 feuillet
+# #				return
+# 				#coupure après quelques feuillets
+# 				if { $i == 3 } {
+# 					ogrlayer free VDASMOKE  
+# 					return
+# 				} else {
+# 					incr i
+# 					puts "____________________________________________________________________________________________"
+# 				}
+# 				#FIN DU TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
 
 
 			} ;# fin du foreach feuillet
