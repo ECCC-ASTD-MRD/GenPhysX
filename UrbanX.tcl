@@ -374,7 +374,7 @@ namespace eval UrbanX { } {
 	# Layers from CanVec requiring postprocessing
    #Aucun tri particulier nécessaire pour cette liste d'entités
    set Param(LayersPostPro)    {
-      BS_2010009_0
+		BS_2010009_0
       BS_2010009_2
       BS_2060009_0
       BS_2310009_1
@@ -398,9 +398,9 @@ namespace eval UrbanX { } {
 
    set Param(BufferLayers)     { BS_2010009_0 TR_1760009_1 } ;# Layers from CanVec required for buffer
 
-   set Param(BufferFuncLayers) { buildin_p buildin_a } ;# Layers from BNDT required for buffer func
+	set Param(BufferFuncLayers) { BS_2010009_0 BS_2010009_2 } ;# Layers from CanVec required for buffer func
 
-   set Param(BufferFuncValues) { 1 2 }
+   set Param(BufferFuncValues) { 1 2 } ;#what's that?
 
 	#TEB Classes for CanVec
    #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
@@ -424,15 +424,13 @@ namespace eval UrbanX { } {
    set Param(VegeFilterType) LOWPASS
    set Param(VegeFilterSize) 99
 
-   #------TO DELETE------------------
-   #CE PATH DOIT ÊTRE MIS À JOUR AVEC LES DONNÉES DE 2006
+   #------TO DELETE : Recensement 2001------------------
    #set Param(PopFile) /data/cmoex7/afsralx/canyon-urbain/global_data/statcan/traitements/da2001ca_socio_eco.shp
    #------FIN DU : TO DELETE---------
 
    #fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
    set Param(PopFile2006) /data/aqli04/afsulub/StatCan2006/da2006-nts_lcc-nad83.shp
 	set Param(PopFile2006SMOKE) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
-#   set Param(PopFile2006SMOKE) /data/goodenough/afsr005/Projects/GenPhysX/UrbanX/da2006-nts_lcc-nad83.shp
 
    #fichier contenanant 1 polygone pour chaque province ou territoire du Canada
    set Param(ProvincesGeom) /data/aqli04/afsulub/StatCan2006/Provinces_lcc-nad83.shp
@@ -670,6 +668,7 @@ proc UrbanX::AreaDefine { Coverage } {
 #   <Lat1>    : Top right latitude
 #   <Lon1>    : Top right longitude
 #   <Res 5>   : Spatial resolution of rasterization and outputs, leave at 5m unless for testing purposes
+#		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -717,7 +716,6 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
 # Goal     : Find the NTS Sheets and paths
 #
 # Parameters :
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
 #
 # Return:
 #
@@ -849,7 +847,7 @@ return
 #						Reset the UTMREF with the appropriate index
 #
 # Parameters : NTSid : identifiant d'une tuile NTS50K
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
+#   <indexCouverture>    :  index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -957,7 +955,6 @@ proc UrbanX::NTSExtent { indexCouverture } {
 # Goal     : Rasterize and flatten all NTDB layers
 #
 # Parameters :
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
 #
 # Return: output genphysx_sandwich.tif
 #
@@ -1112,6 +1109,7 @@ proc UrbanX::SandwichBNDT { } {
 #            procedure or with some post-processing
 #
 # Parameters :
+#		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
 # Return: output genphysx_sandwich.tif
 #
@@ -1668,7 +1666,6 @@ proc UrbanX::SandwichCanVec { indexCouverture } {
 # Goal     : Buffers on selected point and line features
 #
 # Parameters :
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
 #
 # Return: output genphysx_sandwich.tif
 #
@@ -1761,6 +1758,7 @@ proc UrbanX::ScaleBuffersBNDT { } {
 #            sandwich tif file.
 #
 # Parameters :
+#		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
 # Return: output genphysx_sandwich.tif
 #
@@ -1887,7 +1885,7 @@ puts "Fin de la proc ScaleBuffersCanVec"
 # Goal     : Create the fields and building vicinity output using spatial buffers
 #
 # Parameters :
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
+#		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -1955,7 +1953,6 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 # Goal     :
 #
 # Parameters :
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
 #
 # Return: output file genphysx_popdens-builtup.tif
 #
@@ -2054,6 +2051,7 @@ proc UrbanX::PopDens2BuiltupBNDT { } {
 #            to population density
 #
 # Parameters :
+#		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
 # Return: output files :
 #             genphysx_popdens.tif
@@ -2132,11 +2130,19 @@ proc UrbanX::PopDens2BuiltupCanVec {indexCouverture } {
    gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
    gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
    vexpr RTEMP RSANDWICH==605
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
+#    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
+#    vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
+#    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
+#    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
+#    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
+
+	#setting smoke values : à modifier pour donner le choix industrx/urbanx
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),63,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),64,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),65,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),66,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),67,RPOPDENSCUT)
+
 
    gdalband free RSANDWICH ;# move this above once vexpr works
    gdalfile close FSANDWICH
@@ -2162,7 +2168,6 @@ proc UrbanX::PopDens2BuiltupCanVec {indexCouverture } {
 # Goal     : Estimate DEM Height gain based on...
 #
 # Parameters :
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
 #
 # Return:
 #
@@ -2218,6 +2223,7 @@ proc UrbanX::HeightGain { } {
 # Goal     :
 #
 # Parameters :
+#		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -2274,7 +2280,6 @@ proc UrbanX::BuildingHeight {indexCouverture } {
 # Goal     : Applies LUT to all processing results to generate TEB classes
 #
 # Parameters :
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
 #
 # Return:
 #
@@ -2322,6 +2327,7 @@ proc UrbanX::Priorities2TEB { } {
 # Goal     : Applies LUT to all processing results to generate SMOKE classes
 #
 # Parameters :
+#		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -2374,7 +2380,6 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 # Goal     : Generate and apply vegetation mask
 #
 # Parameters :
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
 #
 # Return:
 #
@@ -2610,7 +2615,7 @@ proc UrbanX::FilterGen { Type Size } {
 #						selected NTS Sheet
 #
 # Parameters :
-#   <indexCouverture>    : No de feuillet of 1 NTS sheet (format 999A99)
+#		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -2631,12 +2636,19 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	set da_select [ogrlayer define VDASMOKE -featureselect [list [list SNRC == $indexCouverture]] ]
 	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
 
+
 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
-	foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
-		if { $classeid!=0 } {
-			ogrlayer clear VDASMOKE SMOKE$classeid
-		}
+	for {set classeid 1} {$classeid < 70} {incr classeid 1} {
+		ogrlayer clear VDASMOKE SMOKE$classeid
 	}
+
+# 
+# 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
+# 	foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
+# 		if { $classeid!=0 } {
+# 			ogrlayer clear VDASMOKE SMOKE$classeid
+# 		}
+# 	}
 
 	#création d'un fichier de rasterization des polygones de DA
 	gdalband create RDA $Param(Width) $Param(Height) 1 Int16
@@ -2647,17 +2659,11 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 
 	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
 
-   foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
 
-		#éviter de compter les éléments mis à 0 dans Values2SMOKE
-		if { $classeid==0 } {
-			continue
-		}
+   for {set classeid 1} {$classeid < 70} {incr classeid 1} {
 
 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
 		set t [clock seconds]
-
-		puts "On passe A"
 
 		#comptage des pixels de chaque classe smoke pour chaque polygone de DA : increment de la table
 		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
@@ -2665,6 +2671,24 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 		#affichage du temps requis pour traiter la classe i
 		puts "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
 	}
+
+
+#    foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
+# 
+# 		#éviter de compter les éléments mis à 0 dans Values2SMOKE
+# 		if { $classeid==0 } {
+# 			continue
+# 		}
+# 
+# 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
+# 		set t [clock seconds]
+# 
+# 		#comptage des pixels de chaque classe smoke pour chaque polygone de DA : increment de la table
+# 		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
+# 
+# 		#affichage du temps requis pour traiter la classe i
+# 		puts "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
+# 	}
 
    ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
 
@@ -2700,7 +2724,7 @@ proc UrbanX::Process { Coverage } {
 
 # #	PETIT BOUT DE CODE À SUPPRIMER, JUSTE UN TEST POUR TROUVER TOUS LES FICHIERS CANVEC DU CANADA POUR UNE ENTITÉ
 # set Param(FilesCanada) {}
-# set Param(LayerATrouver) {LX_2460009}
+# set Param(LayerATrouver) {LX_1000079_2}
 # puts "On passe A"
 # set Param(FilesCanada) [GenX::CANVECFindFiles 40 -50 88 -150 $Param(LayerATrouver)]
 # #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
@@ -2768,9 +2792,6 @@ proc UrbanX::Process { Coverage } {
 			# au terme de cette proc, on a
 			#Param(NTSIds) : liste des ids des feuillets NTS : format 9999
 			#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
-
-
-#			set i 0
 
 # 			#POUR OBTENIR SIMPLEMENT LES FEUILLETS NTS QUI SERONT TRAITÉS DANS LA ZONE CHOISIE, UNCOMMENT LE RETURN SUIVANT :
 #  			return
@@ -2849,21 +2870,21 @@ proc UrbanX::Process { Coverage } {
 				#affichage du temps de traitement du feuillet
 				puts "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
 
-				puts "__________________________________________________________________________________________________________________________"
+#				puts "__________________________________________________________________________________________________________________________"
+#				incr i
 
-				incr i
-
-# 				#TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
-# 				#coupure après 1 feuillet
-# 				return
-# 				#coupure après quelques feuillets
-# 				if { $i == 2 } {
-# 					return
-# 				} else {
-# 					incr i
-# 					puts "____________________________________________________________________________________________"
-# 				}
-# 				#FIN DU TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
+				#TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
+				#coupure après 1 feuillet
+#				return
+				#coupure après quelques feuillets
+				if { $i == 3 } {
+					ogrlayer free VDASMOKE  
+					return
+				} else {
+					incr i
+					puts "____________________________________________________________________________________________"
+				}
+				#FIN DU TO DELETE : OPTIONS POUR SORTIR RAPIDEMENT DE LA BOUCLE
 
 
 			} ;# fin du foreach feuillet
@@ -2890,7 +2911,7 @@ proc UrbanX::Process { Coverage } {
 			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
 
 			#----- Finds CanVec files, rasterize and flattens all CanVec layers
-			UrbanX::SandwichCanVec $Coverage
+#			UrbanX::SandwichCanVec $Coverage
 
 			#----- Applies buffer to linear and ponctual elements such as buildings and roads
 			#UrbanX::ScaleBuffersCanVec 0
