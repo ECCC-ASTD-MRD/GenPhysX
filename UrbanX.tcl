@@ -709,57 +709,6 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 }
 
-#----------------------------------------------------------------------------
-# Name     : <UrbanX::FindNTSSheetsBNDT>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
-#
-# Goal     : Find the NTS Sheets and paths
-#
-# Parameters :
-#
-# Return:
-#
-# Remarks :  THIS PROC WILL BE DELETED - WON'T BE USED ANYMORE
-#
-#----------------------------------------------------------------------------
-proc UrbanX::FindNTSSheetsBNDT { } {
-# THIS PROC WILL BE DELETED - WON'T BE USED ANYMORE
-   variable Param
-   variable Data
-
-   set missing 0
-   set Data(Sheets) {} ;#will contain a list of NTS Sheets, format 999a99
-   set Data(Paths)  {} ;#will contain a list of paths, format /data/cmoex7/afsralx/canyon-urbain/global_data/bndt-geonet/999a99
-#IS THIS PATH OK?
-
-   set  layers [lindex [ogrfile open SHAPE read $GenX::Path(NTS)/50kindex.shp] 0]
-   eval ogrlayer read NTSLAYER $layers
-
-   # Select NTS sheets for the area and consider the buffer distance to account for spatial buffers
-   set ids [ogrlayer pick NTSLAYER [list [expr $Param(Lat1)+$Param(Buffer)] [expr $Param(Lon1)+$Param(Buffer)] [expr $Param(Lat1)+$Param(Buffer)] [expr $Param(Lon0)-$Param(Buffer)] [expr $Param(Lat0)-$Param(Buffer)] [expr $Param(Lon0)-$Param(Buffer)] [expr $Param(Lat0)-$Param(Buffer)] [expr $Param(Lon1)+$Param(Buffer)] [expr $Param(Lat1)+$Param(Buffer)] [expr $Param(Lon1)+$Param(Buffer)]] True]
-   foreach indexnts $ids {
-      set sheet    [string tolower [ogrlayer define NTSLAYER -feature $indexnts snrc]]
-      set sheetpath /data/cmoex7/afsralx/canyon-urbain/global_data/bndt-geonet/$sheet
-      if { [file exists $sheetpath] } {
-         set path [glob -nocomplain $sheetpath/*_nts_lim_l.shp]
-         lappend Data(Sheets) [lindex [split [file tail $path] _] 0]
-         lappend Data(Paths)  $sheetpath
-      } else {
-         incr missing
-         GenX::Log WARNING "NTS sheet $file missing, results will be incomplete"
-      }
-   }
-   GenX::Log INFO "Total number of NTS Sheets included in the processing: [llength  $Data(Sheets)], NTS Sheets to process: $Data(Sheets)"
-
-   ogrlayer free NTSLAYER
-   ogrfile close SHAPE
-
-   if { $missing } {
-      GenX::Log INFO WARNING "There are $j NTS sheets missing, results will be incomplete"
-      GenX::Continue
-   }
-
-}
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::FindNTSSheetsCanVec>
@@ -948,156 +897,6 @@ proc UrbanX::NTSExtent { indexCouverture } {
 	GenX::Log INFO "fin de la proc NTSExtent"
 }
 
-#----------------------------------------------------------------------------
-# Name     : <UrbanX::SandwichBNDT>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
-#
-# Goal     : Rasterize and flatten all NTDB layers
-#
-# Parameters :
-#
-# Return: output genphysx_sandwich.tif
-#
-# Remarks : THIS PROC WILL BE DELETED.  TO BE REPLACED BY CANVEC DATA
-#
-#----------------------------------------------------------------------------
-proc UrbanX::SandwichBNDT { } {
-   variable Param
-   variable Data
-
-   GenX::Procs
-   GenX::Log INFO "Generating Sandwich"
-
-   gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
-   gdalband define RSANDWICH -georef UTMREF
-
-   #----- Vérification des shapefiles présents afin de ne pas en manquer un hors-liste
-   foreach sheet $Data(Sheets) path $Data(Paths) {
-      foreach file [glob -nocomplain -tails -directory $path *.shp] {
-         set file [string range [file rootname [file tail $file]] 7 end]
-         if { [lsearch -exact $Param(Entities) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
-               GenX::Log WARNING "File '${sheet}_$file.shp' has no priority value and won't be processed"
-         }
-      }
-   }
-
-   set j 0
-
-   #----- Rasterization of NTDB layers
-   foreach sheet $Data(Sheets) path $Data(Paths) {
-      foreach file $Param(Entities) value $Param(Priorities) {
-         if { [file exists $path/${sheet}_$file.shp] } {
-            set layer [lindex [ogrfile open SHAPE read $path/${sheet}_$file.shp] 0]
-            if { [lsearch -exact Param(LayersPostPro) $file]!=-1 } {
-               switch $file {
-                  "mininga_p" {
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type != 2) "
-                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
-                     #----- mine souterraine ponctuelle convertie en batiment :
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type = 2) "
-                     GenX::Log INFO "Converting and rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] selected features (underground mines) from ${sheet}_$file.shp to priority value 161"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 161
-                  }
-                  "railway_l" {
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (rel_ground != 2) "
-                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features (excluding railway bridges and tunnels) from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
-                  }
-                  "runway_a" -
-                  "runway_p" {
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (surface != 2) "
-                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
-                     #----- unpaved runway converted to priority 41
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (surface = 2) "
-                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (unpaved runways) from ${sheet}_$file.shp to priority value 41"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 41
-                  }
-                  "sport_t_l" -
-                  "sport_t_a" {
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type != 1) "
-                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
-                     #----- paved sports tracks converted to priority 271
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type = 1) "
-                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (paved sports tracks) from ${sheet}_$file.shp to priority value 271"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 271
-                  }
-                  "seapl_b_p" {
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type != 1) "
-                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp as VFEATURE2KEEP$j with priority value $value"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
-                     #----- seaplane base mouillage converted to priority 181
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (type = 1) "
-                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (seaplane base mouillage) from ${sheet}_$file.shp to priority value 181"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 181
-                  }
-                  "road_l" {
-                     #-----rasterize non-bridge and non-tunnel roads (and non-dam)
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (support != 2) "
-                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp (surface roads) as VFEATURE2KEEP$j with priority value $value"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
-                     #----- unpaved roads converted to priority 212
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (support != 2) AND (surface = 2) "
-                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (unpaved surface roads) from ${sheet}_$file.shp to priority value 212"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 212
-                     #----- highways converted to priority 211
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (support != 2) AND (classifica = 1) "
-                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (surface highways) from ${sheet}_$file.shp to priority value 211"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 211
-                  }
-                  "buildin_p" {
-                     #----- divide building types: general, industrial-commercial, day-night 24/7
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function NOT IN (10,11,14,18,23,31,37)) "
-                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp (general buildings) as VFEATURE2KEEP$j with priority value $value"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
-                     #----- industrial-commercial buildings converted to priority 21
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function IN (11,13,14,16,18,23,27,31,33,35,37)) "
-                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from ${sheet}_$file.shp to priority value 21"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 21
-                     #----- day-night 24/7 buildings converted to priority 22
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function IN (9,12,17,19,26,39,40)) "
-                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from ${sheet}_$file.shp to priority value 22"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 22
-                  }
-                  "buildin_a" {
-                     #----- divide building types: general, industrial-commercial, day-night 24/7
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function NOT IN (10,11,14,18,23,31,37)) "
-                     GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from file ${sheet}_$file.shp (general buildings) as VFEATURE2KEEP$j with priority value $value"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $value
-                     #----- industrial-commercial buildings converted to priority 301
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function IN (11,13,14,16,18,23,27,31,33,35,37)) "
-                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from ${sheet}_$file.shp to priority value 301"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 301
-                     #----- day-night 24/7 buildings converted to priority 302
-                     ogrlayer sqlselect VFEATURE2KEEP$j SHAPE " SELECT * FROM ${sheet}_$file WHERE (function IN (9,12,17,19,26,39,40)) "
-                     GenX::Log INFO "Converting [ogrlayer define VFEATURE2KEEP$j -nb] selected features (industrial-commercial buildings) from ${sheet}_$file.shp to priority value 302"
-                     gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 302
-                  }
-                  default {
-                     GenX::Log WARNING "Post-processing for $file not found"
-                  }
-               }
-               ogrlayer free VFEATURE2KEEP$j
-               incr j
-            } else {
-               eval ogrlayer read LAYER$j $layer
-               GenX::Log INFO "Rasterizing [ogrlayer define LAYER$j -nb] features from file ${sheet}_$file.shp as LAYER$j with priority value $value"
-               gdalband gridinterp RSANDWICH LAYER$j $Param(Mode) $value
-               ogrlayer free LAYER$j
-            }
-            ogrfile close SHAPE
-         }
-      }
-   }
-
-   file delete -force $GenX::Param(OutFile)_sandwich.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich.tif GeoTiff
-   gdalband write RSANDWICH FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
-   gdalband free RSANDWICH
-}
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::SandwichCanVec>
@@ -1119,7 +918,6 @@ proc UrbanX::SandwichBNDT { } {
 proc UrbanX::SandwichCanVec { indexCouverture } {
    variable Param
    variable Data
-#   variable Path
 
    GenX::Procs
    GenX::Log INFO "Generating Sandwich"
@@ -1132,25 +930,6 @@ proc UrbanX::SandwichCanVec { indexCouverture } {
    set Param(Files) {}
    set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
    #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
-
-
-   # VEUT-ON REFAIRE CETTE VÉRIFICATION ? ELLE SERAIT UTILE - VOIR APRES
-   #----- Vérification des shapefiles présents afin de ne pas en manquer un hors-liste
-#   foreach sheet $Data(Sheets) path $Data(Paths) {
-#      foreach file [glob -nocomplain -tails -directory $path *.shp] {
-#         set file [string range [file rootname [file tail $file]] 7 end]
-#         if { [lsearch -exact $Param(Entities) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
-#               GenX::Log WARNING "File '${sheet}_$file.shp' has no priority value and won't be processed"
-#         }
-#      }
-#   }
-# NEW CODE TO FIX
-#   foreach file $Param(Files) {
-#      set file [string range [file rootname [file tail $file]] 7 end]
-#      if { [lsearch -exact $Param(Entities) $file]==-1 && [lsearch -exact $Param(Excluded) $file]==-1 } {
-#            GenX::Log WARNING "File '$Param(Files)' has no priority value and won't be processed"
-#      }
-#   }
 
    set j 0 ;# Increment of VFEATURE2KEEP$j required to re-use the object
 
@@ -1946,101 +1725,6 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
    gdalband free RBUFFERCUT
 }
 
-#----------------------------------------------------------------------------
-# Name     : <UrbanX::PopDens2BuiltupBNDT>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
-#
-# Goal     :
-#
-# Parameters :
-#
-# Return: output file genphysx_popdens-builtup.tif
-#
-# Remarks : THIS PROC WILL BE DELETED.  TO BE REPLACED BY CANVEC DATA
-#
-#----------------------------------------------------------------------------
-proc UrbanX::PopDens2BuiltupBNDT { } {
-   variable Param
-   variable Data
-
-   GenX::Log INFO "Processing population density"
-
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
-   set layer [lindex [ogrfile open SHAPE read $Param(PopFile)] 0]
-   eval ogrlayer read VPOPDENS $layer
-
-   #----- Selecting only the required polygons - next is only useful to improve the speed of the layer substraction
-   set features [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
-   ogrlayer define VPOPDENS -featureselect [list [list index # $features]]
-
-   GenX::Log INFO "Cropping population shapefile and substracting water ($Param(WaterLayers))"
-
-   #----- Both layers must have the same projection!
-   foreach sheet $Data(Sheets) path $Data(Paths) {
-      foreach layer $Param(WaterLayers) {
-         set path [glob -nocomplain $path/${sheet}_$layer.shp]
-         if { [file exists $path] } {
-            set water_layer [lindex [ogrfile open SHAPE2 read $path] 0]
-            eval ogrlayer read VWATER $water_layer
-            ogrlayer stats VPOPDENS -difference VWATER
-            ogrfile close SHAPE2
-            ogrlayer free VWATER
-         }
-      }
-   }
-
-   GenX::Log INFO "Calculating population density values"
-   ogrlayer stats VPOPDENS -transform UTMREF
-   foreach n $features {
-      set pop  [ogrlayer define VPOPDENS -feature $n TOTPOPUL]
-      set geom [ogrlayer define VPOPDENS -geometry $n]
-      #ogrgeometry stats $geom -transform UTMREF
-      set area  [expr ([ogrgeometry stats $geom -area]/1000000.0)]
-      ogrlayer define VPOPDENS -feature $n POP_DENS [expr $area==0.0?0.0:($pop/$area)]
-      if {[expr $area==0.0?0.0:($pop/$area)] > 10000000 || [expr $area==0.0?0.0:($pop/$area)] < 0 } {
-         set dens [expr $area==0.0?0.0:($pop/$area)]
-         GenX::Log WARNING "Potential problem n=$n, pop=$pop, area=$area, dens=$dens"
-      }
-   }
-   unset features
-
-   gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
-   eval gdalband define RPOPDENS -georef UTMREF
-   gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) POP_DENS
-
-   file delete -force $GenX::Param(OutFile)_popdens.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens.tif GeoTiff
-   gdalband write RPOPDENS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
-   ogrlayer free VPOPDENS
-   ogrfile close SHAPE
-
-   #file delete -force $GenX::Param(OutFile)_popdens.shp
-   #ogrfile open VPOPDENSFILE write $GenX::Param(OutFile)_popdens.shp "ESRI Shapefile"
-   #ogrlayer write VPOPDENS VPOPDENSFILE
-   #ogrfile close VPOPDENSFILE
-
-   GenX::Log INFO "Cookie cutting population density and setting TEB values"
-   gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
-   gdalband define RPOPDENSCUT -georef UTMREF
-   vexpr RTEMP RSANDWICH==605
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
-
-   gdalband free RSANDWICH ;# move this above once vexpr works
-   gdalfile close FSANDWICH
-   gdalband free RPOPDENS
-   gdalband free RTEMP
-
-   file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
-   gdalband write RPOPDENSCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
-   gdalband free RPOPDENSCUT
-}
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::PopDens2BuiltupCanVec>
@@ -2343,8 +2027,6 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
-  #gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
-   #gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
 
    vector create LUT
    vector dim LUT { FROM TO }
@@ -2354,8 +2036,6 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
    vector free LUT
 
    vexpr RSMOKE ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RSMOKE)
-   #vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
-   #vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RSMOKE)
 
    file delete -force $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif GeoTiff
@@ -2366,8 +2046,6 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
    gdalfile close FILEOUT
    gdalfile close FSANDWICH
    gdalfile close FPOPDENSCUT
-   #gdalfile close FCHAMPS
-   #gdalfile close FHAUTEURCLASS
    gdalband free RSMOKE RSANDWICH RPOPDENSCUT ;# RCHAMPS RHAUTEURCLASS
 
    GenX::Log INFO "Fin de la proc Priorities2SMOKE"
@@ -2636,30 +2314,20 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	set da_select [ogrlayer define VDASMOKE -featureselect [list [list SNRC == $indexCouverture]] ]
 	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
 
-
 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
 	for {set classeid 1} {$classeid < 70} {incr classeid 1} {
 		ogrlayer clear VDASMOKE SMOKE$classeid
 	}
 
-# 
-# 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
-# 	foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
-# 		if { $classeid!=0 } {
-# 			ogrlayer clear VDASMOKE SMOKE$classeid
-# 		}
-# 	}
-
 	#création d'un fichier de rasterization des polygones de DA
 	gdalband create RDA $Param(Width) $Param(Height) 1 Int32
+	gdalband clear RDA -1
 	gdalband define RDA -georef UTMREF$indexCouverture
 
 	#rasterization des polygones de DA
 	gdalband gridinterp RDA VDASMOKE FAST FEATURE_ID
 
 	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
-
-
    for {set classeid 1} {$classeid < 70} {incr classeid 1} {
 
 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
@@ -2671,24 +2339,6 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 		#affichage du temps requis pour traiter la classe i
 		puts "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
 	}
-
-
-#    foreach classeid [lsort -unique -integer $Param(SMOKEClasses)] {
-# 
-# 		#éviter de compter les éléments mis à 0 dans Values2SMOKE
-# 		if { $classeid==0 } {
-# 			continue
-# 		}
-# 
-# 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
-# 		set t [clock seconds]
-# 
-# 		#comptage des pixels de chaque classe smoke pour chaque polygone de DA : increment de la table
-# 		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
-# 
-# 		#affichage du temps requis pour traiter la classe i
-# 		puts "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
-# 	}
 
    ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
 
@@ -2741,26 +2391,6 @@ proc UrbanX::Process { Coverage } {
 # break
 
 
-# # PETIT BOUT DE CODE À SUPPRIMER, QUI COPIE TOUTES LES FEATURE ID DANS LE CHAMP POLY_FID
-# #ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
-# if { ![ogrlayer is VDASMOKE] } {
-# 	set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
-# 	eval ogrlayer read VDASMOKE $da_layer_smoke
-# 	GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
-# 	set nbr_poly [expr ( [ogrlayer define VDASMOKE -nb] + 1) ]
-# }
-# #set les valeurs
-# for {set i 0} {$i < $nbr_poly } {incr i 1} {
-# 	puts $i
-# 	ogrlayer define VDASMOKE -feature $i POLY_FID $i
-# }
-# #ATTENTION, LA DERNIÈRE VALEUR N'EST PAS INSCRITE.  WHY???
-# ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
-# ogrlayer free VDASMOKE  
-# return
-
-
-
    GenX::Log INFO "Coverage = $Coverage"
 
 	switch $Coverage {
@@ -2794,19 +2424,7 @@ proc UrbanX::Process { Coverage } {
 			#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
 
 # 			#POUR OBTENIR SIMPLEMENT LES FEUILLETS NTS QUI SERONT TRAITÉS DANS LA ZONE CHOISIE, UNCOMMENT LE RETURN SUIVANT :
-# 			return
-
-# 			#traitement d'un feuillet, zone Montreal
-# 			set Param(NTSIds) 4862
-# 			set Param(NTSSheets) "031H05"
-
-# 			#traitement d'un feuillet, zone Toronto
-# 			set Param(NTSIds) 4739
-# 			set Param(NTSSheets) "030M12"
-
-# 			#traitement d'un feuillet, far far away
-# 			set Param(NTSIds) 18539
-# 			set Param(NTSSheets) "037E05"
+#				return
 
 			#ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
 			if { ![ogrlayer is VDASMOKE] } {
@@ -2932,63 +2550,18 @@ proc UrbanX::Process { Coverage } {
 			#----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
 			#UrbanX::Priorities2TEB
 
-UrbanX::Priorities2SMOKE  $Coverage
+			#---- To delete : Priorities2SMOKE : là seulement pour les tests
+			#UrbanX::Priorities2SMOKE  $Coverage
 
 			#----- Optional outputs:
 			#UrbanX::VegeMask
 			#UrbanX::TEB2FSTD
-		}
+		} ;# fin du traitement d'UrbanX
 		default {
 			puts "Zone non définie"
 		}
 	}
 
-return
+   GenX::Log INFO "Fin d'UrbanX / d'IndustrX.  Retour à GenPhysX"
 
-
-
-
-   #------------- MAIN ORIGINAGL, À SUPPRIMER SI ON GARDE LE SWITCH SUR COVERAGE ------------
-
-   #----- Defines the extents of the zone to be process
-   #UrbanX::AreaDefine    $Coverage
-   #UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution)
-   #UrbanX::FindNTSSheets ;# Useless now since we use GenX::CANVECFindFiles
-
-   #----- Finds CanVec files, rasterize and flattens all CanVec layers
-   #UrbanX::SandwichBNDT ;# to be deleted, replaced with UrbanX::SandwichCanVec
-   #UrbanX::SandwichCanVec $Coverage
-
-   #----- Applies buffer to linear and ponctual elements such as buildings and roads
-   #UrbanX::ScaleBuffersBNDT ;# to be deleted, replaced with UrbanX::ScaleBuffersCanVec
-   #UrbanX::ScaleBuffersCanVec
-
-   #-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
-   #UrbanX::Shp2Height
-
-   #----- Creates the fields and building vicinity output using spatial buffers
-   #UrbanX::ChampsBuffers
-
-   #----- Calculates the population density
-   #UrbanX::PopDens2BuiltupBNDT ;# to be deleted, replaced with UrbanX::PopDens2BuiltupCanVec
-   #UrbanX::PopDens2BuiltupCanVec
-
-   #----- Calculates building heights
-   #UrbanX::HeightGain               ;# Requires UrbanX::ChampsBuffers to have run
-   #UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
-
-   #----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
-   #UrbanX::Priorities2TEB
-
-   #----- Applies LUT to all processing results to generate SMOKE classes.
-   #UrbanX::Priorities2SMOKE
-   #UrbanX::SMOKE2DA
-
-   #----- Optional outputs:
-   #UrbanX::VegeMask
-   #UrbanX::TEB2FSTD
-
-   #------------- FIN DU MAIN ORIGINAGL, À SUPPRIMER SI ON GARDE LE IF/ELSE SUR COVERAGE ---------
-
-   GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
 }
