@@ -46,168 +46,6 @@ namespace eval UrbanX { } {
    #Note : les entités dont le nom commence par pp_ ne sont pas des entités originant de CanVec, mais plutôt des conséquences du post-traitement.
    #Ils sont inclus dans cette liste pour que leurs valeurs de priorités apparaisent dans la variable Param(Priorities), afin de faire la
    #correspondance avec les valeurs de TEB et de SMOKE.
-
-#old classification : TO DELETE
-#    set Param(Entities) {
-#       SS_1320059_2
-#       SS_1320029_2
-#       SS_1320019_2
-#       FO_1080079_0
-#       FO_1080069_2
-#       FO_1080049_2
-#       HD_1140009_2
-#       FO_1080059_2
-#       FO_1080039_2
-#       pp_HD_1480009_2
-#       pp_HD_1450009_2
-#       HD_1450009_2
-#       LX_1000039_2
-#       LX_2200009_2
-#       LX_2560009_2
-#       LX_2490009_2
-#       LX_2270009_2
-#       LX_2260009_2
-#       pp_HD_1480009_2
-#       pp_HD_1480009_2
-#       LX_2480009_2
-#       IC_1360029_2
-#       IC_1360019_2
-#       LX_2500009_2
-#       LX_2500009_0
-#       LX_1000089_2
-#       IC_1350059_2
-#       IC_1350039_2
-#       IC_1350029_2
-#       IC_1350019_2
-#       IC_1350049_2
-#       LX_1000049_2
-#       LX_2400009_2
-#       pp_HD_1450009_2
-#       LX_2510009_2
-#       EN_1360049_2
-#       IC_2360009_2
-#       IC_2110009_2
-#       LX_2070009_2
-#       HD_1480009_2
-#       HD_1460009_2
-#       EN_1360059_2
-#       VE_1240009_2
-#       SS_1320049_2
-#       LX_1000019_2
-#       BS_2080009_2
-#       LX_2460009_2
-#       TR_1190009_2
-#       pp_HD_1450009_1
-#       FO_1080029_1
-#       pp_HD_1450009_1
-#       pp_HD_1480009_2
-#       HD_1450009_1
-#       BS_1370009_2
-#       IC_1360039_2
-#       pp_HD_1470009_1
-#       HD_1470009_1
-#       HD_1460009_1
-#       BS_2240009_1
-#       EN_1180009_1
-#       BS_2310009_1
-#       pp_HD_1450009_1
-#       pp_HD_1470009_1
-#       TR_1020009_1
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       pp_BS_2010009_2
-#       BS_2010009_2
-#       pp_HD_1450009_1
-#       pp_HD_1450009_1
-#       LX_1000079_2
-#       LX_1000079_1
-#       pp_HD_1470009_1
-#       LX_1000069_0
-#       pp_HD_1450009_0
-#       LX_2420009_1
-#       EN_2170009_0
-#       TR_1750009_1
-#       TR_1760009_1
-#       LX_2280009_1
-#       pp_HD_1450009_0
-#       HD_1460009_0
-#       pp_TR_1190009_2
-#       pp_TR_1190009_0
-#       HD_1450009_0
-#       pp_HD_1450009_0
-#       IC_1350039_0
-#       pp_IC_2600009_0
-#       IC_2600009_0
-#       IC_1350049_0
-#       LX_2220009_0
-#       LX_1000019_0
-#       EN_1360049_0
-#       BS_2000009_0
-#       LX_2400009_0
-#       BS_2440009_0
-#       LX_2480009_0
-#       LX_2030009_0
-#       LX_2490009_0
-#       LX_2070009_0
-#       LX_1000039_0
-#       BS_2080009_0
-#       LX_1000029_0
-#       IC_1360039_0
-#       EN_1360059_0
-#       IC_1360029_0
-#       TR_1190009_0
-#       BS_2060009_0
-#       pp_BS_2060009_0
-#       pp_BS_2060009_0
-#       pp_BS_2060009_0
-#       BS_2530009_0
-#       pp_BS_2010009_0
-#       pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-# 		pp_BS_2010009_0
-#       BS_2010009_0
-#       }
-
-	#temp with new classification
 	set Param(Entities) {
 		HD_1140009_2
 		FO_1080069_2
@@ -435,19 +273,13 @@ namespace eval UrbanX { } {
 		pp_TR_1760009_1
 		}
 
-
 	#LUT of priority values for the CanVec layers to be processed
 	#Les valeurs de priorité sont en ordre décroissant, et leur index dans la liste correspond à celui de l'entité qui leur est associée dans Param(Entities)
-
-#old classification : TO DELETE
-#   set Param(Priorities)           { 999 999 999 999 999 999 991 990 990 970 911 910 890 885 880 875 870 865 861 860 859 858 857 852 852 850 840 823 822 821 820 810 800 795 790 780 775 770 760 740 740 710 700 690 670 665 660 650 645 640 630 610 610 605 600 590 590 580 570 551 550 400 390 380 324 323 322 321 320 319 318 317 316 315 314 313 312 311 310 309 308 307 306 305 304 303 302 301 290 280 271 270 250 244 242 240 230 220 210 200 190 185 181 181 180 170 163 162 161 160 150 140 130 120 110 100 95 90 85 80 70 65 60 60 50 45 40 35 34 33 32 30 24 23 22 21 20 19 18 17 16 15 14 16 12 11 10 9 8 7 6 5 4 3 2 1 }
-#new classification
- set Param(Priorities)           { 224 223 222 221 220 219 218 217 216 215 214 213 212 211 210 209 208 207 206 205 204 203 202 201 200 199 198 197 196 195 194 193 192 191 190 189 188 187 186 185 184 183 182 181 180 179 178 177 176 175 174 173 172 171 170 169 168 167 166 165 164 163 162 161 160 159 158 157 156 155 154 153 152 151 150 149 148 147 146 145 144 143 142 141 140 139 138 137 136 135 134 133 132 131 130 129 128 127 126 125 124 123 122 121 120 119 118 117 116 115 114 113 112 111 110 109 108 107 106 105 104 103 102 101 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 }
-
+	set Param(Priorities)           { 224 223 222 221 220 219 218 217 216 215 214 213 212 211 210 209 208 207 206 205 204 203 202 201 200 199 198 197 196 195 194 193 192 191 190 189 188 187 186 185 184 183 182 181 180 179 178 177 176 175 174 173 172 171 170 169 168 167 166 165 164 163 162 161 160 159 158 157 156 155 154 153 152 151 150 149 148 147 146 145 144 143 142 141 140 139 138 137 136 135 134 133 132 131 130 129 128 127 126 125 124 123 122 121 120 119 118 117 116 115 114 113 112 111 110 109 108 107 106 105 104 103 102 101 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 }
 
 	# Layers from CanVec ignored for rasterization
-   #Aucun tri particulier nécessaire pour cette liste d'entités
-   set Param(Excluded) {
+	#Aucun tri particulier nécessaire pour cette liste d'entités
+	set Param(Excluded) {
       BS_1250009_0
       BS_2120009_0
       BS_2230009_1
@@ -481,10 +313,6 @@ namespace eval UrbanX { } {
 
 	# Layers from CanVec requiring postprocessing
    #Aucun tri particulier nécessaire pour cette liste d'entités
-
-#old classification : to delete
-#    set Param(LayersPostPro)    {BS_2010009_0 BS_2010009_2 BS_2060009_0 BS_2310009_1 EN_1180009_1 HD_1450009_0 HD_1450009_1 HD_1450009_2 HD_1460009_0 HD_1460009_1 HD_1460009_2 HD_1470009_1 HD_1480009_2 IC_2600009_0 TR_1020009_1 TR_1190009_0 TR_1190009_2 TR_1760009_1 }
-#new classification
 	set Param(LayersPostPro)    {
 		BS_1370009_2
 		BS_2010009_0
@@ -516,18 +344,12 @@ namespace eval UrbanX { } {
    set Param(BufferFuncValues) { 1 2 } ;#what's that?
 
 	#TEB Classes for CanVec
-   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-#old classification : to delete
-#   set Param(TEBClasses)         { 840 840 840 820 820 830 902 903 902 830 440 440 520 520 520 520 820 450 440 440 820 440 440 820 820 820 840 830 830 830 830 120 530 410 530 320 410 450 320 830 830 360 810 840 360 410 120 310 440 830 830 440 440 200 400 901 901 830 450 430 430 440 430 340 100 100 120 320 440 330 330 901 110 440 520 420 320 360 440 830 440 440 440 320 830 110 830 830 530 360 110 420 530 140 110 520 520 110 720 410 110 400 360 440 310 420 420 420 420 420 112 111 110 }
-#new classification
+	#Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
 	set Param(TEBClasses)         {902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350   } 
 
 
 	#SMOKE Classes for CanVec
-   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-#old classification : to delete
-#   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 1 2 3 0 4 0 0 0 0 5 6 7 8 9 10 10 11 12 13 14 15 16 0 0 17 0 18 19 20 0 21 0 22 0 0 0 0 23 24 25 0 26 27 3 28 29 30 31 0 0 0 0 2 32 0 48 49 50 51 52 53 54 49 49 55 49 56 57 58 49 59 49 49 52 49 49 61 52 62 33 34 34 35 36 37 2 38 0 39 0 0 34 0 40 40 3 41 13 43 44 42 0 0 18 0 0 0 7 7 0 0 0 0 0 29 22 8 24 0 45 46 47 0 48 49 50 51 52 53 54 49 49 55 49 56 57 58 49 59 49 49 52 49 49 61 52 62 }
-#new classification
+	#Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
 	set Param(SMOKEClasses)       { 0 0 0 0 0 0 1 2 3 4 5 43 0 0 30 29 0 28 27 0 0 0 0 22 0 0 0 0 33 0 26 0 0 36 37 34 35 39 40 41 32 31 42 74 73 67 66 71 70 68 69 72 64 65 0 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 23 0 63 61 62 58 59 60 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 26 25 0 0 0 0 0 0 0 0 21 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 24 0 43 0 28 29 0 28 0 0 0 0 36 37 0 38 39 42 22 23 47 31 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 0 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 0 0 24 0 44 45 46 0 0 }
 
    #------TO DELETE : LAYERS BNDT------------------
@@ -858,10 +680,10 @@ proc UrbanX::FindNTSSheetsCanVec {indexCouverture } {
 	#index de la géométrie de province
 	set idxprovince [ogrlayer define VCANADA -featureselect [list [list PR == $Param(ProvinceCode) ] ] ]
 
-	#conversion de la géométrie pour la province sélectionnée
+	#sélection de la géométrie pour la province sélectionnée
 	set geom [ogrlayer define VCANADA -geometry $idxprovince]
 
-	#conversion de NTSLAYER50K en UTMREF.  ATTENTION: cette conversion doit se faire APRÈS la présélection suivant une boîte lat/lon, mais AVANT la sélection avec une géométrie UTMREF
+	#conversion de NTSLAYER50K en UTMREF.
    ogrlayer stats NTSLAYER50K -transform UTMREF$indexCouverture
 
 	#Présélection des tuiles NTS à l'aide d'un convexhull
@@ -872,6 +694,7 @@ proc UrbanX::FindNTSSheetsCanVec {indexCouverture } {
 	ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
 	puts "Les [llength $ntssheets_pre] tuiles NTS ayant les ID suivants ont été présélectionnées à l'aide du convex hull : $ntssheets_pre"
 
+	#avertissement sur le temps requis...  
 	GenX::Log INFO "Intersection des fichiers NTS présélectionnés avec le polygone de province.  Cette opération peut prendre plusieurs minutes!"
 
 	#sélection, parmi les fichiers NTS présélectionnés, de ceux qui sont en intersection avec la géométrie provinciale
@@ -886,10 +709,10 @@ proc UrbanX::FindNTSSheetsCanVec {indexCouverture } {
    GenX::Log INFO "Les [llength $Param(NTSSheets)] tuiles NTS ayant les no de feuillets suivants sont conservées : $Param(NTSSheets)"
 
 	#nettoyage de mémoire
-	ogrfile close SHAPE50K
-	ogrfile close SHAPECANADA
-	ogrlayer free NTSLAYER50K
-	ogrlayer free VCANADA
+	ogrfile close SHAPE50K SHAPECANADA
+#	ogrfile close SHAPECANADA
+	ogrlayer free NTSLAYER50K VCANADA
+#	ogrlayer free VCANADA
 
 	GenX::Log INFO "fin de la proc FindNTSSheetsCanVec"
 
@@ -935,7 +758,7 @@ proc UrbanX::NTSExtent { indexCouverture } {
 	#trouve les limites lat/lon de la tuile NTS sélectionnée
 	set latlon [ogrlayer stats NTSLAYER50K -extent True]
 
-	#affecte les valeurs latlon aux divers paramètres Lon0, Lon1, Lat0, Lat1
+	#affecte les valeurs latlon aux divers paramètres Lon0, Lon1, Lat0, Lat1, avec une marge
 	set Param(Lon0) [expr [lindex $latlon 0] + 0.01]
 	set Param(Lat0) [expr [lindex $latlon 1] + 0.01]
 	set Param(Lon1) [expr [lindex $latlon 2] - 0.01]
@@ -945,19 +768,18 @@ proc UrbanX::NTSExtent { indexCouverture } {
 	set Param(CanVecNTSFiles) {}
    set Param(CanVecNTSFiles) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(NTSLayer)]
    #Param(CanVecNTSFiles) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
-
 	GenX::Log INFO "CanVec NTS50K file : $Param(CanVecNTSFiles)"
 
-
-	#ouverture du shapefile index NTS50K
+	#ouverture du shapefile CanVec index NTS50K
    if { ![ogrlayer is CANVECNTSLAYER] } {
       set canvec_nts_layer [lindex [ogrfile open SHAPECANVECNTSLAYER read $Param(CanVecNTSFiles)] 0]
       eval ogrlayer read CANVECNTSLAYER $canvec_nts_layer
    }
 
-   #test à supprimer : comptage du nombre de polygones dans le shapefile (devrait être 1)
-   GenX::Log INFO "On compte [ogrlayer define CANVECNTSLAYER -nb] tuiles NTS dans le fichier CanVec NTS Layer"
+   #test : comptage du nombre de polygones dans le shapefile (devrait être 1)
+   GenX::Log INFO "On compte [ogrlayer define CANVECNTSLAYER -nb] tuiles NTS dans le fichier CanVec NTS Layer (devrait être 1)"
 
+	#définition du UTMREF pour la zone à traiter
 	UTMZoneDefine  $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 1_$indexCouverture
 
 	#conversion de l'index NTS50K en UTMREF pour obtenir des coordonnées xy
@@ -1000,10 +822,10 @@ proc UrbanX::NTSExtent { indexCouverture } {
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 
 	#nettoyage de mémoire
-	ogrfile close SHAPE50K
-	ogrfile close SHAPECANVECNTSLAYER
-	ogrlayer free NTSLAYER50K
-	ogrlayer free CANVECNTSLAYER
+	ogrfile close SHAPE50K SHAPECANVECNTSLAYER
+#	ogrfile close SHAPECANVECNTSLAYER
+	ogrlayer free NTSLAYER50K CANVECNTSLAYER
+#	ogrlayer free CANVECNTSLAYER
 
 	GenX::Log INFO "fin de la proc NTSExtent"
 }
@@ -1034,11 +856,12 @@ proc UrbanX::SandwichCanVec { indexCouverture } {
    GenX::Procs
    GenX::Log INFO "Generating Sandwich"
 
+	#création de la raster qui contiendra la LULC
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
    gdalband define RSANDWICH -georef UTMREF$indexCouverture
 
+	#recherche des fichiers CanVec à rasteriser
    GenX::Log INFO "Locating CanVec Files"
-
    set Param(Files) {}
    set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
    #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
@@ -1768,7 +1591,7 @@ proc UrbanX::SandwichCanVec { indexCouverture } {
             }
             default {
                #the layer is part of Param(LayersPostPro) but no case has been defined for it
-               GenX::Log WARNING "Post-processing for $file not found"
+               GenX::Log WARNING "Post-processing for $file not found.  The layer was not rasterized."
             }
          }
          ogrlayer free VFEATURE2KEEP$j
@@ -2114,7 +1937,6 @@ proc UrbanX::PopDens2BuiltupCanVec {indexCouverture } {
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
    #récupération du fichier de données socio-économiques
-   #set layer [lindex [ogrfile open SHAPE read $Param(PopFile)] 0]
    set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006)] 0]
    eval ogrlayer read VPOPDENS $layer
 
@@ -2125,9 +1947,11 @@ proc UrbanX::PopDens2BuiltupCanVec {indexCouverture } {
    #Subtraction of water zone from VPOPDENS
    GenX::Log INFO "Cropping population shapefile and substracting water ($Param(WaterLayers))"
 
+	#recheche des fichiers CanVec correspondant à l'eau
    set Param(FilesWater) {}
    set Param(FilesWater) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(WaterLayers)]
 
+	#soustraction de l'eau 
    foreach file $Param(FilesWater) {
       GenX::Log INFO "Substracting water file $file"
       set water_layer [lindex [ogrfile open SHAPE2 read $file] 0]
@@ -2173,12 +1997,6 @@ proc UrbanX::PopDens2BuiltupCanVec {indexCouverture } {
    gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
    gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
    vexpr RTEMP RSANDWICH==218
-#    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
-#    vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
-#    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
-#    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
-#    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
-
 	#setting smoke values : à modifier pour donner le choix industrx/urbanx
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
    vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
@@ -2186,10 +2004,11 @@ proc UrbanX::PopDens2BuiltupCanVec {indexCouverture } {
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
    vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
 
-   gdalband free RSANDWICH ;# move this above once vexpr works
+	#nettoyage de mémoire
+   gdalband free RSANDWICH RPOPDENS RTEMP
    gdalfile close FSANDWICH
-   gdalband free RPOPDENS
-   gdalband free RTEMP
+#   gdalband free RPOPDENS
+#   gdalband free RTEMP
 
    #écriture du fichier genphysx_popdens-builtup.tif
    file delete -force $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif
@@ -2371,7 +2190,8 @@ proc UrbanX::Priorities2TEB { } {
 # Parameters :
 #		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
-# Return:
+# Return: output files :
+#				 genphysx_smoke.tif
 #
 # Remarks :
 #
@@ -2383,9 +2203,11 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 
    GenX::Log INFO "Converting values to SMOKE classes"
 
+	#lecture des fichiers créés précédemment lors des procs SandwichCanVec et PopDens2BuiltupCanVec
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
 
+	#passage des valeurs de priorités (sandwich) aux valeurs smoke dans RSMOKE
    vector create LUT
    vector dim LUT { FROM TO }
    vector set LUT.FROM $Param(Priorities)
@@ -2393,18 +2215,20 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
    vexpr RSMOKE lut(RSANDWICH,LUT.FROM,LUT.TO)
    vector free LUT
 
+	#modification pour inclure la densité de population 
    vexpr RSMOKE ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RSMOKE)
 
+	#écriture du fichier de sortie
    file delete -force $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif GeoTiff
    gdalband write RSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 
    GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif was generated"
 
-   gdalfile close FILEOUT
-   gdalfile close FSANDWICH
-   gdalfile close FPOPDENSCUT
-   gdalband free RSMOKE RSANDWICH RPOPDENSCUT ;# RCHAMPS RHAUTEURCLASS
+   gdalfile close FILEOUT FSANDWICH FPOPDENSCUT
+#   gdalfile close FSANDWICH
+#   gdalfile close FPOPDENSCUT
+   gdalband free RSMOKE RSANDWICH RPOPDENSCUT
 
    GenX::Log INFO "Fin de la proc Priorities2SMOKE"
 }
@@ -2665,6 +2489,9 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 
    variable Param
 
+	#NOTE : le fichier des polygones de DA à modifier avec les valeurs SMOKE
+	#est ouvert et fermé dans le main, et non dans cette proc.
+
 	#ouverture du fichier SMOKE.tif
 	gdalband read RSMOKE [gdalfile open FSMOKE read $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif]
 
@@ -2832,6 +2659,13 @@ proc UrbanX::Process { Coverage } {
 				#affichage du temps de traitement du feuillet
 				puts "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
 
+
+				#suppression des produits intermédiaires
+				file delete -force $GenX::Param(OutFile)_sandwich_$feuillet.tif
+				file delete -force $GenX::Param(OutFile)_popdens_$feuillet.tif
+				file delete -force $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif
+				file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
+
 				#préparation à la nouvelle incrémentation
 				puts "__________________________________________________________________________________________________________________________"
 				incr i
@@ -2877,7 +2711,7 @@ proc UrbanX::Process { Coverage } {
 			#----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
 			#UrbanX::Priorities2TEB
 
-			#---- To delete : Priorities2SMOKE : là seulement pour les tests
+			#---- To delete : Priorities2SMOKE : là seulement pour les tests sans passer par une province entière
 			UrbanX::Priorities2SMOKE  $Coverage
 
 			#----- Optional outputs:
