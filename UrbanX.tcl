@@ -2135,6 +2135,75 @@ proc UrbanX::BuildingHeight {indexCouverture } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <UrbanX::EOSDvegetation>
+# Creation : October 2010 - Lucie Boucher - CMC/AQMAS
+#
+# Goal     :  Replaces empty zones or wooded area zones
+#						by values from EOSD dataset
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::EOSDvegetation {indexCouverture } {
+
+	GenX::Log INFO "Début de la proc EOSDvegetation"
+
+	variable Param
+
+	#lecture du fichier créé précédemment lors de la proc SandwichCanVec
+	gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
+
+	#recherche des fichiers EOSD
+	set Param(EOSDFiles) [GenX::EOSDFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
+	#Param(EOSDFiles) contains one element of the form /cnfs/ops/production/cmoe/geo/EOSD/999A_lc_1/999A_lc_1.tif
+	puts $Param(EOSDFiles)
+
+	#read the EOSD file
+	gdalband read REOSDTILE [gdalfile open FEOSDTILE read $Param(EOSDFiles)]
+
+	#voir le produit intermédiaire REOSDTILE
+	file delete -force $GenX::Param(OutFile)_REOSDTILE_$indexCouverture.tif
+	gdalfile open FILEOUT write $GenX::Param(OutFile)_REOSDTILE_$indexCouverture.tif GeoTiff
+	gdalband write REOSDTILE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+	gdalfile close FILEOUT
+   GenX::Log INFO "The file $GenX::Param(OutFile)_REOSDTILE_$indexCouverture.tif was generated"
+
+	#tentative de sélection de la zone appropriée
+	gdalband copy RMASK RSANDWICH
+	vexpr RMASK RMASK << 0
+	puts "On passe A"
+	gdalband gridinterp RMASK REOSDTILE NEAREST
+	puts "On passe B"
+
+	#voir le produit intermédiaire RMASK
+	file delete -force $GenX::Param(OutFile)_RMASK_$indexCouverture.tif
+	gdalfile open FILEOUT write $GenX::Param(OutFile)_RMASK_$indexCouverture.tif GeoTiff
+	gdalband write RMASK FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+	gdalfile close FILEOUT
+   GenX::Log INFO "The file $GenX::Param(OutFile)_RMASK_$indexCouverture.tif was generated"
+
+	#remplacement des valeurs de la sandwich par les valeurs EOSD pour les zones vides ou de wooded area
+	vexpr RVEGE ifelse(RSANDWICH==0, RMASK, 0) ;#zones vides
+	vexpr RVEGE ifelse(RSANDWICH==200, RMASK, 0) ;#zones wooded areas
+
+	#écriture du fichier
+	file delete -force $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif
+	gdalfile open FILEOUT write $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif GeoTiff
+	gdalband write RVEGE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif was generated"
+
+	#nettoyage de mémoire
+ 	gdalfile close FSANDWICH FEOSDTILE FILEOUT
+ 	gdalband free RSANDWICH REOSDTILE RVEGE
+
+	GenX::Log INFO "Fin de la proc EOSDvegetation"
+}
+
+#----------------------------------------------------------------------------
 # Name     : <UrbanX::Priorities2TEB>
 # Creation : date? - Alexandre Leroux - CMC/CMOE
 #
@@ -2482,7 +2551,6 @@ proc UrbanX::FilterGen { Type Size } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-
 proc UrbanX::SMOKE2DA {indexCouverture } {
 
    GenX::Log INFO "Début de la proc SMOKE2DA"
@@ -2500,7 +2568,7 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
 
 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
-	for {set classeid 1} {$classeid < 70} {incr classeid 1} {
+	for {set classeid 1} {$classeid < 75} {incr classeid 1} {
 		ogrlayer clear VDASMOKE SMOKE$classeid
 	}
 
@@ -2513,7 +2581,7 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	gdalband gridinterp RDA VDASMOKE FAST FEATURE_ID
 
 	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
-   for {set classeid 1} {$classeid < 70} {incr classeid 1} {
+   for {set classeid 1} {$classeid < 75} {incr classeid 1} {
 
 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
 		set t [clock seconds]
@@ -2662,9 +2730,13 @@ proc UrbanX::Process { Coverage } {
 
 				#suppression des produits intermédiaires
 				file delete -force $GenX::Param(OutFile)_sandwich_$feuillet.tif
+				GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich_$feuillet.tif was deleted"
 				file delete -force $GenX::Param(OutFile)_popdens_$feuillet.tif
+				GenX::Log INFO "The file $GenX::Param(OutFile)_popdens_$feuillet.tif was deleted"
 				file delete -force $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif
+				GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif was deleted"
 				file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
+				GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
 
 				#préparation à la nouvelle incrémentation
 				puts "__________________________________________________________________________________________________________________________"
@@ -2690,7 +2762,7 @@ proc UrbanX::Process { Coverage } {
 			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
 
 			#----- Finds CanVec files, rasterize and flattens all CanVec layers
-			UrbanX::SandwichCanVec $Coverage
+#			UrbanX::SandwichCanVec $Coverage
 
 			#----- Applies buffer to linear and ponctual elements such as buildings and roads
 			#UrbanX::ScaleBuffersCanVec 0
@@ -2702,17 +2774,20 @@ proc UrbanX::Process { Coverage } {
 			#UrbanX::ChampsBuffers 0
 
 			#----- Calculates the population density
-			UrbanX::PopDens2BuiltupCanVec $Coverage
+#			UrbanX::PopDens2BuiltupCanVec $Coverage
 
 			#----- Calculates building heights
 			#UrbanX::HeightGain 0               ;# Requires UrbanX::ChampsBuffers to have run
 			#UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
 
+			#EOSD Vegetation
+			UrbanX::EOSDvegetation $Coverage
+
 			#----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
 			#UrbanX::Priorities2TEB
 
 			#---- To delete : Priorities2SMOKE : là seulement pour les tests sans passer par une province entière
-			UrbanX::Priorities2SMOKE  $Coverage
+#			UrbanX::Priorities2SMOKE  $Coverage
 
 			#----- Optional outputs:
 			#UrbanX::VegeMask
