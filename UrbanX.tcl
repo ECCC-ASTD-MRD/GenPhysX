@@ -23,7 +23,8 @@ namespace eval UrbanX { } {
    variable Param
    variable Const
 
-   set Param(Version)   0.2
+   set Param(Version_UrbanX)   0.2
+   set Param(Version_IndustrX)   0.1
 
    set Param(Resolution) 5       ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
    set Param(Buffer)     0.001   ;# Includes about 200m buffers to account for off-zone buffers which would influence results
@@ -337,6 +338,67 @@ namespace eval UrbanX { } {
 
    set Param(WaterLayers)      { HD_1480009_2 } ;# Water layers from CanVec
 
+	#layers that are substracted before computation of population density, in proc PopDens2BuiltupCanVec
+	set Param(PopDensSubstractionLayers)	{ 
+		HD_1140009_2
+		FO_1080069_2
+		SS_1320019_2
+		SS_1320029_2
+		SS_1320059_2
+		SS_1320039_2
+		IC_1360039_2
+		LX_2070009_2
+		LX_2270009_2
+		LX_1000089_2
+		LX_2500009_2
+		LX_1000039_2
+		LX_2480009_2
+		LX_2200009_2
+		LX_2560009_2
+		LX_2260009_2
+		LX_1000019_2
+		LX_2490009_2
+		TR_1190009_2
+		VE_1240009_2
+		LX_1000049_2
+		LX_2510009_2
+		LX_2400009_2
+		IC_1350059_2
+		FO_1080059_2
+		LX_1000079_2
+		FO_1080039_2
+		FO_1080049_2
+		IC_1350039_2
+		IC_1350049_2
+		IC_1350029_2
+		IC_1350019_2
+		EN_1360049_2
+		IC_2360009_2
+		IC_2110009_2
+		IC_1360019_2
+		IC_1360029_2
+		EN_1360059_2
+		HD_1480009_2
+		SS_1320049_2
+		HD_1460009_2
+		HD_1450009_2
+		FO_1080029_1
+		HD_1470009_1
+		HD_1460009_1
+		HD_1450009_1
+		BS_2310009_1
+		LX_1000079_1
+		LX_2420009_1
+		BS_2240009_1
+		LX_2280009_1
+		TR_1020009_1
+		TR_1760009_1
+		EN_1180009_1
+		LX_2460009_2
+		BS_2080009_2
+		BS_2010009_2
+		}
+
    set Param(BufferLayers)     { BS_2010009_0 TR_1760009_1 } ;# Layers from CanVec required for buffer
 
 	set Param(BufferFuncLayers) { BS_2010009_0 BS_2010009_2 } ;# Layers from CanVec required for buffer func
@@ -363,7 +425,6 @@ namespace eval UrbanX { } {
    set Param(VegeFilterSize) 99
 
    #fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
-   set Param(PopFile2006) /data/aqli04/afsulub/StatCan2006/da2006-nts_lcc-nad83.shp
 	set Param(PopFile2006SMOKE) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
 
    #fichier contenanant 1 polygone pour chaque province ou territoire du Canada
@@ -644,7 +705,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::FindNTSSheetsCanVec>
+# Name     : <UrbanX::FindNTSSheets>
 # Creation : August 2010 - Alexandre Leroux - CMC/CMOE
 #            August 2010 - Lucie Boucher - CMC/AQMAS
 #
@@ -658,7 +719,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::FindNTSSheetsCanVec {indexCouverture } {
+proc UrbanX::FindNTSSheets {indexCouverture } {
 
 	GenX::Log INFO "debut de la proc FindNTSSheetsCanVec"
 
@@ -830,9 +891,8 @@ proc UrbanX::NTSExtent { indexCouverture } {
 	GenX::Log INFO "fin de la proc NTSExtent"
 }
 
-
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::SandwichCanVec>
+# Name     : <UrbanX::Sandwich>
 # Creation : July 2010 - Alexandre Leroux - CMC/CMOE
 #            July 2010 - Lucie Boucher - CMC/AQMAS
 #
@@ -848,8 +908,7 @@ proc UrbanX::NTSExtent { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-
-proc UrbanX::SandwichCanVec { indexCouverture } {
+proc UrbanX::Sandwich { indexCouverture } {
    variable Param
    variable Data
 
@@ -1727,7 +1786,6 @@ proc UrbanX::ScaleBuffersBNDT { } {
 #           with 3.3.0
 #
 #----------------------------------------------------------------------------
-# Buffers on selected point and line features
 proc UrbanX::ScaleBuffersCanVec {indexCouverture } {
 
 puts "Début de la proc ScaleBuffersCanVec"
@@ -1850,7 +1908,8 @@ puts "Fin de la proc ScaleBuffersCanVec"
 #
 # Return:
 #
-# Remarks :
+# Remarks :  BUG on the buffer generation due to GEOS 3.2.2.  Should be fixed
+#           with 3.3.0
 #
 #----------------------------------------------------------------------------
 proc UrbanX::ChampsBuffers {indexCouverture } {
@@ -1907,9 +1966,8 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
    gdalband free RBUFFERCUT
 }
 
-
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::PopDens2BuiltupCanVec>
+# Name     : <UrbanX::PopDens2Builtup>
 # Creation : July 2010 - Alexandre Leroux - CMC/CMOE
 #            July 2010 - Lucie Boucher - CMC/AQMAS
 #
@@ -1926,7 +1984,7 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::PopDens2BuiltupCanVec {indexCouverture } {
+proc UrbanX::PopDens2Builtup {indexCouverture } {
 
 	GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 
@@ -1937,29 +1995,51 @@ proc UrbanX::PopDens2BuiltupCanVec {indexCouverture } {
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
    #récupération du fichier de données socio-économiques
-   set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006)] 0]
+   set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006SMOKE)] 0]
    eval ogrlayer read VPOPDENS $layer
 
-   #----- Selecting only the required polygons - next is only useful to improve the speed of the layer substraction
+   #----- Selecting only the required StatCan polygons - next is only useful to improve the speed of the layer substraction
    set features [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
    ogrlayer define VPOPDENS -featureselect [list [list index # $features]]
 
-   #Subtraction of water zone from VPOPDENS
-   GenX::Log INFO "Cropping population shapefile and substracting water ($Param(WaterLayers))"
 
-	#recheche des fichiers CanVec correspondant à l'eau
-   set Param(FilesWater) {}
-   set Param(FilesWater) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(WaterLayers)]
+	#TO DELETE : REPLACED WITH SUBSTRACTION OF MANY CANVEC LAYERS INSTEAD OF JUST WATER
+	   #Subtraction of water zone from VPOPDENS
+	   GenX::Log INFO "Cropping population shapefile and substracting water ($Param(WaterLayers))"
+	
+		#recheche des fichiers CanVec correspondant à l'eau
+	   set Param(FilesWater) {}
+	   set Param(FilesWater) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(WaterLayers)]
+	
+		#soustraction de l'eau 
+	   foreach file $Param(FilesWater) {
+	      GenX::Log INFO "Substracting water file $file"
+	      set water_layer [lindex [ogrfile open SHAPE2 read $file] 0]
+	      eval ogrlayer read VWATER $water_layer
+	      ogrlayer stats VPOPDENS -difference VWATER
+	      ogrfile close SHAPE2
+	      ogrlayer free VWATER
+	   }
+	# FIN DU TO DELETE
 
-	#soustraction de l'eau 
-   foreach file $Param(FilesWater) {
-      GenX::Log INFO "Substracting water file $file"
-      set water_layer [lindex [ogrfile open SHAPE2 read $file] 0]
-      eval ogrlayer read VWATER $water_layer
-      ogrlayer stats VPOPDENS -difference VWATER
-      ogrfile close SHAPE2
-      ogrlayer free VWATER
-   }
+
+#    #Soustraction des zones non résidentielles de VPOPDENS
+#    GenX::Log INFO "Cropping population shapefile and substracting non residential zones"
+#    GenX::Log INFO "Note : cette opération peut prendre plusieurs minutes pour chaque fichier à soustraire !"
+# 
+# 	#recheche des fichiers CanVec correspondant aux zones non résidentielles
+#    set Param(PopDensSubstractionFiles) {}
+#    set Param(PopDensSubstractionFiles) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(PopDensSubstractionLayers)]
+# 
+# 	#soustraction des zones non résidentielles
+#    foreach file $Param(PopDensSubstractionFiles) {
+#       GenX::Log INFO "Substracting non residential file $file"
+#       set nonrez_layer [lindex [ogrfile open SHAPE2 read $file] 0]
+#       eval ogrlayer read VNONREZ $nonrez_layer
+#       ogrlayer stats VPOPDENS -difference VNONREZ
+#       ogrfile close SHAPE2
+#       ogrlayer free VNONREZ
+#    }
 
    #Calcul de la densité de population
    GenX::Log INFO "Calculating population density values"
@@ -2007,8 +2087,6 @@ proc UrbanX::PopDens2BuiltupCanVec {indexCouverture } {
 	#nettoyage de mémoire
    gdalband free RSANDWICH RPOPDENS RTEMP
    gdalfile close FSANDWICH
-#   gdalband free RPOPDENS
-#   gdalband free RTEMP
 
    #écriture du fichier genphysx_popdens-builtup.tif
    file delete -force $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif
@@ -2160,7 +2238,7 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
 	#recherche des fichiers EOSD
 	set Param(EOSDFiles) [GenX::EOSDFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
 	#Param(EOSDFiles) contains one element of the form /cnfs/ops/production/cmoe/geo/EOSD/999A_lc_1/999A_lc_1.tif
-	puts $Param(EOSDFiles)
+	GenX::Log INFO "Le fichier EOSD suivant a été trouvé : $Param(EOSDFiles)"
 
 	#read the EOSD file
 	gdalband read REOSDTILE [gdalfile open FEOSDTILE read $Param(EOSDFiles)]
@@ -2170,14 +2248,12 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
 	gdalfile open FILEOUT write $GenX::Param(OutFile)_REOSDTILE_$indexCouverture.tif GeoTiff
 	gdalband write REOSDTILE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 	gdalfile close FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_REOSDTILE_$indexCouverture.tif was generated"
+	GenX::Log INFO "The file $GenX::Param(OutFile)_REOSDTILE_$indexCouverture.tif was generated"
 
-	#tentative de sélection de la zone appropriée
+	#sélection de la zone EOSD appropriée à l'aide de la sandwich
 	gdalband copy RMASK RSANDWICH
 	vexpr RMASK RMASK << 0
-	puts "On passe A"
-	gdalband gridinterp RMASK REOSDTILE NEAREST
-	puts "On passe B"
+	gdalband gridinterp RMASK REOSDTILE NEAREST ;#NE FONCTIONNE PAS, RMASK RESTE VIDE ?!?!?!?
 
 	#voir le produit intermédiaire RMASK
 	file delete -force $GenX::Param(OutFile)_RMASK_$indexCouverture.tif
@@ -2257,7 +2333,6 @@ proc UrbanX::Priorities2TEB { } {
 # Goal     : Applies LUT to all processing results to generate SMOKE classes
 #
 # Parameters :
-#		<indexCouverture>		: index à appliquer à la référence UTMREF
 #
 # Return: output files :
 #				 genphysx_smoke.tif
@@ -2604,6 +2679,51 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <UrbanX::Metadata>
+# Creation :  October 2010 - Lucie Boucher - CMC/AQMAS
+#
+# Goal     :  Writes a metadata text file
+#
+# Parameters :
+#
+# Return:
+#					metadata text file
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Metadata { Coverage Usedtool t_traitement} {
+
+	GenX::Log INFO "Début de la proc Metadata"
+
+	variable Param
+	variable Path
+
+	#ouverture du fichier texte
+	set metadatafile [open $GenX::Param(OutFile)_metadata_$Coverage.txt w]
+
+	#écriture des métadonnées
+	puts $metadatafile "Couverture traitée : $Coverage"
+	puts $metadatafile "Traitement réalisé par $Usedtool version $Param(Version_$Usedtool)"
+
+#comment aller chercher l'info de GenX?
+#	puts $metadatafile "Données CanVec : $Path(CANVEC)"
+#	puts $metadatafile "Données EOSD : $Path(EOSD)"
+
+	puts $metadatafile "Statistique Canada : $Param(PopFile2006SMOKE)"
+	puts $metadatafile "Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes"
+	puts $metadatafile "Traitement terminé le : [clock format [clock seconds]]"
+
+#veut-on écrire autre chose là-dedans?
+
+	#fermeture du fichier texte
+	close $metadatafile
+
+	GenX::Log INFO "Fin de la proc Metadata"
+
+}
+
+#----------------------------------------------------------------------------
 # Name     : <UrbanX::Process>
 # Creation : date? - Alexandre Leroux - CMC/CMOE
 #						August 2010 - Lucie Boucher - CMC/AQMAS
@@ -2649,7 +2769,12 @@ proc UrbanX::Process { Coverage } {
 	switch $Coverage {
 		"TN" - "PEI" - "NS" - "NB" - "QC" - "ON" - "MN" - "SK" - "AB" - "BC" - "YK" - "TNO" - "NV"  
 		{
-			GenX::Log INFO "Traitement d'une province : IndustrX"
+
+			set t_traitement [clock seconds]
+
+			set Usedtool "IndustrX"
+
+			GenX::Log INFO "Traitement d'une province : $Usedtool"
 
 			#----- Get the lat/lon and pr code parameters associated with the province
 			UrbanX::AreaDefine    $Coverage
@@ -2657,7 +2782,7 @@ proc UrbanX::Process { Coverage } {
 			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
 
 			#----- Ffinds all NTS Sheets that intersect with the province polygon
-			UrbanX::FindNTSSheetsCanVec 0
+			UrbanX::FindNTSSheets 0
 			# au terme de cette proc, on a
 			#Param(NTSIds) : liste des ids des feuillets NTS : format 9999
 			#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
@@ -2696,7 +2821,7 @@ proc UrbanX::Process { Coverage } {
 
 				#----- Finds CanVec files, rasterize and flattens all CanVec layers
 				if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
-					UrbanX::SandwichCanVec $feuillet
+					UrbanX::Sandwich $feuillet
 				} else {
 					GenX::Log INFO "Le fichier $GenX::Param(OutFile)_sandwich_$feuillet.tif existe déjà."
 				}
@@ -2708,9 +2833,12 @@ proc UrbanX::Process { Coverage } {
 				#UrbanX::ChampsBuffers $m
 				#----------END OF : TO MODIFY FOR CANVEC LAYERS
 
+				#EOSD Vegetation
+#				UrbanX::EOSDvegetation $feuillet
+
 				#----- Calculates the population density and split the residential areas according to population density thresholds
 				if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
-					UrbanX::PopDens2BuiltupCanVec $feuillet
+					UrbanX::PopDens2Builtup $feuillet
 				} else {
 					GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_popdens_$feuillet.tif et $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif existent déjà."
 				}
@@ -2747,13 +2875,21 @@ proc UrbanX::Process { Coverage } {
 			#fermeture du fichier de polygones de DA à modifier avec les valeurs SMOKE
 			ogrlayer free VDASMOKE  
 
+			#ajouter une proc pour l'écriture des métadonnées
+			UrbanX::Metadata $Coverage $Usedtool $t_traitement
+
 			#fin de la boucle sur la zone à traiter
 			GenX::Log INFO "Fin du traitement de $Coverage avec IndustrX"
 
 		}
 		"VANCOUVER" - "MONTREAL" - "TORONTO" - "OTTAWA" - "WINNIPEG" - "CALGARY" - "HALIFAX" - "REGINA" - "EDMONTON" - "VICTORIA" - "QUEBEC"
 		{
-			GenX::Log INFO "Traitement d'une ville : UrbanX"
+
+			set t_traitement [clock seconds]
+
+			set Usedtool "UrbanX"
+
+			GenX::Log INFO "Traitement d'une ville : $Usedtool"
 
 			#----- Get the lat/lon and files parameters associated with the province
 			UrbanX::AreaDefine    $Coverage
@@ -2762,7 +2898,7 @@ proc UrbanX::Process { Coverage } {
 			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
 
 			#----- Finds CanVec files, rasterize and flattens all CanVec layers
-#			UrbanX::SandwichCanVec $Coverage
+			UrbanX::Sandwich $Coverage
 
 			#----- Applies buffer to linear and ponctual elements such as buildings and roads
 			#UrbanX::ScaleBuffersCanVec 0
@@ -2774,7 +2910,7 @@ proc UrbanX::Process { Coverage } {
 			#UrbanX::ChampsBuffers 0
 
 			#----- Calculates the population density
-#			UrbanX::PopDens2BuiltupCanVec $Coverage
+			UrbanX::PopDens2Builtup $Coverage
 
 			#----- Calculates building heights
 			#UrbanX::HeightGain 0               ;# Requires UrbanX::ChampsBuffers to have run
@@ -2787,11 +2923,14 @@ proc UrbanX::Process { Coverage } {
 			#UrbanX::Priorities2TEB
 
 			#---- To delete : Priorities2SMOKE : là seulement pour les tests sans passer par une province entière
-#			UrbanX::Priorities2SMOKE  $Coverage
+			UrbanX::Priorities2SMOKE  $Coverage
 
 			#----- Optional outputs:
 			#UrbanX::VegeMask
 			#UrbanX::TEB2FSTD
+
+			#ajouter une proc pour l'écriture des métadonnées
+			UrbanX::Metadata $Coverage $Usedtool $t_traitement
 
 			#fin de la boucle sur la zone à traiter
 			GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
