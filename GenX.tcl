@@ -45,8 +45,8 @@
 #============================================================================
 
 package require TclData
+package require TclSystem
 package require MetData
-package require Thread
 
 namespace eval GenX { } {
    global env
@@ -630,7 +630,7 @@ proc GenX::ParseCommandLine { } {
    upvar argv gargv
 
    #----- Check if architecture is valid
-   if { ![string match -nocase "Linux" [exec uname]] } {
+   if { [system info -os]!="Linux" } {
       GenX::Log ERROR "GenPhysX only runs on Linux"
       exit 1
    }
@@ -764,7 +764,7 @@ proc GenX::ParseTarget { } {
                   set Param(Check)    "STD"
                   set Param(Sub)      "STD"
                   set Param(Z0Filter) True
-                  set Param(Compress) Fasle
+                  set Param(Compress) False
                 }
    }
 }

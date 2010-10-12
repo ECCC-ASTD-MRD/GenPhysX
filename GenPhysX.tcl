@@ -1,6 +1,7 @@
 #!/bin/sh
 # the next line restarts using tclsh \
-exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.4.0}/tclsh "$0" "$@"
+exec nice ${GENPHYSX_PRIORITY:=-19} /users/dor/afsr/ops/eer_SPI-7.4.1/tclsh "$0" "$@"
+#exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.4.1}/tclsh "$0" "$@"
 #============================================================================
 # Environnement Canada
 # Centre Meteorologique Canadien

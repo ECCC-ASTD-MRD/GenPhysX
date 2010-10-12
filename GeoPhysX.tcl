@@ -1344,16 +1344,6 @@ proc GeoPhysX::AverageSoil { Grid } {
       GeoPhysX::AverageSand $Grid
       GeoPhysX::AverageClay $Grid
    }
-
-#   foreach soil $GenX::Param(Soil) {
-#      switch $soil {
-#         "USDA" -
-#         "AGRC" -
-#         "FAO"  { GeoPhysX::AverageSand $Grid          ;#----- USGS global vege averaging method
-#                  GeoPhysX::AverageClay $Grid  }
-#         "HWSD" { GeoPhysX::AverageSoilHWSD $Grid ;#----- GLOBCOVER global vege averaging method }
-#      }
-#   }
 }
 
 #----------------------------------------------------------------------------
