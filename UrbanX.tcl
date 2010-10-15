@@ -2684,13 +2684,6 @@ proc UrbanX::Process { Coverage } {
 	variable Param
 	GenX::Log INFO "Coverage = $Coverage"
 
-	#en cas de zone mal définie
-	if {$Coverage != "VANCOUVER" || $Coverage != "MONTREAL" || $Coverage != "TORONTO" || $Coverage != "OTTAWA" || $Coverage != "WINNIPEG" || $Coverage != "CALGARY" || $Coverage != "HALIFAX" || $Coverage != "REGINA" || $Coverage != "EDMONTON" || $Coverage != "VICTORIA" || $Coverage != "QUEBEC"} {
-		#si l'utilisateur entre une commande GenPhysX.tcl -urban fdkjldsjlfj 
-		GenX::Log INFO "Zone non définie"
-		return
-	}
-
 	set t_traitement [clock seconds]
 
 	set Usedtool "UrbanX"
@@ -2734,7 +2727,7 @@ proc UrbanX::Process { Coverage } {
 	#fin de la boucle sur la zone à traiter
 	GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
 	GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
-	#la } finale se trouve au terme du gros bloc de commentaires suivant
+} ;#finale se trouve au terme du gros bloc de commentaires suivant
 
 #------ UTILITAIRES TO DELETE ------------
 
@@ -3000,4 +2993,4 @@ proc UrbanX::Process { Coverage } {
 # 
 # 	GenX::Log INFO "Fin d'UrbanX / d'IndustrX.  Retour à GenPhysX"
 
-} ;# fin de la proc Process
+#} ;# fin de la proc Process
