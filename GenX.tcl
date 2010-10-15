@@ -396,7 +396,7 @@ proc GenX::Log { Type Message { Head True } } {
 # Goal     : Record metadata info in a standard RPN Field.
 #
 # Parameters :
-#   <Grid>   : Grid on which to generate the topo
+#   <Grid>   : Grid on which to generate the topo or filename for txt
 #
 # Return:
 #
@@ -443,9 +443,15 @@ proc GenX::MetaData { Grid } {
    append meta $Meta(Footer)
 
    #----- Encode everyting
-   set fld [MetData::TextCode $meta]
-   fstdfield define $fld -NOMVAR META -IP1 [fstdfield define $Grid -IP1] -IP2 [fstdfield define $Grid -IP2] -IP3 [fstdfield define $Grid -IP3]
-   fstdfield write $fld GPXOUTFILE 0 True
+   if { [fstdfield is $Grid] } {
+      set fld [MetData::TextCode $meta]
+      fstdfield define $fld -NOMVAR META -IP1 [fstdfield define $Grid -IP1] -IP2 [fstdfield define $Grid -IP2] -IP3 [fstdfield define $Grid -IP3]
+      fstdfield write $fld GPXOUTFILE 0 True
+   } else {
+      set f [open $Grid w]
+      puts $f $meta
+      close $f
+   }
 }
 
 #----------------------------------------------------------------------------
