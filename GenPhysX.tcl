@@ -1,6 +1,6 @@
 #!/bin/sh
 # the next line restarts using tclsh \
-exec nice ${GENPHYSX_PRIORITY:=-19} /users/dor/afsr/ops/eer_SPI-7.4.1/tclsh "$0" "$@"
+exec nice ${GENPHYSX_PRIORITY:=-19} /users/dor/afsr/005/eer_SPI-7.4.1/tclsh "$0" "$@"
 #exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.4.1}/tclsh "$0" "$@"
 #============================================================================
 # Environnement Canada
@@ -39,6 +39,8 @@ exec nice ${GENPHYSX_PRIORITY:=-19} /users/dor/afsr/ops/eer_SPI-7.4.1/tclsh "$0"
 #      [-soil]     ()                             : Soil method { USDA }
 #      [-aspect]   ()                             : Calculates aspect and slope { SRTM CDED250 CDED50 ASTERGDEM }
 #      [-biogenic] ()                             : Biogenic calculation { BELD USGS }
+#      [-urban]    ()                             : Urban coverage
+#      [-smoke]    ()                             : SMOKE emissions
 #      [-check]                                   : Do consistency checks
 #      [-subgrid]                                 : Calculates sub grid fields
 #      [-diag]                                    : Do diagnostics
@@ -79,6 +81,9 @@ if { $GenX::Param(Urban)!="" } {
    UrbanX::Process $GenX::Param(Urban)
 }
 
+if { $GenX::Param(SMOKE)!="" } {
+   IndustrX::Process $GenX::Param(SMOKE)
+}
 #----- Open output files
 fstdfile open GPXOUTFILE write $GenX::Param(OutFile)$GenX::Param(Process).fst
 fstdfile open GPXAUXFILE write $GenX::Param(OutFile)$GenX::Param(Process)_aux.fst

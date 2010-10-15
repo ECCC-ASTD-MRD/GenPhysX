@@ -74,6 +74,7 @@ namespace eval GenX { } {
    set Param(Target)    ""                    ;#Model cible
    set Param(Biogenic)  ""                    ;#Biogenic emissions data selected
    set Param(Urban)     ""                    ;#Urban coverage
+   set Param(SMOKE)     ""                    ;#SMOKE emissions
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
@@ -94,6 +95,7 @@ namespace eval GenX { } {
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Urbans)    { }
+   set Param(SMOKES)    { }
    set Param(Checks)    { STD }
    set Param(Subs)      { STD }
    set Param(Targets)   { GEMMESO }             ;#Model cible
@@ -561,6 +563,7 @@ proc GenX::CommandLine { } {
       \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Param(Aspects)}" ([join $Param(Aspect)])]
       \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Param(Biogenics)}" ([join $Param(Biogenic)])]
       \[-urban\]    [format "%-30s : Urban coverage {$Param(Urban)}" ([join $Param(Urban)])]
+      \[-smoke\]    [format "%-30s : SMOKE emissions {$Param(SMOKE)}" ([join $Param(SMOKE)])]
       \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" ($Param(Check))]
       \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Param(Subs)}" ($Param(Sub))]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
@@ -665,6 +668,7 @@ proc GenX::ParseCommandLine { } {
          "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Aspect)]; incr flags }
          "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
          "urban"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Urban) $GenX::Param(Urbans)]; incr flags }
+         "smoke"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(SMOKE) $GenX::Param(SMOKES)]; incr flags }
          "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Check)]; incr flags }
          "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Diag)] }
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Z0Filter)]; incr flags }
