@@ -640,12 +640,6 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat0)    85.0
          set Param(ProvinceCode) 62 ;# PR code from StatCan
       }
-		"mtltest" {
-         set Param(Lon1)   -73.5633
-         set Param(Lat1)    45.5288
-         set Param(Lon0)   -73.5840
-         set Param(Lat0)    45.5190
-		}
       default {
          set Param(Lon1)   -71.10
          set Param(Lat1)    46.94
@@ -2280,7 +2274,7 @@ proc UrbanX::Priorities2TEB { } {
 # Return: output files :
 #				 genphysx_smoke.tif
 #
-# Remarks :
+# Remarks :  SWITCH TO INDUSTRX.TCL
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Priorities2SMOKE {indexCouverture } {
@@ -2568,7 +2562,7 @@ proc UrbanX::FilterGen { Type Size } {
 #
 # Return:
 #
-# Remarks :
+# Remarks : SWITCH TO INDUSTRX.TCL
 #
 #----------------------------------------------------------------------------
 proc UrbanX::SMOKE2DA {indexCouverture } {
@@ -2618,7 +2612,6 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	#nettoyage de mémoire
 	gdalband free RSMOKE RDA
 	gdalfile close FSMOKE
-#	ogrfile close SHAPEDSMOKE 
 
    GenX::Log INFO "Fin de la proc SMOKE2DA"
 }
@@ -2686,9 +2679,64 @@ proc UrbanX::Metadata { Coverage Usedtool t_traitement} {
 #----------------------------------------------------------------------------
 proc UrbanX::Process { Coverage } {
 
-   GenX::Log INFO "Début d'UrbanX"
+	GenX::Log INFO "Début d'UrbanX"
 
-   variable Param
+	variable Param
+	GenX::Log INFO "Coverage = $Coverage"
+
+	#en cas de zone mal définie
+	if {$Coverage != "VANCOUVER" || $Coverage != "MONTREAL" || $Coverage != "TORONTO" || $Coverage != "OTTAWA" || $Coverage != "WINNIPEG" || $Coverage != "CALGARY" || $Coverage != "HALIFAX" || $Coverage != "REGINA" || $Coverage != "EDMONTON" || $Coverage != "VICTORIA" || $Coverage != "QUEBEC"} {
+		#si l'utilisateur entre une commande GenPhysX.tcl -urban fdkjldsjlfj 
+		GenX::Log INFO "Zone non définie"
+		return
+	}
+
+	set t_traitement [clock seconds]
+
+	set Usedtool "UrbanX"
+	GenX::Log INFO "Traitement d'une ville : $Usedtool"
+
+	#----- Get the lat/lon and files parameters associated with the province
+	UrbanX::AreaDefine    $Coverage
+
+	#----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
+	UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
+
+	#----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
+	UrbanX::Sandwich $Coverage
+
+	#-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
+	#UrbanX::Shp2Height
+
+	#----- Creates the fields and building vicinity output using spatial buffers
+	#UrbanX::ChampsBuffers 0
+
+	#----- Calculates the population density
+	UrbanX::PopDens2Builtup $Coverage
+
+	#----- Calculates building heights
+	#UrbanX::HeightGain 0               ;# Requires UrbanX::ChampsBuffers to have run
+	#UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
+
+	#EOSD Vegetation
+	UrbanX::EOSDvegetation $Coverage
+
+	#----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
+	#UrbanX::Priorities2TEB
+
+	#----- Optional outputs:
+	#UrbanX::VegeMask
+	#UrbanX::TEB2FSTD
+
+	#ajouter une proc pour l'écriture des métadonnées
+	UrbanX::Metadata $Coverage $Usedtool $t_traitement
+
+	#fin de la boucle sur la zone à traiter
+	GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
+	GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
+	#la } finale se trouve au terme du gros bloc de commentaires suivant
+
+#------ UTILITAIRES TO DELETE ------------
 
 # #to delete, réinitialisation d'un fichier
 # set fichierDA /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83_PEI.shp
@@ -2705,7 +2753,6 @@ proc UrbanX::Process { Coverage } {
 # return
 # #fin du todelete
 
-
 # #	PETIT BOUT DE CODE À SUPPRIMER, JUSTE UN TEST POUR TROUVER TOUS LES FICHIERS CANVEC DU CANADA POUR UNE ENTITÉ
 # set Param(FilesCanada) {}
 # set Param(LayerATrouver) {LX_1000079_2}
@@ -2721,218 +2768,236 @@ proc UrbanX::Process { Coverage } {
 # puts "Il y a [llength $sort_unique_filescanada] shapefiles trouvés."
 # break
 
-
-# #code à supprimer, différence de 2 images
-# 	puts "soustraction oldproc et newproc"
-# 	puts "lecture des 2 fichiers"
-#    gdalband read ROLDPROC [gdalfile open FOLDPROC read $GenX::Param(OutFile)_popdens-builtup_MONTREAL_ratiowithoutbuildings.tif]
-#    gdalband read RNEWPROC [gdalfile open FNEWPROC read $GenX::Param(OutFile)_popdens-builtup_MONTREAL_ratiowithbuildings.tif]
-# 	puts "vexpr"
-#    vexpr RPAREIL ifelse(ROLDPROC!=RNEWPROC,RNEWPROC,0)
+# 	#code à supprimer, binariser les outputs smoke with ou without EOSD
+# 	puts "lecture du fichier"
+#    gdalband read RWITHEOSD [gdalfile open FWITHEOSD read $GenX::Param(OutFile)_SMOKE_testloin_withEOSD.tif]
+#    puts "vexpr"
+#    vexpr RWITHBIN ifelse(RWITHEOSD!=0,1,0)
 # 	puts "ecriture du fichier"
-#    file delete -force $GenX::Param(OutFile)_pareil.tif
-#    gdalfile open FILEOUT write $GenX::Param(OutFile)_pareil.tif GeoTiff
-#    gdalband write RPAREIL FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-#    GenX::Log INFO "The file $GenX::Param(OutFile)_pareil.tif was generated"
-# 	gdalfile close FILEOUT FOLDPROC FNEWPROC
-# 	gdalband free ROLDPROC RNEWPROC RPAREIL
+#    file delete -force $GenX::Param(OutFile)_SMOKEWITHEOSDBIN.tif
+#    gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKEWITHEOSDBIN.tif GeoTiff
+#    gdalband write RWITHBIN FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+#    GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKEWITHEOSDBIN.tif was generated"
+# 	gdalfile close FWITHEOSD FILEOUT
+# 	gdalband free RWITHEOSD RWITHBIN
+# 	puts "lecture du fichier"
+#    gdalband read RWITHOUTEOSD [gdalfile open FWITHOUTEOSD read $GenX::Param(OutFile)_SMOKE_testloin_withoutEOSD.tif]
+#    puts "vexpr"
+#    vexpr RWITHOUTBIN ifelse(RWITHOUTEOSD!=0,1,0)
+# 	puts "ecriture du fichier"
+#    file delete -force $GenX::Param(OutFile)_SMOKEWITHOUTEOSDBIN.tif
+#    gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKEWITHOUTEOSDBIN.tif GeoTiff
+#    gdalband write RWITHOUTBIN FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+#    GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKEWITHEOUTOSDBIN.tif was generated"
+# 	gdalfile close FWITHOUTEOSD FILEOUT
+# 	gdalband free RWITHOUTEOSD RWITHOUTBIN
 # 	return
 
 
-   GenX::Log INFO "Coverage = $Coverage"
+#-------- OLD M AIN WITH URBANX AND INDUSTRX IN SAME TCL FILE-------
 
-	switch $Coverage {
-		"TN" - "PEI" - "NS" - "NB" - "QC" - "ON" - "MN" - "SK" - "AB" - "BC" - "YK" - "TNO" - "NV"  
-		{
+#    GenX::Log INFO "Coverage = $Coverage"
+# 
+# 	switch $Coverage {
+# 		"TN" - "PEI" - "NS" - "NB" - "QC" - "ON" - "MN" - "SK" - "AB" - "BC" - "YK" - "TNO" - "NV"  
+# 		{
+# 
+# 		puts "Ce traitement a été envoyé dans IndustrX.tcl"
+# 			set t_traitement [clock seconds]
+# 
+# 			set Usedtool "IndustrX"
+# 			GenX::Log INFO "Traitement d'une province : $Usedtool"
+# 
+# 			#----- Get the lat/lon and pr code parameters associated with the province
+# 			UrbanX::AreaDefine    $Coverage
+# 			#----- Defines the general  extents of the zone to be process, the central UTM zone and set the initial UTMREF
+# 			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
+# 
+# 			#----- Ffinds all NTS Sheets that intersect with the province polygon
+# 			UrbanX::FindNTSSheets 0
+# 			# au terme de cette proc, on a
+# 				#Param(NTSIds) : liste des ids des feuillets NTS : format 9999
+# 				#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
+# 
+# 			#ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
+# 			if { ![ogrlayer is VDASMOKE] } {
+# 
+# #				set Param(PopFile2006SMOKE_Province) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.shp
+# #				set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE_Province)] 0]
+# 				set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
+# 				eval ogrlayer read VDASMOKE $da_layer_smoke
+# 				GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
+# 			}
+# 
+# 
+# 	#FEUILLETS TESTS DE PERFORMANCES!
+# 	set Param(NTSIds) {270}
+# 	set Param(NTSSheets) {"010O13"}
+# 	puts "Feuillet test $Param(NTSIds) $Param(NTSSheets)"
+# 
+# 
+# 			#préparation à l'incrémentation sur les feuillets NTS 
+# 			set nbrfeuillets [llength $Param(NTSSheets) ] 
+# 			set i 1
+# 			puts "_______________________________________________________________________________________________________________________________"
+# 
+# 			#----- Process for each NTS Sheets that were previously selected
+# 			foreach feuillet $Param(NTSSheets) {
+# 
+# 
+# 			#BOUCLE IFELSE PRÉSENTE JUSTE POUR CONTRER LA SEGMENTATION FAULT.  À SUPPRIMER SI ON TROUVE POURQUOI ÇA PLANTE
+# 			#ENTRER LE FEUILLET POUR LEQUEL ON VEUT COMMENCER LE TRAITEMENT
+# 				if {$i < 1} {
+# 					puts "Feuillet $i sur $nbrfeuillets"
+# 					puts "feuillet déjà traité"
+# 					#préparation à la nouvelle incrémentation
+# 					puts "__________________________________________________________________________________________________________________________"
+# 					incr i
+# 
+# 				} else {
+# 					#calcul du temps de traitement d'un feuillet NTS
+# 					set t_feuillet [clock seconds]
+# 
+# 					puts "Feuillet $i sur $nbrfeuillets"
+# 
+# 					GenX::Log INFO "Traitement de la tuile NTS ayant le numéro de feuillet $feuillet"
+# 
+# 					#----- Finds the extents of the zone (NTS Sheet) to be process
+# 					UrbanX::NTSExtent $feuillet
+# 					GenX::Log INFO "La latitude de la tuile va de $Param(Lat0) à $Param(Lat1)"
+# 					GenX::Log INFO "La longitude de la tuile va de $Param(Lon0) à $Param(Lon1)"
+# 					GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe X  vont de $Param(x0) à $Param(x1)"
+# 					GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe Y  vont de $Param(y0) à $Param(y1)"
+# 
+# 					#----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
+# 					if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
+# 						UrbanX::Sandwich $feuillet
+# 					} else {
+# 						GenX::Log INFO "Le fichier $GenX::Param(OutFile)_sandwich_$feuillet.tif existe déjà."
+# 					}
+# 
+# 					#----------TO MODIFY FOR CANVEC LAYERS
+# 					#----- Creates the fields and building vicinity output using spatial buffers
+# 					#UrbanX::ChampsBuffers $m
+# 					#----------END OF : TO MODIFY FOR CANVEC LAYERS
+# 
+# 					#EOSD Vegetation
+# 					if { ![file exists $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif] } {
+# 						UrbanX::EOSDvegetation $feuillet
+# 					} else {
+# 						GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif et $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif existent déjà."
+# 					}
+# 
+# 					#----- Calculates the population density and split the residential areas according to population density thresholds
+# 					if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
+# 						UrbanX::PopDens2Builtup $feuillet
+# 					} else {
+# 						GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_popdens_$feuillet.tif et $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif existent déjà."
+# 					}
+# 
+# 					#----- Applies LUT to all processing results to generate SMOKE classes and sets the values in the DA shapefile
+# 					if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
+# 						#----- Applies LUT to all processing results to generate SMOKE classes
+# 						UrbanX::Priorities2SMOKE  $feuillet
+# 						#----- Counts the SMOKE values and write the results in the dissemination area shapefile
+# 						UrbanX::SMOKE2DA $feuillet
+# 					} else {
+# 						GenX::Log INFO "Le fichier $GenX::Param(OutFile)_SMOKE_$feuillet.tif existe déjà."
+# 					}
+# 
+# # 					#suppression des produits intermédiaires
+# # 					file delete -force $GenX::Param(OutFile)_sandwich_$feuillet.tif
+# # 					GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich_$feuillet.tif was deleted"
+# # 					file delete -force $GenX::Param(OutFile)_popdens_$feuillet.tif
+# # 					GenX::Log INFO "The file $GenX::Param(OutFile)_popdens_$feuillet.tif was deleted"
+# # 					file delete -force $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif
+# # 					GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif was deleted"
+# # 					file delete -force $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif
+# # 					GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif was generated"
+# # 					file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif
+# # 					GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was generated"
+# # 					file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
+# # 					GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
+# 
+# 					#affichage du temps de traitement du feuillet
+# 					puts "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
+# 
+# 					#préparation à la nouvelle incrémentation
+# 					puts "__________________________________________________________________________________________________________________________"
+# 					incr i
+# 				}
+# 			} ;# fin du foreach feuillet
+# 
+# 			#fermeture du fichier de polygones de DA à modifier avec les valeurs SMOKE
+# #			ogrfile close SHAPEDSMOKE 
+# 			ogrlayer free VDASMOKE  
+# 
+# 			#ajouter une proc pour l'écriture des métadonnées
+# 			UrbanX::Metadata $Coverage $Usedtool $t_traitement
+# 
+# 			#fin de la boucle sur la zone à traiter
+# 			GenX::Log INFO "Fin du traitement de $Coverage avec IndustrX"
 
-			set t_traitement [clock seconds]
-
-			set Usedtool "IndustrX"
-			GenX::Log INFO "Traitement d'une province : $Usedtool"
-
-			#----- Get the lat/lon and pr code parameters associated with the province
-			UrbanX::AreaDefine    $Coverage
-			#----- Defines the general  extents of the zone to be process, the central UTM zone and set the initial UTMREF
-			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
-
-			#----- Ffinds all NTS Sheets that intersect with the province polygon
-			UrbanX::FindNTSSheets 0
-			# au terme de cette proc, on a
-				#Param(NTSIds) : liste des ids des feuillets NTS : format 9999
-				#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
-
-			#ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
-			if { ![ogrlayer is VDASMOKE] } {
-
-				set Param(PopFile2006SMOKE_Province) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.shp
-				set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE_Province)] 0]
-#				set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
-				eval ogrlayer read VDASMOKE $da_layer_smoke
-				GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
-			}
-
-			#préparation à l'incrémentation sur les feuillets NTS 
-			set nbrfeuillets [llength $Param(NTSSheets) ] 
-			set i 1
-			puts "_______________________________________________________________________________________________________________________________"
-
-			#----- Process for each NTS Sheets that were previously selected
-			foreach feuillet $Param(NTSSheets) {
-
-
-			#BOUCLE IFELSE PRÉSENTE JUSTE POUR CONTRER LA SEGMENTATION FAULT.  À SUPPRIMER SI ON TROUVE POURQUOI ÇA PLANTE
-			#ENTRER LE FEUILLET POUR LEQUEL ON VEUT COMMENCER LE TRAITEMENT
-				if {$i < 1} {
-					puts "Feuillet $i sur $nbrfeuillets"
-					puts "feuillet déjà traité"
-					#préparation à la nouvelle incrémentation
-					puts "__________________________________________________________________________________________________________________________"
-					incr i
-
-				} else {
-					#calcul du temps de traitement d'un feuillet NTS
-					set t_feuillet [clock seconds]
-
-					puts "Feuillet $i sur $nbrfeuillets"
-
-					GenX::Log INFO "Traitement de la tuile NTS ayant le numéro de feuillet $feuillet"
-
-					#----- Finds the extents of the zone (NTS Sheet) to be process
-					UrbanX::NTSExtent $feuillet
-					GenX::Log INFO "La latitude de la tuile va de $Param(Lat0) à $Param(Lat1)"
-					GenX::Log INFO "La longitude de la tuile va de $Param(Lon0) à $Param(Lon1)"
-					GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe X  vont de $Param(x0) à $Param(x1)"
-					GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe Y  vont de $Param(y0) à $Param(y1)"
-
-					#----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-					if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
-						UrbanX::Sandwich $feuillet
-					} else {
-						GenX::Log INFO "Le fichier $GenX::Param(OutFile)_sandwich_$feuillet.tif existe déjà."
-					}
-
-					#----------TO MODIFY FOR CANVEC LAYERS
-					#----- Creates the fields and building vicinity output using spatial buffers
-					#UrbanX::ChampsBuffers $m
-					#----------END OF : TO MODIFY FOR CANVEC LAYERS
-
-					#EOSD Vegetation
-					if { ![file exists $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif] } {
-						UrbanX::EOSDvegetation $feuillet
-					} else {
-						GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif et $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif existent déjà."
-					}
-
-					#----- Calculates the population density and split the residential areas according to population density thresholds
-					if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
-						UrbanX::PopDens2Builtup $feuillet
-					} else {
-						GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_popdens_$feuillet.tif et $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif existent déjà."
-					}
-
-					#----- Applies LUT to all processing results to generate SMOKE classes and sets the values in the DA shapefile
-					if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
-						#----- Applies LUT to all processing results to generate SMOKE classes
-						UrbanX::Priorities2SMOKE  $feuillet
-						#----- Counts the SMOKE values and write the results in the dissemination area shapefile
-						UrbanX::SMOKE2DA $feuillet
-					} else {
-						GenX::Log INFO "Le fichier $GenX::Param(OutFile)_SMOKE_$feuillet.tif existe déjà."
-					}
-
-					#suppression des produits intermédiaires
-					file delete -force $GenX::Param(OutFile)_sandwich_$feuillet.tif
-					GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich_$feuillet.tif was deleted"
-					file delete -force $GenX::Param(OutFile)_popdens_$feuillet.tif
-					GenX::Log INFO "The file $GenX::Param(OutFile)_popdens_$feuillet.tif was deleted"
-					file delete -force $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif
-					GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif was deleted"
-					file delete -force $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif
-					GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif was generated"
-					file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif
-					GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was generated"
-					file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
-					GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
-
-					#affichage du temps de traitement du feuillet
-					puts "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
-
-					#préparation à la nouvelle incrémentation
-					puts "__________________________________________________________________________________________________________________________"
-					incr i
-				}
-			} ;# fin du foreach feuillet
-
-			#fermeture du fichier de polygones de DA à modifier avec les valeurs SMOKE
-			ogrfile close SHAPEDSMOKE 
-			ogrlayer free VDASMOKE  
-
-			#ajouter une proc pour l'écriture des métadonnées
-			UrbanX::Metadata $Coverage $Usedtool $t_traitement
-
-			#fin de la boucle sur la zone à traiter
-			GenX::Log INFO "Fin du traitement de $Coverage avec IndustrX"
-
-		}
-		"VANCOUVER" - "MONTREAL" - "TORONTO" - "OTTAWA" - "WINNIPEG" - "CALGARY" - "HALIFAX" - "REGINA" - "EDMONTON" - "VICTORIA" - "QUEBEC" - "mtltest"
-		{
-
-			set t_traitement [clock seconds]
-
-			set Usedtool "UrbanX"
-			GenX::Log INFO "Traitement d'une ville : $Usedtool"
-
-			#----- Get the lat/lon and files parameters associated with the province
-			UrbanX::AreaDefine    $Coverage
-
-			#----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
-			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
-
-			#----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-#			UrbanX::Sandwich $Coverage
-
-			#-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
-			#UrbanX::Shp2Height
-
-			#----- Creates the fields and building vicinity output using spatial buffers
-			#UrbanX::ChampsBuffers 0
-
-			#----- Calculates the population density
-			UrbanX::PopDens2Builtup $Coverage
-
-			#----- Calculates building heights
-			#UrbanX::HeightGain 0               ;# Requires UrbanX::ChampsBuffers to have run
-			#UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
-
-			#EOSD Vegetation
-#			UrbanX::EOSDvegetation $Coverage
-
-			#----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
-			#UrbanX::Priorities2TEB
-
-			#---- To delete : Priorities2SMOKE : là seulement pour les tests sans passer par une province entière
-#			UrbanX::Priorities2SMOKE  $Coverage
-
-			#----- Optional outputs:
-			#UrbanX::VegeMask
-			#UrbanX::TEB2FSTD
-
-			#ajouter une proc pour l'écriture des métadonnées
-			UrbanX::Metadata $Coverage $Usedtool $t_traitement
-
-			#fin de la boucle sur la zone à traiter
-			GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
-		}
-		"MERGE_PROVINCES"
-		{
-			puts "Ceci est une fonction pour merger les différents fichiers de polygones de DA sur les provinces, afin d'obtenir une couverture canadienne"
-		}
-		default {
-			#si l'utilisateur entre une commande GenPhysX.tcl -urban fdkjldsjlfj 
-			GenX::Log INFO "Zone non définie"
-		}
-	} ;# fin du Switch $Coverage
-
-	GenX::Log INFO "Fin d'UrbanX / d'IndustrX.  Retour à GenPhysX"
+# 		}
+# 		"VANCOUVER" - "MONTREAL" - "TORONTO" - "OTTAWA" - "WINNIPEG" - "CALGARY" - "HALIFAX" - "REGINA" - "EDMONTON" - "VICTORIA" - "QUEBEC" - "testloin"
+# 		{
+# 
+# 			set t_traitement [clock seconds]
+# 
+# 			set Usedtool "UrbanX"
+# 			GenX::Log INFO "Traitement d'une ville : $Usedtool"
+# 
+# 			#----- Get the lat/lon and files parameters associated with the province
+# 			UrbanX::AreaDefine    $Coverage
+# 
+# 			#----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
+# 			UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
+# 
+# 			#----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
+# 			UrbanX::Sandwich $Coverage
+# 
+# 			#-----La rasterization des hauteurs n'a pas vraiment d'affaire dans UrbanX... C'est one-shot.
+# 			#UrbanX::Shp2Height
+# 
+# 			#----- Creates the fields and building vicinity output using spatial buffers
+# 			#UrbanX::ChampsBuffers 0
+# 
+# 			#----- Calculates the population density
+# 			UrbanX::PopDens2Builtup $Coverage
+# 
+# 			#----- Calculates building heights
+# 			#UrbanX::HeightGain 0               ;# Requires UrbanX::ChampsBuffers to have run
+# 			#UrbanX::BuildingHeight           ;# This proc requires UrbanX::PopDens2Builtup and must be used in conjunction with the previous one otherwise $Param(HeightGain) won't be defined
+# 
+# 			#EOSD Vegetation
+# 			UrbanX::EOSDvegetation $Coverage
+# 
+# 			#----- Applies LUT to all processing results to generate TEB classes. Requires UrbanX::PopDens2Builtup.
+# 			#UrbanX::Priorities2TEB
+# 
+# 			#---- To delete : Priorities2SMOKE : là seulement pour les tests sans passer par une province entière
+# 			UrbanX::Priorities2SMOKE  $Coverage
+# 
+# 			#----- Optional outputs:
+# 			#UrbanX::VegeMask
+# 			#UrbanX::TEB2FSTD
+# 
+# 			#ajouter une proc pour l'écriture des métadonnées
+# 			UrbanX::Metadata $Coverage $Usedtool $t_traitement
+# 
+# 			#fin de la boucle sur la zone à traiter
+# 			GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
+# 		}
+# 		"MERGE_PROVINCES"
+# 		{
+# 			puts "Ceci est une fonction pour merger les différents fichiers de polygones de DA sur les provinces, afin d'obtenir une couverture canadienne"
+# 		}
+# 		default {
+# 			#si l'utilisateur entre une commande GenPhysX.tcl -urban fdkjldsjlfj 
+# 			GenX::Log INFO "Zone non définie"
+# 		}
+# 	} ;# fin du Switch $Coverage
+# 
+# 	GenX::Log INFO "Fin d'UrbanX / d'IndustrX.  Retour à GenPhysX"
 
 } ;# fin de la proc Process
