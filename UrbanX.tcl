@@ -22,6 +22,7 @@
 namespace eval UrbanX { } {
    variable Param
    variable Const
+	variable Meta
 
    set Param(Version_UrbanX)   0.2
    set Param(Version_IndustrX)   0.1
@@ -912,7 +913,9 @@ proc UrbanX::Sandwich { indexCouverture } {
    variable Param
    variable Data
 
+	#add proc to Metadata
    GenX::Procs
+
    GenX::Log INFO "Generating Sandwich"
 
 	#création de la raster qui contiendra la LULC
@@ -1778,6 +1781,10 @@ proc UrbanX::Sandwich { indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::ChampsBuffers {indexCouverture } {
+
+	#add proc to Metadata
+   GenX::Procs
+
    variable Param
    variable Data
 
@@ -1850,6 +1857,9 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::PopDens2Builtup { indexCouverture } {
+
+	#add proc to Metadata
+	GenX::Procs
 
 	GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 	variable Param
@@ -2006,6 +2016,10 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::HeightGain { } {
+
+	#add proc to Metadata
+   GenX::Procs
+
    variable Param
 
    GenX::Log INFO "Evaluating height gain"
@@ -2062,6 +2076,10 @@ proc UrbanX::HeightGain { } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::BuildingHeight {indexCouverture } {
+
+	#add proc to Metadata
+   GenX::Procs
+
    variable Param
 
    GenX::Log INFO "Cookie cutting building heights and adding gain"
@@ -2120,6 +2138,9 @@ proc UrbanX::BuildingHeight {indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::EOSDvegetation {indexCouverture } {
 
+	#add proc to Metadata
+   GenX::Procs
+
 	GenX::Log INFO "Début de la proc EOSDvegetation"
 
 	variable Param
@@ -2156,52 +2177,58 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
 	GenX::Log INFO "Affectation des valeurs SMOKE à certaines classes EOSD"
 	gdalband create RVEGESMOKE $Param(Width) $Param(Height) 1 Byte
 	gdalband define RVEGESMOKE -georef UTMREF$indexCouverture
-	#lorsque la sandwich est à 0
-	vexpr RTEMP RSANDWICH==0
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==50),75,RVEGESMOKE) ;#shrubland
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==51),76,RVEGESMOKE) ;#shrub tail
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==52),77,RVEGESMOKE) ;#shrub low
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==100),78,RVEGESMOKE) ;#herbs
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==110),79,RVEGESMOKE) ;#grassland
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==120),80,RVEGESMOKE) ;#agriculture
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==121),81,RVEGESMOKE) ;#agr-cropland
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==122),82,RVEGESMOKE) ;#agr-pasture / forage
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==200),83,RVEGESMOKE) ;#forest / trees
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==210),84,RVEGESMOKE) ;#coniferous
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==211),85,RVEGESMOKE) ;#coniferous-dense
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==212),86,RVEGESMOKE) ;#coniferous-open
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==213),87,RVEGESMOKE) ;#coniferous-spare
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==220),88,RVEGESMOKE) ;#broadleaf
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==221),89,RVEGESMOKE) ;#broadleaf-dense
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==222),90,RVEGESMOKE) ;#broadleaf-open
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==223),91,RVEGESMOKE) ;#broadleaf-spare
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==230),92,RVEGESMOKE) ;#mixedwood
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==231),93,RVEGESMOKE) ;#mixedwood-dense
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==232),94,RVEGESMOKE) ;#mixedwood-open
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==233),95,RVEGESMOKE) ;#mixedwood-sparse
-	#lorsque la sandwich est une wooded area
-	vexpr RTEMP RSANDWICH==200
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==50),75,RVEGESMOKE) ;#shrubland
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==51),76,RVEGESMOKE) ;#shrub tail
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==52),77,RVEGESMOKE) ;#shrub low
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==100),78,RVEGESMOKE) ;#herbs
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==110),79,RVEGESMOKE) ;#grassland
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==120),80,RVEGESMOKE) ;#agriculture
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==121),81,RVEGESMOKE) ;#agr-cropland
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==122),82,RVEGESMOKE) ;#agr-pasture / forage
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==200),83,RVEGESMOKE) ;#forest / trees
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==210),84,RVEGESMOKE) ;#coniferous
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==211),85,RVEGESMOKE) ;#coniferous-dense
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==212),86,RVEGESMOKE) ;#coniferous-open
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==213),87,RVEGESMOKE) ;#coniferous-spare
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==220),88,RVEGESMOKE) ;#broadleaf
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==221),89,RVEGESMOKE) ;#broadleaf-dense
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==222),90,RVEGESMOKE) ;#broadleaf-open
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==223),91,RVEGESMOKE) ;#broadleaf-spare
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==230),92,RVEGESMOKE) ;#mixedwood
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==231),93,RVEGESMOKE) ;#mixedwood-dense
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==232),94,RVEGESMOKE) ;#mixedwood-open
-	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==233),95,RVEGESMOKE) ;#mixedwood-sparse
+
+	vector dim LUT { FROM TO }
+	vector set LUT.FROM { 50 51 52 100 110 120 121 122 200 210 211 212 213 220 221 222 223 230 231 232 233 }
+	vector set LUT.TO   { 75 76 77  78  79  80  81  82  83  84  85  86  87  88  89  90  91  92  93  94  95 }
+	vexpr RVEGE ifelse((RSANDWICH==0 || RSANDWICH==200),lut(RVEGE,LUT.FROM,LUT.TO),RVEGE)
+
+# 	#lorsque la sandwich est à 0
+# 	vexpr RTEMP RSANDWICH==0
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==50),75,RVEGESMOKE) ;#shrubland
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==51),76,RVEGESMOKE) ;#shrub tail
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==52),77,RVEGESMOKE) ;#shrub low
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==100),78,RVEGESMOKE) ;#herbs
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==110),79,RVEGESMOKE) ;#grassland
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==120),80,RVEGESMOKE) ;#agriculture
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==121),81,RVEGESMOKE) ;#agr-cropland
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==122),82,RVEGESMOKE) ;#agr-pasture / forage
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==200),83,RVEGESMOKE) ;#forest / trees
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==210),84,RVEGESMOKE) ;#coniferous
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==211),85,RVEGESMOKE) ;#coniferous-dense
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==212),86,RVEGESMOKE) ;#coniferous-open
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==213),87,RVEGESMOKE) ;#coniferous-spare
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==220),88,RVEGESMOKE) ;#broadleaf
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==221),89,RVEGESMOKE) ;#broadleaf-dense
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==222),90,RVEGESMOKE) ;#broadleaf-open
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==223),91,RVEGESMOKE) ;#broadleaf-spare
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==230),92,RVEGESMOKE) ;#mixedwood
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==231),93,RVEGESMOKE) ;#mixedwood-dense
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==232),94,RVEGESMOKE) ;#mixedwood-open
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==233),95,RVEGESMOKE) ;#mixedwood-sparse
+# 	#lorsque la sandwich est une wooded area
+# 	vexpr RTEMP RSANDWICH==200
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==50),75,RVEGESMOKE) ;#shrubland
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==51),76,RVEGESMOKE) ;#shrub tail
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==52),77,RVEGESMOKE) ;#shrub low
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==100),78,RVEGESMOKE) ;#herbs
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==110),79,RVEGESMOKE) ;#grassland
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==120),80,RVEGESMOKE) ;#agriculture
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==121),81,RVEGESMOKE) ;#agr-cropland
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==122),82,RVEGESMOKE) ;#agr-pasture / forage
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==200),83,RVEGESMOKE) ;#forest / trees
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==210),84,RVEGESMOKE) ;#coniferous
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==211),85,RVEGESMOKE) ;#coniferous-dense
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==212),86,RVEGESMOKE) ;#coniferous-open
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==213),87,RVEGESMOKE) ;#coniferous-spare
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==220),88,RVEGESMOKE) ;#broadleaf
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==221),89,RVEGESMOKE) ;#broadleaf-dense
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==222),90,RVEGESMOKE) ;#broadleaf-open
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==223),91,RVEGESMOKE) ;#broadleaf-spare
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==230),92,RVEGESMOKE) ;#mixedwood
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==231),93,RVEGESMOKE) ;#mixedwood-dense
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==232),94,RVEGESMOKE) ;#mixedwood-open
+# 	vexpr RVEGESMOKE ifelse((RTEMP && RVEGE==233),95,RVEGESMOKE) ;#mixedwood-sparse
 
 	#écriture du fichier
 	file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif
@@ -2230,6 +2257,10 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Priorities2TEB { } {
+
+	#add proc to Metadata
+   GenX::Procs
+
    variable Param
 
    GenX::Log INFO "Converting values to TEB classes"
@@ -2277,44 +2308,44 @@ proc UrbanX::Priorities2TEB { } {
 # Remarks :  SWITCH TO INDUSTRX.TCL
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Priorities2SMOKE {indexCouverture } {
-   GenX::Log INFO "Début de la proc Priorities2SMOKE"
-
-   variable Param
-
-   GenX::Log INFO "Converting values to SMOKE classes"
-
-	#lecture des fichiers créés précédemment lors des procs SandwichCanVec et PopDens2BuiltupCanVec
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
-   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
-   gdalband read RVEGESMOKE [gdalfile open FVEGESMOKE read $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif]
-
-	#passage des valeurs de priorités (sandwich) aux valeurs smoke dans RSMOKE
-   vector create LUT
-   vector dim LUT { FROM TO }
-   vector set LUT.FROM $Param(Priorities)
-   vector set LUT.TO $Param(SMOKEClasses)
-   vexpr RSMOKE lut(RSANDWICH,LUT.FROM,LUT.TO)
-   vector free LUT
-
-	#modification pour inclure la densité de population 
-   vexpr RSMOKE ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RSMOKE)
-
-	#modification pour inclure la végétation EOSD
-   vexpr RSMOKE ifelse(RVEGESMOKE!=0,RVEGESMOKE,RSMOKE)
-
-	#écriture du fichier de sortie
-   file delete -force $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif GeoTiff
-   gdalband write RSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-
-   GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif was generated"
-
-   gdalfile close FILEOUT FSANDWICH FPOPDENSCUT FVEGESMOKE
-   gdalband free RSMOKE RSANDWICH RPOPDENSCUT RVEGESMOKE
-
-   GenX::Log INFO "Fin de la proc Priorities2SMOKE"
-}
+# proc UrbanX::Priorities2SMOKE {indexCouverture } {
+#    GenX::Log INFO "Début de la proc Priorities2SMOKE"
+# 
+#    variable Param
+# 
+#    GenX::Log INFO "Converting values to SMOKE classes"
+# 
+# 	#lecture des fichiers créés précédemment lors des procs SandwichCanVec et PopDens2BuiltupCanVec
+#    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
+#    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
+#    gdalband read RVEGESMOKE [gdalfile open FVEGESMOKE read $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif]
+# 
+# 	#passage des valeurs de priorités (sandwich) aux valeurs smoke dans RSMOKE
+#    vector create LUT
+#    vector dim LUT { FROM TO }
+#    vector set LUT.FROM $Param(Priorities)
+#    vector set LUT.TO $Param(SMOKEClasses)
+#    vexpr RSMOKE lut(RSANDWICH,LUT.FROM,LUT.TO)
+#    vector free LUT
+# 
+# 	#modification pour inclure la densité de population 
+#    vexpr RSMOKE ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RSMOKE)
+# 
+# 	#modification pour inclure la végétation EOSD
+#    vexpr RSMOKE ifelse(RVEGESMOKE!=0,RVEGESMOKE,RSMOKE)
+# 
+# 	#écriture du fichier de sortie
+#    file delete -force $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif
+#    gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif GeoTiff
+#    gdalband write RSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+# 
+#    GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif was generated"
+# 
+#    gdalfile close FILEOUT FSANDWICH FPOPDENSCUT FVEGESMOKE
+#    gdalband free RSMOKE RSANDWICH RPOPDENSCUT RVEGESMOKE
+# 
+#    GenX::Log INFO "Fin de la proc Priorities2SMOKE"
+# }
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::VegeMask>
@@ -2330,6 +2361,10 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::VegeMask { } {
+
+	#add proc to Metadata
+   GenX::Procs
+
    variable Param
 
    GenX::Log INFO "Generating vegetation mask"
@@ -2388,6 +2423,9 @@ proc UrbanX::VegeMask { } {
 #----------------------------------------------------------------------------
 proc UrbanX::CreateFSTDBand { Name Band } {
 
+	#add proc to Metadata
+   GenX::Procs
+
    set NI [gdalband configure $Band -width]  ; # Number of X-grid points.
    set NJ [gdalband configure $Band -height] ; # Number of Y-grid points.
    set NK 1                                  ; # Number of Z-grid points.
@@ -2436,6 +2474,9 @@ proc UrbanX::CreateFSTDBand { Name Band } {
 #----------------------------------------------------------------------------
 proc UrbanX::TEB2FSTD { } {
 
+	#add proc to Metadata
+   GenX::Procs
+
    GenX::Log INFO "Converting TEB raster to RPN"
 
    gdalband read BAND [gdalfile open FILE read $GenX::Param(OutFile)_TEB.tif]
@@ -2468,6 +2509,10 @@ proc UrbanX::TEB2FSTD { } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Shp2Height { } {
+
+	#add proc to Metadata
+   GenX::Procs
+
    variable Param
 
    if { $Param(Shape)=="" } {
@@ -2508,6 +2553,9 @@ proc UrbanX::Shp2Height { } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::FilterGen { Type Size } {
+
+	#add proc to Metadata
+   GenX::Procs
 
    #----- Est-ce cette proc maintenant dans le 'main code' de JP?
    #      Il manque les filtres median, directionel, lp/hp gaussien, Sobel/Roberts, FFT
@@ -2565,101 +2613,56 @@ proc UrbanX::FilterGen { Type Size } {
 # Remarks : SWITCH TO INDUSTRX.TCL
 #
 #----------------------------------------------------------------------------
-proc UrbanX::SMOKE2DA {indexCouverture } {
-
-   GenX::Log INFO "Début de la proc SMOKE2DA"
-
-   variable Param
-
-	#NOTE : le fichier des polygones de DA à modifier avec les valeurs SMOKE
-	#est ouvert et fermé dans le main, et non dans cette proc.
-
-	#ouverture du fichier SMOKE.tif
-	gdalband read RSMOKE [gdalfile open FSMOKE read $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif]
-
-	#sélection des polygones de DA ayant la valeur indexCouverture dans le champ SNRC
-	set da_select [ogrlayer define VDASMOKE -featureselect [list [list SNRC == $indexCouverture]] ]
-	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
-
-	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
-	for {set classeid 1} {$classeid < 96} {incr classeid 1} {
-		ogrlayer clear VDASMOKE SMOKE$classeid
-	}
-
-	#création d'un fichier de rasterization des polygones de DA
-	gdalband create RDA $Param(Width) $Param(Height) 1 Int32
-	gdalband clear RDA -1
-	gdalband define RDA -georef UTMREF$indexCouverture
-
-	#rasterization des polygones de DA
-	gdalband gridinterp RDA VDASMOKE FAST FEATURE_ID
-
-	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
-   for {set classeid 1} {$classeid < 96} {incr classeid 1} {
-
-		#enregistrement du temps nécessaire pour faire le traitement de la classe i
-		set t [clock seconds]
-
-		#comptage des pixels de chaque classe smoke pour chaque polygone de DA : increment de la table
-		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
-
-		#affichage du temps requis pour traiter la classe i
-		puts "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
-	}
-
-   ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
-
-	#nettoyage de mémoire
-	gdalband free RSMOKE RDA
-	gdalfile close FSMOKE
-
-   GenX::Log INFO "Fin de la proc SMOKE2DA"
-}
-
-#----------------------------------------------------------------------------
-# Name     : <UrbanX::Metadata>
-# Creation :  October 2010 - Lucie Boucher - CMC/AQMAS
-#
-# Goal     :  Writes a metadata text file
-#
-# Parameters :
-#
-# Return:
-#					metadata text file
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc UrbanX::Metadata { Coverage Usedtool t_traitement} {
-
-	GenX::Log INFO "Début de la proc Metadata"
-
-	variable Param
-	variable Path
-
-	#ouverture du fichier texte
-	set metadatafile [open $GenX::Param(OutFile)_metadata_$Coverage.txt w]
-
-	#écriture des métadonnées
-	puts $metadatafile "Couverture traitée : $Coverage"
-	puts $metadatafile "Traitement réalisé par $Usedtool version $Param(Version_$Usedtool)"
-
-#comment aller chercher l'info de GenX?
-#	puts $metadatafile "Données CanVec : $Path(CANVEC)"
-#	puts $metadatafile "Données EOSD : $Path(EOSD)"
-
-	puts $metadatafile "Statistique Canada : $Param(PopFile2006SMOKE)"
-	puts $metadatafile "Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes"
-	puts $metadatafile "Traitement terminé le : [clock format [clock seconds]]"
-
-#veut-on écrire autre chose là-dedans?
-
-	#fermeture du fichier texte
-	close $metadatafile
-
-	GenX::Log INFO "Fin de la proc Metadata"
-
-}
+# proc UrbanX::SMOKE2DA {indexCouverture } {
+# 
+#    GenX::Log INFO "Début de la proc SMOKE2DA"
+# 
+#    variable Param
+# 
+# 	#NOTE : le fichier des polygones de DA à modifier avec les valeurs SMOKE
+# 	#est ouvert et fermé dans le main, et non dans cette proc.
+# 
+# 	#ouverture du fichier SMOKE.tif
+# 	gdalband read RSMOKE [gdalfile open FSMOKE read $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif]
+# 
+# 	#sélection des polygones de DA ayant la valeur indexCouverture dans le champ SNRC
+# 	set da_select [ogrlayer define VDASMOKE -featureselect [list [list SNRC == $indexCouverture]] ]
+# 	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
+# 
+# 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
+# 	for {set classeid 1} {$classeid < 96} {incr classeid 1} {
+# 		ogrlayer clear VDASMOKE SMOKE$classeid
+# 	}
+# 
+# 	#création d'un fichier de rasterization des polygones de DA
+# 	gdalband create RDA $Param(Width) $Param(Height) 1 Int32
+# 	gdalband clear RDA -1
+# 	gdalband define RDA -georef UTMREF$indexCouverture
+# 
+# 	#rasterization des polygones de DA
+# 	gdalband gridinterp RDA VDASMOKE FAST FEATURE_ID
+# 
+# 	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
+#    for {set classeid 1} {$classeid < 96} {incr classeid 1} {
+# 
+# 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
+# 		set t [clock seconds]
+# 
+# 		#comptage des pixels de chaque classe smoke pour chaque polygone de DA : increment de la table
+# 		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
+# 
+# 		#affichage du temps requis pour traiter la classe i
+# 		puts "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
+# 	}
+# 
+#    ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
+# 
+# 	#nettoyage de mémoire
+# 	gdalband free RSMOKE RDA
+# 	gdalfile close FSMOKE
+# 
+#    GenX::Log INFO "Fin de la proc SMOKE2DA"
+# }
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::Process>
@@ -2682,12 +2685,13 @@ proc UrbanX::Process { Coverage } {
 	GenX::Log INFO "Début d'UrbanX"
 
 	variable Param
-	GenX::Log INFO "Coverage = $Coverage"
-
-	set t_traitement [clock seconds]
+	variable Meta
 
 	set Usedtool "UrbanX"
+	GenX::Log INFO "Coverage = $Coverage"
 	GenX::Log INFO "Traitement d'une ville : $Usedtool"
+
+	set t_traitement [clock seconds]
 
 	#----- Get the lat/lon and files parameters associated with the province
 	UrbanX::AreaDefine    $Coverage
@@ -2721,13 +2725,18 @@ proc UrbanX::Process { Coverage } {
 	#UrbanX::VegeMask
 	#UrbanX::TEB2FSTD
 
-	#ajouter une proc pour l'écriture des métadonnées
-	UrbanX::Metadata $Coverage $Usedtool $t_traitement
+	#écriture des métadonnées
+	set GenX::Meta(Footer) " Varia : 
+	Données CanVec : $GenX::Path(CANVEC)
+	Données de Statistique Canada : $Param(PopFile2006SMOKE)
+	Données EOSD : $GenX::Path(EOSD)
+	Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes"
+	GenX::MetaData $GenX::Param(OutFile)_metadata_$Coverage.txt
 
 	#fin de la boucle sur la zone à traiter
 	GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
 	GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
-} ;#finale se trouve au terme du gros bloc de commentaires suivant
+} ;#fin de la proc process
 
 #------ UTILITAIRES TO DELETE ------------
 
