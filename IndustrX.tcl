@@ -19,6 +19,12 @@
 #
 #============================================================================
 
+namespace eval IndustrX { } {
+   variable Param
+   variable Const
+	variable Meta
+}
+
 #----------------------------------------------------------------------------
 # Name     : <IndustrX::Priorities2SMOKE>
 # Creation : July 2010 - Alexandre Leroux - CMC/CMOE
@@ -38,7 +44,6 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 
 	#add proc to Metadata
    GenX::Procs
-
    GenX::Log INFO "Début de la proc Priorities2SMOKE"
 
    variable Param
@@ -48,13 +53,13 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 	#lecture des fichiers créés précédemment lors des procs SandwichCanVec et PopDens2BuiltupCanVec
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
-   gdalband read RVEGESMOKE [gdalfile open FVEGESMOKE read $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif]
+#   gdalband read RVEGESMOKE [gdalfile open FVEGESMOKE read $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif]
 
 	#passage des valeurs de priorités (sandwich) aux valeurs smoke dans RSMOKE
    vector create LUT
    vector dim LUT { FROM TO }
-   vector set LUT.FROM $Param(Priorities)
-   vector set LUT.TO $Param(SMOKEClasses)
+   vector set LUT.FROM $UrbanX::Param(Priorities)
+   vector set LUT.TO $UrbanX::Param(SMOKEClasses)
    vexpr RSMOKE lut(RSANDWICH,LUT.FROM,LUT.TO)
    vector free LUT
 
@@ -62,7 +67,7 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
    vexpr RSMOKE ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RSMOKE)
 
 	#modification pour inclure la végétation EOSD
-   vexpr RSMOKE ifelse(RVEGESMOKE!=0,RVEGESMOKE,RSMOKE)
+#   vexpr RSMOKE ifelse(RVEGESMOKE!=0,RVEGESMOKE,RSMOKE)
 
 	#écriture du fichier de sortie
    file delete -force $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif
@@ -71,8 +76,8 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 
    GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif was generated"
 
-   gdalfile close FILEOUT FSANDWICH FPOPDENSCUT FVEGESMOKE
-   gdalband free RSMOKE RSANDWICH RPOPDENSCUT RVEGESMOKE
+   gdalfile close FILEOUT FSANDWICH FPOPDENSCUT ;#FVEGESMOKE
+   gdalband free RSMOKE RSANDWICH RPOPDENSCUT ;#RVEGESMOKE
 
    GenX::Log INFO "Fin de la proc Priorities2SMOKE"
 }
@@ -98,7 +103,6 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 
 	#add proc to Metadata
    GenX::Procs
-
    GenX::Log INFO "Début de la proc SMOKE2DA"
 
    variable Param
@@ -114,12 +118,13 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
 
 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
-	for {set classeid 1} {$classeid < 96} {incr classeid 1} {
+	#to 96 si EOSD, to 75 sinon
+	for {set classeid 1} {$classeid < 75} {incr classeid 1} {
 		ogrlayer clear VDASMOKE SMOKE$classeid
 	}
 
 	#création d'un fichier de rasterization des polygones de DA
-	gdalband create RDA $Param(Width) $Param(Height) 1 Int32
+	gdalband create RDA $UrbanX::Param(Width) $UrbanX::Param(Height) 1 Int32
 	gdalband clear RDA -1
 	gdalband define RDA -georef UTMREF$indexCouverture
 
@@ -127,7 +132,8 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	gdalband gridinterp RDA VDASMOKE FAST FEATURE_ID
 
 	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
-   for {set classeid 1} {$classeid < 96} {incr classeid 1} {
+	#to 96 si EOSD, to 75 sinon
+   for {set classeid 1} {$classeid < 75} {incr classeid 1} {
 
 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
 		set t [clock seconds]
@@ -145,7 +151,7 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	gdalband free RSMOKE RDA
 	gdalfile close FSMOKE
 
-   GenX::Log INFO "Fin de la proc SMOKE2DA"
+	GenX::Log INFO "Fin de la proc SMOKE2DA"
 }
 
 
@@ -181,7 +187,7 @@ proc IndustrX::Process { Coverage } {
 	#----- Get the lat/lon and pr code parameters associated with the province
 	UrbanX::AreaDefine    $Coverage
 	#----- Defines the general  extents of the zone to be process, the central UTM zone and set the initial UTMREF
-	UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 0
+	UrbanX::UTMZoneDefine $UrbanX::Param(Lat0) $UrbanX::Param(Lon0) $UrbanX::Param(Lat1) $UrbanX::Param(Lon1) $UrbanX::Param(Resolution) 0
 
 	#----- Ffinds all NTS Sheets that intersect with the province polygon
 	UrbanX::FindNTSSheets 0
@@ -191,26 +197,26 @@ proc IndustrX::Process { Coverage } {
 
 	#ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
 	if { ![ogrlayer is VDASMOKE] } {
-	#	set Param(PopFile2006SMOKE_Province) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.shp
-	#	set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE_Province)] 0]
-		set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE)] 0]
+		set Param(PopFile2006SMOKE_Province) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.shp
+		set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE_Province)] 0]
+		#set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $UrbanX::Param(PopFile2006SMOKE)] 0]
 		eval ogrlayer read VDASMOKE $da_layer_smoke
 		GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
 	}
 
-	#TO DELETE : FEUILLETS TESTS DE PERFORMANCES
-	set Param(NTSIds) {270}
-	set Param(NTSSheets) {"010O13"}
-	puts "Feuillet test $Param(NTSIds) $Param(NTSSheets)"
-	#FIN DU TO DELETE : FEUILLETS TESTS DE PERFORMANCES
+# 	#TO DELETE : FEUILLETS TESTS DE PERFORMANCES
+# 	set Param(NTSIds) {270}
+# 	set Param(NTSSheets) {"010O13"}
+# 	puts "Feuillet test $Param(NTSIds) $Param(NTSSheets)"
+# 	#FIN DU TO DELETE : FEUILLETS TESTS DE PERFORMANCES
 
 	#préparation à l'incrémentation sur les feuillets NTS 
-	set nbrfeuillets [llength $Param(NTSSheets) ] 
+	set nbrfeuillets [llength $UrbanX::Param(NTSSheets) ] 
 	set i 1
 	puts "_______________________________________________________________________________________________________________________________"
 
 	#----- Process for each NTS Sheets that were previously selected
-	foreach feuillet $Param(NTSSheets) {
+	foreach feuillet $UrbanX::Param(NTSSheets) {
 
 		#calcul du temps de traitement d'un feuillet NTS
 		set t_feuillet [clock seconds]
@@ -221,12 +227,13 @@ proc IndustrX::Process { Coverage } {
 
 		#----- Finds the extents of the zone (NTS Sheet) to be process
 		UrbanX::NTSExtent $feuillet
-		GenX::Log INFO "La latitude de la tuile va de $Param(Lat0) à $Param(Lat1)"
-		GenX::Log INFO "La longitude de la tuile va de $Param(Lon0) à $Param(Lon1)"
-		GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe X  vont de $Param(x0) à $Param(x1)"
-		GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe Y  vont de $Param(y0) à $Param(y1)"
+		GenX::Log INFO "La latitude de la tuile va de $UrbanX::Param(Lat0) à $UrbanX::Param(Lat1)"
+		GenX::Log INFO "La longitude de la tuile va de $UrbanX::Param(Lon0) à $UrbanX::Param(Lon1)"
+		GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe X  vont de $UrbanX::Param(x0) à $UrbanX::Param(x1)"
+		GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe Y  vont de $UrbanX::Param(y0) à $UrbanX::Param(y1)"
 
 		#----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
+		set UrbanX::Param(t_Sandwich) 0
 		if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
 			UrbanX::Sandwich $feuillet
 		} else {
@@ -234,18 +241,21 @@ proc IndustrX::Process { Coverage } {
 		}
 
 		#----------TO MODIFY FOR CANVEC LAYERS
-		#----- Creates the fields and building vicinity output using spatial buffers
-		#UrbanX::ChampsBuffers $m
+# 		#----- Creates the fields and building vicinity output using spatial buffers
+# 		UrbanX::ChampsBuffers $m
 		#----------END OF : TO MODIFY FOR CANVEC LAYERS
 
-		#EOSD Vegetation
-		if { ![file exists $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif] } {
-			UrbanX::EOSDvegetation $feuillet
-		} else {
-			GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif et $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif existent déjà."
-		}
+		# ----------TO MODIFY FOR LCC2000-V DATA INSTEAD OF EOSD
+# 		#EOSD Vegetation
+# 		if { ![file exists $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif] } {
+# 			UrbanX::EOSDvegetation $feuillet
+# 		} else {
+# 			GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif et $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif existent déjà."
+# 		}
+		# ----------END OF : TO MODIFY FOR LCC2000-V DATA INSTEAD OF EOSD 
 
 		#----- Calculates the population density and split the residential areas according to population density thresholds
+		set UrbanX::Param(t_PopDens2Builtup) 0
 		if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
 			UrbanX::PopDens2Builtup $feuillet
 		} else {
@@ -253,6 +263,8 @@ proc IndustrX::Process { Coverage } {
 		}
 
 		#----- Applies LUT to all processing results to generate SMOKE classes and sets the values in the DA shapefile
+		set Param(t_Priorities2SMOKE) 0
+		set Param(t_SMOKE2DA) 0
 		if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
 			#----- Applies LUT to all processing results to generate SMOKE classes
 			UrbanX::Priorities2SMOKE  $feuillet
@@ -275,7 +287,7 @@ proc IndustrX::Process { Coverage } {
 		GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was generated"
 		file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
 		GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
-
+# 
 		#affichage du temps de traitement du feuillet
 		puts "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
 
@@ -283,7 +295,7 @@ proc IndustrX::Process { Coverage } {
 		puts "__________________________________________________________________________________________________________________________"
 		incr i
 	} ;# fin du foreach feuillet
-
+# 
 	#fermeture du fichier de polygones de DA à modifier avec les valeurs SMOKE
 	#ogrfile close SHAPEDSMOKE  ;#ne pas le mettre, vu un bogue avec le mode append
 	ogrlayer free VDASMOKE  
@@ -291,12 +303,14 @@ proc IndustrX::Process { Coverage } {
 	#écriture des métadonnées
 	set GenX::Meta(Footer) " Varia : 
 	Données CanVec : $GenX::Path(CANVEC)
-	Données de Statistique Canada : $Param(PopFile2006SMOKE)
+	Données de Statistique Canada : $Param(PopFile2006SMOKE_Province)
 	Données EOSD : $GenX::Path(EOSD)
-	Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes"
+	Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes
+	Nombre de feuillets NTS traités : $i / $nbrfeuillets"
 	GenX::MetaData $GenX::Param(OutFile)_metadata_$Coverage.txt
 
 	#fin de la boucle sur la zone à traiter
 	GenX::Log INFO "Fin du traitement de $Coverage avec IndustrX"
 	GenX::Log INFO "Fin d'IndustrX.  Retour à GenPhysX"
-} ;# fin de la proc Process
+
+ } ;# fin de la proc Process
