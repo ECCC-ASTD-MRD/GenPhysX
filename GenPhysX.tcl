@@ -72,6 +72,7 @@ source $dir/GenX.tcl
 source $dir/GeoPhysX.tcl
 source $dir/BioGenX.tcl
 source $dir/UrbanX.tcl
+source $dir/IndustrX.tcl
 
 #----- Parse the arguments
 GenX::ParseCommandLine
