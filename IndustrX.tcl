@@ -53,7 +53,7 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 	#lecture des fichiers créés précédemment lors des procs SandwichCanVec et PopDens2BuiltupCanVec
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
-#   gdalband read RVEGESMOKE [gdalfile open FVEGESMOKE read $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif]
+   gdalband read RLCC2000VSMOKE [gdalfile open FLCC2000VSMOKE read $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif]
 
 	#passage des valeurs de priorités (sandwich) aux valeurs smoke dans RSMOKE
    vector create LUT
@@ -66,8 +66,8 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 	#modification pour inclure la densité de population 
    vexpr RSMOKE ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RSMOKE)
 
-	#modification pour inclure la végétation EOSD
-#   vexpr RSMOKE ifelse(RVEGESMOKE!=0,RVEGESMOKE,RSMOKE)
+	#modification pour inclure la végétation LCC2000V
+   vexpr RSMOKE ifelse(RSMOKE==0 || RSMOKE==200,RLCC2000VSMOKE,RSMOKE)
 
 	#écriture du fichier de sortie
    file delete -force $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif
@@ -119,7 +119,7 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 
 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
 	#to 96 si EOSD, to 75 sinon
-	for {set classeid 1} {$classeid < 75} {incr classeid 1} {
+	for {set classeid 1} {$classeid < 96} {incr classeid 1} {
 		ogrlayer clear VDASMOKE SMOKE$classeid
 	}
 
@@ -133,7 +133,7 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 
 	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
 	#to 96 si EOSD, to 75 sinon
-   for {set classeid 1} {$classeid < 75} {incr classeid 1} {
+   for {set classeid 1} {$classeid < 96} {incr classeid 1} {
 
 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
 		set t [clock seconds]
@@ -204,11 +204,11 @@ proc IndustrX::Process { Coverage } {
 		GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
 	}
 
-# 	#TO DELETE : FEUILLETS TESTS DE PERFORMANCES
-# 	set Param(NTSIds) {270}
-# 	set Param(NTSSheets) {"010O13"}
-# 	puts "Feuillet test $Param(NTSIds) $Param(NTSSheets)"
-# 	#FIN DU TO DELETE : FEUILLETS TESTS DE PERFORMANCES
+# # 	#TO DELETE : FEUILLETS TESTS DE PERFORMANCES
+#  	set Param(NTSIds) {3012}
+#  	set Param(NTSSheets) {"21I16"}
+#  	puts "Feuillet test $Param(NTSIds) $Param(NTSSheets)"
+# # 	#FIN DU TO DELETE : FEUILLETS TESTS DE PERFORMANCES
 
 	#préparation à l'incrémentation sur les feuillets NTS 
 	set nbrfeuillets [llength $UrbanX::Param(NTSSheets) ] 
@@ -245,14 +245,12 @@ proc IndustrX::Process { Coverage } {
 # 		UrbanX::ChampsBuffers $m
 		#----------END OF : TO MODIFY FOR CANVEC LAYERS
 
-		# ----------TO MODIFY FOR LCC2000-V DATA INSTEAD OF EOSD
-# 		#EOSD Vegetation
-# 		if { ![file exists $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif] } {
-# 			UrbanX::EOSDvegetation $feuillet
+# 		#LCC2000V Vegetation
+# 		if { ![file exists $GenX::Param(OutFile)_LCC2000V_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_LCC2000VSMOKE_$feuillet.tif] } {
+# 			UrbanX::LCC2000V $feuillet
 # 		} else {
-# 			GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif et $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif existent déjà."
+# 			GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_LCC2000V_$feuillet.tif et $GenX::Param(OutFile)_LCC2000VSMOKE_$feuillet.tif existent déjà."
 # 		}
-		# ----------END OF : TO MODIFY FOR LCC2000-V DATA INSTEAD OF EOSD 
 
 		#----- Calculates the population density and split the residential areas according to population density thresholds
 		set UrbanX::Param(t_PopDens2Builtup) 0
@@ -306,7 +304,7 @@ proc IndustrX::Process { Coverage } {
 	Données de Statistique Canada : $Param(PopFile2006SMOKE_Province)
 	Données EOSD : $GenX::Path(EOSD)
 	Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes
-	Nombre de feuillets NTS traités : $i / $nbrfeuillets"
+	Nombre de feuillets NTS traités : [expr ($i-1)] / $nbrfeuillets"
 	GenX::MetaData $GenX::Param(OutFile)_metadata_$Coverage.txt
 
 	#fin de la boucle sur la zone à traiter
