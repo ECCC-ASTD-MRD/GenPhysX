@@ -636,9 +636,9 @@ proc UrbanX::AreaDefine { Coverage } {
       }
       "NV" {
          set Param(Lon1)   -60.0
-         set Param(Lat1)    51.0
+         set Param(Lat1)    85.0
          set Param(Lon0)   -122.0
-         set Param(Lat0)    85.0
+         set Param(Lat0)    51.0
          set Param(ProvinceCode) 62 ;# PR code from StatCan
       }
       default {
@@ -1975,12 +1975,28 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 	gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
 	gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
 	vexpr RTEMP RSANDWICH==218
-	#setting smoke values : à modifier pour donner le choix industrx/urbanx
+	
+	#LES LIGNES SUIVANTES SERONT À REMPLACER PAR LE BLOC IFELSE POUR DIFFÉRENCIER URBANX ET INDUSTRX
 	vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
 	vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
 	vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
 	vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
 	vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
+
+# 	if {$GenX::Param(SMOKE)!="" } {
+# 		#seuils de densité de population associés à SMOKE (IndustrX)
+# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
+# 		vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
+# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
+# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
+# 	} else {
+# 		#seuils de densité de population associés à TEB (UrbanX)
+# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
+# 		vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
+# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
+# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
+# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
+# 	}
 
 	#nettoyage de mémoire
 	gdalband free RSANDWICH RPOPDENS RTEMP
