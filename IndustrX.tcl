@@ -9,7 +9,7 @@
 # Creation   : Octobre 2010- Lucie Boucher / Alexandre Leroux / J.P. Gauthier - CMC/AQMAS & CMC/CMOE
 # Revision   : $Id$
 # Description: Classification automatisée, principalement à partir de
-#              données CanVec 1:50000, StatCan (population) et EOSD
+#              données CanVec 1:50000, StatCan (population) et LCC2000V
 #              pour alimenter le modèle SMOKE
 #
 # Remarks  :
@@ -27,8 +27,7 @@ namespace eval IndustrX { } {
 
 #----------------------------------------------------------------------------
 # Name     : <IndustrX::Priorities2SMOKE>
-# Creation : July 2010 - Alexandre Leroux - CMC/CMOE
-#            July 2010 - Lucie Boucher - CMC/AQMAS
+# Creation : July 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     : Applies LUT to all processing results to generate SMOKE classes
 #
@@ -84,8 +83,7 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
 
 #----------------------------------------------------------------------------
 # Name     : <IndustrX::SMOKE2DA>
-# Creation : August 2010 - Alexandre Leroux - CMC/CMOE
-#						  August 2010 - Lucie Boucher - CMC/AQMAS
+# Creation : August 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     : Proceed to the counting of pixels associated to
 #						each SMOKE class for each DA polygon in the
@@ -118,7 +116,6 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
 
 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
-	#to 96 si EOSD, to 75 sinon
 	for {set classeid 1} {$classeid < 96} {incr classeid 1} {
 		ogrlayer clear VDASMOKE SMOKE$classeid
 	}
@@ -132,7 +129,6 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 	gdalband gridinterp RDA VDASMOKE FAST FEATURE_ID
 
 	GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
-	#to 96 si EOSD, to 75 sinon
    for {set classeid 1} {$classeid < 96} {incr classeid 1} {
 
 		#enregistrement du temps nécessaire pour faire le traitement de la classe i
@@ -145,7 +141,7 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 		puts "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
 	}
 
-   ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
+   ogrlayer sync VDASMOKE ;# là pcq utilisation du mode append, pas besoin en mode write, mais le mode write a un bug
 
 	#nettoyage de mémoire
 	gdalband free RSMOKE RDA
@@ -156,15 +152,14 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::Process>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
-#						August 2010 - Lucie Boucher - CMC/AQMAS
+# Name     : <IndustrX::Process>
+# Creation : Octobre 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     :
 #
 # Parameters :
-#   <Coverage>   : zone to process {MONTREAL VANCOUVER TORONTO OTTAWA WINNIPEG CALGARY HALIFAX REGINA EDMONTON VICTORIA QUEBEC}
-#		   default settings on Quebec
+#   <Coverage>   : zone to process {TN PEI NS NB QC ON MN SK AB BC YK TNO NV}
+#		   default settings on Quebec City, from UrbanX
 #
 # Return:
 #
@@ -218,8 +213,8 @@ proc IndustrX::Process { Coverage } {
 	#----- Process for each NTS Sheets that were previously selected
 	foreach feuillet $UrbanX::Param(NTSSheets) {
 
-		#si le traitement d'une province a déjà été partiellement effectué, écrire l'index de feuillet où reprendre le traitement
-		if {$i < 1} {
+		#Si le traitement d'une province a déjà été partiellement effectué, écrire l'index de feuillet où reprendre le traitement.  Default à 1
+		if {$i < 354} {
 			GenX::Log INFO "Feuillet $i sur $nbrfeuillets"
 			GenX::Log INFO "Feuillet déjà traité"
 			puts "__________________________________________________________________________________________________________________________"
@@ -300,6 +295,7 @@ proc IndustrX::Process { Coverage } {
 			#préparation à la nouvelle incrémentation
 			puts "__________________________________________________________________________________________________________________________"
 			incr i
+
 		} ;#fin du traitement du feuillet (boucle else)
 	} ;# fin du foreach feuillet
  
