@@ -233,6 +233,12 @@ proc GenX::Process { Grid } {
          BioGenX::TransportableFractions $Grid
       }
 
+      #----- Urban parameters
+      if { $GenX::Param(Urban)!="" } {
+         UrbanPhysX::Cover $Grid
+         UrbanPhysX::CoverUrban $Grid
+      }
+
       #----- Diagnostics of output fields
       if { $GenX::Param(Diag) } {
          GeoPhysX::Diag
@@ -1153,7 +1159,7 @@ proc GenX::GridGetFromFile { File { Copy True } } {
             set ip3 [fstdfield define TIC -IP3]
 
             #----- Check if there are doubles
-            if { [llength [fstdfield find GPXAUXFILE -1 "" $ip1 $ip2 $ip3 "" ">>"]] } {
+            if { [llength [fstdfield find GPXAUXFILE -1 "" $ip1 $ip2 $ip3 "" ">>"]]>1 } {
                GenX::Log WARNING "Found duplicate grid (IP1=$ip1 IP2=$ip2 IP3=$ip3), will not process it"
                continue
             }

@@ -71,6 +71,7 @@ set dir [file dirname $dir]
 source $dir/GenX.tcl
 source $dir/GeoPhysX.tcl
 source $dir/BioGenX.tcl
+source $dir/UrbanPhysX.tcl
 source $dir/UrbanX.tcl
 source $dir/IndustrX.tcl
 
@@ -78,9 +79,9 @@ source $dir/IndustrX.tcl
 GenX::ParseCommandLine
 
 #----- Urban classes calculations
-if { $GenX::Param(Urban)!="" } {
-   UrbanX::Process $GenX::Param(Urban)
-}
+#if { $GenX::Param(Urban)!="" } {
+#   UrbanX::Process $GenX::Param(Urban)
+#}
 
 if { $GenX::Param(SMOKE)!="" } {
    IndustrX::Process $GenX::Param(SMOKE)

@@ -37,7 +37,6 @@ namespace eval BioGenX { } {
    set Param(FileOut)   [list OUT  OUT  OUT  OUT  OUT  OUT  OUT  OUT  OUT AUX  AUX  ]
 
    set Param(DoNotUseBELD3) False
-   set Param(Compress)      False
    set Param(Interp)        AVERAGE
 
    set Param(ToleranceVCHK) 0.0001
@@ -118,7 +117,7 @@ proc BioGenX::LULC_15Classes { Grid } {
    vexpr BGXLU BGXLU()()(14) = BGXVF()()(20)
 
    fstdfield define BGXLU -ETIKET LULC-GRAHM -TYPVAR "C"
-   fstdfield write BGXLU GPXAUXFILE -32 True $BioGenX::Param(Compress)
+   fstdfield write BGXLU GPXAUXFILE -32 True $GenX::Param(Compress)
 
    fstdfield free BGXLU BGXCFRAC BGXTFRAC
 }
@@ -182,7 +181,7 @@ proc BioGenX::TrFractions_15Classes { Grid } {
    vexpr BGXTFRAC 1.0 - BGXCFRAC
 
    fstdfield define BGXTFRAC -NOMVAR TFRC -ETIKET "TR FRAC 15" -TYPVAR "C"
-   fstdfield write BGXTFRAC GPXAUXFILE -32 True $BioGenX::Param(Compress)
+   fstdfield write BGXTFRAC GPXAUXFILE -32 True $GenX::Param(Compress)
 
    fstdfield free BGXTFRAC BGXCFRAC BGXLU
 }
@@ -223,7 +222,7 @@ proc BioGenX::TrFractions_26Classes { Grid } {
    vexpr BGXTFRAC 1.0 - BGXCFRAC
 
    fstdfield define BGXTFRAC -NOMVAR TFRC -ETIKET "TR FRAC 26" -TYPVAR "C"
-   fstdfield write BGXTFRAC GPXAUXFILE -32 True $BioGenX::Param(Compress)
+   fstdfield write BGXTFRAC GPXAUXFILE -32 True $GenX::Param(Compress)
 
    fstdfield free BGXTFRAC BGXCFRAC BGXVF
 }
@@ -369,7 +368,7 @@ proc BioGenX::StateField { Grid } {
    GenX::GridClear $Grid -1.0
    fstdfield copy BGXST $Grid
    fstdfield define BGXST -NOMVAR "ST" -ETIKET "DUMMY"
-   fstdfield write BGXST GPXOUTFILE -12 True $BioGenX::Param(Compress)
+   fstdfield write BGXST GPXOUTFILE -12 True $GenX::Param(Compress)
 }
 
 #-------------------------------------------------------------------------------
@@ -412,11 +411,11 @@ proc BioGenX::CalcEmissions { Grid  } {
    #----- Save output
    foreach field $BioGenX::Param(FieldList) varname $BioGenX::Param(NameList) season $BioGenX::Param(NameList) fichier $BioGenX::Param(FileOut) {
       fstdfield define BGX$field -ETIKET "EMISSIONS" -TYPVAR $season -NOMVAR $varname -IP1 0
-      fstdfield write BGX$field GPX${fichier}FILE -32 True $BioGenX::Param(Compress)
+      fstdfield write BGX$field GPX${fichier}FILE -32 True $GenX::Param(Compress)
    }
    #----- Save merge mask for different databases
    fstdfield define BGXRMS -NOMVAR BRMS -IP1 1200
-   fstdfield write BGXRMS GPXAUXFILE -32 True $BioGenX::Param(Compress)
+   fstdfield write BGXRMS GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Free output fields
    foreach field $BioGenX::Param(FieldList) {
