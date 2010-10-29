@@ -236,7 +236,6 @@ proc GenX::Process { Grid } {
       #----- Urban parameters
       if { $GenX::Param(Urban)!="" } {
          UrbanPhysX::Cover $Grid
-         UrbanPhysX::CoverUrban $Grid
       }
 
       #----- Diagnostics of output fields

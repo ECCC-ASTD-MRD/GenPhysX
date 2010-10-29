@@ -16,7 +16,6 @@
 # Functions :
 #
 #   UrbanPhysX::Cover      { Grid }
-#   UrbanPhysX::CoverUrban { Grid }
 #============================================================================
 
 namespace eval UrbanPhysX { } {
@@ -124,58 +123,6 @@ namespace eval UrbanPhysX { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanPhysX::CoverUrban>
-# Creation : Octobre 2010 - J.P. Gauthier - CMC/CMOE
-#
-# Goal     : Generate the urban charactecitics fields.
-#
-# Parameters :
-#   <Grid>   : Grid on which to generate the fields
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc UrbanPhysX::CoverUrban { Grid } {
-   variable Param
-   variable Const
-
-   GenX::Procs
-   GenX::Log INFO "Generating urban characteristics"
-
-   fstdfield copy GPXAGG $Grid
-   fstdfield copy GPXTOT $Grid
-
-   #----- Read urban classification
-   fstdfield read GPXUF GPXOUTFILE -1 "" -1 -1 -1 "" "UF"
-   fstdfield readcube GPXUF
-
-   #----- Parse each urban characteristic
-   foreach type $Param(Types) var $Param(Vars) ip1 $Param(IP1s) {
-
-      GenX::Log DEBUG "   Processing $type ($var $ip1)" False
-
-      GenX::GridClear { GPXAGG GPXTOT } 0.0
-
-      #----- Apply fraction correspondance table
-      for { set c 0 } { $c<[fstdfield define GPXUF -NK] } { incr c } {
-         vexpr GPXTOT GPXTOT+GPXUF()()($c)
-         vexpr GPXAGG GPXAGG+GPXUF()()($c)*[lindex $Const($type) $c]
-      }
-
-      #----- Normalize
-      vexpr GPXAGG ifelse(GPXTOT>0,GPXAGG/GPXTOT,0)
-
-      #----- Save resolution
-      fstdfield define GPXAGG -NOMVAR $var -IP1 $ip1
-      fstdfield write GPXAGG GPXOUTFILE -32 True $GenX::Param(Compress)
-   }
-
-   fstdfield free GPXAGG GPXTOT GPXUF
-}
-
-#----------------------------------------------------------------------------
 # Name     : <UrbanPhysX::Cover>
 # Creation : Octobre 2010 - J.P. Gauthier - CMC/CMOE
 #
@@ -197,8 +144,9 @@ proc UrbanPhysX::Cover { Grid } {
    GenX::Log INFO "Applying urban characteristics to VF"
 
    fstdfield copy GPXSUM $Grid
-   fstdfield copy GPXLN0 $Grid
-   GenX::GridClear { GPXSUM GPXLN0 } 0.0
+   fstdfield copy GPXZ0 $Grid
+   fstdfield copy GPXAGG $Grid
+   GenX::GridClear { GPXSUM GPXZ0 GPXAGG } 0.0
 
    #----- Read urban classification
    fstdfield read GPXUF GPXOUTFILE -1 "" -1 -1 -1 "" "UF"
@@ -208,10 +156,10 @@ proc UrbanPhysX::Cover { Grid } {
    fstdfield read GPXVF GPXOUTFILE -1 "" -1 -1 -1 "" "VF"
    fstdfield readcube GPXVF
 
-   #----- Calculation of urban fraction and built-up fraction (covf 27-38)
+   #----- Calculation of urban fraction and built-up fraction
    for { set c 0 } { $c<[fstdfield define GPXUF -NK] } { incr c } {
-      vexpr GPXURB$c  GPXUF()()($c)*[lindex $Const(FracBuilt) $c]
-      vexpr GPXSUM GPXSUM+GPXURB$c
+      vexpr GPXUF GPXUF()()($c)=GPXUF()()($c)*[lindex $Const(FracBuilt) $c]
+      vexpr GPXSUM GPXSUM+GPXUF()()($c)
    }
 
    #----- Remove urban class (21)
@@ -236,17 +184,41 @@ proc UrbanPhysX::Cover { Grid } {
       GenX::Log WARNING "Total coverage fration exceeds valid range \[0.999,1.006\] : $min, $max"
    }
 
+   #----- Save urban adjusted vege
+   fstdfield write GPXVF GPXAUXFILE -32 False $GenX::Param(Compress)
+
+   #----- Parse each urban characteristic
+   foreach type $Param(Types) var $Param(Vars) ip1 $Param(IP1s) {
+
+      GenX::Log DEBUG "   Processing $type ($var $ip1)" False
+
+      GenX::GridClear { GPXAGG GPXSUM } 0.0
+
+      #----- Apply fraction correspondance table
+      for { set c 0 } { $c<[fstdfield define GPXUF -NK] } { incr c } {
+         vexpr GPXSUM GPXSUM+GPXUF()()($c)
+         vexpr GPXAGG GPXAGG+GPXUF()()($c)*[lindex $Const($type) $c]
+      }
+
+      #----- Normalize
+      vexpr GPXAGG ifelse(GPXSUM>0,GPXAGG/GPXSUM,0)
+
+      #----- Save urban fields
+      fstdfield define GPXAGG -NOMVAR $var -IP1 $ip1
+      fstdfield write GPXAGG GPXOUTFILE -32 True $GenX::Param(Compress)
+   }
+
    #----- Dynamical roughness calculation for vegetation and soils
    for { set c 0 } { $c<[fstdfield define GPXVF -NK] } { incr c } {
       #----- Everything but the urban class 21
       if { $c!=20 } {
-         vexpr GPXLN0 GPXLN0 + GPXVF()()($c) * ln([lindex $Const(Z0Veg) $c])
+         vexpr GPXZ0 GPXZ0 + GPXVF()()($c) * ln([lindex $Const(Z0Veg) $c])
       }
    }
+   vexpr GPXZ0 exp(GPXZ0)
 
-   fstdfield write GPXVF GPXAUXFILE -32 False $GenX::Param(Compress)
-
-   vexpr GPXZ0 exp(GPXLN0)
    fstdfield define GPXZ0 -NOMVAR Z0TO
    fstdfield write GPXZ0 GPXOUTFILE -32 False  $GenX::Param(Compress)
+
+   fstdfield free GPXSUM GPXAGG GPXVF GPXUF GPXZ0
 }
