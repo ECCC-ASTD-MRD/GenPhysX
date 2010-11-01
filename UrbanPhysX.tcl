@@ -29,7 +29,7 @@ namespace eval UrbanPhysX { } {
       HC_WALL1 HC_WALL2 HC_WALL3 TC_WALL1 TC_WALL2 TC_WALL3 D_WALL1 D_WALL2 D_WALL3 }
 
    set Param(Vars) { 1T 3T 4T 5T 1N 2N 3N 4N 5N 6N 7O 8O 9O 1Q 7N 7N 7N 8N 8N 8N 9N 9N 9N 1O 1O 1O 2O 2O 2O 3O 3O 3O 4O 4O 4O 5O 5O 5O 6O 6O 6O }
-   set Param(IP1s) {  0  0  0  0  0  0  0  0  0  0  0  0  0  0 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 }
+   set Param(IP1s) { 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 1199 1198 1197 }
 
    #----- Fractions areas by urban class
    set Const(FracBuilt) { 0.95 0.90 0.80 0.70 0.70 0.40 0.85 0.70 0.44 0.27 0.18 0.25 }
@@ -118,8 +118,8 @@ namespace eval UrbanPhysX { } {
    set Const(H_INDUSTRY) { 10.0 10.0 10.0 10.0 30.0  5.0  0.0  0.0  5.0  5.0  5.0 0.0 }
 
    #----- Latent heat flux due to traffic and  industry
-   set Const(LE_TRAFFIC) {  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0 0.0 }
-   set Const(LE_INDUSTRY) {  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0 0.0 }
+   set Const(LE_TRAFFIC)  { 0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0 0.0 }
+   set Const(LE_INDUSTRY) { 0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0 0.0 }
 }
 
 #----------------------------------------------------------------------------
@@ -161,6 +161,9 @@ proc UrbanPhysX::Cover { Grid } {
       vexpr GPXUF GPXUF()()($c)=GPXUF()()($c)*[lindex $Const(FracBuilt) $c]
       vexpr GPXSUM GPXSUM+GPXUF()()($c)
    }
+   #----- Save urban UR field
+   fstdfield define GPXSUM -NOMVAR UR -IP1 0
+   fstdfield write GPXSUM GPXOUTFILE -32 True $GenX::Param(Compress)
 
    #----- Remove urban class (21)
    vexpr GPXVF GPXVF()()(20) = 0.0
@@ -208,17 +211,17 @@ proc UrbanPhysX::Cover { Grid } {
       fstdfield write GPXAGG GPXOUTFILE -32 True $GenX::Param(Compress)
    }
 
-   #----- Dynamical roughness calculation for vegetation and soils
-   for { set c 0 } { $c<[fstdfield define GPXVF -NK] } { incr c } {
-      #----- Everything but the urban class 21
-      if { $c!=20 } {
-         vexpr GPXZ0 GPXZ0 + GPXVF()()($c) * ln([lindex $Const(Z0Veg) $c])
-      }
-   }
-   vexpr GPXZ0 exp(GPXZ0)
+#   #----- Dynamical roughness calculation for vegetation and soils
+#   for { set c 0 } { $c<[fstdfield define GPXVF -NK] } { incr c } {
+#      #----- Everything but the urban class 21
+#      if { $c!=20 } {
+#         vexpr GPXZ0 GPXZ0 + GPXVF()()($c) * ln([lindex $Const(Z0Veg) $c])
+#      }
+#   }
+#   vexpr GPXZ0 exp(GPXZ0)
 
-   fstdfield define GPXZ0 -NOMVAR Z0TO
-   fstdfield write GPXZ0 GPXOUTFILE -32 False  $GenX::Param(Compress)
+#   fstdfield define GPXZ0 -NOMVAR Z0TO
+#   fstdfield write GPXZ0 GPXOUTFILE -32 False  $GenX::Param(Compress)
 
    fstdfield free GPXSUM GPXAGG GPXVF GPXUF GPXZ0
 }
