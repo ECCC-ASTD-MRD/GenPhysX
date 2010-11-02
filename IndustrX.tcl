@@ -54,6 +54,8 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
 #   gdalband read RLCC2000VSMOKE [gdalfile open FLCC2000VSMOKE read $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif]
 
+puts "A"
+
 	#passage des valeurs de priorités (sandwich) aux valeurs smoke dans RSMOKE
    vector create LUT
    vector dim LUT { FROM TO }
@@ -62,21 +64,29 @@ proc UrbanX::Priorities2SMOKE {indexCouverture } {
    vexpr RSMOKE lut(RSANDWICH,LUT.FROM,LUT.TO)
    vector free LUT
 
+puts "B"
+
 	#modification pour inclure la densité de population 
    vexpr RSMOKE ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RSMOKE)
 
 	#modification pour inclure la végétation LCC2000V
 #   vexpr RSMOKE ifelse(RSMOKE==0 || RSMOKE==200,RLCC2000VSMOKE,RSMOKE)
 
+puts "C"
+
 	#écriture du fichier de sortie
    file delete -force $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif GeoTiff
    gdalband write RSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 
+puts "D"
+
    GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif was generated"
 
    gdalfile close FILEOUT FSANDWICH FPOPDENSCUT ;#FLCC2000VSMOKE
    gdalband free RSMOKE RSANDWICH RPOPDENSCUT ;#RLCC2000VSMOKE
+
+puts "E"
 
    GenX::Log INFO "Fin de la proc Priorities2SMOKE"
 }
@@ -113,7 +123,7 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 
 	#sélection des polygones de DA ayant la valeur indexCouverture dans le champ SNRC
 	set da_select [ogrlayer define VDASMOKE -featureselect [list [list SNRC == $indexCouverture]] ]
-	GenX::Log INFO "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
+	GenX::Log DEBUG "Les [llength $da_select] polygones de dissemination area ayant les ID suivants ont été conservés : $da_select"
 
 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
 	for {set classeid 1} {$classeid < 96} {incr classeid 1} {
@@ -138,7 +148,7 @@ proc UrbanX::SMOKE2DA {indexCouverture } {
 		vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
 
 		#affichage du temps requis pour traiter la classe i
-		puts "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
+		GenX::Log DEBUG "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
 	}
 
    ogrlayer sync VDASMOKE ;# là pcq utilisation du mode append, pas besoin en mode write, mais le mode write a un bug
@@ -190,13 +200,15 @@ proc IndustrX::Process { Coverage } {
 		#Param(NTSIds) : liste des ids des feuillets NTS : format 9999
 		#Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
 
+return
+
 	#ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
 	if { ![ogrlayer is VDASMOKE] } {
 		set Param(PopFile2006SMOKE_Province) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.shp
 		set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE_Province)] 0]
 		#set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $UrbanX::Param(PopFile2006SMOKE)] 0]
 		eval ogrlayer read VDASMOKE $da_layer_smoke
-		GenX::Log INFO "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
+		GenX::Log DEBUG "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
 	}
 
 # # 	#TO DELETE : FEUILLETS TESTS DE PERFORMANCES
@@ -290,7 +302,7 @@ proc IndustrX::Process { Coverage } {
 			GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
 	# 
 			#affichage du temps de traitement du feuillet
-			puts "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
+			GenX::Log DEBUG "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
 
 			#préparation à la nouvelle incrémentation
 			puts "__________________________________________________________________________________________________________________________"
