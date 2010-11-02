@@ -602,9 +602,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
    set Param(Width)  [expr int(ceil(([lindex $xy1 0] - [lindex $xy0 0])/$Res))]
    set Param(Height) [expr int(ceil(([lindex $xy1 1] - [lindex $xy0 1])/$Res))]
 
-
 	georef define UTMREF$indexCouverture -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
-
 
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 }
@@ -626,7 +624,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::FindNTSSheets {indexCouverture } {
 
-	GenX::Log INFO "debut de la proc FindNTSSheetsCanVec"
+	GenX::Log INFO "Debut de la proc FindNTSSheetsCanVec"
 
    variable Param
 
@@ -635,13 +633,13 @@ proc UrbanX::FindNTSSheets {indexCouverture } {
       set nts_layer [lindex [ogrfile open SHAPE50K read $Param(NTSFile)] 0]
       eval ogrlayer read NTSLAYER50K $nts_layer
    }
-	GenX::Log INFO "On compte [ogrlayer define NTSLAYER50K -nb] tuiles NTS dans le fichier NTS50K"
+	GenX::Log DEBUG "On compte [ogrlayer define NTSLAYER50K -nb] tuiles NTS dans le fichier NTS50K"
 
    #ouverture du shapefile du Canada
    set prov_layer [lindex [ogrfile open SHAPECANADA read $Param(ProvincesGeom)] 0]
    eval ogrlayer read VCANADA $prov_layer
    ogrlayer stats VCANADA -transform UTMREF$indexCouverture
-   GenX::Log INFO "On compte [ogrlayer define VCANADA -nb] polygones dans le fichier de géométrie canadienne"
+   GenX::Log DEBUG "On compte [ogrlayer define VCANADA -nb] polygones dans le fichier de géométrie canadienne"
 
 	#index de la géométrie de province
 	set idxprovince [ogrlayer define VCANADA -featureselect [list [list PR == $Param(ProvinceCode) ] ] ]
@@ -658,27 +656,27 @@ proc UrbanX::FindNTSSheets {indexCouverture } {
 
 	#ramener NTSLAYER50K à la sélection des fichiers présélectionnés
 	ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
-	puts "Les [llength $ntssheets_pre] tuiles NTS ayant les ID suivants ont été présélectionnées à l'aide du convex hull : $ntssheets_pre"
+	GenX::Log DEBUG "Les [llength $ntssheets_pre] tuiles NTS ayant les ID suivants ont été présélectionnées à l'aide du convex hull : $ntssheets_pre"
 
 	#avertissement sur le temps requis...  
 	GenX::Log INFO "Intersection des fichiers NTS présélectionnés avec le polygone de province.  Cette opération peut prendre plusieurs minutes!"
 
 	#sélection, parmi les fichiers NTS présélectionnés, de ceux qui sont en intersection avec la géométrie provinciale
    set Param(NTSIds) [ogrlayer pick NTSLAYER50K $geom True INTERSECT]
-   GenX::Log INFO "Les [llength $Param(NTSIds)] tuiles NTS ayant les ID suivants sont conservées suite à l'intersection avec la géométrie : $Param(NTSIds)"
+   GenX::Log DEBUG "Les [llength $Param(NTSIds)] tuiles NTS ayant les ID suivants sont conservées suite à l'intersection avec la géométrie : $Param(NTSIds)"
 
 	#remplacement des ids des tuiles par le no de feuillet NTS, de format 999A99
 	set Param(NTSSheets) { }
    foreach id $Param(NTSIds) {
       set Param(NTSSheets)  [concat $Param(NTSSheets) [ogrlayer define NTSLAYER50K -feature $id IDENTIFIAN] ]
 	}
-   GenX::Log INFO "Les [llength $Param(NTSSheets)] tuiles NTS ayant les no de feuillets suivants sont conservées : $Param(NTSSheets)"
+   GenX::Log DEBUG "Les [llength $Param(NTSSheets)] tuiles NTS ayant les no de feuillets suivants sont conservées : $Param(NTSSheets)"
 
 	#nettoyage de mémoire
 	ogrfile close SHAPE50K SHAPECANADA
 	ogrlayer free NTSLAYER50K VCANADA
 
-	GenX::Log INFO "fin de la proc FindNTSSheetsCanVec"
+	GenX::Log INFO "Fin de la proc FindNTSSheetsCanVec"
 
 return
 
@@ -702,7 +700,7 @@ return
 #----------------------------------------------------------------------------
 proc UrbanX::NTSExtent { indexCouverture } {
 
-	GenX::Log INFO "debut de la proc NTSExtent"
+	GenX::Log INFO "Debut de la proc NTSExtent"
 
    variable Param
 
@@ -731,7 +729,7 @@ proc UrbanX::NTSExtent { indexCouverture } {
 	set Param(CanVecNTSFiles) {}
    set Param(CanVecNTSFiles) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(NTSLayer)]
    #Param(CanVecNTSFiles) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
-	GenX::Log INFO "CanVec NTS50K file : $Param(CanVecNTSFiles)"
+	GenX::Log DEBUG "CanVec NTS50K file : $Param(CanVecNTSFiles)"
 
 	#ouverture du shapefile CanVec index NTS50K
    if { ![ogrlayer is CANVECNTSLAYER] } {
@@ -740,7 +738,7 @@ proc UrbanX::NTSExtent { indexCouverture } {
    }
 
    #test : comptage du nombre de polygones dans le shapefile (devrait être 1)
-   GenX::Log INFO "On compte [ogrlayer define CANVECNTSLAYER -nb] tuiles NTS dans le fichier CanVec NTS Layer (devrait être 1)"
+   GenX::Log DEBUG "On compte [ogrlayer define CANVECNTSLAYER -nb] tuiles NTS dans le fichier CanVec NTS Layer (devrait être 1)"
 
 	#définition du UTMREF pour la zone à traiter
 	UTMZoneDefine  $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) 1_$indexCouverture
@@ -788,7 +786,7 @@ proc UrbanX::NTSExtent { indexCouverture } {
 	ogrfile close SHAPE50K SHAPECANVECNTSLAYER
 	ogrlayer free NTSLAYER50K CANVECNTSLAYER
 
-	GenX::Log INFO "fin de la proc NTSExtent"
+	GenX::Log INFO "Fin de la proc NTSExtent"
 }
 
 #----------------------------------------------------------------------------
@@ -815,7 +813,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 	#add proc to Metadata
    GenX::Procs
 
-   GenX::Log INFO "Generating Sandwich"
+   GenX::Log INFO "Debut de la proc for generating Sandwich"
 
 	#création de la raster qui contiendra la LULC
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
@@ -830,7 +828,7 @@ proc UrbanX::Sandwich { indexCouverture } {
    set j 0 ;# Increment of VFEATURE2KEEP$j required to re-use the object
 
    #----- Rasterization of CanVec layers
-
+	GenX::Log INFO "Generating Sandwich"
    foreach file $Param(Files) {
       set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
       #entity contains an element of the form AA_9999999_9
@@ -857,779 +855,779 @@ proc UrbanX::Sandwich { indexCouverture } {
 					#5000 <= densité < 15000 : PRI = 216 ; TEB = 230 ; SMO = 3
 					#15000 <= densité < 25000 : PRI = 215 ; TEB = 240 ; SMO = 4
 					#25000 <= densité : PRI = 214 ; TEB = 250 ; SMO = 5
-               GenX::Log INFO "Post-processing for Residential area, area"
+               GenX::Log DEBUG "Post-processing for Residential area, area"
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity as VFEATURE2KEEP$j with priority value 218"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity as VFEATURE2KEEP$j with priority value 218"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 218
             }
             BS_2010009_0 {
 					# entity : Building, points
-               GenX::Log INFO "Post-processing for buildings, points"
+               GenX::Log DEBUG "Post-processing for buildings, points"
 
 					#function = 1 : arena
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 1)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (arena) as VFEATURE2KEEP$j with priority value 32"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (arena) as VFEATURE2KEEP$j with priority value 32"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 32
 
 					#function = 2 : armoury
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 2)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (armoury) as VFEATURE2KEEP$j with priority value 31"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (armoury) as VFEATURE2KEEP$j with priority value 31"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 31
 
 					#function = 5 : city hall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 5)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (city hall) as VFEATURE2KEEP$j with priority value 30"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (city hall) as VFEATURE2KEEP$j with priority value 30"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 30
 
 					#function = 6 : coast guard station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 6)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (coast guard station) as VFEATURE2KEEP$j with priority value 29"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (coast guard station) as VFEATURE2KEEP$j with priority value 29"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 29
 
 					#function = 7 : community center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 7)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (community center) as VFEATURE2KEEP$j with priority value 28"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (community center) as VFEATURE2KEEP$j with priority value 28"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 28
 
 					#function = 8 : courthouse
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 8)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (courthouse) as VFEATURE2KEEP$j with priority value 27"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (courthouse) as VFEATURE2KEEP$j with priority value 27"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 27
 
 					#function = 9 : custom post
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 9)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (custom post) as VFEATURE2KEEP$j with priority value 26"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (custom post) as VFEATURE2KEEP$j with priority value 26"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 26
 
 					#function = 11 : electric power station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 11)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (electric power station) as VFEATURE2KEEP$j with priority value 25"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (electric power station) as VFEATURE2KEEP$j with priority value 25"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 25
 
 					#function = 12 : fire station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 12)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fire station) as VFEATURE2KEEP$j with priority value 24"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fire station) as VFEATURE2KEEP$j with priority value 24"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 24
 
 					#function = 16 : highway service center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 16)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highway service center) as VFEATURE2KEEP$j with priority value 23"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highway service center) as VFEATURE2KEEP$j with priority value 23"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 23
 
 					#function = 17 : hospital
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 17)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (hospital) as VFEATURE2KEEP$j with priority value 22"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (hospital) as VFEATURE2KEEP$j with priority value 22"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 22
 
 					#function = 19 : medical center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 19)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (medical center) as VFEATURE2KEEP$j with priority value 21"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (medical center) as VFEATURE2KEEP$j with priority value 21"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 21
 
 					#function = 20 : municipal hall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 20)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (municipal hall) as VFEATURE2KEEP$j with priority value 20"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (municipal hall) as VFEATURE2KEEP$j with priority value 20"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 20
 
 					#function = 23 : gas and oil facilities building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 23)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (gas and oil facilities building) as VFEATURE2KEEP$j with priority value 19"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (gas and oil facilities building) as VFEATURE2KEEP$j with priority value 19"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 19
 
 					#function = 25 : parliament building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 25)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (parliament building) as VFEATURE2KEEP$j with priority value 18"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (parliament building) as VFEATURE2KEEP$j with priority value 18"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 18
 
 					#function = 26 : police station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 26)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (police station) as VFEATURE2KEEP$j with priority value 17"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (police station) as VFEATURE2KEEP$j with priority value 17"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 17
 
 					#function = 27 : railway station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 27)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (railway station) as VFEATURE2KEEP$j with priority value 16"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (railway station) as VFEATURE2KEEP$j with priority value 16"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 16
 
 					#function = 29 : satellite-tracking station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 29)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (satellite-tracking station) as VFEATURE2KEEP$j with priority value 15"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (satellite-tracking station) as VFEATURE2KEEP$j with priority value 15"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 15
 
 					#function = 32 : sportsplex
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 32)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (sportsplex) as VFEATURE2KEEP$j with priority value 14"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (sportsplex) as VFEATURE2KEEP$j with priority value 14"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 14
 
 					#function = 37 : industrial building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 37)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial building) as VFEATURE2KEEP$j with priority value 13"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial building) as VFEATURE2KEEP$j with priority value 13"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 13
 
 					#function = 38 : religious building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 38)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (religious building) as VFEATURE2KEEP$j with priority value 12"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (religious building) as VFEATURE2KEEP$j with priority value 12"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 12
 
 					#function = 39 : penal building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 39)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (penal building) as VFEATURE2KEEP$j with priority value 11"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (penal building) as VFEATURE2KEEP$j with priority value 11"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 11
 
 					#function = 41 : educational building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 41)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (educational building) as VFEATURE2KEEP$j with priority value 10"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (educational building) as VFEATURE2KEEP$j with priority value 10"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 10
 
 					#function = else
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (1,2,5,6,7,8,9,11,12,16,17,19,20,23,25,26,27,29,32,37,38,39,41)"
 #					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general) as VFEATURE2KEEP$j with priority value 33"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general) as VFEATURE2KEEP$j with priority value 33"
 #					GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 33
             }
             BS_2010009_2 {
 					# entity : Building, polygons
-               GenX::Log INFO "Post-processing for buildings, areas"
+               GenX::Log DEBUG "Post-processing for buildings, areas"
 					#function = 1 : arena
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (arena) as VFEATURE2KEEP$j with priority value 103"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (arena) as VFEATURE2KEEP$j with priority value 103"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 103
 					#function = 2 : armoury
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (armoury) as VFEATURE2KEEP$j with priority value 102"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (armoury) as VFEATURE2KEEP$j with priority value 102"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 102
 					#function = 5 : city hall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 5)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (city hall) as VFEATURE2KEEP$j with priority value 101"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (city hall) as VFEATURE2KEEP$j with priority value 101"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 101
 					#function = 6 : coast guard station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (coast guard station) as VFEATURE2KEEP$j with priority value 100"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (coast guard station) as VFEATURE2KEEP$j with priority value 100"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 100
 					#function = 7 : community center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (community center) as VFEATURE2KEEP$j with priority value 99"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (community center) as VFEATURE2KEEP$j with priority value 99"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 99
 					#function = 8 : courthouse
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 8)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (courthouse) as VFEATURE2KEEP$j with priority value 98"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (courthouse) as VFEATURE2KEEP$j with priority value 98"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 98
 					#function = 9 : custom post
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 9)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (custom post) as VFEATURE2KEEP$j with priority value 97"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (custom post) as VFEATURE2KEEP$j with priority value 97"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 97
 					#function = 11 : electric power station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 11)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (electric power station) as VFEATURE2KEEP$j with priority value 96"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (electric power station) as VFEATURE2KEEP$j with priority value 96"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 96
 					#function = 12 : fire station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 12)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fire station) as VFEATURE2KEEP$j with priority value 95"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fire station) as VFEATURE2KEEP$j with priority value 95"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 95
 					#function = 16 : highway service center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 16)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highway service center) as VFEATURE2KEEP$j with priority value 94"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highway service center) as VFEATURE2KEEP$j with priority value 94"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 94
 					#function = 17 : hospital
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 17)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (hospital) as VFEATURE2KEEP$j with priority value 93"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (hospital) as VFEATURE2KEEP$j with priority value 93"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 93
 					#function = 19 : medical center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 19)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (medical center) as VFEATURE2KEEP$j with priority value 92"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (medical center) as VFEATURE2KEEP$j with priority value 92"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 92
 					#function = 20 : municipal hall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 20)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (municipal hall) as VFEATURE2KEEP$j with priority value 91"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (municipal hall) as VFEATURE2KEEP$j with priority value 91"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 91
 					#function = 23 : gas and oil facilities building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 23)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (gas and oil facilities building) as VFEATURE2KEEP$j with priority value 90"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (gas and oil facilities building) as VFEATURE2KEEP$j with priority value 90"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 90
 					#function = 25 : parliament building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 25)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (parliament building) as VFEATURE2KEEP$j with priority value 89"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (parliament building) as VFEATURE2KEEP$j with priority value 89"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 89
 					#function = 26 : police station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 26)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (police station) as VFEATURE2KEEP$j with priority value 88"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (police station) as VFEATURE2KEEP$j with priority value 88"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 88
 					#function = 27 : railway station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 27)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (railway station) as VFEATURE2KEEP$j with priority value 87"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (railway station) as VFEATURE2KEEP$j with priority value 87"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 87
 					#function = 29 : satellite-tracking station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 29)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (satellite-tracking station) as VFEATURE2KEEP$j with priority value 86"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (satellite-tracking station) as VFEATURE2KEEP$j with priority value 86"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 86
 					#function = 32 : sportsplex
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 32)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (sportsplex) as VFEATURE2KEEP$j with priority value 85"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (sportsplex) as VFEATURE2KEEP$j with priority value 85"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 85
 					#function = 37 : industrial building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 37)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial building) as VFEATURE2KEEP$j with priority value 84"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial building) as VFEATURE2KEEP$j with priority value 84"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 84
 					#function = 38 : religious building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 38)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (religious building) as VFEATURE2KEEP$j with priority value 83"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (religious building) as VFEATURE2KEEP$j with priority value 83"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 83
 					#function = 39 : penal building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 39)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (penal building) as VFEATURE2KEEP$j with priority value 82"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (penal building) as VFEATURE2KEEP$j with priority value 82"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 82
 					#function = 41 : educational building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 41)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (educational building) as VFEATURE2KEEP$j with priority value 81"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (educational building) as VFEATURE2KEEP$j with priority value 81"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 81
 					#function = else
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (1,2,5,6,7,8,9,11,12,16,17,19,20,23,25,26,27,29,32,37,38,39,41)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general) as VFEATURE2KEEP$j with priority value 104"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general) as VFEATURE2KEEP$j with priority value 104"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 104
             }
             BS_2060009_0 {
                #entity : Chimney, points
-               GenX::Log INFO "Post-processing for Chimneys, points"
+               GenX::Log DEBUG "Post-processing for Chimneys, points"
                #general value for unknown type
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type NOT IN (1, 2, 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - general) as VFEATURE2KEEP$j with priority value 6"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - general) as VFEATURE2KEEP$j with priority value 6"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 6
                #type = 1 : burner
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - burners) as VFEATURE2KEEP$j with priority value 5"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - burners) as VFEATURE2KEEP$j with priority value 5"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 5
                #type = 2 : industrial
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - industrial) as VFEATURE2KEEP$j with priority value 4"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - industrial) as VFEATURE2KEEP$j with priority value 4"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 4
                #type = 3 : flare stack
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - flare stack) as VFEATURE2KEEP$j with priority value 3"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Chimneys - flare stack) as VFEATURE2KEEP$j with priority value 3"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 3
             }
-            BS_2240009_0 {
+            BS_2240009_1 {
                #entity : Wall/fence, line
-               GenX::Log INFO "Post-processing for Wall / fences, lines"
+               GenX::Log DEBUG "Post-processing for Wall / fences, lines"
                #type = 1 : fence
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Wall / fence - fences) as VFEATURE2KEEP$j with priority value 114"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Wall / fence - fences) as VFEATURE2KEEP$j with priority value 114"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 114
                #type = 2 : wall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Wall / fence - fences) as VFEATURE2KEEP$j with priority value 113"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (Wall / fence - fences) as VFEATURE2KEEP$j with priority value 113"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 113
             }
             BS_2310009_1 {
                #entity : Pipeline (Sewage / liquid waste), line
-               GenX::Log INFO "Post-processing for Pipelines (Sewage / liquid waste), lines"
+               GenX::Log DEBUG "Post-processing for Pipelines (Sewage / liquid waste), lines"
                #if relation2ground != 1 (aboveground), exclus; else, valeur générale
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (aboveground sewage pipeline entity) as VFEATURE2KEEP$j with priority value $priority"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (aboveground sewage pipeline entity) as VFEATURE2KEEP$j with priority value $priority"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
             }
             EN_1180009_1 {
                #entity : Pipeline, line
-               GenX::Log INFO "Post-processing for Pipelines, lines"
+               GenX::Log DEBUG "Post-processing for Pipelines, lines"
                #if relation2ground != 1 (aboveground), exclus; else, valeur générale
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (aboveground pipeline entity) as VFEATURE2KEEP$j with priority value $priority"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (aboveground pipeline entity) as VFEATURE2KEEP$j with priority value $priority"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) $priority
             }
             HD_1450009_0 {
                # entity : Manmade hydrographic entity [Geobase], point
-               GenX::Log INFO "Post-processing for Manmade hydrographic entities, points"
+               GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, points"
                #type = 1 : dam
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 43"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 43"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 43
                #type = 1 : dock
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dock manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 42"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dock manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 42"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 42
                #type = 1 : wharf
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (wharf manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 41"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (wharf manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 41"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 41
                #type = 1 : breakwater
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 44"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 44"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 44
                #type = 1 : dike / levee
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 5)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dike / levee manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 45"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dike / levee manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 45"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 45
                #type = 1 : lock gate
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (lock gate manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 37"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (lock gate manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 37"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 37
                #type = 1 : boat ramp
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (boat ramp manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 40"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (boat ramp manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 40"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 40
                #type = 1 : fish ladder
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 8)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fish ladder manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 38"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fish ladder manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 38"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 38
                #type = 1 : slip
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 9)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (slip manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 39"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (slip manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 39"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 39
                #type = 1 : breakwater in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 104)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater in the ocean manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 46"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater in the ocean manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 46"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 46
                #general value for unknown types
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type NOT IN (1,2,3,4,5,6,7,8,9,104)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 47"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 47"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 47
             }
             HD_1450009_1 {
                # entity : Manmade hydrographic entity [Geobase], line
-					GenX::Log INFO "Post-processing for Manmade hydrographic entities, lines"
+					GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, lines"
                #type = 1 : dam
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 124"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 124"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 124
                #type = 1 : dock
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dock manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 123"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dock manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 123"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 123
                #type = 1 : wharf
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (wharf manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 122"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (wharf manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 122"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 122
                #type = 1 : breakwater
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 125"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 125"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 125
                #type = 1 : dike / levee
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 5)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dike / levee manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 126"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dike / levee manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 126"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 126
                #type = 1 : lock gate
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (lock gate manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 118"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (lock gate manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 118"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 118
                #type = 1 : boat ramp
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (boat ramp manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 121"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (boat ramp manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 121"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 121
                #type = 1 : fish ladder
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 8)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fish ladder manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 119"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fish ladder manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 119"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 119
                #type = 1 : slip
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 9)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (slip manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 120"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (slip manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 120"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 120
                #type = 1 : breakwater in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 104)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater in the ocean manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 127"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater in the ocean manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 127"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 127
                #general value for unknown types
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type NOT IN (1,2,3,4,5,6,7,8,9,104)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 128"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 128"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 128
             }
             HD_1450009_2 {
                # entity : Manmade hydrographic entity [Geobase], area
-					GenX::Log INFO "Post-processing for Manmade hydrographic entities, areas"
+					GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, areas"
                #type = 1 : dam
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 154"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 154"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 154
                #type = 1 : dock
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dock manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 153"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dock manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 153"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 153
                #type = 1 : wharf
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (wharf manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 152"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (wharf manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 152"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 152
                #type = 1 : breakwater
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 155"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 155"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 155
                #type = 1 : dike / levee
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 5)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dike / levee manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 156"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dike / levee manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 156"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 156
                #type = 1 : lock gate
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (lock gate manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 148"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (lock gate manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 148"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 148
                #type = 1 : boat ramp
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (boat ramp manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 151"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (boat ramp manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 151"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 151
                #type = 1 : fish ladder
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 8)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fish ladder manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 149"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fish ladder manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 149"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 149
                #type = 1 : slip
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 9)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (slip manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 150"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (slip manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 150"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 150
                #type = 1 : breakwater in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 104)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater in the ocean manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 157"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (breakwater in the ocean manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 157"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 157
                #general value for unknown types
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type NOT IN (1,2,3,4,5,6,7,8,9,104)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 158"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 158"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 158
             }
             HD_1460009_0 {
                # entity : Hydrographic obstacle entity [Geobase], point
-					GenX::Log INFO "Post-processing for Hydrographic obstacle entities, points"
+					GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, points"
                #type = 1 : fall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fall hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 56"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fall hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 56"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 56
                #type = 2 : rapids
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rapids hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 57"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rapids hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 57"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 57
                #type = 3 : reef
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 53"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 53"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 53
                #type = 4 : rocks
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 52"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 52"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 52
                #type = 5 : disappearing stream
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 5)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (disappearing stream hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 48"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (disappearing stream hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 48"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 48
                #type = 6 : exposed shipwreck
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 50"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 50"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 50
                #type = 7 : ford
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ford hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 49"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ford hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 49"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 49
                #type = 103 : reef in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 103)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 55"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 55"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 55
                #type = 104 : rocks in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 104)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 54"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 54"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 54
                #type = 106 : exposed shipwreck in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 106)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 51"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 51"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 51
                #general value for unknown types
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type NOT IN (1,2,3,4,5,6,7,103,104,106)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 58"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 58"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 58
             }
             HD_1460009_1 {
                # entity : Hydrographic obstacle entity [Geobase], line
-					GenX::Log INFO "Post-processing for Hydrographic obstacle entities, lines"
+					GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, lines"
                #type = 1 : fall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fall hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 137"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fall hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 137"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 137
                #type = 2 : rapids
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rapids hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 138"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rapids hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 138"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 138
                #type = 3 : reef
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 134"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 134"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 134
                #type = 4 : rocks
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 133"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 133"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 133
                #type = 5 : disappearing stream
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 5)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (disappearing stream hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 129"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (disappearing stream hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 129"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 129
                #type = 6 : exposed shipwreck
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 131"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 131"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 131
                #type = 7 : ford
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ford hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 130"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ford hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 130"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 130
                #type = 103 : reef in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 103)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 136"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 136"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 136
                #type = 104 : rocks in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 104)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 135"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 135"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 135
                #type = 106 : exposed shipwreck in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 106)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 132"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 132"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 132
                #general value for unknown types
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type NOT IN (1,2,3,4,5,6,7,103,104,106)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 139"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 139"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 139
             }
             HD_1460009_2 {
                # entity : Hydrographic obstacle entity [Geobase], area
-					GenX::Log INFO "Post-processing for Hydrographic obstacle entities, areas"
+					GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, areas"
                #type = 1 : fall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fall hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 167"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fall hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 167"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 167
                #type = 2 : rapids
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rapids hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 168"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rapids hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 168"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 168
                #type = 3 : reef
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 164"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 164"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 164
                #type = 4 : rocks
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 163"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 163"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 163
                #type = 5 : disappearing stream
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 5)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (disappearing stream hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 159"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (disappearing stream hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 159"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 159
                #type = 6 : exposed shipwreck
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 161"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 161"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 161
                #type = 7 : ford
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ford hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 160"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ford hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 160"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 160
                #type = 103 : reef in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 103)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 166"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reef in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 166"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 166
                #type = 104 : rocks in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 104)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 165"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (rocks in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 165"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 165
                #type = 106 : exposed shipwreck in the ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 106)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 162"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (exposed shipwreck in the ocean hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 162"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 162
                #general value for unknown types
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type NOT IN (1,2,3,4,5,6,7,103,104,106)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 169"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 169"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 169
             }
             HD_1470009_1 {
                # entity : Single line watercourse [Geobase], line
-               GenX::Log INFO "Post-processing for Single line watercourse, line"
+               GenX::Log DEBUG "Post-processing for Single line watercourse, line"
                #definition = 1 : canal
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (canal watercourses) as VFEATURE2KEEP$j with priority value 142"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (canal watercourses) as VFEATURE2KEEP$j with priority value 142"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 142
                #definition = 2 : canal
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 2)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (conduit watercourses) as VFEATURE2KEEP$j with priority value 141"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (conduit watercourses) as VFEATURE2KEEP$j with priority value 141"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 141
                #definition = 3 : canal
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (conduit watercourses) as VFEATURE2KEEP$j with priority value 140"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (conduit watercourses) as VFEATURE2KEEP$j with priority value 140"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 140
                #definition = 6 : watercourse
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (canal watercourses) as VFEATURE2KEEP$j with priority value 144"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (canal watercourses) as VFEATURE2KEEP$j with priority value 144"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 144
                #definition = 7 : canal
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (conduit watercourses) as VFEATURE2KEEP$j with priority value 143"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (conduit watercourses) as VFEATURE2KEEP$j with priority value 143"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 143
                #general value for unknown types
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type NOT IN (1,2,3,6,7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 145"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 145"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 145
             }
             HD_1480009_2 {
               # entity : Waterbody [Geobase], polygon
-               GenX::Log INFO "Post-processing for Waterbody, polygon"
+               GenX::Log DEBUG "Post-processing for Waterbody, polygon"
                #definition = 1 : canal
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (canal waterbodies) as VFEATURE2KEEP$j with priority value 172"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (canal waterbodies) as VFEATURE2KEEP$j with priority value 172"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 172
                #definition = 3 : ditch
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ditch waterbodies) as VFEATURE2KEEP$j with priority value 171"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ditch waterbodies) as VFEATURE2KEEP$j with priority value 171"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 171
                #definition = 4 : lake
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 4)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (lake waterbodies) as VFEATURE2KEEP$j with priority value 178"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (lake waterbodies) as VFEATURE2KEEP$j with priority value 178"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 178
                #definition = 5 : reservoir
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 5)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reservoir waterbodies) as VFEATURE2KEEP$j with priority value 179"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (reservoir waterbodies) as VFEATURE2KEEP$j with priority value 179"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 179
                #definition = 6 : watercourse
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (watercourse waterbodies) as VFEATURE2KEEP$j with priority value 175"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (watercourse waterbodies) as VFEATURE2KEEP$j with priority value 175"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 175
                #definition = 7 : tidal river
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 7)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (tidal river waterbodies) as VFEATURE2KEEP$j with priority value 174"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (tidal river waterbodies) as VFEATURE2KEEP$j with priority value 174"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 174
                #definition = 8 : liquid waste
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 8)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (liquid waste waterbodies) as VFEATURE2KEEP$j with priority value 176"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (liquid waste waterbodies) as VFEATURE2KEEP$j with priority value 176"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 176
                #definition = 9 : pond
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 9)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (pond waterbodies) as VFEATURE2KEEP$j with priority value 177"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (pond waterbodies) as VFEATURE2KEEP$j with priority value 177"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 177
                #definition = 10 : side channel
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 10)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (side channel waterbodies) as VFEATURE2KEEP$j with priority value 173"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (side channel waterbodies) as VFEATURE2KEEP$j with priority value 173"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 173
                #definition = 100 : ocean
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (definition = 100)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ocean waterbodies) as VFEATURE2KEEP$j with priority value 180"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (ocean waterbodies) as VFEATURE2KEEP$j with priority value 180"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 180
                #general value for unknown types
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE definition NOT IN (1,3,4,5,6,7,8,9,10,100)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general waterbodies) as VFEATURE2KEEP$j with priority value 181"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general waterbodies) as VFEATURE2KEEP$j with priority value 181"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 181
             }
             IC_2600009_0 {
                # entity : Mining area, point
-               GenX::Log INFO "Post-processing for Mining area, point"
+               GenX::Log DEBUG "Post-processing for Mining area, point"
                #status = 1 : mines opérationnelles
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (status = 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (operational mines) as VFEATURE2KEEP$j with priority value 65"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (operational mines) as VFEATURE2KEEP$j with priority value 65"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 65
                #status != 1 : mines non opérationnelles
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (status != 1)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (non operational mines) as VFEATURE2KEEP$j with priority value 66"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (non operational mines) as VFEATURE2KEEP$j with priority value 66"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 66
             }
             TR_1020009_1 {
                # entity : Railway, line
-               GenX::Log INFO "Post-processing for Railway, line"
+               GenX::Log DEBUG "Post-processing for Railway, line"
                #support = 3 : bridge
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (support = 3)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (bridge railway) as VFEATURE2KEEP$j with priority value 2"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (bridge railway) as VFEATURE2KEEP$j with priority value 2"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 2
                #support != 3 ou 4 : not bridge, not tunnel
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE support NOT IN (3,4)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (bridge railway) as VFEATURE2KEEP$j with priority value 111"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (bridge railway) as VFEATURE2KEEP$j with priority value 111"
 					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 111
             }
             TR_1190009_0 {
 					# entity : Runway, point
-					GenX::Log INFO "Post-processing for Runway, point"
+					GenX::Log DEBUG "Post-processing for Runway, point"
 					#type = 1 : airport
 					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1 )"
-					GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (airport runway) as VFEATURE2KEEP$j with priority value 62"
+					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (airport runway) as VFEATURE2KEEP$j with priority value 62"
 					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 62
 					#type = 2 ou 3 : heliport, hospital heliport
 					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type IN (2,3)"
-					GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (heliport or hospital heliport runway) as VFEATURE2KEEP$j with priority value 7"
+					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (heliport or hospital heliport runway) as VFEATURE2KEEP$j with priority value 7"
 					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 7
 					#type = 4 : water aerodrome
 					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4 )"
-					GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (water aerodrome runway) as VFEATURE2KEEP$j with priority value 61"
+					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (water aerodrome runway) as VFEATURE2KEEP$j with priority value 61"
 					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 61
             }
             TR_1190009_2 {
 					# entity : Runway, area
-					GenX::Log INFO "Post-processing for Runway, areas"
+					GenX::Log DEBUG "Post-processing for Runway, areas"
 					#type = 1 : airport
 					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1 )"
-					GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (airport runway) as VFEATURE2KEEP$j with priority value 201"
+					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (airport runway) as VFEATURE2KEEP$j with priority value 201"
 					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 201
 					#type = 2 ou 3 : heliport, hospital heliport
 					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type IN (2,3)"
-					GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (heliport or hospital heliport runway) as VFEATURE2KEEP$j with priority value 80"
+					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (heliport or hospital heliport runway) as VFEATURE2KEEP$j with priority value 80"
 					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 80
 					#type = 4 : water aerodrome
 					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4 )"
-					GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (water aerodrome runway) as VFEATURE2KEEP$j with priority value 147"
+					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (water aerodrome runway) as VFEATURE2KEEP$j with priority value 147"
 					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 147
             }
             TR_1760009_1 {
                # entity : Road segment [Geobase], line
-					GenX::Log INFO "Post-processing for Road segment, lines"
+					GenX::Log DEBUG "Post-processing for Road segment, lines"
 
                #exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
 #					ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general road segments) as VFEATURE2KEEP$j with priority value 109"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general road segments) as VFEATURE2KEEP$j with priority value 109"
 #					GenX::Log INFO "Buffering general road segments to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 109
 
                #pavstatus = 2 : unpaved : routes non pavées n'étant pas des tunnels ou des snowsheds
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (unpaved road segments) as VFEATURE2KEEP$j with priority value 110"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (unpaved road segments) as VFEATURE2KEEP$j with priority value 110"
 					#pas de buffer sur les routes non pavées
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 110
 
                #roadclass in (1,2) : freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
 #					ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highways road segments) as VFEATURE2KEEP$j with priority value 108"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highways road segments) as VFEATURE2KEEP$j with priority value 108"
 #					GenX::Log INFO "Buffering highway road segments to 22m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 108
 
               #structype in (1,2,3,4) : bridge (tous les types de ponts)
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE structype IN (1,2,3,4)"
 #					ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
-               GenX::Log INFO "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (bridge road segments) as VFEATURE2KEEP$j with priority value 1"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (bridge road segments) as VFEATURE2KEEP$j with priority value 1"
 #					GenX::Log INFO "Buffering bridge road segments to 22m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 1
             }
@@ -1642,9 +1640,8 @@ proc UrbanX::Sandwich { indexCouverture } {
          incr j ;# Increment of VFEATURE2KEEP$j required to re-use the object
       } else {
          #general procedure for rasterization : entities are not part of Param(LayersPostPro)
-         GenX::Log INFO "Layer $entity rasterized with general procedure"
          eval ogrlayer read LAYER$j SHAPE 0
-         GenX::Log INFO "Rasterizing [ogrlayer define LAYER$j -nb] features from file $file as LAYER$j with priority value $priority"
+         GenX::Log DEBUG "Rasterizing [ogrlayer define LAYER$j -nb] features from file $file as LAYER$j with priority value $priority, general procedure"
          gdalband gridinterp RSANDWICH LAYER$j $Param(Mode) $priority
          ogrlayer free LAYER$j
       }
@@ -1764,16 +1761,16 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 	variable Param
 	
 	#récupération de genphysx_sandwich.tif
-	GenX::Log INFO "Récupération du fichier sandwich"
+	GenX::Log DEBUG "Récupération du fichier sandwich"
 	gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
 	#récupération du fichier de données socio-économiques
-	GenX::Log INFO "Récupération du fichier de polygones de DA"
+	GenX::Log DEBUG "Récupération du fichier de polygones de DA"
 	set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006SMOKE)] 0]
 	eval ogrlayer read VPOPDENS $layer
 
 	#----- Selecting only the required StatCan polygons - next is only useful to improve the speed of the layer substraction
-	GenX::Log INFO "Sélection des polygones de DA appropriés."
+	GenX::Log DEBUG "Sélection des polygones de DA appropriés."
 	set da_select [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
 	ogrlayer define VPOPDENS -featureselect [list [list index # $da_select]]
 
@@ -1795,6 +1792,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
 	#Calcul de la densité de population
 	GenX::Log INFO "Calculating population density values"
+	GenX::Log INFO "Ajustement de la densité au besoin"
 	foreach n $da_select {
 		#récupération de la valeur de population
 		set pop [ogrlayer define VPOPDENS -feature $n POP_NEW]
@@ -1842,7 +1840,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 		#fonction générale.
 		if { $densite_div > 20} {
 			set densite_choisie [expr ($densite_vect * 2.0)]
-			GenX::Log INFO "Ajustement de la densité pour le polygone $n"
+			GenX::Log DEBUG "Ajustement de la densité pour le polygone $n"
 		} else {
 			set densite_choisie $densite_pixels  
 		}
@@ -1884,12 +1882,14 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
 # 	if {$GenX::Param(SMOKE)!="" } {
 # 		#seuils de densité de population associés à SMOKE (IndustrX)
+# 		GenX::Log INFO "Seuils adaptés à IndustrX"
 # 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
 # 		vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
 # 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
 # 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
 # 	} else {
 # 		#seuils de densité de population associés à TEB (UrbanX)
+# 		GenX::Log INFO "Seuils adaptés à UrbanX"
 # 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
 # 		vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
 # 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
@@ -1902,7 +1902,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 	gdalfile close FSANDWICH
 
 	#écriture du fichier genphysx_popdens-builtup.tif
-	GenX::Log INFO "Génération du fichier résultant du cookiecutting"
+	GenX::Log DEBUG "Génération du fichier résultant du cookiecutting"
 	file delete -force $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif
 	gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif GeoTiff
 	gdalband write RPOPDENSCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
@@ -2067,7 +2067,7 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
 	#recherche des fichiers EOSD
 	set Param(EOSDFiles) [GenX::EOSDFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
 	#Param(EOSDFiles) contains one element of the form /cnfs/ops/production/cmoe/geo/EOSD/999A_lc_1/999A_lc_1.tif
-	GenX::Log INFO "Le fichier EOSD suivant a été trouvé : $Param(EOSDFiles)"
+	GenX::Log DEBUG "Le fichier EOSD suivant a été trouvé : $Param(EOSDFiles)"
 
 	#read the EOSD file
 	gdalband read REOSDTILE [gdalfile open FEOSDTILE read $Param(EOSDFiles)]
@@ -2079,7 +2079,7 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
 	gdalband gridinterp RMASK REOSDTILE NEAREST
 
 	#conserver les valeurs EOSD lorsque la sandwich est vide ou présente une zone boisée
-	GenX::Log INFO "conserver les valeurs EOSD lorsque la sandwich est vide ou présente une zone boisée"
+	GenX::Log INFO "Conserver les valeurs EOSD lorsque la sandwich est vide ou présente une zone boisée"
 	vexpr RVEGE ifelse((RSANDWICH==0 || RSANDWICH==200),RMASK, 0)
 
 	#écriture du fichier
@@ -2134,12 +2134,12 @@ proc UrbanX::LCC2000V {indexCouverture} {
 
 	variable Param
 
-	puts "lecture du fichier sandwich"
+	GenX::Log INFO "Récupération du fichier sandwich"
 	#lecture du fichier créé précédemment lors de la proc SandwichCanVec
 	gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
 	#recherche des fichiers LCC2000V
-	puts "Recherche des fichiers LCC2000V"
+	GenX::Log INFO "Recherche des fichiers LCC2000V"
 
 	#---- NOTE : CE PROCESSUS DEVRAIT SE RETROUVER DIRECTEMENT DANS GENX
 	#---- IL SERAIT ALORS REMPLACÉ PAR LES DEUX LIGNES SUIVANTES :
@@ -2171,7 +2171,7 @@ proc UrbanX::LCC2000V {indexCouverture} {
 	}
 	#---- FIN DU BLOC À MIGRER DANS GENX
 
-	puts "Les fichiers LCC2000-V suivants ont été trouvés : $files"
+	GenX::Log DEBUG "Les fichiers LCC2000-V suivants ont été trouvés : $files"
 	set Param(LCC2000VFiles) $files  ;#cette ligne devrait être supprimée si le bloc est migré dans GenX
 	#Param(LCC2000VFiles) contains a list of elements of the form/data/aqli04/afsulub/lcc2000v_csc2000v/shp_en/999/a/LCC2000-V_999A_1_0.shp
 
@@ -2189,10 +2189,10 @@ proc UrbanX::LCC2000V {indexCouverture} {
 		vexpr RMASK RMASK << 0
 
 		#rasterization des éléments LCC2000V
-		puts "Rasterizarion des éléments LCC2000V sur la zone à traiter (peut être long...)"
+		GenX::Log INFO "Rasterizarion des éléments LCC2000V sur la zone à traiter (peut être long...)"
 		set t_gridinterp [clock seconds]
 		gdalband gridinterp RMASK LAYERLCC2000V$j $Param(Mode) COVTYPE
-		puts "Temps total de rasterization : [expr [clock seconds]-$t_gridinterp] secondes"
+		GenX::Log DEBUG "Temps total de rasterization : [expr [clock seconds]-$t_gridinterp] secondes"
 
 		#nettoyage de mémiore
 		ogrlayer free LAYERLCC2000V$j 
@@ -2207,19 +2207,19 @@ proc UrbanX::LCC2000V {indexCouverture} {
  	gdalband free RSANDWICH
 
    #creating the output file : les entités LCC2000V rasterizés
-	puts "Fichier de sortie"
+	GenX::Log DEBUG "Génération du fichier de sortie"
    file delete -force $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif GeoTiff
    gdalband write RMASK FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
    gdalband free RMASK
 
-	puts "lecture du fichier LCC2000V"
+	GenX::Log INFO "Lecture du fichier LCC2000V"
 	#lecture du fichier créé précédemment lors de la proc SandwichCanVec
 	gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif]
 
 	#associer aux valeurs LCC2000V des priorités
-	puts "Associer des valeurs de priorités aux données LCC2000V"
+	GenX::Log INFO "Associer des valeurs de priorités aux données LCC2000V"
 	vector create LUT
 	vector dim LUT { FROM TO }
 	vector set LUT.FROM {0 10 11 12 20 30 31 32 33 34 35 36 37 40 50 51 52 53 80 81 82 83 100 101 102 103 104 110 121 122 123 200 210 211 212 213 220 221 222 223 230 231 232 233 }
@@ -2227,7 +2227,7 @@ proc UrbanX::LCC2000V {indexCouverture} {
 	vexpr RLCC2000VSMOKE lut(RLCC2000V,LUT.FROM,LUT.TO)
 	vector free LUT
 
-	puts "Fichier de sortie"
+	GenX::Log DEBUG "Génération du fichier de sortie"
    #creating the output file
    file delete -force $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif GeoTiff
@@ -2644,7 +2644,7 @@ proc UrbanX::Process { Coverage } {
 	UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
 
 	#----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-	UrbanX::Sandwich $Coverage
+#	UrbanX::Sandwich $Coverage
 
 	#-----La rasterization des hauteurs n'a pas vraiment sa place dans UrbanX... C'est one-shot.
 	#UrbanX::Shp2Height $Coverage
