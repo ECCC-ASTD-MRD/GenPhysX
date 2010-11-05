@@ -22,9 +22,9 @@
 namespace eval UrbanX { } {
    variable Param
    variable Const
-	variable Meta
+   variable Meta
 
-	set Param(Version) 0.3
+   set Param(Version) 0.3
 
    set Param(Resolution) 5       ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
    set Param(Buffer)     0.001   ;# Includes about 200m buffers to account for off-zone buffers which would influence results
@@ -42,307 +42,307 @@ namespace eval UrbanX { } {
    set Param(Shape)          ""
    set Param(ShapeField)     ""
 
-	#Liste des entités CanVec qui doivent être rasterisées.
+   #Liste des entités CanVec qui doivent être rasterisées.
    #Ces entités sont classés par ordre décroissant de priorité
    #Note : les entités dont le nom commence par pp_ ne sont pas des entités originant de CanVec, mais plutôt des conséquences du post-traitement.
    #Ces éléments sont inclus dans cette liste pour que leurs valeurs de priorités apparaisent dans la variable Param(Priorities), afin de faire la
    #correspondance avec les valeurs de TEB et de SMOKE.
-	set Param(Entities) {
-		HD_1140009_2
-		FO_1080069_2
-		SS_1320019_2
-		SS_1320029_2
-		SS_1320059_2
-		SS_1320039_2
-		BS_1370009_2
-		pp_BS_1370009_2
-		pp_BS_1370009_2
-		pp_BS_1370009_2
-		pp_BS_1370009_2
-		IC_1360039_2
-		LX_2070009_2
-		LX_2270009_2
-		LX_1000089_2
-		LX_2500009_2
-		LX_1000039_2
-		LX_2480009_2
-		LX_2200009_2
-		LX_2560009_2
-		LX_2260009_2
-		LX_1000019_2
-		LX_2490009_2
-		TR_1190009_2
-		VE_1240009_2
-		LX_1000049_2
-		LX_2510009_2
-		LX_2400009_2
-		IC_1350059_2
-		FO_1080059_2
-		LX_1000079_2
-		FO_1080039_2
-		FO_1080049_2
-		IC_1350039_2
-		IC_1350049_2
-		IC_1350029_2
-		IC_1350019_2
-		EN_1360049_2
-		IC_2360009_2
-		IC_2110009_2
-		IC_1360019_2
-		IC_1360029_2
-		EN_1360059_2
-		HD_1480009_2
-		pp_HD_1480009_2
-		pp_HD_1480009_2
-		pp_HD_1480009_2
-		pp_HD_1480009_2
-		pp_HD_1480009_2
-		pp_HD_1480009_2
-		pp_HD_1480009_2
-		pp_HD_1480009_2
-		pp_HD_1480009_2
-		pp_HD_1480009_2
-		SS_1320049_2
-		HD_1460009_2
-		pp_HD_1460009_2
-		pp_HD_1460009_2
-		pp_HD_1460009_2
-		pp_HD_1460009_2
-		pp_HD_1460009_2
-		pp_HD_1460009_2
-		pp_HD_1460009_2
-		pp_HD_1460009_2
-		pp_HD_1460009_2
-		pp_HD_1460009_2
-		HD_1450009_2
-		pp_HD_1450009_2
-		pp_HD_1450009_2
-		pp_HD_1450009_2
-		pp_HD_1450009_2
-		pp_HD_1450009_2
-		pp_HD_1450009_2
-		pp_HD_1450009_2
-		pp_HD_1450009_2
-		pp_HD_1450009_2
-		pp_HD_1450009_2
-		pp_TR_1190009_2
-		FO_1080029_1
-		HD_1470009_1
-		pp_HD_1470009_1
-		pp_HD_1470009_1
-		pp_HD_1470009_1
-		pp_HD_1470009_1
-		pp_HD_1470009_1
-		HD_1460009_1
-		pp_HD_1460009_1
-		pp_HD_1460009_1
-		pp_HD_1460009_1
-		pp_HD_1460009_1
-		pp_HD_1460009_1
-		pp_HD_1460009_1
-		pp_HD_1460009_1
-		pp_HD_1460009_1
-		pp_HD_1460009_1
-		pp_HD_1460009_1
-		HD_1450009_1
-		pp_HD_1450009_1
-		pp_HD_1450009_1
-		pp_HD_1450009_1
-		pp_HD_1450009_1
-		pp_HD_1450009_1
-		pp_HD_1450009_1
-		pp_HD_1450009_1
-		pp_HD_1450009_1
-		pp_HD_1450009_1
-		pp_HD_1450009_1
-		BS_2310009_1
-		LX_1000079_1
-		LX_2420009_1
-		BS_2240009_1
-		pp_BS_2240009_1
-		LX_2280009_1
-		TR_1020009_1
-		TR_1760009_1
-		pp_TR_1760009_1
-		pp_TR_1760009_1
-		EN_1180009_1
-		LX_2460009_2
-		BS_2080009_2
-		BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_BS_2010009_2
-		pp_TR_1190009_2
-		FO_1080079_0
-		IC_1360039_0
-		LX_1000029_0
-		LX_2030009_0
-		LX_2500009_0
-		LX_1000039_0
-		LX_2480009_0
-		LX_2220009_0
-		LX_1000019_0
-		LX_2490009_0
-		LX_2400009_0
-		IC_1350039_0
-		IC_1350049_0
-		IC_2600009_0
-		pp_IC_2600009_0
-		EN_1360049_0
-		EN_1360059_0
-		TR_1190009_0
-		pp_TR_1190009_0
-		LX_1000069_0
-		IC_1360029_0
-		HD_1460009_0
-		pp_HD_1460009_0
-		pp_HD_1460009_0
-		pp_HD_1460009_0
-		pp_HD_1460009_0
-		pp_HD_1460009_0
-		pp_HD_1460009_0
-		pp_HD_1460009_0
-		pp_HD_1460009_0
-		pp_HD_1460009_0
-		pp_HD_1460009_0
-		HD_1450009_0
-		pp_HD_1450009_0
-		pp_HD_1450009_0
-		pp_HD_1450009_0
-		pp_HD_1450009_0
-		pp_HD_1450009_0
-		pp_HD_1450009_0
-		pp_HD_1450009_0
-		pp_HD_1450009_0
-		pp_HD_1450009_0
-		pp_HD_1450009_0
-		BS_2530009_0
-		BS_2440009_0
-		BS_2080009_0
-		BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		pp_BS_2010009_0
-		BS_2000009_0
-		EN_2170009_0
-		pp_TR_1190009_0
-		BS_2060009_0
-		pp_BS_2060009_0
-		pp_BS_2060009_0
-		pp_BS_2060009_0
-		pp_TR_1020009_1
-		pp_TR_1760009_1
-		}
+   set Param(Entities) {
+      HD_1140009_2
+      FO_1080069_2
+      SS_1320019_2
+      SS_1320029_2
+      SS_1320059_2
+      SS_1320039_2
+      BS_1370009_2
+      pp_BS_1370009_2
+      pp_BS_1370009_2
+      pp_BS_1370009_2
+      pp_BS_1370009_2
+      IC_1360039_2
+      LX_2070009_2
+      LX_2270009_2
+      LX_1000089_2
+      LX_2500009_2
+      LX_1000039_2
+      LX_2480009_2
+      LX_2200009_2
+      LX_2560009_2
+      LX_2260009_2
+      LX_1000019_2
+      LX_2490009_2
+      TR_1190009_2
+      VE_1240009_2
+      LX_1000049_2
+      LX_2510009_2
+      LX_2400009_2
+      IC_1350059_2
+      FO_1080059_2
+      LX_1000079_2
+      FO_1080039_2
+      FO_1080049_2
+      IC_1350039_2
+      IC_1350049_2
+      IC_1350029_2
+      IC_1350019_2
+      EN_1360049_2
+      IC_2360009_2
+      IC_2110009_2
+      IC_1360019_2
+      IC_1360029_2
+      EN_1360059_2
+      HD_1480009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
+      pp_HD_1480009_2
+      SS_1320049_2
+      HD_1460009_2
+      pp_HD_1460009_2
+      pp_HD_1460009_2
+      pp_HD_1460009_2
+      pp_HD_1460009_2
+      pp_HD_1460009_2
+      pp_HD_1460009_2
+      pp_HD_1460009_2
+      pp_HD_1460009_2
+      pp_HD_1460009_2
+      pp_HD_1460009_2
+      HD_1450009_2
+      pp_HD_1450009_2
+      pp_HD_1450009_2
+      pp_HD_1450009_2
+      pp_HD_1450009_2
+      pp_HD_1450009_2
+      pp_HD_1450009_2
+      pp_HD_1450009_2
+      pp_HD_1450009_2
+      pp_HD_1450009_2
+      pp_HD_1450009_2
+      pp_TR_1190009_2
+      FO_1080029_1
+      HD_1470009_1
+      pp_HD_1470009_1
+      pp_HD_1470009_1
+      pp_HD_1470009_1
+      pp_HD_1470009_1
+      pp_HD_1470009_1
+      HD_1460009_1
+      pp_HD_1460009_1
+      pp_HD_1460009_1
+      pp_HD_1460009_1
+      pp_HD_1460009_1
+      pp_HD_1460009_1
+      pp_HD_1460009_1
+      pp_HD_1460009_1
+      pp_HD_1460009_1
+      pp_HD_1460009_1
+      pp_HD_1460009_1
+      HD_1450009_1
+      pp_HD_1450009_1
+      pp_HD_1450009_1
+      pp_HD_1450009_1
+      pp_HD_1450009_1
+      pp_HD_1450009_1
+      pp_HD_1450009_1
+      pp_HD_1450009_1
+      pp_HD_1450009_1
+      pp_HD_1450009_1
+      pp_HD_1450009_1
+      BS_2310009_1
+      LX_1000079_1
+      LX_2420009_1
+      BS_2240009_1
+      pp_BS_2240009_1
+      LX_2280009_1
+      TR_1020009_1
+      TR_1760009_1
+      pp_TR_1760009_1
+      pp_TR_1760009_1
+      EN_1180009_1
+      LX_2460009_2
+      BS_2080009_2
+      BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_BS_2010009_2
+      pp_TR_1190009_2
+      FO_1080079_0
+      IC_1360039_0
+      LX_1000029_0
+      LX_2030009_0
+      LX_2500009_0
+      LX_1000039_0
+      LX_2480009_0
+      LX_2220009_0
+      LX_1000019_0
+      LX_2490009_0
+      LX_2400009_0
+      IC_1350039_0
+      IC_1350049_0
+      IC_2600009_0
+      pp_IC_2600009_0
+      EN_1360049_0
+      EN_1360059_0
+      TR_1190009_0
+      pp_TR_1190009_0
+      LX_1000069_0
+      IC_1360029_0
+      HD_1460009_0
+      pp_HD_1460009_0
+      pp_HD_1460009_0
+      pp_HD_1460009_0
+      pp_HD_1460009_0
+      pp_HD_1460009_0
+      pp_HD_1460009_0
+      pp_HD_1460009_0
+      pp_HD_1460009_0
+      pp_HD_1460009_0
+      pp_HD_1460009_0
+      HD_1450009_0
+      pp_HD_1450009_0
+      pp_HD_1450009_0
+      pp_HD_1450009_0
+      pp_HD_1450009_0
+      pp_HD_1450009_0
+      pp_HD_1450009_0
+      pp_HD_1450009_0
+      pp_HD_1450009_0
+      pp_HD_1450009_0
+      pp_HD_1450009_0
+      BS_2530009_0
+      BS_2440009_0
+      BS_2080009_0
+      BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      pp_BS_2010009_0
+      BS_2000009_0
+      EN_2170009_0
+      pp_TR_1190009_0
+      BS_2060009_0
+      pp_BS_2060009_0
+      pp_BS_2060009_0
+      pp_BS_2060009_0
+      pp_TR_1020009_1
+      pp_TR_1760009_1
+      }
 
-	#LUT of priority values for the CanVec layers to be processed
-	#Les valeurs de priorité sont en ordre décroissant, et leur index dans la liste correspond à celui de l'entité qui leur est associée dans Param(Entities)
-	set Param(Priorities)           { 224 223 222 221 220 219 218 217 216 215 214 213 212 211 210 209 208 207 206 205 204 203 202 201 200 199 198 197 196 195 194 193 192 191 190 189 188 187 186 185 184 183 182 181 180 179 178 177 176 175 174 173 172 171 170 169 168 167 166 165 164 163 162 161 160 159 158 157 156 155 154 153 152 151 150 149 148 147 146 145 144 143 142 141 140 139 138 137 136 135 134 133 132 131 130 129 128 127 126 125 124 123 122 121 120 119 118 117 116 115 114 113 112 111 110 109 108 107 106 105 104 103 102 101 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 }
+   #LUT of priority values for the CanVec layers to be processed
+   #Les valeurs de priorité sont en ordre décroissant, et leur index dans la liste correspond à celui de l'entité qui leur est associée dans Param(Entities)
+   set Param(Priorities)           { 224 223 222 221 220 219 218 217 216 215 214 213 212 211 210 209 208 207 206 205 204 203 202 201 200 199 198 197 196 195 194 193 192 191 190 189 188 187 186 185 184 183 182 181 180 179 178 177 176 175 174 173 172 171 170 169 168 167 166 165 164 163 162 161 160 159 158 157 156 155 154 153 152 151 150 149 148 147 146 145 144 143 142 141 140 139 138 137 136 135 134 133 132 131 130 129 128 127 126 125 124 123 122 121 120 119 118 117 116 115 114 113 112 111 110 109 108 107 106 105 104 103 102 101 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 }
 
-	# Layers from CanVec requiring postprocessing
+   # Layers from CanVec requiring postprocessing
    #Aucun tri particulier nécessaire pour cette liste d'entités
-	set Param(LayersPostPro)    {
-		BS_1370009_2
-		BS_2010009_0
-		BS_2010009_2
-		BS_2060009_0
-		BS_2240009_1
-		BS_2310009_1
-		EN_1180009_1
-		HD_1450009_0
-		HD_1450009_1
-		HD_1450009_2
-		HD_1460009_0
-		HD_1460009_1
-		HD_1460009_2
-		HD_1470009_1
-		HD_1480009_2
-		IC_2600009_0
-		TR_1020009_1
-		TR_1190009_0
-		TR_1190009_2
-		TR_1760009_1 }
+   set Param(LayersPostPro)    {
+      BS_1370009_2
+      BS_2010009_0
+      BS_2010009_2
+      BS_2060009_0
+      BS_2240009_1
+      BS_2310009_1
+      EN_1180009_1
+      HD_1450009_0
+      HD_1450009_1
+      HD_1450009_2
+      HD_1460009_0
+      HD_1460009_1
+      HD_1460009_2
+      HD_1470009_1
+      HD_1480009_2
+      IC_2600009_0
+      TR_1020009_1
+      TR_1190009_0
+      TR_1190009_2
+      TR_1760009_1 }
 
    set Param(WaterLayers)      { HD_1480009_2 } ;# Water layers from CanVec
 
    set Param(BufferLayers)     { BS_2010009_0 TR_1760009_1 } ;# Layers from CanVec required for buffer
 
-	set Param(BufferFuncLayers) { BS_2010009_0 BS_2010009_2 } ;# Layers from CanVec required for buffer func
+   set Param(BufferFuncLayers) { BS_2010009_0 BS_2010009_2 } ;# Layers from CanVec required for buffer func
 
    set Param(BufferFuncValues) { 1 2 } ;#what's that?
 
-	#TEB Classes for CanVec
-	#Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-	set Param(TEBClasses)         {902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350   } 
+   #TEB Classes for CanVec
+   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
+   set Param(TEBClasses)         {902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350   }
 
    #------TO DELETE : LAYERS BNDT------------------
-	#set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
-	#set Param(BufferLayers)     { bridge_l buildin_p road_l } ;# Layers from BNDT required for buffer
+   #set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
+   #set Param(BufferLayers)     { bridge_l buildin_p road_l } ;# Layers from BNDT required for buffer
    #set Param(BufferFuncLayers) { } ;# Layers from CanVec required for buffer func
    #set Param(TEBClasses)         { 902 830 830 830 410 440 903 520 520 520 520 820 450 820 820 820 840 820 830 120 530 530 320 410 450 410 320 901 830 360 810 840 440 901 360 410 120 310 440 830 830 450 901 200 901 830 450 430 440 420 430 430 340 100 100 120 320 440 320 320 330 330 410 901 420 110 440 520 420 420 330 330 310 320 350 360 440 830 901 440 320 110 830 530 360 110 420 530 140 110 520 520 110 520 410 110 360 440 330 310 420 420 112 111 110 }  ;# TEB classes for BNDT
    #------FIN DU : TO DELETE---------
 
-	#SMOKE Classes for CanVec
-	#Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-	set Param(SMOKEClasses)       { 0 0 0 0 0 0 1 2 3 4 5 43 0 0 30 29 0 28 27 0 0 0 0 22 0 0 0 0 33 0 26 0 0 36 37 34 35 39 40 41 32 31 42 74 73 67 66 71 70 68 69 72 64 65 0 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 23 0 63 61 62 58 59 60 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 26 25 0 0 0 0 0 0 0 0 21 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 24 0 43 0 28 29 0 28 0 0 0 0 36 37 0 38 39 42 22 23 47 31 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 0 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 0 0 24 0 44 45 46 0 0 }
+   #SMOKE Classes for CanVec
+   #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
+   set Param(SMOKEClasses)       { 0 0 0 0 0 0 1 2 3 4 5 43 0 0 30 29 0 28 27 0 0 0 0 22 0 0 0 0 33 0 26 0 0 36 37 34 35 39 40 41 32 31 42 74 73 67 66 71 70 68 69 72 64 65 0 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 23 0 63 61 62 58 59 60 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 26 25 0 0 0 0 0 0 0 0 21 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 24 0 43 0 28 29 0 28 0 0 0 0 36 37 0 38 39 42 22 23 47 31 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 0 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 0 0 24 0 44 45 46 0 0 }
 
    set Param(VegeFilterType) LOWPASS
    set Param(VegeFilterSize) 99
 
-	#NOTE : les paths des fichiers suivants devront être modifiés lorsqu'il aura été décidé où ces fichiers seront localisés
+   #NOTE : les paths des fichiers suivants devront être modifiés lorsqu'il aura été décidé où ces fichiers seront localisés
 
    #fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
-	#NOTE : ce fichier ne sert que dans la proc UrbanX::PopDens2Builtup.  Il n'a pas besoin de contenir les champs SMOKEi.  Toutefois, il doit être découpé selon l'index NTS 50K.
-	set Param(PopFile2006SMOKE) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
+   #NOTE : ce fichier ne sert que dans la proc UrbanX::PopDens2Builtup.  Il n'a pas besoin de contenir les champs SMOKEi.  Toutefois, il doit être découpé selon l'index NTS 50K.
+   set Param(PopFile2006SMOKE) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
 
    #fichier contenanant 1 polygone pour chaque province ou territoire du Canada
    set Param(ProvincesGeom) /data/aqli04/afsulub/StatCan2006/Provinces_lcc-nad83.shp
 
    #fichier contenant l'index NTS à l'échelle 1:50000
-	#attention : s'assurer qu'il s'agit bien de l'index ayant servi au découpage du fichier PopFile2006SMOKE
+   #attention : s'assurer qu'il s'agit bien de l'index ayant servi au découpage du fichier PopFile2006SMOKE
    set Param(NTSFile) /cnfs/ops/production/cmoe/geo/NTS/decoupage50k_2.shp
 
-	#entité CanVec déterminant la bordure des polygones NTS50K
-	set Param(NTSLayer) {LI_1210009_2 }
+   #entité CanVec déterminant la bordure des polygones NTS50K
+   set Param(NTSLayer) {LI_1210009_2 }
 
 }
 
@@ -471,20 +471,20 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat0)    45.94
          set Param(ProvinceCode) 11 ;# PR code from StatCan
       }
-		"NS" {
+      "NS" {
          set Param(Lon1)   -59.5
          set Param(Lat1)    47.5
          set Param(Lon0)   -67.0
          set Param(Lat0)    43.0
          set Param(ProvinceCode) 12 ;# PR code from StatCan
-		}
-		"NB" {
+      }
+      "NB" {
          set Param(Lon1)   -63.5
          set Param(Lat1)    48.5
          set Param(Lon0)   -69.5
          set Param(Lat0)    44.5
          set Param(ProvinceCode) 13 ;# PR code from StatCan
-		}
+      }
       "QC" {
          set Param(Lon1)   -56.5
          set Param(Lat1)    63.0
@@ -572,7 +572,7 @@ proc UrbanX::AreaDefine { Coverage } {
 #   <Lat1>    : Top right latitude
 #   <Lon1>    : Top right longitude
 #   <Res 5>   : Spatial resolution of rasterization and outputs, leave at 5m unless for testing purposes
-#		<indexCouverture>		: index à appliquer à la référence UTMREF
+#      <indexCouverture>      : index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -585,20 +585,20 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
    set zone     [expr int(ceil((180 + (($Lon1 + $Lon0)/2))/6))]
    set meridian [expr -((180-($zone*6))+3)]
 
-		eval georef create UTMREF$indexCouverture \
-			\{PROJCS\[\"WGS_1984_UTM_Zone_${zone}N\",\
-				GEOGCS\[\"GCS_WGS_1984\",\
-					DATUM\[\"D_WGS_1984\",\
-						SPHEROID\[\"WGS_1984\",6378137.0,298.257223563\]\],\
-					PRIMEM\[\"Greenwich\",0.0\],\
-					UNIT\[\"Degree\",0.0174532925199433\]\],\
-				PROJECTION\[\"Transverse_Mercator\"\],\
-				PARAMETER\[\"False_Easting\",500000.0\],\
-				PARAMETER\[\"False_Northing\",0.0\],\
-				PARAMETER\[\"Central_Meridian\",$meridian\],\
-				PARAMETER\[\"Scale_Factor\",0.9996\],\
-				PARAMETER\[\"Latitude_Of_Origin\",0.0\],\
-				UNIT\[\"Meter\",1.0\]\]\}
+      eval georef create UTMREF$indexCouverture \
+         \{PROJCS\[\"WGS_1984_UTM_Zone_${zone}N\",\
+            GEOGCS\[\"GCS_WGS_1984\",\
+               DATUM\[\"D_WGS_1984\",\
+                  SPHEROID\[\"WGS_1984\",6378137.0,298.257223563\]\],\
+               PRIMEM\[\"Greenwich\",0.0\],\
+               UNIT\[\"Degree\",0.0174532925199433\]\],\
+            PROJECTION\[\"Transverse_Mercator\"\],\
+            PARAMETER\[\"False_Easting\",500000.0\],\
+            PARAMETER\[\"False_Northing\",0.0\],\
+            PARAMETER\[\"Central_Meridian\",$meridian\],\
+            PARAMETER\[\"Scale_Factor\",0.9996\],\
+            PARAMETER\[\"Latitude_Of_Origin\",0.0\],\
+            UNIT\[\"Meter\",1.0\]\]\}
 
    set xy1 [georef unproject UTMREF$indexCouverture $Lat1 $Lon1]
    set xy0 [georef unproject UTMREF$indexCouverture $Lat0 $Lon0]
@@ -606,7 +606,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
    set Param(Width)  [expr int(ceil(([lindex $xy1 0] - [lindex $xy0 0])/$Res))]
    set Param(Height) [expr int(ceil(([lindex $xy1 1] - [lindex $xy0 1])/$Res))]
 
-	georef define UTMREF$indexCouverture -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
+   georef define UTMREF$indexCouverture -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
 
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
 }
@@ -621,7 +621,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
 #            procedure or with some post-processing
 #
 # Parameters :
-#		<indexCouverture>		: index à appliquer à la référence UTMREF
+#      <indexCouverture>      : index à appliquer à la référence UTMREF
 #
 # Return: output genphysx_sandwich.tif
 #
@@ -632,29 +632,29 @@ proc UrbanX::Sandwich { indexCouverture } {
    variable Param
    variable Data
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    GenX::Log INFO "Debut de la proc for generating Sandwich"
 
-	#création de la raster qui contiendra la LULC
+   #création de la raster qui contiendra la LULC
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
    gdalband define RSANDWICH -georef UTMREF$indexCouverture
 
-	#recherche des fichiers CanVec à rasteriser
+   #recherche des fichiers CanVec à rasteriser
    GenX::Log INFO "Locating CanVec Files"
    set Param(Files) {}
    set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
    #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
-	#Les paths des fichiers sont triés par feuillet NTS, puis suivant l'ordre donné dans Param(Entities).
-	#On a donc, dans l'ordre: feuillet1-entité1, feuillet1-entité2... feuillet1-entitéN, feuillet2-entité1, feuillet2-entité2... feuilletM-entitéN
+   #Les paths des fichiers sont triés par feuillet NTS, puis suivant l'ordre donné dans Param(Entities).
+   #On a donc, dans l'ordre: feuillet1-entité1, feuillet1-entité2... feuillet1-entitéN, feuillet2-entité1, feuillet2-entité2... feuilletM-entitéN
 
    set j 0 ;# Increment of VFEATURE2KEEP$j required to re-use the object
 
    #----- Rasterization of CanVec layers
-	GenX::Log INFO "Generating Sandwich"
+   GenX::Log INFO "Generating Sandwich"
    foreach file $Param(Files) {
-		#Rappel : Param(Files) contient les fichiers trouvés par GenX::CANVECFindFiles.  Ces fichiers triés par feuillet NTS, puis suivant l'ordre donné dans Param(Entities).
+      #Rappel : Param(Files) contient les fichiers trouvés par GenX::CANVECFindFiles.  Ces fichiers triés par feuillet NTS, puis suivant l'ordre donné dans Param(Entities).
 
       set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
       #entity contains an element of the form AA_9999999_9
@@ -673,287 +673,287 @@ proc UrbanX::Sandwich { indexCouverture } {
          switch $entity {
 
             BS_1370009_2 {
-				#residential areas
-				#Lors de la procédure sandwich, l'entité prend entièrement les valeurs suivantes : PRI = 218 ; TEB = 210 ; SMO = 1
-				#Lors de la procédure PopDens2Builtup, l'entité est découpée selon les seuils de densité de population suivants :
-					#0 <= densité < 2000 : PRI = 218 ; TEB = 210 ; SMO = 1
-					#2000 <= densité < 5000 : PRI = 217 ; TEB = 220 ; SMO = 2
-					#5000 <= densité < 15000 : PRI = 216 ; TEB = 230 ; SMO = 3
-					#15000 <= densité < 25000 : PRI = 215 ; TEB = 240 ; SMO = 4
-					#25000 <= densité : PRI = 214 ; TEB = 250 ; SMO = 5
+            #residential areas
+            #Lors de la procédure sandwich, l'entité prend entièrement les valeurs suivantes : PRI = 218 ; TEB = 210 ; SMO = 1
+            #Lors de la procédure PopDens2Builtup, l'entité est découpée selon les seuils de densité de population suivants :
+               #0 <= densité < 2000 : PRI = 218 ; TEB = 210 ; SMO = 1
+               #2000 <= densité < 5000 : PRI = 217 ; TEB = 220 ; SMO = 2
+               #5000 <= densité < 15000 : PRI = 216 ; TEB = 230 ; SMO = 3
+               #15000 <= densité < 25000 : PRI = 215 ; TEB = 240 ; SMO = 4
+               #25000 <= densité : PRI = 214 ; TEB = 250 ; SMO = 5
                GenX::Log DEBUG "Post-processing for Residential area, area"
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity as VFEATURE2KEEP$j with priority value 218"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 218
             }
             BS_2010009_0 {
-					# entity : Building, points
+               # entity : Building, points
                GenX::Log DEBUG "Post-processing for buildings, points"
 
-					#function = 1 : arena
+               #function = 1 : arena
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 1)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (arena) as VFEATURE2KEEP$j with priority value 32"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 32
 
-					#function = 2 : armoury
+               #function = 2 : armoury
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 2)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (armoury) as VFEATURE2KEEP$j with priority value 31"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 31
 
-					#function = 5 : city hall
+               #function = 5 : city hall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 5)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (city hall) as VFEATURE2KEEP$j with priority value 30"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 30
 
-					#function = 6 : coast guard station
+               #function = 6 : coast guard station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 6)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (coast guard station) as VFEATURE2KEEP$j with priority value 29"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 29
 
-					#function = 7 : community center
+               #function = 7 : community center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 7)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (community center) as VFEATURE2KEEP$j with priority value 28"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 28
 
-					#function = 8 : courthouse
+               #function = 8 : courthouse
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 8)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (courthouse) as VFEATURE2KEEP$j with priority value 27"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 27
 
-					#function = 9 : custom post
+               #function = 9 : custom post
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 9)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (custom post) as VFEATURE2KEEP$j with priority value 26"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 26
 
-					#function = 11 : electric power station
+               #function = 11 : electric power station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 11)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (electric power station) as VFEATURE2KEEP$j with priority value 25"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 25
 
-					#function = 12 : fire station
+               #function = 12 : fire station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 12)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fire station) as VFEATURE2KEEP$j with priority value 24"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 24
 
-					#function = 16 : highway service center
+               #function = 16 : highway service center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 16)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highway service center) as VFEATURE2KEEP$j with priority value 23"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 23
 
-					#function = 17 : hospital
+               #function = 17 : hospital
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 17)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (hospital) as VFEATURE2KEEP$j with priority value 22"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 22
 
-					#function = 19 : medical center
+               #function = 19 : medical center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 19)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (medical center) as VFEATURE2KEEP$j with priority value 21"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 21
 
-					#function = 20 : municipal hall
+               #function = 20 : municipal hall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 20)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (municipal hall) as VFEATURE2KEEP$j with priority value 20"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 20
 
-					#function = 23 : gas and oil facilities building
+               #function = 23 : gas and oil facilities building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 23)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (gas and oil facilities building) as VFEATURE2KEEP$j with priority value 19"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 19
 
-					#function = 25 : parliament building
+               #function = 25 : parliament building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 25)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (parliament building) as VFEATURE2KEEP$j with priority value 18"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 18
 
-					#function = 26 : police station
+               #function = 26 : police station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 26)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (police station) as VFEATURE2KEEP$j with priority value 17"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 17
 
-					#function = 27 : railway station
+               #function = 27 : railway station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 27)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (railway station) as VFEATURE2KEEP$j with priority value 16"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 16
 
-					#function = 29 : satellite-tracking station
+               #function = 29 : satellite-tracking station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 29)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (satellite-tracking station) as VFEATURE2KEEP$j with priority value 15"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 15
 
-					#function = 32 : sportsplex
+               #function = 32 : sportsplex
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 32)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (sportsplex) as VFEATURE2KEEP$j with priority value 14"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 14
 
-					#function = 37 : industrial building
+               #function = 37 : industrial building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 37)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial building) as VFEATURE2KEEP$j with priority value 13"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 13
 
-					#function = 38 : religious building
+               #function = 38 : religious building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 38)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (religious building) as VFEATURE2KEEP$j with priority value 12"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 12
 
-					#function = 39 : penal building
+               #function = 39 : penal building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 39)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (penal building) as VFEATURE2KEEP$j with priority value 11"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 11
 
-					#function = 41 : educational building
+               #function = 41 : educational building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 41)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (educational building) as VFEATURE2KEEP$j with priority value 10"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 10
 
-					#function = else
+               #function = else
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (1,2,5,6,7,8,9,11,12,16,17,19,20,23,25,26,27,29,32,37,38,39,41)"
-#					ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+#               ogrlayer stats VFEATURE2KEEP$j -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general) as VFEATURE2KEEP$j with priority value 33"
-#					GenX::Log INFO "Buffering all point buildings to 12m"
+#               GenX::Log INFO "Buffering all point buildings to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 33
             }
             BS_2010009_2 {
-					# entity : Building, polygons
+               # entity : Building, polygons
                GenX::Log DEBUG "Post-processing for buildings, areas"
-					#function = 1 : arena
+               #function = 1 : arena
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (arena) as VFEATURE2KEEP$j with priority value 103"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 103
-					#function = 2 : armoury
+               #function = 2 : armoury
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 2)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (armoury) as VFEATURE2KEEP$j with priority value 102"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 102
-					#function = 5 : city hall
+               #function = 5 : city hall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 5)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (city hall) as VFEATURE2KEEP$j with priority value 101"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 101
-					#function = 6 : coast guard station
+               #function = 6 : coast guard station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 6)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (coast guard station) as VFEATURE2KEEP$j with priority value 100"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 100
-					#function = 7 : community center
+               #function = 7 : community center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 7)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (community center) as VFEATURE2KEEP$j with priority value 99"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 99
-					#function = 8 : courthouse
+               #function = 8 : courthouse
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 8)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (courthouse) as VFEATURE2KEEP$j with priority value 98"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 98
-					#function = 9 : custom post
+               #function = 9 : custom post
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 9)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (custom post) as VFEATURE2KEEP$j with priority value 97"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 97
-					#function = 11 : electric power station
+               #function = 11 : electric power station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 11)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (electric power station) as VFEATURE2KEEP$j with priority value 96"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 96
-					#function = 12 : fire station
+               #function = 12 : fire station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 12)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fire station) as VFEATURE2KEEP$j with priority value 95"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 95
-					#function = 16 : highway service center
+               #function = 16 : highway service center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 16)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highway service center) as VFEATURE2KEEP$j with priority value 94"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 94
-					#function = 17 : hospital
+               #function = 17 : hospital
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 17)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (hospital) as VFEATURE2KEEP$j with priority value 93"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 93
-					#function = 19 : medical center
+               #function = 19 : medical center
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 19)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (medical center) as VFEATURE2KEEP$j with priority value 92"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 92
-					#function = 20 : municipal hall
+               #function = 20 : municipal hall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 20)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (municipal hall) as VFEATURE2KEEP$j with priority value 91"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 91
-					#function = 23 : gas and oil facilities building
+               #function = 23 : gas and oil facilities building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 23)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (gas and oil facilities building) as VFEATURE2KEEP$j with priority value 90"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 90
-					#function = 25 : parliament building
+               #function = 25 : parliament building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 25)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (parliament building) as VFEATURE2KEEP$j with priority value 89"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 89
-					#function = 26 : police station
+               #function = 26 : police station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 26)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (police station) as VFEATURE2KEEP$j with priority value 88"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 88
-					#function = 27 : railway station
+               #function = 27 : railway station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 27)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (railway station) as VFEATURE2KEEP$j with priority value 87"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 87
-					#function = 29 : satellite-tracking station
+               #function = 29 : satellite-tracking station
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 29)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (satellite-tracking station) as VFEATURE2KEEP$j with priority value 86"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 86
-					#function = 32 : sportsplex
+               #function = 32 : sportsplex
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 32)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (sportsplex) as VFEATURE2KEEP$j with priority value 85"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 85
-					#function = 37 : industrial building
+               #function = 37 : industrial building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 37)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (industrial building) as VFEATURE2KEEP$j with priority value 84"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 84
-					#function = 38 : religious building
+               #function = 38 : religious building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 38)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (religious building) as VFEATURE2KEEP$j with priority value 83"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 83
-					#function = 39 : penal building
+               #function = 39 : penal building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 39)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (penal building) as VFEATURE2KEEP$j with priority value 82"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 82
-					#function = 41 : educational building
+               #function = 41 : educational building
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (function = 41)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (educational building) as VFEATURE2KEEP$j with priority value 81"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 81
-					#function = else
+               #function = else
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE function NOT IN (1,2,5,6,7,8,9,11,12,16,17,19,20,23,25,26,27,29,32,37,38,39,41)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general) as VFEATURE2KEEP$j with priority value 104"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 104
@@ -1056,7 +1056,7 @@ proc UrbanX::Sandwich { indexCouverture } {
             }
             HD_1450009_1 {
                # entity : Manmade hydrographic entity [Geobase], line
-					GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, lines"
+               GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, lines"
                #type = 1 : dam
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 124"
@@ -1104,7 +1104,7 @@ proc UrbanX::Sandwich { indexCouverture } {
             }
             HD_1450009_2 {
                # entity : Manmade hydrographic entity [Geobase], area
-					GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, areas"
+               GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, areas"
                #type = 1 : dam
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (dam manmade hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 154"
@@ -1152,7 +1152,7 @@ proc UrbanX::Sandwich { indexCouverture } {
             }
             HD_1460009_0 {
                # entity : Hydrographic obstacle entity [Geobase], point
-					GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, points"
+               GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, points"
                #type = 1 : fall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fall hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 56"
@@ -1200,7 +1200,7 @@ proc UrbanX::Sandwich { indexCouverture } {
             }
             HD_1460009_1 {
                # entity : Hydrographic obstacle entity [Geobase], line
-					GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, lines"
+               GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, lines"
                #type = 1 : fall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fall hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 137"
@@ -1248,7 +1248,7 @@ proc UrbanX::Sandwich { indexCouverture } {
             }
             HD_1460009_2 {
                # entity : Hydrographic obstacle entity [Geobase], area
-					GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, areas"
+               GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, areas"
                #type = 1 : fall
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (fall hydrographic obstacle entity) as VFEATURE2KEEP$j with priority value 167"
@@ -1392,69 +1392,69 @@ proc UrbanX::Sandwich { indexCouverture } {
                #support != 3 ou 4 : not bridge, not tunnel
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE support NOT IN (3,4)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (bridge railway) as VFEATURE2KEEP$j with priority value 111"
-					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 111
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 111
             }
             TR_1190009_0 {
-					# entity : Runway, point
-					GenX::Log DEBUG "Post-processing for Runway, point"
-					#type = 1 : airport
-					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1 )"
-					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (airport runway) as VFEATURE2KEEP$j with priority value 62"
-					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 62
-					#type = 2 ou 3 : heliport, hospital heliport
-					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type IN (2,3)"
-					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (heliport or hospital heliport runway) as VFEATURE2KEEP$j with priority value 7"
-					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 7
-					#type = 4 : water aerodrome
-					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4 )"
-					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (water aerodrome runway) as VFEATURE2KEEP$j with priority value 61"
-					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 61
+               # entity : Runway, point
+               GenX::Log DEBUG "Post-processing for Runway, point"
+               #type = 1 : airport
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1 )"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (airport runway) as VFEATURE2KEEP$j with priority value 62"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 62
+               #type = 2 ou 3 : heliport, hospital heliport
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type IN (2,3)"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (heliport or hospital heliport runway) as VFEATURE2KEEP$j with priority value 7"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 7
+               #type = 4 : water aerodrome
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4 )"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (water aerodrome runway) as VFEATURE2KEEP$j with priority value 61"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 61
             }
             TR_1190009_2 {
-					# entity : Runway, area
-					GenX::Log DEBUG "Post-processing for Runway, areas"
-					#type = 1 : airport
-					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1 )"
-					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (airport runway) as VFEATURE2KEEP$j with priority value 201"
-					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 201
-					#type = 2 ou 3 : heliport, hospital heliport
-					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type IN (2,3)"
-					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (heliport or hospital heliport runway) as VFEATURE2KEEP$j with priority value 80"
-					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 80
-					#type = 4 : water aerodrome
-					ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4 )"
-					GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (water aerodrome runway) as VFEATURE2KEEP$j with priority value 147"
-					gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 147
+               # entity : Runway, area
+               GenX::Log DEBUG "Post-processing for Runway, areas"
+               #type = 1 : airport
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 1 )"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (airport runway) as VFEATURE2KEEP$j with priority value 201"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 201
+               #type = 2 ou 3 : heliport, hospital heliport
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE type IN (2,3)"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (heliport or hospital heliport runway) as VFEATURE2KEEP$j with priority value 80"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 80
+               #type = 4 : water aerodrome
+               ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (type = 4 )"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (water aerodrome runway) as VFEATURE2KEEP$j with priority value 147"
+               gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 147
             }
             TR_1760009_1 {
                # entity : Road segment [Geobase], line
-					GenX::Log DEBUG "Post-processing for Road segment, lines"
+               GenX::Log DEBUG "Post-processing for Road segment, lines"
 
                #exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
-#					ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
+#               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (general road segments) as VFEATURE2KEEP$j with priority value 109"
-#					GenX::Log INFO "Buffering general road segments to 12m"
+#               GenX::Log INFO "Buffering general road segments to 12m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 109
 
                #pavstatus = 2 : unpaved : routes non pavées n'étant pas des tunnels ou des snowsheds
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (unpaved road segments) as VFEATURE2KEEP$j with priority value 110"
-					#pas de buffer sur les routes non pavées
+               #pas de buffer sur les routes non pavées
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 110
 
                #roadclass in (1,2) : freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
-#					ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+#               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (highways road segments) as VFEATURE2KEEP$j with priority value 108"
-#					GenX::Log INFO "Buffering highway road segments to 22m"
+#               GenX::Log INFO "Buffering highway road segments to 22m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 108
 
               #structype in (1,2,3,4) : bridge (tous les types de ponts)
                ogrlayer sqlselect VFEATURE2KEEP$j SHAPE "SELECT * FROM $filename WHERE structype IN (1,2,3,4)"
-#					ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+#               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
                GenX::Log DEBUG "Rasterizing [ogrlayer define VFEATURE2KEEP$j -nb] features from layer $entity (bridge road segments) as VFEATURE2KEEP$j with priority value 1"
-#					GenX::Log INFO "Buffering bridge road segments to 22m"
+#               GenX::Log INFO "Buffering bridge road segments to 22m"
                gdalband gridinterp RSANDWICH VFEATURE2KEEP$j $Param(Mode) 1
             }
             default {
@@ -1483,7 +1483,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 
    GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich_$indexCouverture.tif was generated"
 
-	GenX::Log INFO "Fin de UrbanX::SandwichCanVec"
+   GenX::Log INFO "Fin de UrbanX::SandwichCanVec"
 
 }
 
@@ -1494,7 +1494,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 # Goal     : Create the fields and building vicinity output using spatial buffers
 #
 # Parameters :
-#		<indexCouverture>		: index à appliquer à la référence UTMREF
+#      <indexCouverture>      : index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -1504,7 +1504,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::ChampsBuffers {indexCouverture } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    variable Param
@@ -1569,7 +1569,7 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 #            to population density
 #
 # Parameters :
-#		<indexCouverture>		: index à appliquer à la référence UTMREF
+#      <indexCouverture>      : index à appliquer à la référence UTMREF
 #
 # Return: output files :
 #             genphysx_popdens.tif
@@ -1580,167 +1580,167 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::PopDens2Builtup { indexCouverture } {
 
-	#add proc to Metadata
-	GenX::Procs
+   #add proc to Metadata
+   GenX::Procs
 
-	GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
-	variable Param
-	
-	#récupération de genphysx_sandwich.tif
-	GenX::Log DEBUG "Récupération du fichier sandwich"
-	gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
+   GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
+   variable Param
 
-	#récupération du fichier de données socio-économiques
-	GenX::Log DEBUG "Récupération du fichier de polygones de DA"
-	set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006SMOKE)] 0]
-	eval ogrlayer read VPOPDENS $layer
+   #récupération de genphysx_sandwich.tif
+   GenX::Log DEBUG "Récupération du fichier sandwich"
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
-	#----- Selecting only the required StatCan polygons - next is only useful to improve the speed of the layer substraction
-	GenX::Log DEBUG "Sélection des polygones de DA appropriés."
-	set da_select [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
-	ogrlayer define VPOPDENS -featureselect [list [list index # $da_select]]
+   #récupération du fichier de données socio-économiques
+   GenX::Log DEBUG "Récupération du fichier de polygones de DA"
+   set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006SMOKE)] 0]
+   eval ogrlayer read VPOPDENS $layer
 
-	#	clear la colonne POP_DENS pour les polygones de DA sélectionnés
-	ogrlayer clear VPOPDENS POP_DENS
+   #----- Selecting only the required StatCan polygons - next is only useful to improve the speed of the layer substraction
+   GenX::Log DEBUG "Sélection des polygones de DA appropriés."
+   set da_select [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
+   ogrlayer define VPOPDENS -featureselect [list [list index # $da_select]]
 
-	#création d'un fichier de rasterization des polygones de DA
-	gdalband create RDA $Param(Width) $Param(Height) 1 Int32
-	gdalband clear RDA -1
-	gdalband define RDA -georef UTMREF$indexCouverture
+   #   clear la colonne POP_DENS pour les polygones de DA sélectionnés
+   ogrlayer clear VPOPDENS POP_DENS
 
-	#rasterization des polygones de DA
-	GenX::Log INFO "Rasterization des polygones de DA sélectionnés."
-	gdalband gridinterp RDA VPOPDENS FAST FEATURE_ID
+   #création d'un fichier de rasterization des polygones de DA
+   gdalband create RDA $Param(Width) $Param(Height) 1 Int32
+   gdalband clear RDA -1
+   gdalband define RDA -georef UTMREF$indexCouverture
 
-	#comptage des pixels de la residential area pour chaque polygone de DA : increment de la table et buildings generals (ponctuels et surfaciques)
-	GenX::Log INFO "Comptage des pixels de la zone résidentielle et des bâtiments sans fonction précisée pour chaque polygone de DA"
-	vexpr VPOPDENS.POP_DENS tcount(VPOPDENS.POP_DENS,ifelse (RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
+   #rasterization des polygones de DA
+   GenX::Log INFO "Rasterization des polygones de DA sélectionnés."
+   gdalband gridinterp RDA VPOPDENS FAST FEATURE_ID
 
-	#Calcul de la densité de population
-	GenX::Log INFO "Calculating population density values"
-	GenX::Log INFO "Ajustement de la densité au besoin"
-	foreach n $da_select {
-		#récupération de la valeur de population
-		set pop [ogrlayer define VPOPDENS -feature $n POP_NEW]
-		
-		#calcul de l'aire de la residential area à l'aide du nombre de pixels comptés précédemment
-		set nbrpixels [ogrlayer define VPOPDENS -feature $n POP_DENS]
-		set area_pixels [expr ($nbrpixels*25.0/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
+   #comptage des pixels de la residential area pour chaque polygone de DA : increment de la table et buildings generals (ponctuels et surfaciques)
+   GenX::Log INFO "Comptage des pixels de la zone résidentielle et des bâtiments sans fonction précisée pour chaque polygone de DA"
+   vexpr VPOPDENS.POP_DENS tcount(VPOPDENS.POP_DENS,ifelse (RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
 
-		#calcul de la densité de population : dentité = pop/aire_pixels
-		if {$area_pixels != 0} {
-			set densite_pixels [expr $pop/$area_pixels]
-		} else {
-			set densite_pixels 0
-		}
+   #Calcul de la densité de population
+   GenX::Log INFO "Calculating population density values"
+   GenX::Log INFO "Ajustement de la densité au besoin"
+   foreach n $da_select {
+      #récupération de la valeur de population
+      set pop [ogrlayer define VPOPDENS -feature $n POP_NEW]
 
-		#calcul de l'aire à l'aide de la géométrie vectorielle
-		set geom [ogrlayer define VPOPDENS -geometry $n]
-		set area_vect  [expr ([ogrgeometry stats $geom -area]/1000000.0)]
+      #calcul de l'aire de la residential area à l'aide du nombre de pixels comptés précédemment
+      set nbrpixels [ogrlayer define VPOPDENS -feature $n POP_DENS]
+      set area_pixels [expr ($nbrpixels*25.0/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
 
-		#calcul de la densité de population : dentité = pop/aire_vect
-		if {$area_vect != 0} {
-			set densite_vect [expr $pop/$area_vect]
-		} else {
-			set densite_vect 0
-		}
+      #calcul de la densité de population : dentité = pop/aire_pixels
+      if {$area_pixels != 0} {
+         set densite_pixels [expr $pop/$area_pixels]
+      } else {
+         set densite_pixels 0
+      }
 
-		#comparaison entre les deux densités calculées
-		if {$densite_pixels != 0} {
-			set densite_div [expr ($densite_pixels/$densite_vect)]
-		} else {
-			set densite_div 0
-		}
+      #calcul de l'aire à l'aide de la géométrie vectorielle
+      set geom [ogrlayer define VPOPDENS -geometry $n]
+      set area_vect  [expr ([ogrgeometry stats $geom -area]/1000000.0)]
 
-		#affectation de la densité appropriée
-		#Note : la densité est généralement plus précise lorsque calculée à partir des pixels.  
-		#Toutefois, il arrive que certains endoits reçoivent des valeurs extrêmes puisque, notamment, 
-		#les polygones de DA ne sont pas snappés avec les zones résidentielles, ce qui peut entraîner 
-		#des cas où toute la population d'un polygone se retrouve concentrée sur 1 ou 2 pixels.
-		#Afin d'éviter ces problèmes, si le ratio entre la densité calculée à l'aide des pixels et la densité
-		#calculée à l'aide de la géométrie dépasse un seuil, nous conserverons la deuxième option, qui 
-		#répartit la population sur l'ensemble du territoire plutôt que sur 1 ou 2 pixels, et la multiplions par
-		#2 pour tenir compte du fait que l'ensemble du polygones n'est probablement pas résidentiel 
-		#(présence de parcs, de bâtiments non résidentiels, d'industries, etc.).  Le seuil choisi est de 20, ce
-		#qui signifie que 95% du polygone n'est pas recouvert par les entités residential area ou bâtiments de
-		#fonction générale.
-		if { $densite_div > 20} {
-			set densite_choisie [expr ($densite_vect * 2.0)]
-			GenX::Log DEBUG "Ajustement de la densité pour le polygone $n"
-		} else {
-			set densite_choisie $densite_pixels  
-		}
-		ogrlayer define VPOPDENS -feature $n POP_DENS $densite_choisie
-	}
+      #calcul de la densité de population : dentité = pop/aire_vect
+      if {$area_vect != 0} {
+         set densite_vect [expr $pop/$area_vect]
+      } else {
+         set densite_vect 0
+      }
 
-	unset da_select
+      #comparaison entre les deux densités calculées
+      if {$densite_pixels != 0} {
+         set densite_div [expr ($densite_pixels/$densite_vect)]
+      } else {
+         set densite_div 0
+      }
 
-	#Conversion de la densité de population en raster
-	GenX::Log INFO "Conversion des densités de population en raster"
-	gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
-	eval gdalband define RPOPDENS -georef UTMREF$indexCouverture
-	gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) POP_DENS
+      #affectation de la densité appropriée
+      #Note : la densité est généralement plus précise lorsque calculée à partir des pixels.
+      #Toutefois, il arrive que certains endoits reçoivent des valeurs extrêmes puisque, notamment,
+      #les polygones de DA ne sont pas snappés avec les zones résidentielles, ce qui peut entraîner
+      #des cas où toute la population d'un polygone se retrouve concentrée sur 1 ou 2 pixels.
+      #Afin d'éviter ces problèmes, si le ratio entre la densité calculée à l'aide des pixels et la densité
+      #calculée à l'aide de la géométrie dépasse un seuil, nous conserverons la deuxième option, qui
+      #répartit la population sur l'ensemble du territoire plutôt que sur 1 ou 2 pixels, et la multiplions par
+      #2 pour tenir compte du fait que l'ensemble du polygones n'est probablement pas résidentiel
+      #(présence de parcs, de bâtiments non résidentiels, d'industries, etc.).  Le seuil choisi est de 20, ce
+      #qui signifie que 95% du polygone n'est pas recouvert par les entités residential area ou bâtiments de
+      #fonction générale.
+      if { $densite_div > 20} {
+         set densite_choisie [expr ($densite_vect * 2.0)]
+         GenX::Log DEBUG "Ajustement de la densité pour le polygone $n"
+      } else {
+         set densite_choisie $densite_pixels
+      }
+      ogrlayer define VPOPDENS -feature $n POP_DENS $densite_choisie
+   }
 
-	#écriture du fichier genphysx_popdens.tif contenant la densité de population
-	file delete -force $GenX::Param(OutFile)_popdens_$indexCouverture.tif
-	gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens_$indexCouverture.tif GeoTiff
-	gdalband write RPOPDENS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-	GenX::Log INFO "The file $GenX::Param(OutFile)_popdens_$indexCouverture.tif was generated"
+   unset da_select
 
-	#nettoyage de mémoire
-	gdalfile close FILEOUT
-	ogrlayer free VPOPDENS
-	ogrfile close SHAPE
-	gdalband free RDA
+   #Conversion de la densité de population en raster
+   GenX::Log INFO "Conversion des densités de population en raster"
+   gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
+   eval gdalband define RPOPDENS -georef UTMREF$indexCouverture
+   gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) POP_DENS
 
-	#Cookie cutting population density and setting SMOKE/TEB values
-	GenX::Log INFO "Cookie cutting population density and setting SMOKE/TEB values"
-	gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
-	gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
-	vexpr RTEMP RSANDWICH==218
-	
-	#LES LIGNES SUIVANTES SERONT À REMPLACER PAR LE BLOC IFELSE POUR DIFFÉRENCIER URBANX ET INDUSTRX
-	vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
-	vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
-	vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
-	vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
-	vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
+   #écriture du fichier genphysx_popdens.tif contenant la densité de population
+   file delete -force $GenX::Param(OutFile)_popdens_$indexCouverture.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens_$indexCouverture.tif GeoTiff
+   gdalband write RPOPDENS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens_$indexCouverture.tif was generated"
 
-# 	if {$GenX::Param(SMOKE)!="" } {
-# 		#seuils de densité de population associés à SMOKE (IndustrX)
-# 		GenX::Log INFO "Seuils adaptés à IndustrX"
-# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
-# 		vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
-# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
-# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
-# 	} else {
-# 		#seuils de densité de population associés à TEB (UrbanX)
-# 		GenX::Log INFO "Seuils adaptés à UrbanX"
-# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
-# 		vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
-# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
-# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
-# 		vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
-# 	}
+   #nettoyage de mémoire
+   gdalfile close FILEOUT
+   ogrlayer free VPOPDENS
+   ogrfile close SHAPE
+   gdalband free RDA
 
-	#nettoyage de mémoire
-	gdalband free RSANDWICH RPOPDENS RTEMP
-	gdalfile close FSANDWICH
+   #Cookie cutting population density and setting SMOKE/TEB values
+   GenX::Log INFO "Cookie cutting population density and setting SMOKE/TEB values"
+   gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
+   gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
+   vexpr RTEMP RSANDWICH==218
 
-	#écriture du fichier genphysx_popdens-builtup.tif
-	GenX::Log DEBUG "Génération du fichier résultant du cookiecutting"
-	file delete -force $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif
-	gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif GeoTiff
-	gdalband write RPOPDENSCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-	gdalfile close FILEOUT
-	gdalband free RPOPDENSCUT
-	GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif was generated"
+   #LES LIGNES SUIVANTES SERONT À REMPLACER PAR LE BLOC IFELSE POUR DIFFÉRENCIER URBANX ET INDUSTRX
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
+   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
 
-	#nettoyage de mémoire
-	gdalfile close FILEOUT
-	gdalband free RPOPDENSCUT
+#    if {$GenX::Param(SMOKE)!="" } {
+#       #seuils de densité de population associés à SMOKE (IndustrX)
+#       GenX::Log INFO "Seuils adaptés à IndustrX"
+#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
+#       vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
+#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
+#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
+#    } else {
+#       #seuils de densité de population associés à TEB (UrbanX)
+#       GenX::Log INFO "Seuils adaptés à UrbanX"
+#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
+#       vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
+#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
+#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
+#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
+#    }
 
-	GenX::Log INFO "Fin de la proc PopDens2BuiltupCanVec"
+   #nettoyage de mémoire
+   gdalband free RSANDWICH RPOPDENS RTEMP
+   gdalfile close FSANDWICH
+
+   #écriture du fichier genphysx_popdens-builtup.tif
+   GenX::Log DEBUG "Génération du fichier résultant du cookiecutting"
+   file delete -force $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif GeoTiff
+   gdalband write RPOPDENSCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   gdalfile close FILEOUT
+   gdalband free RPOPDENSCUT
+   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif was generated"
+
+   #nettoyage de mémoire
+   gdalfile close FILEOUT
+   gdalband free RPOPDENSCUT
+
+   GenX::Log INFO "Fin de la proc PopDens2BuiltupCanVec"
 }
 
 #----------------------------------------------------------------------------
@@ -1758,7 +1758,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::HeightGain {indexCouverture } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    variable Param
@@ -1809,7 +1809,7 @@ proc UrbanX::HeightGain {indexCouverture } {
 # Goal     :
 #
 # Parameters :
-#		<indexCouverture>		: index à appliquer à la référence UTMREF
+#      <indexCouverture>      : index à appliquer à la référence UTMREF
 #
 # Return:
 #
@@ -1818,7 +1818,7 @@ proc UrbanX::HeightGain {indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::BuildingHeight {indexCouverture } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    variable Param
@@ -1868,7 +1868,7 @@ proc UrbanX::BuildingHeight {indexCouverture } {
 # Creation : October 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     :  Replaces empty zones or wooded area zones
-#						by values from EOSD dataset
+#                  by values from EOSD dataset
 #
 # Parameters :
 #
@@ -1879,61 +1879,61 @@ proc UrbanX::BuildingHeight {indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::EOSDvegetation {indexCouverture } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
-	GenX::Log INFO "Début de la proc EOSDvegetation"
+   GenX::Log INFO "Début de la proc EOSDvegetation"
 
-	variable Param
+   variable Param
 
-	#lecture du fichier créé précédemment lors de la proc SandwichCanVec
-	gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
+   #lecture du fichier créé précédemment lors de la proc SandwichCanVec
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
-	#recherche des fichiers EOSD
-	set Param(EOSDFiles) [GenX::EOSDFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
-	#Param(EOSDFiles) contains one element of the form /cnfs/ops/production/cmoe/geo/EOSD/999A_lc_1/999A_lc_1.tif
-	GenX::Log DEBUG "Le fichier EOSD suivant a été trouvé : $Param(EOSDFiles)"
+   #recherche des fichiers EOSD
+   set Param(EOSDFiles) [GenX::EOSDFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
+   #Param(EOSDFiles) contains one element of the form /cnfs/ops/production/cmoe/geo/EOSD/999A_lc_1/999A_lc_1.tif
+   GenX::Log DEBUG "Le fichier EOSD suivant a été trouvé : $Param(EOSDFiles)"
 
-	#read the EOSD file
-	gdalband read REOSDTILE [gdalfile open FEOSDTILE read $Param(EOSDFiles)]
+   #read the EOSD file
+   gdalband read REOSDTILE [gdalfile open FEOSDTILE read $Param(EOSDFiles)]
 
-	#sélection de la zone EOSD appropriée à l'aide de la sandwich
-	GenX::Log INFO "Sélection de la zone appropriée sur la tuile EOSD"
-	gdalband copy RMASK RSANDWICH
-	vexpr RMASK RMASK << 0
-	gdalband gridinterp RMASK REOSDTILE NEAREST
+   #sélection de la zone EOSD appropriée à l'aide de la sandwich
+   GenX::Log INFO "Sélection de la zone appropriée sur la tuile EOSD"
+   gdalband copy RMASK RSANDWICH
+   vexpr RMASK RMASK << 0
+   gdalband gridinterp RMASK REOSDTILE NEAREST
 
-	#conserver les valeurs EOSD lorsque la sandwich est vide ou présente une zone boisée
-	GenX::Log INFO "Conserver les valeurs EOSD lorsque la sandwich est vide ou présente une zone boisée"
-	vexpr RVEGE ifelse((RSANDWICH==0 || RSANDWICH==200),RMASK, 0)
+   #conserver les valeurs EOSD lorsque la sandwich est vide ou présente une zone boisée
+   GenX::Log INFO "Conserver les valeurs EOSD lorsque la sandwich est vide ou présente une zone boisée"
+   vexpr RVEGE ifelse((RSANDWICH==0 || RSANDWICH==200),RMASK, 0)
 
-	#écriture du fichier
-	file delete -force $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif
-	gdalfile open FILEOUT write $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif GeoTiff
-	gdalband write RVEGE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-	gdalfile close FILEOUT
+   #écriture du fichier
+   file delete -force $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif GeoTiff
+   gdalband write RVEGE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   gdalfile close FILEOUT
    GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif was generated"
 
-	#affectation des valeurs SMOKE
-	GenX::Log INFO "Affectation des valeurs SMOKE à certaines classes EOSD"
-	gdalband create RVEGESMOKE $Param(Width) $Param(Height) 1 Byte
-	gdalband define RVEGESMOKE -georef UTMREF$indexCouverture
-	vector dim LUT { FROM TO }
-	vector set LUT.FROM { 50 51 52 100 110 120 121 122 200 210 211 212 213 220 221 222 223 230 231 232 233 }
-	vector set LUT.TO   { 75 76 77  78  79  80  81  82  83  84  85  86  87  88  89  90  91  92  93  94  95 }
-	vexpr RVEGE ifelse((RSANDWICH==0 || RSANDWICH==200),lut(RVEGE,LUT.FROM,LUT.TO),RVEGE)
+   #affectation des valeurs SMOKE
+   GenX::Log INFO "Affectation des valeurs SMOKE à certaines classes EOSD"
+   gdalband create RVEGESMOKE $Param(Width) $Param(Height) 1 Byte
+   gdalband define RVEGESMOKE -georef UTMREF$indexCouverture
+   vector dim LUT { FROM TO }
+   vector set LUT.FROM { 50 51 52 100 110 120 121 122 200 210 211 212 213 220 221 222 223 230 231 232 233 }
+   vector set LUT.TO   { 75 76 77  78  79  80  81  82  83  84  85  86  87  88  89  90  91  92  93  94  95 }
+   vexpr RVEGE ifelse((RSANDWICH==0 || RSANDWICH==200),lut(RVEGE,LUT.FROM,LUT.TO),RVEGE)
 
-	#écriture du fichier
-	file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif
-	gdalfile open FILEOUT write $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif GeoTiff
-	gdalband write RVEGESMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   #écriture du fichier
+   file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif GeoTiff
+   gdalband write RVEGESMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif was generated"
 
-	#nettoyage de mémoire
- 	gdalfile close FSANDWICH FEOSDTILE FILEOUT
- 	gdalband free RSANDWICH REOSDTILE RVEGE RVEGESMOKE RTEMP
+   #nettoyage de mémoire
+    gdalfile close FSANDWICH FEOSDTILE FILEOUT
+    gdalband free RSANDWICH REOSDTILE RVEGE RVEGESMOKE RTEMP
 
-	GenX::Log INFO "Fin de la proc EOSDvegetation"
+   GenX::Log INFO "Fin de la proc EOSDvegetation"
 }
 
 #----------------------------------------------------------------------------
@@ -1951,118 +1951,118 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::LCC2000V {indexCouverture} {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
-	GenX::Log INFO "Début de la proc LCC2000V"
+   GenX::Log INFO "Début de la proc LCC2000V"
 
-	variable Param
+   variable Param
 
-	GenX::Log INFO "Récupération du fichier sandwich"
-	#lecture du fichier créé précédemment lors de la proc SandwichCanVec
-	gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
+   GenX::Log INFO "Récupération du fichier sandwich"
+   #lecture du fichier créé précédemment lors de la proc SandwichCanVec
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
-	#recherche des fichiers LCC2000V
-	GenX::Log INFO "Recherche des fichiers LCC2000V"
+   #recherche des fichiers LCC2000V
+   GenX::Log INFO "Recherche des fichiers LCC2000V"
 
-	#---- NOTE : CE PROCESSUS DEVRAIT SE RETROUVER DIRECTEMENT DANS GENX
-	#---- IL SERAIT ALORS REMPLACÉ PAR LES DEUX LIGNES SUIVANTES :
-		#	set Param(LCC2000VFiles) [GenX::LCC2000VFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
-		#	GenX::Log INFO "Les fichier LCC2000V suivants ont été trouvés : $Param(LCC2000VFiles)"
-	#---- LA SÉRIE DES SET LAT/LON SERAIT ALORS SUPPRIMÉE ET LE PATH SERAIT UNIFORMISÉ
-	#---- IL FAUT AUSSI VOIR SI L'EMPLACEMENT DE LA BASE DE DONNÉES DOIT ÊTRE MODIFIÉ
+   #---- NOTE : CE PROCESSUS DEVRAIT SE RETROUVER DIRECTEMENT DANS GENX
+   #---- IL SERAIT ALORS REMPLACÉ PAR LES DEUX LIGNES SUIVANTES :
+      #   set Param(LCC2000VFiles) [GenX::LCC2000VFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
+      #   GenX::Log INFO "Les fichier LCC2000V suivants ont été trouvés : $Param(LCC2000VFiles)"
+   #---- LA SÉRIE DES SET LAT/LON SERAIT ALORS SUPPRIMÉE ET LE PATH SERAIT UNIFORMISÉ
+   #---- IL FAUT AUSSI VOIR SI L'EMPLACEMENT DE LA BASE DE DONNÉES DOIT ÊTRE MODIFIÉ
 
-	set Lat1 $Param(Lat1)
-	set Lon1 $Param(Lon1)
-	set Lat0 $Param(Lat0)
-	set Lon0 $Param(Lon0)
-	set Path(LCC2000V) /data/aqli04/afsulub/lcc2000v_csc2000v/shp_en
+   set Lat1 $Param(Lat1)
+   set Lon1 $Param(Lon1)
+   set Lat0 $Param(Lat0)
+   set Lon0 $Param(Lon0)
+   set Path(LCC2000V) /data/aqli04/afsulub/lcc2000v_csc2000v/shp_en
 
-	if { ![ogrlayer is NTSLAYER250K] } {
-		set nts_layer [lindex [ogrfile open SHAPE250K read $GenX::Path(NTS)/decoupage250k_2.shp] 0]
-		eval ogrlayer read NTSLAYER250K $nts_layer
-	}
+   if { ![ogrlayer is NTSLAYER250K] } {
+      set nts_layer [lindex [ogrfile open SHAPE250K read $GenX::Path(NTS)/decoupage250k_2.shp] 0]
+      eval ogrlayer read NTSLAYER250K $nts_layer
+   }
 
-	set files { }
-	foreach id [ogrlayer pick NTSLAYER250K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
-		set feuillet [ogrlayer define NTSLAYER250K -feature $id IDENTIFIAN]
+   set files { }
+   foreach id [ogrlayer pick NTSLAYER250K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
+      set feuillet [ogrlayer define NTSLAYER250K -feature $id IDENTIFIAN]
       set s250 [string range $feuillet 0 2]
       set sl_maj [string toupper [string range $feuillet 3 3]]
-		set sl_min [string tolower [string range $feuillet 3 3]]
-		if { [llength [set lst [glob -nocomplain $Path(LCC2000V)/${s250}/${sl_min}/*LCC2000-V_${s250}${sl_maj}*.shp]]] } {
-			lappend files $lst
-		}
-	}
-	#---- FIN DU BLOC À MIGRER DANS GENX
+      set sl_min [string tolower [string range $feuillet 3 3]]
+      if { [llength [set lst [glob -nocomplain $Path(LCC2000V)/${s250}/${sl_min}/*LCC2000-V_${s250}${sl_maj}*.shp]]] } {
+         lappend files $lst
+      }
+   }
+   #---- FIN DU BLOC À MIGRER DANS GENX
 
-	GenX::Log DEBUG "Les fichiers LCC2000-V suivants ont été trouvés : $files"
-	set Param(LCC2000VFiles) $files  ;#cette ligne devrait être supprimée si le bloc est migré dans GenX
-	#Param(LCC2000VFiles) contains a list of elements of the form/data/aqli04/afsulub/lcc2000v_csc2000v/shp_en/999/a/LCC2000-V_999A_1_0.shp
+   GenX::Log DEBUG "Les fichiers LCC2000-V suivants ont été trouvés : $files"
+   set Param(LCC2000VFiles) $files  ;#cette ligne devrait être supprimée si le bloc est migré dans GenX
+   #Param(LCC2000VFiles) contains a list of elements of the form/data/aqli04/afsulub/lcc2000v_csc2000v/shp_en/999/a/LCC2000-V_999A_1_0.shp
 
-	set j 0 ;# Increment of LAYERLCC2000V$j required to re-use the object
+   set j 0 ;# Increment of LAYERLCC2000V$j required to re-use the object
 
-	foreach fichierLCC2000V $Param(LCC2000VFiles) {
+   foreach fichierLCC2000V $Param(LCC2000VFiles) {
 
-		#read the LCC2000V file
-		ogrfile open SHAPELCC2000V read $fichierLCC2000V
-		eval ogrlayer read LAYERLCC2000V$j SHAPELCC2000V 0
+      #read the LCC2000V file
+      ogrfile open SHAPELCC2000V read $fichierLCC2000V
+      eval ogrlayer read LAYERLCC2000V$j SHAPELCC2000V 0
 
-		#sélection de la zone LCC2000-V appropriée à l'aide de la sandwich
-		GenX::Log INFO "Sélection de la zone appropriée sur la tuile LCC2000V"
-		gdalband copy RMASK RSANDWICH
-		vexpr RMASK RMASK << 0
+      #sélection de la zone LCC2000-V appropriée à l'aide de la sandwich
+      GenX::Log INFO "Sélection de la zone appropriée sur la tuile LCC2000V"
+      gdalband copy RMASK RSANDWICH
+      vexpr RMASK RMASK << 0
 
-		#rasterization des éléments LCC2000V
-		GenX::Log INFO "Rasterizarion des éléments LCC2000V sur la zone à traiter (peut être long...)"
-		set t_gridinterp [clock seconds]
-		gdalband gridinterp RMASK LAYERLCC2000V$j $Param(Mode) COVTYPE
-		GenX::Log DEBUG "Temps total de rasterization : [expr [clock seconds]-$t_gridinterp] secondes"
+      #rasterization des éléments LCC2000V
+      GenX::Log INFO "Rasterizarion des éléments LCC2000V sur la zone à traiter (peut être long...)"
+      set t_gridinterp [clock seconds]
+      gdalband gridinterp RMASK LAYERLCC2000V$j $Param(Mode) COVTYPE
+      GenX::Log DEBUG "Temps total de rasterization : [expr [clock seconds]-$t_gridinterp] secondes"
 
-		#nettoyage de mémiore
-		ogrlayer free LAYERLCC2000V$j 
-		ogrfile close SHAPELCC2000V
+      #nettoyage de mémiore
+      ogrlayer free LAYERLCC2000V$j
+      ogrfile close SHAPELCC2000V
 
-		#préparation à la nouvelle boucle
-		incr j ;# Increment of VFEATURE2KEEP$j required to re-use the object
-	}
+      #préparation à la nouvelle boucle
+      incr j ;# Increment of VFEATURE2KEEP$j required to re-use the object
+   }
 
-	#nettoyage de mémoire
-	gdalfile close FSANDWICH
- 	gdalband free RSANDWICH
+   #nettoyage de mémoire
+   gdalfile close FSANDWICH
+    gdalband free RSANDWICH
 
    #creating the output file : les entités LCC2000V rasterizés
-	GenX::Log DEBUG "Génération du fichier de sortie"
+   GenX::Log DEBUG "Génération du fichier de sortie"
    file delete -force $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif GeoTiff
    gdalband write RMASK FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
    gdalband free RMASK
 
-	#lecture du fichier créé précédemment lors de la proc SandwichCanVec
-	GenX::Log INFO "Lecture du fichier LCC2000V"
-	gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif]
+   #lecture du fichier créé précédemment lors de la proc SandwichCanVec
+   GenX::Log INFO "Lecture du fichier LCC2000V"
+   gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif]
 
-	#associer aux valeurs LCC2000V des priorités
-	GenX::Log INFO "Associer des valeurs de priorités aux données LCC2000V"
-	vector create LUT
-	vector dim LUT { FROM TO }
-	vector set LUT.FROM {0 10 11 12 20 30 31 32 33 34 35 36 37 40 50 51 52 53 80 81 82 83 100 101 102 103 104 110 121 122 123 200 210 211 212 213 220 221 222 223 230 231 232 233 }
-	vector set LUT.TO   { 0 0 0 0 0 500 0 0 501 0 502 503 504 505 506 507 508 509 510 511 512 513 514 515 516 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535  }
-	vexpr RLCC2000VSMOKE lut(RLCC2000V,LUT.FROM,LUT.TO)
-	vector free LUT
+   #associer aux valeurs LCC2000V des priorités
+   GenX::Log INFO "Associer des valeurs de priorités aux données LCC2000V"
+   vector create LUT
+   vector dim LUT { FROM TO }
+   vector set LUT.FROM {0 10 11 12 20 30 31 32 33 34 35 36 37 40 50 51 52 53 80 81 82 83 100 101 102 103 104 110 121 122 123 200 210 211 212 213 220 221 222 223 230 231 232 233 }
+   vector set LUT.TO   { 0 0 0 0 0 500 0 0 501 0 502 503 504 505 506 507 508 509 510 511 512 513 514 515 516 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535  }
+   vexpr RLCC2000VSMOKE lut(RLCC2000V,LUT.FROM,LUT.TO)
+   vector free LUT
 
    #creating the output file
-	GenX::Log DEBUG "Génération du fichier de sortie"
+   GenX::Log DEBUG "Génération du fichier de sortie"
    file delete -force $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif GeoTiff
    gdalband write RLCC2000VSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    gdalfile close FILEOUT
 
-	#nettoyage de mémoire
- 	gdalfile close FLCC2000V
- 	gdalband free RLCC2000V RLCC2000VSMOKE
+   #nettoyage de mémoire
+    gdalfile close FLCC2000V
+    gdalband free RLCC2000V RLCC2000VSMOKE
 
-	GenX::Log INFO "Fin de la proc LCC2000V"
+   GenX::Log INFO "Fin de la proc LCC2000V"
 
 }
 
@@ -2081,7 +2081,7 @@ proc UrbanX::LCC2000V {indexCouverture} {
 #----------------------------------------------------------------------------
 proc UrbanX::Priorities2TEB { } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    variable Param
@@ -2131,7 +2131,7 @@ proc UrbanX::Priorities2TEB { } {
 #----------------------------------------------------------------------------
 proc UrbanX::VegeMask { } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    variable Param
@@ -2192,7 +2192,7 @@ proc UrbanX::VegeMask { } {
 #----------------------------------------------------------------------------
 proc UrbanX::CreateFSTDBand { Name Band } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    set NI [gdalband configure $Band -width]  ; # Number of X-grid points.
@@ -2243,7 +2243,7 @@ proc UrbanX::CreateFSTDBand { Name Band } {
 #----------------------------------------------------------------------------
 proc UrbanX::TEB2FSTD { } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    GenX::Log INFO "Converting TEB raster to RPN"
@@ -2279,7 +2279,7 @@ proc UrbanX::TEB2FSTD { } {
 #----------------------------------------------------------------------------
 proc UrbanX::Shp2Height {indexCouverture } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    variable Param
@@ -2323,7 +2323,7 @@ proc UrbanX::Shp2Height {indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::FilterGen { Type Size } {
 
-	#add proc to Metadata
+   #add proc to Metadata
    GenX::Procs
 
    #----- Est-ce cette proc maintenant dans le 'main code' de JP?
@@ -2370,8 +2370,8 @@ proc UrbanX::FilterGen { Type Size } {
 # Creation : Octobre 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     : Various functions that are not commonly
-#						used in UrbanX process but might be
-#						useful before of after the main process
+#                  used in UrbanX process but might be
+#                  useful before of after the main process
 #
 # Parameters :
 #   <Type>   :
@@ -2384,47 +2384,47 @@ proc UrbanX::FilterGen { Type Size } {
 #----------------------------------------------------------------------------
 proc UrbanX::Utilitaires { } {
 
-	variable Param
+   variable Param
 
-	#RÉINITIALISATION D'UN FICHIER DE DA
-# 	puts "Utilitaire pour réinitialiser toutes les colonnes SMOKE d'un fichier de polygones de DA"
-# 	set fichierDA /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83_PRECISERLENOM.shp
-# 	puts "Fichier à traiter : $fichierDA"
-# 	puts "Ouverture du fichier..."
-# 	set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $fichierDA] 0]
-# 	eval ogrlayer read VDASMOKE $da_layer_smoke
-# 	puts "Réinitialisation des colonnes"
-# 	#	clear les colonnes SMOKE pour les polygones de DA sélectionnés
-# 	for {set classeid 1} {$classeid < 96} {incr classeid 1} {
-# 		ogrlayer clear VDASMOKE SMOKE$classeid
-# 		puts "La colonne $classeid a été réinitialisée"
-# 	}
-# 	puts "Écriture et fermeture du fichier"
-# 	ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
-# 	ogrlayer free VDASMOKE 
-# 	ogrfile close SHAPEDSMOKE  
-# 	puts "Les colonnes SMOKE1 à SMOKE$classeid devraient être vides. Vérifier le résultat."
-# 	return
+   #RÉINITIALISATION D'UN FICHIER DE DA
+#    puts "Utilitaire pour réinitialiser toutes les colonnes SMOKE d'un fichier de polygones de DA"
+#    set fichierDA /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83_PRECISERLENOM.shp
+#    puts "Fichier à traiter : $fichierDA"
+#    puts "Ouverture du fichier..."
+#    set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $fichierDA] 0]
+#    eval ogrlayer read VDASMOKE $da_layer_smoke
+#    puts "Réinitialisation des colonnes"
+#    #   clear les colonnes SMOKE pour les polygones de DA sélectionnés
+#    for {set classeid 1} {$classeid < 96} {incr classeid 1} {
+#       ogrlayer clear VDASMOKE SMOKE$classeid
+#       puts "La colonne $classeid a été réinitialisée"
+#    }
+#    puts "Écriture et fermeture du fichier"
+#    ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
+#    ogrlayer free VDASMOKE
+#    ogrfile close SHAPEDSMOKE
+#    puts "Les colonnes SMOKE1 à SMOKE$classeid devraient être vides. Vérifier le résultat."
+#    return
 
 
-	#POUR TROUVER TOUS LES FICHIERS CANVEC DU CANADA POUR UNE ENTITÉ
-# 	puts "Utilitaire pour trouver tous les fichiers CanVec du Canada pour une entité"
-# 	set Param(FilesCanada) {}
-# 	set Param(LayerATrouver) {LX_1000079_2}
-# 	puts "Entité à trouver : $Param(LayerATrouver)"
-# 	puts "Recherche des fichiers Canvec..."
-# 	set Param(FilesCanada) [GenX::CANVECFindFiles 40 -50 88 -150 $Param(LayerATrouver)]
-# 	#Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
-# 	set unique_filescanada [lsort -unique $Param(FilesCanada)]
-# 	set sort_unique_filescanada [lsort $unique_filescanada]
-# 	puts "Liste des fichiers trouvés :"
-# 	foreach file $sort_unique_filescanada {
-# 		set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
-# 		#filename contains an element of the form 999a99_9_9_AA_9999999_9
-# 		puts $filename
-# 	}
-# 	puts "Il y a [llength $sort_unique_filescanada] shapefiles trouvés."
-# 	return
+   #POUR TROUVER TOUS LES FICHIERS CANVEC DU CANADA POUR UNE ENTITÉ
+#    puts "Utilitaire pour trouver tous les fichiers CanVec du Canada pour une entité"
+#    set Param(FilesCanada) {}
+#    set Param(LayerATrouver) {LX_1000079_2}
+#    puts "Entité à trouver : $Param(LayerATrouver)"
+#    puts "Recherche des fichiers Canvec..."
+#    set Param(FilesCanada) [GenX::CANVECFindFiles 40 -50 88 -150 $Param(LayerATrouver)]
+#    #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
+#    set unique_filescanada [lsort -unique $Param(FilesCanada)]
+#    set sort_unique_filescanada [lsort $unique_filescanada]
+#    puts "Liste des fichiers trouvés :"
+#    foreach file $sort_unique_filescanada {
+#       set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
+#       #filename contains an element of the form 999a99_9_9_AA_9999999_9
+#       puts $filename
+#    }
+#    puts "Il y a [llength $sort_unique_filescanada] shapefiles trouvés."
+#    return
 
 }
 
@@ -2437,7 +2437,7 @@ proc UrbanX::Utilitaires { } {
 #
 # Parameters :
 #   <Coverage>   : zone to process {MONTREAL VANCOUVER TORONTO OTTAWA WINNIPEG CALGARY HALIFAX REGINA EDMONTON VICTORIA QUEBEC}
-#									   default settings on Quebec City
+#                              default settings on Quebec City
 #
 # Return:
 #
@@ -2446,66 +2446,66 @@ proc UrbanX::Utilitaires { } {
 #----------------------------------------------------------------------------
 proc UrbanX::Process { Coverage } {
 
-	GenX::Log INFO "Début d'UrbanX"
+   GenX::Log INFO "Début d'UrbanX"
 
-	variable Param
-	variable Meta
+   variable Param
+   variable Meta
 
-	#pour employer un utilitaire, retirer le # des deux lignes suivantes et aller retirer les # associés à l'utilitaire choisi dans la proc UrbanX::Utilitaires
-	#UrbanX::Utilitaires
-	#	return
+   #pour employer un utilitaire, retirer le # des deux lignes suivantes et aller retirer les # associés à l'utilitaire choisi dans la proc UrbanX::Utilitaires
+   #UrbanX::Utilitaires
+   #   return
 
-	set Usedtool "UrbanX"
-	GenX::Log INFO "Coverage = $Coverage"
-	GenX::Log INFO "Traitement d'une ville : $Usedtool"
+   set Usedtool "UrbanX"
+   GenX::Log INFO "Coverage = $Coverage"
+   GenX::Log INFO "Traitement d'une ville : $Usedtool"
 
-	set t_traitement [clock seconds]
+   set t_traitement [clock seconds]
 
-	#----- Get the lat/lon and files parameters associated with the province
-	UrbanX::AreaDefine    $Coverage
+   #----- Get the lat/lon and files parameters associated with the province
+   UrbanX::AreaDefine    $Coverage
 
-	#----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
-	UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
+   #----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
+   UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
 
-	#----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-	UrbanX::Sandwich $Coverage
+   #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
+   UrbanX::Sandwich $Coverage
 
-	#-----La rasterization des hauteurs n'a pas vraiment sa place dans UrbanX... C'est one-shot.
-	#UrbanX::Shp2Height $Coverage
+   #-----La rasterization des hauteurs n'a pas vraiment sa place dans UrbanX... C'est one-shot.
+   #UrbanX::Shp2Height $Coverage
 
-	#----- Creates the fields and building vicinity output using spatial buffers
-	#UrbanX::ChampsBuffers 0
+   #----- Creates the fields and building vicinity output using spatial buffers
+   #UrbanX::ChampsBuffers 0
 
-	#----- Calculates the population density
-	UrbanX::PopDens2Builtup $Coverage
+   #----- Calculates the population density
+   UrbanX::PopDens2Builtup $Coverage
 
-	#----- Calculates building heights
-	#UrbanX::HeightGain 0
-	#UrbanX::BuildingHeight
+   #----- Calculates building heights
+   #UrbanX::HeightGain 0
+   #UrbanX::BuildingHeight
 
-	#------EOSD Vegetation
-	#	UrbanX::EOSDvegetation $Coverage
+   #------EOSD Vegetation
+   #   UrbanX::EOSDvegetation $Coverage
 
-	#-----LCC2000V Vegetation
-	#UrbanX::LCC2000V $Coverage
+   #-----LCC2000V Vegetation
+   #UrbanX::LCC2000V $Coverage
 
-	#----- Applies LUT to all processing results to generate TEB classes.
-	#UrbanX::Priorities2TEB
+   #----- Applies LUT to all processing results to generate TEB classes.
+   #UrbanX::Priorities2TEB
 
-	#----- Optional outputs:
-	#UrbanX::VegeMask
-	#UrbanX::TEB2FSTD
+   #----- Optional outputs:
+   #UrbanX::VegeMask
+   #UrbanX::TEB2FSTD
 
-	#écriture des métadonnées
-	set GenX::Meta(Footer) " Varia : 
-	Données CanVec : $GenX::Path(CANVEC)
-	Données de Statistique Canada : $Param(PopFile2006SMOKE)
-	Données EOSD : $GenX::Path(EOSD)
-	Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes"
-	GenX::MetaData $GenX::Param(OutFile)_metadata_$Coverage.txt
+   #écriture des métadonnées
+   set GenX::Meta(Footer) " Varia :
+   Données CanVec : $GenX::Path(CANVEC)
+   Données de Statistique Canada : $Param(PopFile2006SMOKE)
+   Données EOSD : $GenX::Path(EOSD)
+   Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes"
+   GenX::MetaData $GenX::Param(OutFile)_metadata_$Coverage.txt
 
-	#fin de la boucle sur la zone à traiter
-	GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
-	GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
+   #fin de la boucle sur la zone à traiter
+   GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
+   GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
 
 } ;#fin de la proc process

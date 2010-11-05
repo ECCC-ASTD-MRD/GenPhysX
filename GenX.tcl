@@ -363,7 +363,7 @@ proc GenX::Procs { } {
 # Goal     : Display verbose messages.
 #
 # Parameters :
-#  <Type>    : Type de message (ERROR,WARNING,INFO,DEBUG,...)
+#  <Type>    : Type de message (-,ERROR,WARNING,INFO,DEBUG,...)
 #  <Message> : Message to display
 #  <Head>    : Afficher l'info du stack
 #
@@ -378,6 +378,11 @@ proc GenX::Log { Type Message { Head True } } {
 
    set head " "
    set proc ""
+
+   if { $Type=="-" } {
+      puts "--------------------------------------------------------------------------------"
+      return
+   }
 
    if { $Log($Type)<=$Log(Level) } {
       if { $Head && [info level]>1} {
