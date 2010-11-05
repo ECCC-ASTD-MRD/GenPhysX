@@ -20,7 +20,7 @@ exec nice ${GENPHYSX_PRIORITY:=-19} /users/dor/afsr/005/eer_SPI-7.4.1/tclsh "$0"
 #   Information parameters:
 #      [-help]                                    : This information
 #      [-version]                                 : GenPhysX version
-#      [-verbose]  (2)                            : Trace level (0 none,1 some ,2 more,3 Debug)
+#      [-verbose]  (2)                            : Trace level (0 ERROR,1 WARNING ,2 INFO,3 DEBUG)
 #
 #   Input parameters:
 #      [-nml]      (gem_settings)                 : GEM namelist definition file

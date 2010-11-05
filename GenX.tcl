@@ -419,6 +419,8 @@ proc GenX::MetaData { Grid } {
    set version "GenX($Param(Version))"
    catch { append version ", GeoPhysX($GeoPhysX::Param(Version))" }
    catch { append version ", BioGenX($BioGenX::Param(Version))" }
+   catch { append version ", UrbanX($UrbanX::Param(Version))" }
+   catch { append version ", IndustrX($IndustrX::Param(Version))" }
 
    #----- Generation date et parameters used
    set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\n"

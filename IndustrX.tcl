@@ -23,6 +23,8 @@ namespace eval IndustrX { } {
    variable Param
    variable Const
 	variable Meta
+
+   set Param(Version)   0.1
 }
 
 #----------------------------------------------------------------------------
@@ -66,7 +68,7 @@ puts "A"
 
 puts "B"
 
-	#modification pour inclure la densité de population 
+	#modification pour inclure la densité de population
    vexpr RSMOKE ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RSMOKE)
 
 	#modification pour inclure la végétation LCC2000V
@@ -217,8 +219,8 @@ return
 #  	puts "Feuillet test $Param(NTSIds) $Param(NTSSheets)"
 # # 	#FIN DU TO DELETE : FEUILLETS TESTS DE PERFORMANCES
 
-	#préparation à l'incrémentation sur les feuillets NTS 
-	set nbrfeuillets [llength $UrbanX::Param(NTSSheets) ] 
+	#préparation à l'incrémentation sur les feuillets NTS
+	set nbrfeuillets [llength $UrbanX::Param(NTSSheets) ]
 	set i 1
 	puts "_______________________________________________________________________________________________________________________________"
 
@@ -300,7 +302,7 @@ return
 			GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was generated"
 			file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
 			GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
-	# 
+	#
 			#affichage du temps de traitement du feuillet
 			GenX::Log DEBUG "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
 
@@ -310,13 +312,13 @@ return
 
 		} ;#fin du traitement du feuillet (boucle else)
 	} ;# fin du foreach feuillet
- 
+
 	#fermeture du fichier de polygones de DA à modifier avec les valeurs SMOKE
 	#ogrfile close SHAPEDSMOKE  ;#ne pas le mettre, vu un bogue avec le mode append
-	ogrlayer free VDASMOKE  
+	ogrlayer free VDASMOKE
 
 	#écriture des métadonnées
-	set GenX::Meta(Footer) " Varia : 
+	set GenX::Meta(Footer) " Varia :
 	Données CanVec : $GenX::Path(CANVEC)
 	Données de Statistique Canada : $Param(PopFile2006SMOKE_Province)
 	Données EOSD : $GenX::Path(EOSD)

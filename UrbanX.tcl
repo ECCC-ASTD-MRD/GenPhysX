@@ -24,8 +24,7 @@ namespace eval UrbanX { } {
    variable Const
 	variable Meta
 
-   set Param(Version_UrbanX)   0.2
-   set Param(Version_IndustrX)   0.1
+   set Param(Version)   0.2
 
    set Param(Resolution) 5       ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
    set Param(Buffer)     0.001   ;# Includes about 200m buffers to account for off-zone buffers which would influence results
@@ -313,7 +312,7 @@ namespace eval UrbanX { } {
 
 	#TEB Classes for CanVec
 	#Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-	set Param(TEBClasses)         {902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350   } 
+	set Param(TEBClasses)         {902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350   }
 
    #------TO DELETE : LAYERS BNDT------------------
 	#set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
@@ -658,7 +657,7 @@ proc UrbanX::FindNTSSheets {indexCouverture } {
 	ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
 	GenX::Log DEBUG "Les [llength $ntssheets_pre] tuiles NTS ayant les ID suivants ont été présélectionnées à l'aide du convex hull : $ntssheets_pre"
 
-	#avertissement sur le temps requis...  
+	#avertissement sur le temps requis...
 	GenX::Log INFO "Intersection des fichiers NTS présélectionnés avec le polygone de province.  Cette opération peut prendre plusieurs minutes!"
 
 	#sélection, parmi les fichiers NTS présélectionnés, de ceux qui sont en intersection avec la géométrie provinciale
@@ -1759,7 +1758,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
 	GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
 	variable Param
-	
+
 	#récupération de genphysx_sandwich.tif
 	GenX::Log DEBUG "Récupération du fichier sandwich"
 	gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
@@ -1796,7 +1795,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 	foreach n $da_select {
 		#récupération de la valeur de population
 		set pop [ogrlayer define VPOPDENS -feature $n POP_NEW]
-		
+
 		#calcul de l'aire de la residential area à l'aide du nombre de pixels comptés précédemment
 		set nbrpixels [ogrlayer define VPOPDENS -feature $n POP_DENS]
 		set area_pixels [expr ($nbrpixels*25.0/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
@@ -1827,14 +1826,14 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 		}
 
 		#affectation de la densité appropriée
-		#Note : la densité est généralement plus précise lorsque calculée à partir des pixels.  
-		#Toutefois, il arrive que certains endoits reçoivent des valeurs extrêmes puisque, notamment, 
-		#les polygones de DA ne sont pas snappés avec les zones résidentielles, ce qui peut entraîner 
+		#Note : la densité est généralement plus précise lorsque calculée à partir des pixels.
+		#Toutefois, il arrive que certains endoits reçoivent des valeurs extrêmes puisque, notamment,
+		#les polygones de DA ne sont pas snappés avec les zones résidentielles, ce qui peut entraîner
 		#des cas où toute la population d'un polygone se retrouve concentrée sur 1 ou 2 pixels.
 		#Afin d'éviter ces problèmes, si le ratio entre la densité calculée à l'aide des pixels et la densité
-		#calculée à l'aide de la géométrie dépasse un seuil, nous conserverons la deuxième option, qui 
+		#calculée à l'aide de la géométrie dépasse un seuil, nous conserverons la deuxième option, qui
 		#répartit la population sur l'ensemble du territoire plutôt que sur 1 ou 2 pixels, et la multiplions par
-		#2 pour tenir compte du fait que l'ensemble du polygones n'est probablement pas résidentiel 
+		#2 pour tenir compte du fait que l'ensemble du polygones n'est probablement pas résidentiel
 		#(présence de parcs, de bâtiments non résidentiels, d'industries, etc.).  Le seuil choisi est de 20, ce
 		#qui signifie que 95% du polygone n'est pas recouvert par les entités residential area ou bâtiments de
 		#fonction générale.
@@ -1842,7 +1841,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 			set densite_choisie [expr ($densite_vect * 2.0)]
 			GenX::Log DEBUG "Ajustement de la densité pour le polygone $n"
 		} else {
-			set densite_choisie $densite_pixels  
+			set densite_choisie $densite_pixels
 		}
 		ogrlayer define VPOPDENS -feature $n POP_DENS $densite_choisie
 	}
@@ -1872,7 +1871,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 	gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
 	gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
 	vexpr RTEMP RSANDWICH==218
-	
+
 	#LES LIGNES SUIVANTES SERONT À REMPLACER PAR LE BLOC IFELSE POUR DIFFÉRENCIER URBANX ET INDUSTRX
 	vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
 	vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
@@ -2048,7 +2047,7 @@ proc UrbanX::BuildingHeight {indexCouverture } {
 #
 # Return:
 #
-# Remarks : SINCE EOSD DOES NOT COVERS CANADA ENTIRELY, AND SINCE OTHER DATA ARE MORE ACCURATE, 
+# Remarks : SINCE EOSD DOES NOT COVERS CANADA ENTIRELY, AND SINCE OTHER DATA ARE MORE ACCURATE,
 #							THIS PROC WILL BE DELETED AND REPLACED BY LCC2000V
 #
 #----------------------------------------------------------------------------
@@ -2195,7 +2194,7 @@ proc UrbanX::LCC2000V {indexCouverture} {
 		GenX::Log DEBUG "Temps total de rasterization : [expr [clock seconds]-$t_gridinterp] secondes"
 
 		#nettoyage de mémiore
-		ogrlayer free LAYERLCC2000V$j 
+		ogrlayer free LAYERLCC2000V$j
 		ogrfile close SHAPELCC2000V
 
 		#préparation à la nouvelle boucle
@@ -2577,8 +2576,8 @@ proc UrbanX::Utilitaires { } {
 # 	}
 # 	puts "Écriture et fermeture du fichier"
 # 	ogrlayer sync VDASMOKE ;# là pcq mode append, pas besoin en mode write, mais le mode write a un bug
-# 	ogrlayer free VDASMOKE 
-# 	ogrfile close SHAPEDSMOKE  
+# 	ogrlayer free VDASMOKE
+# 	ogrfile close SHAPEDSMOKE
 # 	puts "Les colonnes SMOKE1 à SMOKE$classeid devraient être vides. Vérifier le résultat."
 # 	return
 
@@ -2664,7 +2663,7 @@ proc UrbanX::Process { Coverage } {
 	#	UrbanX::EOSDvegetation $Coverage
 	#LCC2000V Vegetation
 	#UrbanX::LCC2000V $Coverage
-	# ----------END OF : TO MODIFY FOR LCC2000-V DATA INSTEAD OF EOSD 
+	# ----------END OF : TO MODIFY FOR LCC2000-V DATA INSTEAD OF EOSD
 
 	#----- Applies LUT to all processing results to generate TEB classes.
 	#UrbanX::Priorities2TEB
@@ -2674,7 +2673,7 @@ proc UrbanX::Process { Coverage } {
 	#UrbanX::TEB2FSTD
 
 	#écriture des métadonnées
-	set GenX::Meta(Footer) " Varia : 
+	set GenX::Meta(Footer) " Varia :
 	Données CanVec : $GenX::Path(CANVEC)
 	Données de Statistique Canada : $Param(PopFile2006SMOKE)
 	Données EOSD : $GenX::Path(EOSD)
