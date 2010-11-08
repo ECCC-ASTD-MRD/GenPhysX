@@ -205,7 +205,7 @@ proc GeoPhysX::AverageTopo { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoUSGS { Grid } {
 
-   GenX::Procs
+   GenX::Procs TopoUSGS
    GenX::Log INFO "Averaging topography using USGS database"
 
    #----- Loop over files
@@ -247,7 +247,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
 
-   GenX::Procs
+   GenX::Procs GTOPO30
    GenX::Log INFO "Averaging topography using GTOPO30 database"
 
    #----- Loop over files
@@ -290,7 +290,7 @@ proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
 proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
    variable Param
 
-   GenX::Procs
+   GenX::Procs ASTERGDEM
    GenX::Log INFO "Averaging topography using ATSERGDEM database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
@@ -340,7 +340,7 @@ proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
 proc GeoPhysX::AverageTopoSRTM { Grid } {
    variable Param
 
-   GenX::Procs
+   GenX::Procs SRTM
    GenX::Log INFO "Averaging topography using SRTM database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
@@ -390,7 +390,7 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
 proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
    variable Param
 
-   GenX::Procs
+   GenX::Procs CDED
    GenX::Log INFO "Averaging topography using CDED(1:${Res}000) database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
@@ -452,7 +452,7 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
 proc GeoPhysX::AverageAspect { Grid } {
    variable Param
 
-   GenX::Procs
+   GenX::Procs SRTM CDED
    GenX::Log INFO "Computing slope and aspect"
 
    set SRTM [expr [lsearch -exact $GenX::Param(Aspect) SRTM]!=-1]
@@ -650,7 +650,7 @@ proc GeoPhysX::AverageMask { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageMaskUSGS { Grid } {
 
-   GenX::Procs
+   GenX::Procs MaskUSGS
    GenX::Log INFO "Averaging mask using USGS database"
 
    fstdfield copy GPXMASK  $Grid
@@ -697,7 +697,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
 
-   GenX::Procs
+   GenX::Procs GlobCover
    GenX::Log INFO "Averaging mask using GLOBCOVER database"
 
    fstdfield copy GPXMASK  $Grid
@@ -754,7 +754,7 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageMaskGLC2000 { Grid } {
 
-   GenX::Procs
+   GenX::Procs GLC2000
    GenX::Log INFO "Averaging mask using GLC2000 database"
 
    fstdfield copy GPXMASK  $Grid
@@ -812,7 +812,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    variable Path
    variable Param
 
-   GenX::Procs
+   GenX::Procs CANVEC
    GenX::Log INFO "Averaging mask using CANVEC database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
@@ -975,7 +975,7 @@ proc GeoPhysX::AverageVege { Grid } {
 proc GeoPhysX::AverageVegeUSGS { Grid } {
    variable Param
 
-   GenX::Procs
+   GenX::Procs VegeUSGS
    GenX::Log INFO "Averaging vegetation type using USGS database"
 
    #----- Loop over files
@@ -1016,7 +1016,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs
+   GenX::Procs EOSD
    GenX::Log INFO "Averaging vegetation type using EOSD database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
@@ -1089,7 +1089,7 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs
+   GenX::Procs CORINE
    GenX::Log INFO "Averaging vegetation type using CORINE database"
 
    #----- Open the file
@@ -1151,7 +1151,7 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs
+   GenX::Procs GlobCover
    GenX::Log INFO "Averaging vegetation type using GlobCover database"
 
    #----- Open the file
@@ -1213,7 +1213,7 @@ proc GeoPhysX::AverageVegeGLC2000 { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs
+   GenX::Procs GLC2000
    GenX::Log INFO "Averaging vegetation type using GLC2000 database"
 
    #----- Open the file
@@ -1275,7 +1275,7 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs
+   GenX::Procs CCRS
    GenX::Log INFO "Averaging vegetation type using CCRS database"
 
    #----- Open the file
@@ -1377,6 +1377,7 @@ proc GeoPhysX::AverageSand { Grid } {
          GenX::Log DEBUG "   Processing database $db" False
 
          foreach file [glob $GenX::Path(Sand$db)/*] {
+            GenX::Procs Sand$db
             GenX::Log DEBUG "      Processing file : $file" False
             fstdfile open GPXSANDFILE read $file
 
@@ -1423,7 +1424,7 @@ proc GeoPhysX::AverageSand { Grid } {
 proc GeoPhysX::AverageSoilHWSD { Grid } {
    variable Param
 
-   GenX::Procs
+   GenX::Procs HWSD
 
    set fields { GPXGRAVT GPXSANDT GPXCLAYT GPXBULKT GPXOCT GPXGRAVS GPXSANDS GPXCLAYS GPXBULKS GPXOCS }
    set types  { tgrav tsand tclay tref toc sgrav ssand sclay sref soc }
@@ -1586,6 +1587,7 @@ proc GeoPhysX::AverageClay { Grid } {
 
          #----- Loop over files
          foreach file [glob $GenX::Path(Clay$db)/*] {
+            GenX::Procs Clay$db
             GenX::Log DEBUG "      Processing file : $file" False
             fstdfile open GPXCLAYFILE read $file
 
@@ -1630,7 +1632,7 @@ proc GeoPhysX::AverageClay { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoLow { Grid } {
 
-   GenX::Procs
+   GenX::Procs TopoLow
    GenX::Log INFO "Averaging low resolution topography"
 
    fstdfield copy GPXLRMS $Grid
@@ -1687,7 +1689,7 @@ proc GeoPhysX::AverageTopoLow { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageGradient { Grid } {
 
-   GenX::Procs
+   GenX::Procs Grad
    GenX::Log INFO "Averaging gradient correlation"
 
    fstdfield copy GPXGXX $Grid

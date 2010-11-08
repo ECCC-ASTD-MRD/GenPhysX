@@ -348,6 +348,7 @@ proc IndustrX::SMOKE2DA { indexCouverture } {
 #----------------------------------------------------------------------------
 proc IndustrX::Process { Coverage } {
 
+   GenX::Procs CANVEC StatCan EOSD
    GenX::Log INFO "Début d'IndustrX"
 
    variable Param
@@ -439,8 +440,6 @@ proc IndustrX::Process { Coverage } {
          }
 
          #----- Applies LUT to all processing results to generate SMOKE classes and sets the values in the DA shapefile
-         set Param(t_Priorities2SMOKE) 0
-         set Param(t_SMOKE2DA) 0
          if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
             #----- Applies LUT to all processing results to generate SMOKE classes
             IndustrX::Priorities2SMOKE  $feuillet
@@ -458,9 +457,9 @@ proc IndustrX::Process { Coverage } {
          file delete -force $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif
          GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif was deleted"
          file delete -force $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif
-         GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif was generated"
+         GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif was deleted"
          file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif
-         GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was generated"
+         GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was deleted"
          file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
          GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
 
@@ -479,15 +478,9 @@ proc IndustrX::Process { Coverage } {
    ogrlayer free VDASMOKE
 
    #écriture des métadonnées
-   set GenX::Meta(Footer) " Varia :
-   Données CanVec : $GenX::Path(CANVEC)
-   Données de Statistique Canada : $GenX::Path(StatCan)
-   Données EOSD : $GenX::Path(EOSD)
-   Nombre de feuillets NTS traités : [expr ($i-1)] / $nbrfeuillets"
-   GenX::MetaData $GenX::Param(OutFile)_metadata_$Coverage.txt
+   append GenX::Meta(Footer) "Varia         :
+   Nombre de feuillets NTS traités : [expr ($i-1)] / $nbrfeuillets\n"
 
    #fin de la boucle sur la zone à traiter
    GenX::Log INFO "Fin du traitement de $Coverage avec IndustrX"
-   GenX::Log INFO "Fin d'IndustrX.  Retour à GenPhysX"
-
- } ;# fin de la proc Process
+}

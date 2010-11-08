@@ -312,7 +312,7 @@ namespace eval UrbanX { } {
 
    #TEB Classes for CanVec
    #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-   set Param(TEBClasses)         {902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350   }
+   set Param(TEBClasses)         { 902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350 }
 
    #------TO DELETE : LAYERS BNDT------------------
    #set Param(WaterLayers)      { water_b_a n_canal_a fish_po_a } ;# Water layers from BNDT
@@ -332,14 +332,14 @@ namespace eval UrbanX { } {
 
    #fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
    #NOTE : ce fichier ne sert que dans la proc UrbanX::PopDens2Builtup.  Il n'a pas besoin de contenir les champs SMOKEi.  Toutefois, il doit être découpé selon l'index NTS 50K.
-   set Param(PopFile2006SMOKE) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
+   set Param(PopFile2006SMOKE) $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
 
    #fichier contenanant 1 polygone pour chaque province ou territoire du Canada
-   set Param(ProvincesGeom) /data/aqli04/afsulub/StatCan2006/Provinces_lcc-nad83.shp
+   set Param(ProvincesGeom) $GenX::Path(StatCan)/Provinces_lcc-nad83.shp
 
    #fichier contenant l'index NTS à l'échelle 1:50000
    #attention : s'assurer qu'il s'agit bien de l'index ayant servi au découpage du fichier PopFile2006SMOKE
-   set Param(NTSFile) /cnfs/ops/production/cmoe/geo/NTS/decoupage50k_2.shp
+   set Param(NTSFile) $GenX::Path(NTS)/decoupage50k_2.shp
 
    #entité CanVec déterminant la bordure des polygones NTS50K
    set Param(NTSLayer) {LI_1210009_2 }
@@ -2446,6 +2446,7 @@ proc UrbanX::Utilitaires { } {
 #----------------------------------------------------------------------------
 proc UrbanX::Process { Coverage } {
 
+   GenX::Procs CANVEC StatCan EOSD
    GenX::Log INFO "Début d'UrbanX"
 
    variable Param
@@ -2494,15 +2495,6 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::VegeMask
    #UrbanX::TEB2FSTD
 
-   #écriture des métadonnées
-   set GenX::Meta(Footer) " Varia :
-   Données CanVec : $GenX::Path(CANVEC)
-   Données de Statistique Canada : $Param(PopFile2006SMOKE)
-   Données EOSD : $GenX::Path(EOSD)"
-   GenX::MetaData $GenX::Param(OutFile)_metadata_$Coverage.txt
-
    #fin de la boucle sur la zone à traiter
    GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
-   GenX::Log INFO "Fin d'UrbanX.  Retour à GenPhysX"
-
-} ;#fin de la proc process
+}

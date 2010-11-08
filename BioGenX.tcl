@@ -141,7 +141,6 @@ proc BioGenX::LULC_15Classes { Grid } {
    BioGenX::LULC_15Classes $Grid
    BioGenX::TrFractions_15Classes $Grid
    BioGenX::TrFractions_26Classes $Grid
-
 }
 
 #-------------------------------------------------------------------------------
@@ -518,7 +517,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs
+   GenX::Procs BELD3
    GenX::Log INFO "Calculating biogenic emissions using BELD3 database ($Param(Interp))."
 
    #----- Verification de la necessite d'utiliser BELD3

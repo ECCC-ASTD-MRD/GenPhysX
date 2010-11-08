@@ -15,7 +15,7 @@
 #
 # Functions :
 #
-#   GenX::Procs              { }
+#   GenX::Procs              { args }
 #   GenX::Log                { Type Message { Head True } }
 #   GenX::Submit             { }
 #   GenX::MetaData           { Grid }
@@ -95,7 +95,7 @@ namespace eval GenX { } {
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Urbans)    { }
-   set Param(SMOKES)    { }
+   set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
    set Param(Subs)      { STD }
    set Param(Targets)   { GEMMESO }             ;#Model cible
@@ -149,6 +149,7 @@ namespace eval GenX { } {
    #----- Metadata related variables
 
    set Meta(Procs)     {}                     ;#Metadata procedure registration list
+   set Meta(Databases) {}                     ;#Databases used
    set Meta(Header)    ""                     ;#Metadata header
    set Meta(Footer)    ""                     ;#Metadata footer
    set Meta(Command)   ""                     ;#Launch command
@@ -351,16 +352,21 @@ proc GenX::Submit { } {
 # Goal     :Creates a list of the procedure used.
 #
 # Parameters :
-#
+#   <args>   : Databases used by the calling proc
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::Procs { } {
+proc GenX::Procs { args } {
    variable Meta
 
-   lappend Meta(Procs) [info level [expr [info level] -1]]
+   set Meta(Databases) [lsort -unique [concat $Meta(Databases) $args]]
+
+   set proc [info level [expr [info level] -1]]
+   if { [lsearch -exact $Meta(Procs) $proc]==-1 } {
+      lappend Meta(Procs) $proc
+   }
 }
 
 #----------------------------------------------------------------------------
@@ -387,7 +393,7 @@ proc GenX::Log { Type { Message "" } { Head True } } {
    set proc ""
 
    if { $Type=="-" } {
-      puts "--------------------------------------------------------------------------------"
+      puts "----------------------------------------------------------------------------------------------------"
       return
    }
 
@@ -413,7 +419,7 @@ proc GenX::Log { Type { Message "" } { Head True } } {
 # Goal     : Record metadata info in a standard RPN Field.
 #
 # Parameters :
-#   <Grid>   : Grid on which to generate the topo or filename for txt
+#   <Grid>   : Grid on which to generate the topo
 #
 # Return:
 #
@@ -435,7 +441,7 @@ proc GenX::MetaData { Grid } {
    catch { append version ", IndustrX($IndustrX::Param(Version))" }
 
    #----- Generation date et parameters used
-   set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\nExecution time : [expr [clock seconds]-$Param(Secs)]\n"
+   set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\nExecution time : [expr [clock seconds]-$Param(Secs)] s\n"
 
    if  { [info exists env(GENPHYSX_BATCH)] } {
       append meta "Call parameters: [info script] $env(GENPHYSX_BATCH)\n"
@@ -454,23 +460,39 @@ proc GenX::MetaData { Grid } {
       close $f
    }
 
+   #----- Append specific header info
    append meta $Meta(Header)
+
+   #----- Append processing used
    append meta "Processing used:\n   [join $Meta(Procs) "\n   "]\n"
+
+   #----- Append NML file if any
    if { [file exists $Param(NameFile)] } {
       append meta "\nGEM namelist   : { \n[exec cat $Param(NameFile)]\n }"
    }
+
+   #----- Append databases paths
+   if { [llength $Meta(Databases)] } {
+      append meta "Databases used :\n"
+      foreach data $Meta(Databases) {
+         catch { append meta [format "   %-10s: %s\n" $data $Path($data)] }
+      }
+   }
+
+   #----- Append specific footer info
    append meta $Meta(Footer)
 
-   #----- Encode everyting
+   #----- Encode everyting into fst record
    if { [fstdfield is $Grid] } {
       set fld [MetData::TextCode $meta]
       fstdfield define $fld -NOMVAR META -IP1 [fstdfield define $Grid -IP1] -IP2 [fstdfield define $Grid -IP2] -IP3 [fstdfield define $Grid -IP3]
       fstdfield write $fld GPXOUTFILE 0 True
-   } else {
-      set f [open $Grid w]
-      puts $f $meta
-      close $f
    }
+
+   #---- Save as text file
+   set f [open $GenX::Param(OutFile)_meta.txt w]
+   puts $f $meta
+   close $f
 }
 
 #----------------------------------------------------------------------------
