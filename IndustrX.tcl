@@ -370,14 +370,20 @@ proc IndustrX::Process { Coverage } {
 
    #ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
    #Ce fichier contient les polygones de DA pour une province, qui ont été découpés suivant l'index NTS 50K spécifié dans Param(NTSFile)
+
    if { ![ogrlayer is VDASMOKE] } {
       foreach file [glob $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.*] {
-         file delete -force [file tail $file]
-         file copy $file ./
+         if { ![file exists [file tail $file]] } {
+            file delete -force [file tail $file]
+            file copy $file ./
+            GenX::Log INFO "Copy file [file tail $file] in directory."
+         } else {
+            GenX::Log INFO "File [file tail $file] was already in directory."
+         }
       }
       set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append da2006-nts_lcc-nad83_$Coverage.shp] 0]
       eval ogrlayer read VDASMOKE $da_layer_smoke
-      GenX::Log DEBUG "There are [ogrlayer define VDASMOKE -nb] dissemination area polygons in the output file."
+      GenX::Log DEBUG "There are [ogrlayer define VDASMOKE -nb] polygons in the provincial dissemination area file."
    }
 
 #    #Pour traiter une liste spécifique de feuillets NTS (tests de performances, une tuile qui a mal été traitée...), entrez la liste des
