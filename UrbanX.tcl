@@ -635,7 +635,7 @@ proc UrbanX::Sandwich { indexCouverture } {
    #add proc to Metadata
    GenX::Procs
 
-   GenX::Log INFO "Debut de la proc for generating Sandwich"
+   GenX::Log INFO "Beginning of procedure : Sandwich"
 
    #création de la raster qui contiendra la LULC
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
@@ -1483,7 +1483,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 
    GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich_$indexCouverture.tif was generated"
 
-   GenX::Log INFO "Fin de UrbanX::SandwichCanVec"
+   GenX::Log INFO "End of procedure : Sandwich."
 
 }
 
@@ -1583,20 +1583,20 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    #add proc to Metadata
    GenX::Procs
 
-   GenX::Log INFO "Début de la proc PopDens2BuiltupCanVec"
+   GenX::Log INFO "Beginning of procedure : PopDens2BuiltupCanVec"
    variable Param
 
    #récupération de genphysx_sandwich.tif
-   GenX::Log DEBUG "Récupération du fichier sandwich"
+   GenX::Log DEBUG "Open and read Sandwich file."
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
    #récupération du fichier de données socio-économiques
-   GenX::Log DEBUG "Récupération du fichier de polygones de DA"
+   GenX::Log DEBUG "Open and read the Canada-wide dissemination area polygons file."
    set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006SMOKE)] 0]
    eval ogrlayer read VPOPDENS $layer
 
    #----- Selecting only the required StatCan polygons - next is only useful to improve the speed of the layer substraction
-   GenX::Log DEBUG "Sélection des polygones de DA appropriés."
+   GenX::Log DEBUG "Select the appropriate dissemination area polygons."
    set da_select [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
    ogrlayer define VPOPDENS -featureselect [list [list index # $da_select]]
 
@@ -1610,15 +1610,15 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
    #rasterization des polygones de DA
    GenX::Log INFO "Rasterization des polygones de DA sélectionnés."
+   GenX::Log INFO "Rasterize the selected dissemination area polygons."
    gdalband gridinterp RDA VPOPDENS FAST FEATURE_ID
 
    #comptage des pixels de la residential area pour chaque polygone de DA : increment de la table et buildings generals (ponctuels et surfaciques)
-   GenX::Log INFO "Comptage des pixels de la zone résidentielle et des bâtiments sans fonction précisée pour chaque polygone de DA"
+   GenX::Log INFO "Counting pixels for residential areas and general function buildings for each dissemination area polygon."
    vexpr VPOPDENS.POP_DENS tcount(VPOPDENS.POP_DENS,ifelse (RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
 
    #Calcul de la densité de population
-   GenX::Log INFO "Calculating population density values"
-   GenX::Log INFO "Ajustement de la densité au besoin"
+   GenX::Log INFO "Calculating population density values and ajustement if required."
    foreach n $da_select {
       #récupération de la valeur de population
       set pop [ogrlayer define VPOPDENS -feature $n POP_NEW]
@@ -1666,7 +1666,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
       #fonction générale.
       if { $densite_div > 20} {
          set densite_choisie [expr ($densite_vect * 2.0)]
-         GenX::Log DEBUG "Ajustement de la densité pour le polygone $n"
+         GenX::Log DEBUG "Ajustement of population density for polygon ID $n"
       } else {
          set densite_choisie $densite_pixels
       }
@@ -1676,7 +1676,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    unset da_select
 
    #Conversion de la densité de population en raster
-   GenX::Log INFO "Conversion des densités de population en raster"
+   GenX::Log INFO "Conversion of population density in a raster file."
    gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
    eval gdalband define RPOPDENS -georef UTMREF$indexCouverture
    gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) POP_DENS
@@ -1708,14 +1708,14 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
 #    if {$GenX::Param(SMOKE)!="" } {
 #       #seuils de densité de population associés à SMOKE (IndustrX)
-#       GenX::Log INFO "Seuils adaptés à IndustrX"
+#       GenX::Log INFO "Thresholds for IndustrX."
 #       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
 #       vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
 #       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
 #       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
 #    } else {
 #       #seuils de densité de population associés à TEB (UrbanX)
-#       GenX::Log INFO "Seuils adaptés à UrbanX"
+#       GenX::Log INFO "Thresholds for UrbanX"
 #       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
 #       vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
 #       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
@@ -1728,7 +1728,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    gdalfile close FSANDWICH
 
    #écriture du fichier genphysx_popdens-builtup.tif
-   GenX::Log DEBUG "Génération du fichier résultant du cookiecutting"
+   GenX::Log DEBUG "Generating output file, result of cookiecutting."
    file delete -force $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif GeoTiff
    gdalband write RPOPDENSCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
@@ -1740,7 +1740,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    gdalfile close FILEOUT
    gdalband free RPOPDENSCUT
 
-   GenX::Log INFO "Fin de la proc PopDens2BuiltupCanVec"
+   GenX::Log INFO "End of procedure : PopDens2BuiltupCanVec"
 }
 
 #----------------------------------------------------------------------------
@@ -1882,7 +1882,7 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
    #add proc to Metadata
    GenX::Procs
 
-   GenX::Log INFO "Début de la proc EOSDvegetation"
+   GenX::Log INFO "Beginning of procedure : EOSDvegetation"
 
    variable Param
 
@@ -1892,19 +1892,19 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
    #recherche des fichiers EOSD
    set Param(EOSDFiles) [GenX::EOSDFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
    #Param(EOSDFiles) contains one element of the form /cnfs/ops/production/cmoe/geo/EOSD/999A_lc_1/999A_lc_1.tif
-   GenX::Log DEBUG "Le fichier EOSD suivant a été trouvé : $Param(EOSDFiles)"
+   GenX::Log DEBUG "The following EOSD file was found : $Param(EOSDFiles)"
 
    #read the EOSD file
    gdalband read REOSDTILE [gdalfile open FEOSDTILE read $Param(EOSDFiles)]
 
    #sélection de la zone EOSD appropriée à l'aide de la sandwich
-   GenX::Log INFO "Sélection de la zone appropriée sur la tuile EOSD"
+   GenX::Log INFO "Selecting the appropriate zone on the EOSD tile."
    gdalband copy RMASK RSANDWICH
    vexpr RMASK RMASK << 0
    gdalband gridinterp RMASK REOSDTILE NEAREST
 
    #conserver les valeurs EOSD lorsque la sandwich est vide ou présente une zone boisée
-   GenX::Log INFO "Conserver les valeurs EOSD lorsque la sandwich est vide ou présente une zone boisée"
+   GenX::Log INFO "EOSD values are kept when Sandwich is empty or covered by Wooded Area"
    vexpr RVEGE ifelse((RSANDWICH==0 || RSANDWICH==200),RMASK, 0)
 
    #écriture du fichier
@@ -1915,7 +1915,7 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
    GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif was generated"
 
    #affectation des valeurs SMOKE
-   GenX::Log INFO "Affectation des valeurs SMOKE à certaines classes EOSD"
+   GenX::Log INFO "Converting EOSD classes into SMOKE/TEB values"
    gdalband create RVEGESMOKE $Param(Width) $Param(Height) 1 Byte
    gdalband define RVEGESMOKE -georef UTMREF$indexCouverture
    vector dim LUT { FROM TO }
@@ -1933,7 +1933,7 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
     gdalfile close FSANDWICH FEOSDTILE FILEOUT
     gdalband free RSANDWICH REOSDTILE RVEGE RVEGESMOKE RTEMP
 
-   GenX::Log INFO "Fin de la proc EOSDvegetation"
+   GenX::Log INFO "End of procedure : EOSDvegetation"
 }
 
 #----------------------------------------------------------------------------
@@ -1954,16 +1954,16 @@ proc UrbanX::LCC2000V {indexCouverture} {
    #add proc to Metadata
    GenX::Procs
 
-   GenX::Log INFO "Début de la proc LCC2000V"
+   GenX::Log INFO "Beginning of procedure : LCC2000V"
 
    variable Param
 
-   GenX::Log INFO "Récupération du fichier sandwich"
+   GenX::Log DEBUG "Open and read Sandwich file."
    #lecture du fichier créé précédemment lors de la proc SandwichCanVec
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
    #recherche des fichiers LCC2000V
-   GenX::Log INFO "Recherche des fichiers LCC2000V"
+   GenX::Log INFO "Search for LCC2000V files."
 
    #---- NOTE : CE PROCESSUS DEVRAIT SE RETROUVER DIRECTEMENT DANS GENX
    #---- IL SERAIT ALORS REMPLACÉ PAR LES DEUX LIGNES SUIVANTES :
@@ -1995,7 +1995,7 @@ proc UrbanX::LCC2000V {indexCouverture} {
    }
    #---- FIN DU BLOC À MIGRER DANS GENX
 
-   GenX::Log DEBUG "Les fichiers LCC2000-V suivants ont été trouvés : $files"
+   GenX::Log DEBUG "The following LCC2000-V files were found : $files"
    set Param(LCC2000VFiles) $files  ;#cette ligne devrait être supprimée si le bloc est migré dans GenX
    #Param(LCC2000VFiles) contains a list of elements of the form/data/aqli04/afsulub/lcc2000v_csc2000v/shp_en/999/a/LCC2000-V_999A_1_0.shp
 
@@ -2008,15 +2008,15 @@ proc UrbanX::LCC2000V {indexCouverture} {
       eval ogrlayer read LAYERLCC2000V$j SHAPELCC2000V 0
 
       #sélection de la zone LCC2000-V appropriée à l'aide de la sandwich
-      GenX::Log INFO "Sélection de la zone appropriée sur la tuile LCC2000V"
+      GenX::Log INFO "Selecting the appropriate zone on the LCC2000V tile."
       gdalband copy RMASK RSANDWICH
       vexpr RMASK RMASK << 0
 
       #rasterization des éléments LCC2000V
-      GenX::Log INFO "Rasterizarion des éléments LCC2000V sur la zone à traiter (peut être long...)"
+      GenX::Log INFO "Rasterize the selected LCC2000V (this step can take several minutes...)."
       set t_gridinterp [clock seconds]
       gdalband gridinterp RMASK LAYERLCC2000V$j $Param(Mode) COVTYPE
-      GenX::Log DEBUG "Temps total de rasterization : [expr [clock seconds]-$t_gridinterp] secondes"
+      GenX::Log DEBUG "Time required for LCC2000V rasterization : [expr [clock seconds]-$t_gridinterp] seconds"
 
       #nettoyage de mémiore
       ogrlayer free LAYERLCC2000V$j
@@ -2031,7 +2031,7 @@ proc UrbanX::LCC2000V {indexCouverture} {
     gdalband free RSANDWICH
 
    #creating the output file : les entités LCC2000V rasterizés
-   GenX::Log DEBUG "Génération du fichier de sortie"
+   GenX::Log DEBUG "Generating output file."
    file delete -force $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif GeoTiff
    gdalband write RMASK FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
@@ -2039,11 +2039,11 @@ proc UrbanX::LCC2000V {indexCouverture} {
    gdalband free RMASK
 
    #lecture du fichier créé précédemment lors de la proc SandwichCanVec
-   GenX::Log INFO "Lecture du fichier LCC2000V"
+   GenX::Log INFO "Open and read LCC2000V file."
    gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif]
 
    #associer aux valeurs LCC2000V des priorités
-   GenX::Log INFO "Associer des valeurs de priorités aux données LCC2000V"
+   GenX::Log INFO "Associate SMOKE/TEB classes to LCC2000V values."
    vector create LUT
    vector dim LUT { FROM TO }
    vector set LUT.FROM {0 10 11 12 20 30 31 32 33 34 35 36 37 40 50 51 52 53 80 81 82 83 100 101 102 103 104 110 121 122 123 200 210 211 212 213 220 221 222 223 230 231 232 233 }
@@ -2052,7 +2052,7 @@ proc UrbanX::LCC2000V {indexCouverture} {
    vector free LUT
 
    #creating the output file
-   GenX::Log DEBUG "Génération du fichier de sortie"
+   GenX::Log DEBUG "Generating output file."
    file delete -force $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif GeoTiff
    gdalband write RLCC2000VSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
@@ -2062,7 +2062,7 @@ proc UrbanX::LCC2000V {indexCouverture} {
     gdalfile close FLCC2000V
     gdalband free RLCC2000V RLCC2000VSMOKE
 
-   GenX::Log INFO "Fin de la proc LCC2000V"
+   GenX::Log INFO "End of procedure : LCC2000V"
 
 }
 
@@ -2447,7 +2447,7 @@ proc UrbanX::Utilitaires { } {
 proc UrbanX::Process { Coverage } {
 
    GenX::Procs CANVEC StatCan EOSD
-   GenX::Log INFO "Début d'UrbanX"
+   GenX::Log INFO "Beginning of UrbanX"
 
    variable Param
    variable Meta
@@ -2456,9 +2456,7 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::Utilitaires
    #   return
 
-   set Usedtool "UrbanX"
    GenX::Log INFO "Coverage = $Coverage"
-   GenX::Log INFO "Traitement d'une ville : $Usedtool"
 
    #----- Get the lat/lon and files parameters associated with the province
    UrbanX::AreaDefine    $Coverage
@@ -2496,5 +2494,5 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::TEB2FSTD
 
    #fin de la boucle sur la zone à traiter
-   GenX::Log INFO "Fin du traitement de $Coverage avec UrbanX"
+   GenX::Log INFO "End of processing $Coverage with UrbanX"
 }
