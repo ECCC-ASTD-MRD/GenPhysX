@@ -144,6 +144,7 @@ namespace eval GenX { } {
    set Path(CCRS)      $Path(DBase)/CCRS-LC2005
    set Path(Various)   $Path(DBase)/Various
    set Path(BELD3)     $Path(DBase)/BELD3
+   set Path(StatCan)   /data/aqli04/afsulub/StatCan2006
 
    #----- Metadata related variables
 
@@ -174,52 +175,53 @@ namespace eval GenX { } {
 #
 #----------------------------------------------------------------------------
 proc GenX::Process { Grid } {
+   variable Param
 
    #----- Check if we only need to process topo
-   if { [fstdfield define $Grid -IP1]!=1200 } {
-      if { $GenX::Param(Topo)!="" } {
+   if { [fstdfield is $Grid] && [fstdfield define $Grid -IP1]!=1200 } {
+      if { $Param(Topo)!="" } {
          GeoPhysX::AverageTopo     $Grid
       }
    } else {
       #----- Topography
-      if { $GenX::Param(Topo)!="" } {
+      if { $Param(Topo)!="" } {
          GeoPhysX::AverageTopo     $Grid
          GeoPhysX::AverageTopoLow  $Grid
          GeoPhysX::AverageGradient $Grid
       }
 
       #----- Slope and Aspect
-      if { $GenX::Param(Aspect)!="" } {
+      if { $Param(Aspect)!="" } {
          GeoPhysX::AverageAspect $Grid
       }
 
       #----- Land-water mask
-      if { $GenX::Param(Mask)!="" } {
+      if { $Param(Mask)!="" } {
          GeoPhysX::AverageMask $Grid
       }
 
       #----- Land-water mask
-      if { $GenX::Param(GeoMask)!="" } {
+      if { $Param(GeoMask)!="" } {
          GeoPhysX::AverageGeoMask $Grid
       }
 
       #----- Vegetation type
-      if { $GenX::Param(Vege)!="" } {
+      if { $Param(Vege)!="" } {
          GeoPhysX::AverageVege $Grid
       }
 
       #----- Soil type
-      if { $GenX::Param(Soil)!="" } {
+      if { $Param(Soil)!="" } {
          GeoPhysX::AverageSoil $Grid
       }
 
       #----- Consistency checks
-      switch $GenX::Param(Check) {
+      switch $Param(Check) {
          "STD" { GeoPhysX::CheckConsistencyStandard }
       }
 
       #----- Sub grid calculations
-      if { $GenX::Param(Sub)!="" } {
+      if { $Param(Sub)!="" } {
          GeoPhysX::SubCorrectionFactor
          GeoPhysX::SubTopoFilter
          GeoPhysX::SubLaunchingHeight
@@ -228,18 +230,23 @@ proc GenX::Process { Grid } {
       }
 
       #----- Biogenic emissions calculations
-      if { $GenX::Param(Biogenic)!="" } {
+      if { $Param(Biogenic)!="" } {
          BioGenX::CalcEmissions  $Grid
          BioGenX::TransportableFractions $Grid
       }
 
       #----- Urban parameters
-      if { $GenX::Param(Urban)!="" } {
+      if { $Param(Urban)!="" } {
+         #UrbanX::Process $Param(Urban)
          UrbanPhysX::Cover $Grid
       }
 
+      if { $Param(SMOKE)!="" } {
+         IndustrX::Process $Param(SMOKE)
+      }
+
       #----- Diagnostics of output fields
-      if { $GenX::Param(Diag) } {
+      if { $Param(Diag) } {
          GeoPhysX::Diag
       }
    }
@@ -372,7 +379,7 @@ proc GenX::Procs { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::Log { Type Message { Head True } } {
+proc GenX::Log { Type { Message "" } { Head True } } {
    variable Log
    variable Param
 
@@ -428,7 +435,7 @@ proc GenX::MetaData { Grid } {
    catch { append version ", IndustrX($IndustrX::Param(Version))" }
 
    #----- Generation date et parameters used
-   set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\n"
+   set meta "Generated      : [clock format [clock seconds]] on [info hostname] by $env(USER)\nExecution time : [expr [clock seconds]-$Param(Secs)]\n"
 
    if  { [info exists env(GENPHYSX_BATCH)] } {
       append meta "Call parameters: [info script] $env(GENPHYSX_BATCH)\n"
@@ -1007,7 +1014,7 @@ proc GenX::GridGet { } {
 
    if { ![llength $grids] } {
       GenX::Log ERROR "Could not find a grid definition either from a standard file or a namelist"
-      exit 1
+#      exit 1
    }
 
    if { $Param(Process)!="" } {

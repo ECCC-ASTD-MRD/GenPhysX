@@ -91,13 +91,13 @@ proc IndustrX::FindNTSSheets { indexCouverture } {
    #remplacement des ids des tuiles par le no de feuillet NTS, de format 999A99
    set UrbanX::Param(NTSSheets) { }
    foreach id $UrbanX::Param(NTSIds) {
-      lappend UrbanX::Param(NTSSheets) $UrbanX::Param(NTSSheets) [ogrlayer define NTSLAYER50K -feature $id IDENTIFIAN]
+      lappend UrbanX::Param(NTSSheets) [ogrlayer define NTSLAYER50K -feature $id IDENTIFIAN]
    }
    GenX::Log DEBUG "Les [llength $UrbanX::Param(NTSSheets)] tuiles NTS ayant les no de feuillets suivants sont conservées : $UrbanX::Param(NTSSheets)"
 
    #nettoyage de mémoire
-   ogrfile close SHAPECANADA
-   ogrlayer free VCANADA
+   ogrfile close SHAPECANADA SHAPE50K
+   ogrlayer free VCANADA NTSLAYER50K
 
    GenX::Log INFO "Fin de la proc FindNTSSheetsCanVec"
 }
@@ -200,8 +200,8 @@ proc IndustrX::NTSExtent { indexCouverture } {
    GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $UrbanX::Param(Width)x$UrbanX::Param(Height)"
 
    #nettoyage de mémoire
-   ogrfile close SHAPECANVECNTSLAYER
-   ogrlayer free CANVECNTSLAYER
+   ogrfile close SHAPECANVECNTSLAYER SHAPE50K
+   ogrlayer free CANVECNTSLAYER NTSLAYER50K
 
    GenX::Log INFO "Fin de la proc NTSExtent"
 }
@@ -356,9 +356,6 @@ proc IndustrX::Process { Coverage } {
    GenX::Log INFO "Coverage = $Coverage"
    GenX::Log INFO "Traitement d'une province : $Usedtool"
 
-   #mesure du temps de traitement de la zone entière
-   set t_traitement [clock seconds]
-
    #----- Get the lat/lon and pr code parameters associated with the province
    UrbanX::AreaDefine    $Coverage
    #----- Defines the general  extents of the zone to be process, the central UTM zone and set the initial UTMREF
@@ -375,8 +372,11 @@ proc IndustrX::Process { Coverage } {
    #ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
    #Ce fichier contient les polygones de DA pour une province, qui ont été découpés suivant l'index NTS 50K spécifié dans Param(NTSFile)
    if { ![ogrlayer is VDASMOKE] } {
-      set Param(PopFile2006SMOKE_Province) /data/aqli04/afsulub/StatCan2006/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.shp
-      set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append $Param(PopFile2006SMOKE_Province)] 0]
+      foreach file [glob $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.*] {
+         file delete -force [file tail $file]
+         file copy $file ./
+      }
+      set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append da2006-nts_lcc-nad83_$Coverage.shp] 0]
       eval ogrlayer read VDASMOKE $da_layer_smoke
       GenX::Log DEBUG "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
    }
@@ -390,7 +390,7 @@ proc IndustrX::Process { Coverage } {
    #préparation à l'incrémentation sur les feuillets NTS
    set nbrfeuillets [llength $UrbanX::Param(NTSSheets) ]
    set i 1 ;#incrémentation sur les feuillets à traiter
-   puts "_______________________________________________________________________________________________________________________________"
+   GenX::Log -
 
    #----- Process for each NTS Sheets that were previously selected
    foreach feuillet $UrbanX::Param(NTSSheets) {
@@ -400,7 +400,7 @@ proc IndustrX::Process { Coverage } {
       if {$i < 1} {
          GenX::Log INFO "Feuillet $i sur $nbrfeuillets"
          GenX::Log INFO "Feuillet déjà traité"
-         puts "_______________________________________________________________________________________________________________________________"
+         GenX::Log -
          incr i
 
       } else {
@@ -481,9 +481,8 @@ proc IndustrX::Process { Coverage } {
    #écriture des métadonnées
    set GenX::Meta(Footer) " Varia :
    Données CanVec : $GenX::Path(CANVEC)
-   Données de Statistique Canada : $Param(PopFile2006SMOKE_Province)
+   Données de Statistique Canada : $GenX::Path(StatCan)
    Données EOSD : $GenX::Path(EOSD)
-   Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes
    Nombre de feuillets NTS traités : [expr ($i-1)] / $nbrfeuillets"
    GenX::MetaData $GenX::Param(OutFile)_metadata_$Coverage.txt
 

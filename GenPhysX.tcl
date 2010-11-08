@@ -78,14 +78,6 @@ source $dir/IndustrX.tcl
 #----- Parse the arguments
 GenX::ParseCommandLine
 
-#----- Urban classes calculations
-#if { $GenX::Param(Urban)!="" } {
-#   UrbanX::Process $GenX::Param(Urban)
-#}
-
-if { $GenX::Param(SMOKE)!="" } {
-   IndustrX::Process $GenX::Param(SMOKE)
-}
 #----- Open output files
 fstdfile open GPXOUTFILE write $GenX::Param(OutFile)$GenX::Param(Process).fst
 fstdfile open GPXAUXFILE write $GenX::Param(OutFile)$GenX::Param(Process)_aux.fst
@@ -107,15 +99,12 @@ proc ProcessCheck { Channel } {
    }
 }
 
-#----- Get get grids to process
+#----- Get grids to process
 set grids [GenX::GridGet]
 
-if { [llength $grids]==1 } {
-   #----- If we have only on grid
-   GenX::Process $grids
-   GenX::MetaData $grids
-} else {
-   #----- Otherwise, launch each grid into a sub-process
+if { [llength $grids]>1 } {
+   #----- If we have more than 1 grid, launch each grid into a sub-process
+
    set Param(Process) 0
    set Param(Done)    False
 
@@ -152,6 +141,9 @@ if { [llength $grids]==1 } {
       }
       incr Param(Process) 1
    }
+} else {
+   GenX::Process $grids
+   GenX::MetaData $grids
 }
 
 #----- Tadaaaa ...

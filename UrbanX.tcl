@@ -2459,8 +2459,6 @@ proc UrbanX::Process { Coverage } {
    GenX::Log INFO "Coverage = $Coverage"
    GenX::Log INFO "Traitement d'une ville : $Usedtool"
 
-   set t_traitement [clock seconds]
-
    #----- Get the lat/lon and files parameters associated with the province
    UrbanX::AreaDefine    $Coverage
 
@@ -2500,8 +2498,7 @@ proc UrbanX::Process { Coverage } {
    set GenX::Meta(Footer) " Varia :
    Données CanVec : $GenX::Path(CANVEC)
    Données de Statistique Canada : $Param(PopFile2006SMOKE)
-   Données EOSD : $GenX::Path(EOSD)
-   Temps total du traitement : [expr [clock seconds]-$t_traitement] secondes"
+   Données EOSD : $GenX::Path(EOSD)"
    GenX::MetaData $GenX::Param(OutFile)_metadata_$Coverage.txt
 
    #fin de la boucle sur la zone à traiter
