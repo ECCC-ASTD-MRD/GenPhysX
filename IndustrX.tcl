@@ -49,20 +49,20 @@ namespace eval IndustrX { } {
 #----------------------------------------------------------------------------
 proc IndustrX::FindNTSSheets { indexCouverture } {
 
-   GenX::Log INFO "Debut de la proc FindNTSSheetsCanVec"
+   GenX::Log INFO "Beginning of procedure : FindNTSSheetsCanVec"
 
    #ouverture du shapefile index NTS50K
    if { ![ogrlayer is NTSLAYER50K] } {
       set nts_layer [lindex [ogrfile open SHAPE50K read $UrbanX::Param(NTSFile)] 0]
       eval ogrlayer read NTSLAYER50K $nts_layer
    }
-   GenX::Log DEBUG "On compte [ogrlayer define NTSLAYER50K -nb] tuiles NTS dans le fichier NTS50K"
+   GenX::Log DEBUG "There are [ogrlayer define NTSLAYER50K -nb] NTS tiles in the NTS50K file."
 
    #ouverture du shapefile du Canada
    set prov_layer [lindex [ogrfile open SHAPECANADA read $UrbanX::Param(ProvincesGeom)] 0]
    eval ogrlayer read VCANADA $prov_layer
    ogrlayer stats VCANADA -transform UTMREF$indexCouverture
-   GenX::Log DEBUG "On compte [ogrlayer define VCANADA -nb] polygones dans le fichier de géométrie canadienne"
+   GenX::Log DEBUG "There are [ogrlayer define VCANADA -nb] polygons in the canadian territory file."
 
    #index de la géométrie de province
    set idxprovince [ogrlayer define VCANADA -featureselect [list [list PR == $UrbanX::Param(ProvinceCode) ] ] ]
@@ -79,27 +79,27 @@ proc IndustrX::FindNTSSheets { indexCouverture } {
 
    #ramener NTSLAYER50K à la sélection des fichiers présélectionnés
    ogrlayer define NTSLAYER50K -featureselect [list [list index # $ntssheets_pre]]
-   GenX::Log DEBUG "Les [llength $ntssheets_pre] tuiles NTS ayant les ID suivants ont été présélectionnées à l'aide du convex hull : $ntssheets_pre"
+   GenX::Log DEBUG "The [llength $ntssheets_pre] NTS tiles with the following IDs have been pre-selected with a convex hull command : $ntssheets_pre"
 
    #avertissement sur le temps requis...
-   GenX::Log INFO "Intersection des fichiers NTS présélectionnés avec le polygone de province.  Cette opération peut prendre plusieurs minutes!"
+   GenX::Log INFO "Intersecting pre-selected NTS tiles with the province polygon.  This operation might takes several minutes..."
 
    #sélection, parmi les fichiers NTS présélectionnés, de ceux qui sont en intersection avec la géométrie provinciale
    set UrbanX::Param(NTSIds) [ogrlayer pick NTSLAYER50K $geom True INTERSECT]
-   GenX::Log DEBUG "Les [llength $UrbanX::Param(NTSIds)] tuiles NTS ayant les ID suivants sont conservées suite à l'intersection avec la géométrie : $UrbanX::Param(NTSIds)"
+   GenX::Log DEBUG "The [llength $UrbanX::Param(NTSIds)] NTS tiles with the following IDs intersect the province polygon : $UrbanX::Param(NTSIds)"
 
    #remplacement des ids des tuiles par le no de feuillet NTS, de format 999A99
    set UrbanX::Param(NTSSheets) { }
    foreach id $UrbanX::Param(NTSIds) {
       lappend UrbanX::Param(NTSSheets) [ogrlayer define NTSLAYER50K -feature $id IDENTIFIAN]
    }
-   GenX::Log DEBUG "Les [llength $UrbanX::Param(NTSSheets)] tuiles NTS ayant les no de feuillets suivants sont conservées : $UrbanX::Param(NTSSheets)"
+   GenX::Log DEBUG "The [llength $UrbanX::Param(NTSSheets)] NTS tiles with the following SNRC identification codes intersect the province polygon : $UrbanX::Param(NTSSheets)"
 
    #nettoyage de mémoire
    ogrfile close SHAPECANADA SHAPE50K
    ogrlayer free VCANADA NTSLAYER50K
 
-   GenX::Log INFO "Fin de la proc FindNTSSheetsCanVec"
+   GenX::Log INFO "End of procedure : FindNTSSheetsCanVec"
 }
 
 #----------------------------------------------------------------------------
@@ -120,7 +120,7 @@ proc IndustrX::FindNTSSheets { indexCouverture } {
 #----------------------------------------------------------------------------
 proc IndustrX::NTSExtent { indexCouverture } {
 
-   GenX::Log INFO "Debut de la proc NTSExtent"
+   GenX::Log INFO "Beginning of procedure : NTSExtent"
 
    #ouverture du shapefile index NTS50K
    if { ![ogrlayer is NTSLAYER50K] } {
@@ -155,7 +155,7 @@ proc IndustrX::NTSExtent { indexCouverture } {
    }
 
    #test : comptage du nombre de polygones dans le shapefile (devrait être 1)
-   GenX::Log DEBUG "On compte [ogrlayer define CANVECNTSLAYER -nb] tuiles NTS dans le fichier CanVec NTS Layer (devrait être 1)"
+   GenX::Log DEBUG "There are [ogrlayer define CANVECNTSLAYER -nb] NTS tiles in the CanVec NTS layer file (should be 1)"
 
    #définition du UTMREF pour la zone à traiter
    UrbanX::UTMZoneDefine  $UrbanX::Param(Lat0) $UrbanX::Param(Lon0) $UrbanX::Param(Lat1) $UrbanX::Param(Lon1) $UrbanX::Param(Resolution) 1_$indexCouverture
@@ -203,7 +203,7 @@ proc IndustrX::NTSExtent { indexCouverture } {
    ogrfile close SHAPECANVECNTSLAYER SHAPE50K
    ogrlayer free CANVECNTSLAYER NTSLAYER50K
 
-   GenX::Log INFO "Fin de la proc NTSExtent"
+   GenX::Log INFO "End of procedure NTSExtent"
 }
 
 #----------------------------------------------------------------------------
@@ -224,7 +224,7 @@ proc IndustrX::Priorities2SMOKE { indexCouverture } {
 
    #add proc to Metadata
    GenX::Procs
-   GenX::Log INFO "Début de la proc Priorities2SMOKE"
+   GenX::Log INFO "Beginning of procedure : Priorities2SMOKE"
 
    variable Param
 
@@ -259,7 +259,7 @@ proc IndustrX::Priorities2SMOKE { indexCouverture } {
    gdalfile close FILEOUT FSANDWICH FPOPDENSCUT ;#FLCC2000VSMOKE
    gdalband free RSMOKE RSANDWICH RPOPDENSCUT ;#RLCC2000VSMOKE
 
-   GenX::Log INFO "Fin de la proc Priorities2SMOKE"
+   GenX::Log INFO "End of procedure Priorities2SMOKE"
 }
 
 #----------------------------------------------------------------------------
@@ -282,7 +282,7 @@ proc IndustrX::SMOKE2DA { indexCouverture } {
 
    #add proc to Metadata
    GenX::Procs
-   GenX::Log INFO "Début de la proc SMOKE2DA"
+   GenX::Log INFO "Beginning of procedure SMOKE2DA"
 
    variable Param
 
@@ -294,7 +294,7 @@ proc IndustrX::SMOKE2DA { indexCouverture } {
 
    #sélection des polygones de DA ayant la valeur indexCouverture dans le champ SNRC
    set da_select [ogrlayer define VDASMOKE -featureselect [list [list SNRC == $indexCouverture]] ]
-   GenX::Log DEBUG "Les [llength $da_select] polygones de dissemination area ayant les ID suivants (fichier provincial) ont été conservés : $da_select"
+   GenX::Log DEBUG "The [llength $da_select] dissemination area polygons with the following IDs were selected : $da_select"
 
    #   clear les colonnes SMOKE pour les polygones de DA sélectionnés
    for {set classeid 1} {$classeid < 96} {incr classeid 1} {
@@ -309,7 +309,7 @@ proc IndustrX::SMOKE2DA { indexCouverture } {
    #rasterization des polygones de DA
    gdalband gridinterp RDA VDASMOKE FAST FEATURE_ID
 
-   GenX::Log INFO "Comptage des pixels de chaque classe SMOKE pour chaque polygone de DA"
+   GenX::Log INFO "Counting pixels associated to each SMOKE class for each dissemination area polygon"
    for {set classeid 1} {$classeid < 96} {incr classeid 1} {
 
       #enregistrement du temps nécessaire pour faire le traitement de la classe i
@@ -319,7 +319,7 @@ proc IndustrX::SMOKE2DA { indexCouverture } {
       vexpr VDASMOKE.SMOKE$classeid tcount(VDASMOKE.SMOKE$classeid,ifelse (RSMOKE==$classeid,RDA,-1))
 
       #affichage du temps requis pour traiter la classe i
-      GenX::Log DEBUG "Classe $classeid traitée en [expr [clock seconds]-$t] secondes"
+      GenX::Log DEBUG "Class $classeid was computed in [expr [clock seconds]-$t] seconds"
    }
 
    ogrlayer sync VDASMOKE ;# là pcq utilisation du mode append, pas besoin en mode write, mais le mode write a un bug
@@ -328,7 +328,7 @@ proc IndustrX::SMOKE2DA { indexCouverture } {
    gdalband free RSMOKE RDA
    gdalfile close FSMOKE
 
-   GenX::Log INFO "Fin de la proc SMOKE2DA"
+   GenX::Log INFO "End of procedure SMOKE2DA"
 }
 
 
@@ -349,13 +349,11 @@ proc IndustrX::SMOKE2DA { indexCouverture } {
 proc IndustrX::Process { Coverage } {
 
    GenX::Procs CANVEC StatCan EOSD
-   GenX::Log INFO "Début d'IndustrX"
+   GenX::Log INFO "Beginning of IndustrX"
 
    variable Param
 
-   set Usedtool "IndustrX"
    GenX::Log INFO "Coverage = $Coverage"
-   GenX::Log INFO "Traitement d'une province : $Usedtool"
 
    #----- Get the lat/lon and pr code parameters associated with the province
    UrbanX::AreaDefine    $Coverage
@@ -379,7 +377,7 @@ proc IndustrX::Process { Coverage } {
       }
       set da_layer_smoke [lindex [ogrfile open SHAPEDASMOKE append da2006-nts_lcc-nad83_$Coverage.shp] 0]
       eval ogrlayer read VDASMOKE $da_layer_smoke
-      GenX::Log DEBUG "On compte [ogrlayer define VDASMOKE -nb] polygones dans le fichier des dissemination areas à modifier"
+      GenX::Log DEBUG "There are [ogrlayer define VDASMOKE -nb] dissemination area polygons in the output file."
    }
 
 #    #Pour traiter une liste spécifique de feuillets NTS (tests de performances, une tuile qui a mal été traitée...), entrez la liste des
@@ -399,8 +397,8 @@ proc IndustrX::Process { Coverage } {
       #Si le traitement d'une province a déjà été partiellement effectué, écrire l'index de feuillet où reprendre le traitement.  Default à 1.
       #L'information se trouve dans le log du traitement précédemment effectué
       if {$i < 1} {
-         GenX::Log INFO "Feuillet $i sur $nbrfeuillets"
-         GenX::Log INFO "Feuillet déjà traité"
+         GenX::Log INFO "Tile $i of $nbrfeuillets"
+         GenX::Log INFO "Tile already processed"
          GenX::Log -
          incr i
 
@@ -408,22 +406,23 @@ proc IndustrX::Process { Coverage } {
          #calcul du temps de traitement d'un feuillet NTS
          set t_feuillet [clock seconds]
 
-         GenX::Log INFO "Feuillet $i sur $nbrfeuillets"
+         GenX::Log INFO "Tile $i of $nbrfeuillets"
          GenX::Log INFO "Traitement de la tuile NTS ayant le numéro de feuillet $feuillet"
+         GenX::Log INFO "Processing NTS tile with the SNRC identification code $feuillet"
 
          #----- Finds the extents of the zone (NTS Sheet) to be process
          IndustrX::NTSExtent $feuillet
-         GenX::Log INFO "La latitude de la tuile va de $UrbanX::Param(Lat0) à $UrbanX::Param(Lat1)"
-         GenX::Log INFO "La longitude de la tuile va de $UrbanX::Param(Lon0) à $UrbanX::Param(Lon1)"
-         GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe X  vont de $UrbanX::Param(x0) à $UrbanX::Param(x1)"
-         GenX::Log INFO "Les coordonnées UTM de la tuile sur l'axe Y  vont de $UrbanX::Param(y0) à $UrbanX::Param(y1)"
+         GenX::Log INFO "Tile's latitude goes from $UrbanX::Param(Lat0) to $UrbanX::Param(Lat1)"
+         GenX::Log INFO "Tile's longitude goes from $UrbanX::Param(Lon0) to $UrbanX::Param(Lon1)"
+         GenX::Log INFO "Tile's UTM coordinates, on the X axis, go from $UrbanX::Param(x0) to $UrbanX::Param(x1)"
+         GenX::Log INFO "ile's UTM coordinates, on the X axis, go from $UrbanX::Param(y0) to $UrbanX::Param(y1)"
 
          #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
          set UrbanX::Param(t_Sandwich) 0
          if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
             UrbanX::Sandwich $feuillet
          } else {
-            GenX::Log INFO "Le fichier $GenX::Param(OutFile)_sandwich_$feuillet.tif existe déjà."
+            GenX::Log INFO "File $GenX::Param(OutFile)_sandwich_$feuillet.tif already exists."
          }
 
          #----------TO MODIFY FOR CANVEC LAYERS
@@ -436,7 +435,7 @@ proc IndustrX::Process { Coverage } {
          if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
             UrbanX::PopDens2Builtup $feuillet
          } else {
-            GenX::Log INFO "Les fichiers $GenX::Param(OutFile)_popdens_$feuillet.tif et $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif existent déjà."
+            GenX::Log INFO "Files $GenX::Param(OutFile)_popdens_$feuillet.tif and $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif already exist."
          }
 
          #----- Applies LUT to all processing results to generate SMOKE classes and sets the values in the DA shapefile
@@ -446,25 +445,25 @@ proc IndustrX::Process { Coverage } {
             #----- Counts the SMOKE values and write the results in the dissemination area shapefile
             IndustrX::SMOKE2DA $feuillet
          } else {
-            GenX::Log INFO "Le fichier $GenX::Param(OutFile)_SMOKE_$feuillet.tif existe déjà."
+            GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE_$feuillet.tif already exist."
          }
 
          #suppression des produits intermédiaires
          file delete -force $GenX::Param(OutFile)_sandwich_$feuillet.tif
-         GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich_$feuillet.tif was deleted"
+         GenX::Log INFO "File $GenX::Param(OutFile)_sandwich_$feuillet.tif was deleted"
          file delete -force $GenX::Param(OutFile)_popdens_$feuillet.tif
-         GenX::Log INFO "The file $GenX::Param(OutFile)_popdens_$feuillet.tif was deleted"
+         GenX::Log INFO "File $GenX::Param(OutFile)_popdens_$feuillet.tif was deleted"
          file delete -force $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif
-         GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif was deleted"
+         GenX::Log INFO "File $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif was deleted"
          file delete -force $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif
-         GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif was deleted"
+         GenX::Log INFO "File $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif was deleted"
          file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif
-         GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was deleted"
+         GenX::Log INFO "File $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was deleted"
          file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
-         GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
+         GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
 
          #affichage du temps de traitement du feuillet
-         GenX::Log DEBUG "Feuillet $feuillet traité en [expr [clock seconds]-$t_feuillet] secondes"
+         GenX::Log DEBUG "Processing the NTS tile $feuillet took [expr [clock seconds]-$t_feuillet] seconds"
 
          #préparation à la nouvelle incrémentation
          GenX::Log -
@@ -478,9 +477,9 @@ proc IndustrX::Process { Coverage } {
    ogrlayer free VDASMOKE
 
    #écriture des métadonnées
-   append GenX::Meta(Footer) "Varia         :
-   Nombre de feuillets NTS traités : [expr ($i-1)] / $nbrfeuillets\n"
+   append GenX::Meta(Footer) "Miscellaneous         :
+	Number of NTS tiles processed : [expr ($i-1)] / $nbrfeuillets\n"
 
    #fin de la boucle sur la zone à traiter
-   GenX::Log INFO "Fin du traitement de $Coverage avec IndustrX"
+   GenX::Log INFO "End of processing $Coverage with IndustrX"
 }
