@@ -100,7 +100,7 @@ proc ProcessCheck { Channel } {
 }
 
 #----- Get grids to process
-set grids [GenX::GridGet]
+set grids [GenX::GridGet $GenX::Param(GridFile)]
 
 if { [llength $grids]>1 } {
    #----- If we have more than 1 grid, launch each grid into a sub-process

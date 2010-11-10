@@ -30,10 +30,7 @@
 #   GenX::GridLimits         { Grid }
 #   GenX::GridCopy           { SourceField DestField }
 #   GenX::GridCopyDesc       { Field FileIn FileOut }
-#   GenX::GridGet            { }
-#   GenX::GridGetFromGEM     { File }
-#   GenX::GridGetFromNML     { File }
-#   GenX::GridGetFromFile    { File { Copy True } }
+#   GenX::GridGet            { File }
 #   GenX::ASTERGDEMFindFiles { Lat0 Lon0Lat1 Lon1 }
 #   GenX::CANVECFindFiles    { Lat0 Lon0 Lat1 Lon1 Layers }
 #   GenX::SRTMFindFiles      { Lat0 Lon0Lat1 Lon1 }
@@ -282,10 +279,6 @@ proc GenX::Submit { } {
    set f [open [set job $env(TMPDIR)/GenPhysX[pid]] w 0755]
 
    puts $f "#!/bin/ksh\nset -x"
-   if { [info exists env(gem_dynversion)] } {
-      puts $f ". r.sm.dot gem $env(gem_dynversion)"
-   }
-
    puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
    puts $f "trap \"cd ..; rm -fr $rdir\" 0 1 2 3 6 15 30"
@@ -1007,161 +1000,6 @@ proc GenX::GridCopyDesc { Field FileIn FileOut } {
 # Name     : <GenX::GridGet>
 # Creation : Octobre 2007 - J.P. Gauthier - CMC/CMOE
 #
-# Goal     : Get the grid from the first availabel way (standard file,grille or gem settings).
-#
-# Parameters :
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GenX::GridGet { } {
-   variable Path
-   variable Param
-
-   set grids {}
-
-   if { [file exists $Param(GridFile)] } {
-     set grids [GenX::GridGetFromFile $Param(GridFile)]
-   }
-
-   if { ![llength $grids] && [file exists $Param(OutFile).fst] } {
-     set grids [GenX::GridGetFromFile $Param(OutFile).fst False]
-   }
-
-   if { ![llength $grids] && [file exists $Param(NameFile)] } {
-     set grids [GenX::GridGetFromGEM $Param(NameFile)]
-   }
-
-   if { ![llength $grids] } {
-      GenX::Log ERROR "Could not find a grid definition either from a standard file or a namelist"
-#      exit 1
-   }
-
-   if { $Param(Process)!="" } {
-      return [lindex $grids $Param(Process)]
-   } else {
-      return $grids
-   }
-}
-
-#----------------------------------------------------------------------------
-# Name     : <GenX::GridGetFromGEM>
-# Creation : Octobre 2007 - J.P. Gauthier - CMC/CMOE
-#
-# Goal     : Get the grid from grille (GEM procs).
-#
-# Parameters :
-#  <File>    : Namelist file path
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GenX::GridGetFromGEM { File } {
-   global   env
-   variable Param
-
-   if { ![info exists env(GEM)] } {
-       GenX::Log ERROR "GEM environment not loaded (. r.sm.dot gem x.x.x)"
-       exit 1
-   }
-
-   GenX::Log INFO "Found GEM version ([file tail $env(GEM)])"
-
-   set grid ""
-   catch { set grid [exec which $Param(GridBin)] }
-   if { $grid=="" } {
-      GenX::Log ERROR "Could not find \"$Param(GridBin)\". Please make sure GEM environment is loaded first (. r.sm.dot gem x.x.x)"
-      exit 1
-   }
-
-   if { [file normalize $File]!=[file normalize gem_settings.nml] } {
-      exec ln -fs $File gem_settings.nml
-   }
-
-   #----- Erase tape1 and gfilemap.txt since gemgrid won't run if they already exist
-   catch { file delete -force tape1 gfilemap.txt }
-   set err [catch { exec $grid } msg]
-   if { $err } {
-      GenX::Log ERROR "Problem while creating grid with $grid:\n\n\t$msg"
-      exit 1
-   }
-   catch { file rename -force gfilemap.txt ${Param(OutFile)}.fst_gfilemap.txt }
-
-   fstdfile open GPXGRIDFILE read tape1
-
-   foreach etiket { "GRDZ" "GRDU" "GRDV" } ip1 { 1200 1199 1198 } {
-      fstdfield read TIC GPXGRIDFILE -1 "$etiket" -1 -1 -1 "" ">>"
-      fstdfield read TAC GPXGRIDFILE -1 "$etiket" -1 -1 -1 "" "^^"
-      fstdfield free GRID
-      fstdfield create GRID [fstdfield define TIC -NI] [fstdfield define TAC -NJ] 1 Float32
-      fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -GRTYP Z \
-         -IG1 [fstdfield define TIC -IP1] -IG2 [fstdfield define TIC -IP2] -IG3 [fstdfield define TIC -IP3] -IP1 $ip1
-
-      fstdfield write TIC  GPXOUTFILE -32 True
-      fstdfield write TAC  GPXOUTFILE -32 True
-
-      fstdfield write TIC  GPXAUXFILE -32 True
-      fstdfield write TAC  GPXAUXFILE -32 True
-      fstdfield write GRID GPXAUXFILE -32 True
-   }
-   fstdfile close GPXGRIDFILE
-   file delete -force tape1
-
-   fstdfield read GRID  GPXAUXFILE -1 "" 1200 -1 -1 "" "GRID"
-   fstdfield read GRIDU GPXAUXFILE -1 "" 1199 -1 -1 "" "GRID"
-   fstdfield read GRIDV GPXAUXFILE -1 "" 1198 -1 -1 "" "GRID"
-
-   fstdfield free TIC TAC
-
-   return [list GRID GRIDU GRIDV]
-}
-
-#----------------------------------------------------------------------------
-# Name     : <GenX::GridGetFromNML>
-# Creation : Octobre 2007 - J.P. Gauthier - CMC/CMOE
-#
-# Goal     : Get the grid from internal procs.
-#
-# Parameters :
-#  <File>    : Namelist file path
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GenX::GridGetFromNML { File } {
-   variable Path
-
-   GenX::GetNML $File
-
-   fstdgrid zgrid TIC TAC GenX::Settings
-   fstdfield create GRID [fstdfield define TIC -NI] [fstdfield define TAC -NJ] 1 Float32
-   fstdfield define GRID -NOMVAR "GRID" -TYPVAR C \
-      -GRTYP Z -IG1 [fstdfield define TIC -IP1] -IG2 [fstdfield define TIC -IP2] -IG3 [fstdfield define TIC -IP3] -IP1 1200
-   fstdfield define GRID -positional TIC TAC
-
-   fstdfield write TIC GPXOUTFILE -32 True
-   fstdfield write TAC GPXOUTFILE -32 True
-
-   fstdfield write TIC  GPXAUXFILE -32 True
-   fstdfield write TAC  GPXAUXFILE -32 True
-   fstdfield write GRID GPXAUXFILE -32 True
-
-   fstdfield read GRID GPXAUXFILE -1 "" 1200 -1 -1 "" "GRID"
-   fstdfield free TIC TAC
-
-   return GRID
-}
-
-#----------------------------------------------------------------------------
-# Name     : <GenX::GridGetFromFile>
-# Creation : Octobre 2007 - J.P. Gauthier - CMC/CMOE
-#
 # Goal     : Get the grid from a standard file.
 #
 # Parameters :
@@ -1172,16 +1010,27 @@ proc GenX::GridGetFromNML { File } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::GridGetFromFile { File { Copy True } } {
+proc GenX::GridGet { File } {
    variable Param
 
+   set grids {}
+
+   if { $File=="" } {
+      return $grids
+   }
+
+   if { ![file exists $File] } {
+      GenX::Log ERROR "Grid description file does not exists: $File"
+      exit 1
+   }
+
    if { [catch { fstdfile open GPXGRIDFILE read $File } ] } {
-      GenX::Log ERROR "Could not open $File."
+      GenX::Log ERROR "Could not open Grid description file: $File"
       exit 1
    }
 
    #----- If the descriptors have'nt been made in grids yet
-   if { $Copy && $Param(Process)=="" } {
+   if { $Param(Process)=="" } {
 
       set tip1 1200
       #----- Read grid descriptors from source file and write grid field in aux file
@@ -1234,7 +1083,12 @@ proc GenX::GridGetFromFile { File { Copy True } } {
    fstdfile close GPXGRIDFILE
    fstdfield free GRID TIC TAC
 
-   return $grids
+   #----- Check if we're in a sub-process, if so return only the needed grid
+   if { $Param(Process)!="" } {
+      return [lindex $grids $Param(Process)]
+   } else {
+      return $grids
+   }
 }
 
 #----------------------------------------------------------------------------
