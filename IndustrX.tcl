@@ -365,12 +365,11 @@ proc IndustrX::Process { Coverage } {
    #loin, on lui passe le numéro de feuillet NTS à traiter
    IndustrX::FindNTSSheets 0
    # au terme de cette proc, on a :
-      #Param(NTSIds) : liste des ids des feuillets NTS : format 9999
-      #Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
+      #UrbanX::Param(NTSIds) : liste des ids des feuillets NTS : format 9999
+      #UrbanX::Param(NTSSheets) : liste des nos de feuillets NTS : format 999A99
 
    #ouverture du fichier de polygones de DA à modifier avec les valeurs SMOKE
    #Ce fichier contient les polygones de DA pour une province, qui ont été découpés suivant l'index NTS 50K spécifié dans Param(NTSFile)
-
    if { ![ogrlayer is VDASMOKE] } {
       foreach file [glob $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.*] {
          if { ![file exists [file tail $file]] } {
@@ -386,96 +385,106 @@ proc IndustrX::Process { Coverage } {
       GenX::Log DEBUG "There are [ogrlayer define VDASMOKE -nb] polygons in the provincial dissemination area file."
    }
 
-#    #Pour traiter une liste spécifique de feuillets NTS (tests de performances, une tuile qui a mal été traitée...), entrez la liste des
-#    #Feature_ID dans la variable UrbanX::Param(NTSIds) et la liste des identifiants NTS dans UrbanX::Param(NTSSheets)
-#     set UrbanX::Param(NTSIds) {3613 3614 3615}
-#     set UrbanX::Param(NTSSheets) {"031F10" "031F11" "031F12"}
-#     puts "Feuillets à traiter, entrée manuellement : $UrbanX::Param(NTSIds) $UrbanX::Param(NTSSheets)"
+   #Pour traiter une liste spécifique de feuillets NTS (tests de performances, une tuile qui a mal été traitée...), entrez la liste des
+   #Feature_ID dans la variable UrbanX::Param(NTSIds) et la liste des identifiants NTS dans UrbanX::Param(NTSSheets)
+#    set UrbanX::Param(NTSIds) {4650 4651 4652 4653 4654 4655 4656 4657 4658 4659 4660 4661 4662 4663 4664 4665 4666 4667 4668 4669}
+#    set UrbanX::Param(NTSSheets) {"035A02" "035A03" "035A04" "035A05" "035A06" "035A07" "035A08" "035A09" "035A10" "035A11" "035A12" "035A13" "035A14" "035A15" "035A16" "035B01" "035B02" "035B03" "035B04" "035B05"}
+#    puts "Feuillets à traiter, entrée manuellement : $UrbanX::Param(NTSIds) $UrbanX::Param(NTSSheets)"
 
    #préparation à l'incrémentation sur les feuillets NTS
    set nbrfeuillets [llength $UrbanX::Param(NTSSheets) ]
    set i 1 ;#incrémentation sur les feuillets à traiter
-   GenX::Log -
+   GenX::Log -  ;#affichage d'une ligne ----- dans le log
 
    #----- Process for each NTS Sheets that were previously selected
    foreach feuillet $UrbanX::Param(NTSSheets) {
 
-      #Si le traitement d'une province a déjà été partiellement effectué, écrire l'index de feuillet où reprendre le traitement.  Default à 1.
-      #L'information se trouve dans le log du traitement précédemment effectué
-      if {$i < 1} {
+      #Are there any CanVec files for this tile?      
+      set s250 [string range $feuillet 0 2]
+      set sl   [string tolower [string range $feuillet 3 3]]
+      set s50  [string range $feuillet 4 5]
+      set Path $GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50 ;#path du répertoire qui contient les données CanVec associées au feuillet
+
+      if {![file exists $Path] } {
+         #There are no CanVec files for this tile.  Skip the tile.
          GenX::Log INFO "Tile $i of $nbrfeuillets"
-         GenX::Log INFO "Tile already processed"
+         GenX::Log INFO "There are no CanVec files for this tile"
          GenX::Log -
          incr i
 
       } else {
-         #calcul du temps de traitement d'un feuillet NTS
-         set t_feuillet [clock seconds]
+         #There are CanVec files for this tile.  Process the tile.
 
-         GenX::Log INFO "Tile $i of $nbrfeuillets"
-         GenX::Log INFO "Traitement de la tuile NTS ayant le numéro de feuillet $feuillet"
-         GenX::Log INFO "Processing NTS tile with the SNRC identification code $feuillet"
+         #Si le traitement d'une province a déjà été partiellement effectué, écrire l'index de feuillet où reprendre le traitement.  Default à 1.
+         #L'information se trouve dans le log du traitement précédemment effectué
+         if {$i < 1213 } {
+            GenX::Log INFO "Tile $i of $nbrfeuillets"
+            GenX::Log INFO "Tile already processed"
+            GenX::Log -
+            incr i
 
-         #----- Finds the extents of the zone (NTS Sheet) to be process
-         IndustrX::NTSExtent $feuillet
-         GenX::Log INFO "Tile's latitude goes from $UrbanX::Param(Lat0) to $UrbanX::Param(Lat1)"
-         GenX::Log INFO "Tile's longitude goes from $UrbanX::Param(Lon0) to $UrbanX::Param(Lon1)"
-         GenX::Log INFO "Tile's UTM coordinates, on the X axis, go from $UrbanX::Param(x0) to $UrbanX::Param(x1)"
-         GenX::Log INFO "ile's UTM coordinates, on the X axis, go from $UrbanX::Param(y0) to $UrbanX::Param(y1)"
-
-         #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-         set UrbanX::Param(t_Sandwich) 0
-         if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
-            UrbanX::Sandwich $feuillet
          } else {
-            GenX::Log INFO "File $GenX::Param(OutFile)_sandwich_$feuillet.tif already exists."
-         }
+            #calcul du temps de traitement d'un feuillet NTS 
+            set t_feuillet [clock seconds]
 
-         #----------TO MODIFY FOR CANVEC LAYERS
-#          #----- Creates the fields and building vicinity output using spatial buffers
-#          UrbanX::ChampsBuffers $m
-         #----------END OF : TO MODIFY FOR CANVEC LAYERS
+            GenX::Log INFO "Tile $i of $nbrfeuillets"
+            GenX::Log INFO "Processing NTS tile with the SNRC identification code $feuillet"
 
-         #----- Calculates the population density and split the residential areas according to population density thresholds
-         set UrbanX::Param(t_PopDens2Builtup) 0
-         if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
-            UrbanX::PopDens2Builtup $feuillet
-         } else {
-            GenX::Log INFO "Files $GenX::Param(OutFile)_popdens_$feuillet.tif and $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif already exist."
-         }
+            #----- Finds the extents of the zone (NTS Sheet) to be process
+            IndustrX::NTSExtent $feuillet
+            GenX::Log INFO "Tile's latitude goes from $UrbanX::Param(Lat0) to $UrbanX::Param(Lat1)"
+            GenX::Log INFO "Tile's longitude goes from $UrbanX::Param(Lon0) to $UrbanX::Param(Lon1)"
+            GenX::Log INFO "Tile's UTM coordinates, on the X axis, go from $UrbanX::Param(x0) to $UrbanX::Param(x1)"
+            GenX::Log INFO "Tile's UTM coordinates, on the X axis, go from $UrbanX::Param(y0) to $UrbanX::Param(y1)"
 
-         #----- Applies LUT to all processing results to generate SMOKE classes and sets the values in the DA shapefile
-         if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
-            #----- Applies LUT to all processing results to generate SMOKE classes
-            IndustrX::Priorities2SMOKE  $feuillet
-            #----- Counts the SMOKE values and write the results in the dissemination area shapefile
-            IndustrX::SMOKE2DA $feuillet
-         } else {
-            GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE_$feuillet.tif already exist."
-         }
+            #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
+            set UrbanX::Param(t_Sandwich) 0
+            if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
+               UrbanX::Sandwich $feuillet
+            } else {
+               GenX::Log INFO "File $GenX::Param(OutFile)_sandwich_$feuillet.tif already exists."
+            }
 
-         #suppression des produits intermédiaires
-         file delete -force $GenX::Param(OutFile)_sandwich_$feuillet.tif
-         GenX::Log INFO "File $GenX::Param(OutFile)_sandwich_$feuillet.tif was deleted"
-         file delete -force $GenX::Param(OutFile)_popdens_$feuillet.tif
-         GenX::Log INFO "File $GenX::Param(OutFile)_popdens_$feuillet.tif was deleted"
-         file delete -force $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif
-         GenX::Log INFO "File $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif was deleted"
-         file delete -force $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif
-         GenX::Log INFO "File $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif was deleted"
-         file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif
-         GenX::Log INFO "File $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was deleted"
-         file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
-         GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
+            #----- Calculates the population density and split the residential areas according to population density thresholds
+            set UrbanX::Param(t_PopDens2Builtup) 0
+            if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
+               UrbanX::PopDens2Builtup $feuillet
+            } else {
+               GenX::Log INFO "Files $GenX::Param(OutFile)_popdens_$feuillet.tif and $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif already exist."
+            }
 
-         #affichage du temps de traitement du feuillet
-         GenX::Log DEBUG "Processing the NTS tile $feuillet took [expr [clock seconds]-$t_feuillet] seconds"
+            #----- Applies LUT to all processing results to generate SMOKE classes and sets the values in the DA shapefile
+            if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
+               #----- Applies LUT to all processing results to generate SMOKE classes
+               IndustrX::Priorities2SMOKE  $feuillet
+               #----- Counts the SMOKE values and write the results in the dissemination area shapefile
+               IndustrX::SMOKE2DA $feuillet
+            } else {
+               GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE_$feuillet.tif already exist."
+            }
 
-         #préparation à la nouvelle incrémentation
-         GenX::Log -
-         incr i
+            #suppression des produits intermédiaires
+            file delete -force $GenX::Param(OutFile)_sandwich_$feuillet.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_sandwich_$feuillet.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_popdens_$feuillet.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_popdens_$feuillet.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
 
-      } ;#fin du traitement du feuillet (boucle else)
+            #affichage du temps de traitement du feuillet
+            GenX::Log DEBUG "Processing the NTS tile $feuillet took [expr [clock seconds]-$t_feuillet] seconds"
+
+            #préparation à la nouvelle incrémentation
+            GenX::Log -
+            incr i
+         } ;#fin du traitement du feuillet (boucle else)
+      } ;#fin du else "les données canvec existent"
    } ;# fin du foreach feuillet
 
    #fermeture du fichier de polygones de DA à modifier avec les valeurs SMOKE
