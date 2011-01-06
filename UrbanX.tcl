@@ -341,9 +341,8 @@ namespace eval UrbanX { } {
    #attention : s'assurer qu'il s'agit bien de l'index ayant servi au découpage du fichier PopFile2006SMOKE
    set Param(NTSFile) $GenX::Path(NTS)/decoupage50k_2.shp
 
-   #entité CanVec déterminant la bordure des polygones NTS50K
+   #entité CanVec déterminant la bordure des polygones NTS 50K
    set Param(NTSLayer) {LI_1210009_2 }
-
 }
 
 #----------------------------------------------------------------------------
@@ -635,7 +634,7 @@ proc UrbanX::Sandwich { indexCouverture } {
    #add proc to Metadata
    GenX::Procs
 
-   GenX::Log INFO "Beginning of procedure : Sandwich"
+   GenX::Log INFO "Beginning of procedure: Sandwich"
 
    #création de la raster qui contiendra la LULC
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
@@ -644,6 +643,7 @@ proc UrbanX::Sandwich { indexCouverture } {
    #recherche des fichiers CanVec à rasteriser
    GenX::Log INFO "Locating CanVec Files"
    set Param(Files) {}
+   GenX::Log INFO "$Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)"
    set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
    #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
    #Les paths des fichiers sont triés par feuillet NTS, puis suivant l'ordre donné dans Param(Entities).
@@ -1478,12 +1478,12 @@ proc UrbanX::Sandwich { indexCouverture } {
    file delete -force $GenX::Param(OutFile)_sandwich_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich_$indexCouverture.tif GeoTiff
    gdalband write RSANDWICH FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+
    gdalfile close FILEOUT
    gdalband free RSANDWICH
 
    GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich_$indexCouverture.tif was generated"
-
-   GenX::Log INFO "End of procedure : Sandwich."
+   GenX::Log INFO "End of procedure: Sandwich"
 
 }
 
@@ -1549,15 +1549,13 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
    #gdalfile open FILEOUT write $GenX::Param(OutFile)_champs_buf100ma+25mp.tif GeoTiff
    #gdalband write RBUFFER FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    #gdalfile close FILEOUT
-   gdalband free RBUFFER
-   gdalband free RSANDWICH
-   gdalfile close FSANDWICH
 
    file delete -force $GenX::Param(OutFile)_champs-only+building-vicinity.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_champs-only+building-vicinity.tif GeoTiff
    gdalband write RBUFFERCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
-   gdalband free RBUFFERCUT
+
+   gdalfile close FSANDWICH FILEOUT
+   gdalband free RBUFFERCUT RBUFFER RSANDWICH
 }
 
 #----------------------------------------------------------------------------
@@ -1723,24 +1721,18 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 #       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
 #    }
 
-   #nettoyage de mémoire
-   gdalband free RSANDWICH RPOPDENS RTEMP
-   gdalfile close FSANDWICH
 
    #écriture du fichier genphysx_popdens-builtup.tif
-   GenX::Log DEBUG "Generating output file, result of cookiecutting."
+   GenX::Log DEBUG "Generating output file, result of cookie cutting"
    file delete -force $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif GeoTiff
    gdalband write RPOPDENSCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
-   gdalband free RPOPDENSCUT
    GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif was generated"
 
-   #nettoyage de mémoire
-   gdalfile close FILEOUT
-   gdalband free RPOPDENSCUT
+   gdalfile close FSANDWICH FILEOUT
+   gdalband free RSANDWICH RPOPDENS RTEMP RPOPDENSCUT
 
-   GenX::Log INFO "End of procedure : PopDens2BuiltupCanVec"
+   GenX::Log INFO "End of procedure: PopDens2BuiltupCanVec"
 }
 
 #----------------------------------------------------------------------------
@@ -1796,10 +1788,9 @@ proc UrbanX::HeightGain {indexCouverture } {
    file delete -force $GenX::Param(OutFile)_hauteur-champs.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_hauteur-champs.tif GeoTiff
    gdalband write RHEIGHTCHAMPS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
 
+   gdalfile close FILEOUT FCHAMPS
    gdalband free RCHAMPS RHEIGHTCHAMPS RHAUTEURPROJ
-   gdalfile close FCHAMPS
 }
 
 #----------------------------------------------------------------------------
@@ -1858,8 +1849,8 @@ proc UrbanX::BuildingHeight {indexCouverture } {
    file delete -force $GenX::Param(OutFile)_hauteur-classes.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_hauteur-classes.tif GeoTiff
    gdalband write RHAUTEURCLASS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
-   gdalfile close FSANDWICH
+
+   gdalfile close FILEOUT FSANDWICH
    gdalband free RHAUTEURCLASS RSANDWICH
 }
 
@@ -1929,11 +1920,10 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
    gdalband write RVEGESMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    GenX::Log INFO "The file $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif was generated"
 
-   #nettoyage de mémoire
     gdalfile close FSANDWICH FEOSDTILE FILEOUT
     gdalband free RSANDWICH REOSDTILE RVEGE RVEGESMOKE RTEMP
 
-   GenX::Log INFO "End of procedure : EOSDvegetation"
+   GenX::Log INFO "End of procedure: EOSDvegetation"
 }
 
 #----------------------------------------------------------------------------
@@ -2026,17 +2016,13 @@ proc UrbanX::LCC2000V {indexCouverture} {
       incr j ;# Increment of VFEATURE2KEEP$j required to re-use the object
    }
 
-   #nettoyage de mémoire
-   gdalfile close FSANDWICH
-    gdalband free RSANDWICH
-
    #creating the output file : les entités LCC2000V rasterizés
    GenX::Log DEBUG "Generating output file."
    file delete -force $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif GeoTiff
    gdalband write RMASK FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
-   gdalband free RMASK
+   gdalfile close FSANDWICH FILEOUT
+   gdalband free RSANDWICH RMASK
 
    #lecture du fichier créé précédemment lors de la proc SandwichCanVec
    GenX::Log INFO "Open and read LCC2000V file."
@@ -2056,14 +2042,11 @@ proc UrbanX::LCC2000V {indexCouverture} {
    file delete -force $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif GeoTiff
    gdalband write RLCC2000VSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
 
-   #nettoyage de mémoire
-    gdalfile close FLCC2000V
-    gdalband free RLCC2000V RLCC2000VSMOKE
+   gdalfile close FILEOUT FLCC2000V
+   gdalband free RLCC2000V RLCC2000VSMOKE
 
-   GenX::Log INFO "End of procedure : LCC2000V"
-
+   GenX::Log INFO "End of procedure: LCC2000V"
 }
 
 #----------------------------------------------------------------------------
@@ -2108,11 +2091,7 @@ proc UrbanX::Priorities2TEB { } {
    gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB.tif GeoTiff
    gdalband write RTEB FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 
-   gdalfile close FILEOUT
-   gdalfile close FSANDWICH
-   gdalfile close FPOPDENSCUT
-   gdalfile close FCHAMPS
-   gdalfile close FHAUTEURCLASS
+   gdalfile close FILEOUT FSANDWICH FPOPDENSCUT FCHAMPS FHAUTEURCLASS
    gdalband free RTEB RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS
 }
 
@@ -2170,8 +2149,8 @@ proc UrbanX::VegeMask { } {
    file delete -force $GenX::Param(OutFile)_TEB-wVegeMask.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB-wVegeMask.tif GeoTiff
    gdalband write RTEBWMASK FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   gdalfile close FILEOUT
 
+   gdalfile close FILEOUT
    gdalband free RTEBWMASK VEGEMASK
 }
 
@@ -2302,6 +2281,7 @@ proc UrbanX::Shp2Height {indexCouverture } {
    file delete -force $GenX::Param(OutFile)_shp-height.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_shp-height.tif GeoTiff
    gdalband write RHAUTEURSHP FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+
    gdalfile close FILEOUT
    gdalband free RHAUTEURSHP
 }
