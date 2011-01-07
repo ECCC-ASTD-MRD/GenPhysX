@@ -36,6 +36,7 @@
 #   GenX::SRTMFindFiles      { Lat0 Lon0Lat1 Lon1 }
 #   GenX::CDEDFindFiles      { Lat0 Lon0 Lat1 Lon1 { Res 50 } }
 #   GenX::EOSDFindFiles      { Lat0 Lon0Lat1 Lon1 }
+#   GenX::LCC2000VFindFiles  { Lat0 Lon0 Lat1 Lon1 }
 #   GenX::CacheGet           { File { NoData "" } }
 #   GenX::CacheFree          { }
 #
@@ -86,7 +87,7 @@ namespace eval GenX { } {
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
-   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD CORINE }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE }
    set Param(Soils)     { USDA AGRC FAO HWSD }
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
@@ -141,6 +142,7 @@ namespace eval GenX { } {
    set Path(CCRS)      $Path(DBase)/CCRS-LC2005
    set Path(Various)   $Path(DBase)/Various
    set Path(BELD3)     $Path(DBase)/BELD3
+   set Path(LCC2000V)  $Path(DBase)/LCC2000V
    set Path(StatCan)   /data/aqli04/afsulub/StatCan2006
 
    #----- Metadata related variables
@@ -235,8 +237,8 @@ proc GenX::Process { Grid } {
 
       #----- Urban parameters
       if { $Param(Urban)!="" } {
-         #UrbanX::Process $Param(Urban)
-         UrbanPhysX::Cover $Grid
+         UrbanX::Process $Param(Urban)
+         #UrbanPhysX::Cover $Grid
       }
 
       if { $Param(SMOKE)!="" } {
@@ -1160,6 +1162,7 @@ proc GenX::CacheFree { } {
 #  <Lon1>    : Upper right corner longitude
 #
 # Return:
+#   <Files>  : List of files with coverage intersecting with area
 #
 # Remarks :
 #
@@ -1213,6 +1216,7 @@ proc GenX::ASTERGDEMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #  <Layers>  : Layers to get
 #
 # Return:
+#   <Files>  : List of files with coverage intersecting with area
 #
 # Remarks :
 #
@@ -1257,6 +1261,7 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
 #  <Lon1>    : Upper right corner longitude
 #
 # Return:
+#   <Files>  : List of files with coverage intersecting with area
 #
 # Remarks :
 #
@@ -1292,6 +1297,7 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #  <Res>     : Resolution desiree (50 ou 250)
 #
 # Return:
+#   <Files>  : List of files with coverage intersecting with area
 #
 # Remarks :
 #
@@ -1346,6 +1352,7 @@ proc GenX::CDEDFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
 #  <Lon1>    : Upper right corner longitude
 #
 # Return:
+#   <Files>  : List of files with coverage intersecting with area
 #
 # Remarks :
 #
@@ -1366,5 +1373,44 @@ proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
          lappend files $path
       }
    }
+   return $files
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::LCC2000VFindFiles>
+# Creation : October 2010 - Lucie Boucher - CMC/AQMAS
+#
+# Goal     : Get the LCC2000V data filenames covering an area.
+#
+# Parameters :
+#  <Lat0>    : Lower left corner latitude
+#  <Lon0>    : Lower left corner longitude
+#  <Lat1>    : Upper right corner latitude
+#  <Lon1>    : Upper right corner longitude
+#
+# Return:
+#   <Files>  : List of files with coverage intersecting with area
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::LCC2000VFindFiles { Lat0 Lon0 Lat1 Lon1 } {
+   variable Path
+
+   if { ![ogrlayer is NTSLAYER250K] } {
+      set nts_layer [lindex [ogrfile open SHAPE250K read $Path(NTS)/decoupage250k_2.shp] 0]
+      eval ogrlayer read NTSLAYER250K $nts_layer
+   }
+
+   set files { }
+   foreach id [ogrlayer pick NTSLAYER250K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
+      set feuillet [ogrlayer define NTSLAYER250K -feature $id IDENTIFIAN]
+      set s250 [string range $feuillet 0 2]
+
+      if { [llength [set path [glob -nocomplain $Path(LCC2000V)/${s250}/*LCC2000-V_${s250}*.shp]]] } {
+         set files [concat $files $path]
+      }
+   }
+
    return $files
 }

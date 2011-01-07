@@ -373,7 +373,6 @@ proc IndustrX::Process { Coverage } {
    if { ![ogrlayer is VDASMOKE] } {
       foreach file [glob $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83_$Coverage.*] {
          if { ![file exists [file tail $file]] } {
-            file delete -force [file tail $file]
             file copy $file ./
             GenX::Log INFO "Copy file [file tail $file] in directory."
          } else {

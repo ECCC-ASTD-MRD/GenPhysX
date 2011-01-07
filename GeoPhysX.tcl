@@ -38,6 +38,7 @@
 #   GeoPhysX::AverageVegeCORINE    { Grid }
 #   GeoPhysX::AverageVegeGLOBCOVER { Grid }
 #   GeoPhysX::AverageVegeCCRS      { Grid }
+#   GeoPhysX::AverageVegeLCC2000V  { Grid }
 #   GeoPhysX::DominantVege         { Grid }
 #
 #   GeoPhysX::AverageSoil          { Grid }
@@ -129,6 +130,11 @@ namespace eval GeoPhysX { } {
    #----- Correspondance de Douglas Chan Juin 2009 pour la conversion des classes CCRS vers les classes RPN
    set Const(CCRS2RPN) { { 39 37 38 1  3  4  5 6 7  8  9 10 2 11 12 16 20 18 17 26 27 28 29 36 21 22 23 24 25 19 32 30 33 34 35 13 14 15 31 }
                          {  2  3  3 4 25 25 25 4 4 26 22 23 7  7  7 11 14 13 14 15 15 15 15 21 13 13 13 13 13 23 23 22 24 24 24 25 25 25 23 } }
+
+   #----- Correspondance de Sylvie Leroyer Decembre 2010 pour la conversion des classes LCC2000V vers les classes RPN
+   set Const(LCC2000V2RPN) { {   0   10  11  12 20 30 31 32 33 34 35 36 37 40 50 51 52 53 80 81 82 83 100 101 102 103 104 110 121 122 123 200 210 211 212 213 220 221 222 223 230 231 232 233 }
+                             { -99 -99  -99 -99  3 24  2 24 24 21 24 24 24 22 26 11 11 22 23 25 26 13  13  22  14  22  22  14  15  15  15  25   4   4   4   4  7    7   7   7  25  25  25  24 } }
+#                                                                                            23 23 23                                  13
 }
 
 #----------------------------------------------------------------------------
@@ -945,6 +951,7 @@ proc GeoPhysX::AverageVege { Grid } {
          "GLC2000"   { GeoPhysX::AverageVegeGLC2000   GPXVF ;#----- GLC2000 global vege averaging method }
          "CCRS"      { GeoPhysX::AverageVegeCCRS      GPXVF ;#----- CCRS over Canada only vege averaging method }
          "EOSD"      { GeoPhysX::AverageVegeEOSD      GPXVF ;#----- EOSD over Canada only vege averaging method }
+         "LCC2000V"  { GeoPhysX::AverageVegeLCC2000V  GPXVF ;#----- LCC2000V over Canada only vege averaging method }
          "CORINE"    { GeoPhysX::AverageVegeCORINE    GPXVF ;#----- CORINE over Europe only vege averaging method }
       }
    }
@@ -1024,16 +1031,17 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
    set lon0 [lindex $limits 1]
    set lat1 [lindex $limits 2]
    set lon1 [lindex $limits 3]
+   set n    0
 
    #----- Loop over files
-   if { [llength [set files [GenX::EOSDFindFiles $lat0 $lon0 $lat1 $lon1]]] } {
+   if { [set nb [llength [set files [GenX::EOSDFindFiles $lat0 $lon0 $lat1 $lon1]]]] } {
 
       GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(EOSD2RPN) 0]\n   To  :[lindex $Const(EOSD2RPN) 1]"
       vector create FROMEOSD [lindex $Const(EOSD2RPN) 0]
       vector create TORPN    [lindex $Const(EOSD2RPN) 1]
 
       foreach file $files {
-         GenX::Log DEBUG "   Processing file $file" False
+         GenX::Log DEBUG "   Processing file ([incr n]/$nb) $file" False
          gdalband read EOSDTILE [gdalfile open EOSDFILE read $file]
          gdalband stats EOSDTILE -nodata -99 -celldim $GenX::Param(Cell)
 
@@ -1067,6 +1075,92 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
       ogrlayer define NTSLAYER250K -featureselect {}
    } else {
       GenX::Log WARNING "The grid is not within EOSD limits"
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageVegeLCC2000V>
+# Creation : Novembre 2010 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the 20 something vegetation types through averaging.
+#            using LCC2000V Database
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageVegeLCC2000V { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs LCC2000V
+   GenX::Log INFO "Averaging vegetation type using LCC2000V database"
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   set lat0 [lindex $limits 0]
+   set lon0 [lindex $limits 1]
+   set lat1 [lindex $limits 2]
+   set lon1 [lindex $limits 3]
+
+   set res  [expr 0.75/(60*60)]
+   set n    0
+
+   #----- Loop over files
+   if { [set nb [llength [set files [GenX::LCC2000VFindFiles $lat0 $lon0 $lat1 $lon1]]]] } {
+
+      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(LCC2000V2RPN) 0]\n   To  :[lindex $Const(LCC2000V2RPN) 1]"
+      vector create FROMLCC2000V [lindex $Const(LCC2000V2RPN) 0]
+      vector create TORPN        [lindex $Const(LCC2000V2RPN) 1]
+
+      foreach file $files {
+         GenX::Log DEBUG "   Processing file ([incr n]/$nb) $file" False
+         ogrfile open LCC2000VFILE read $file
+         eval ogrlayer read LCC2000VTILE LCC2000VFILE 0
+
+         set ex [ogrlayer stats LCC2000VTILE -extent]
+
+         set lo0 [lindex $ex 0]
+         set la0 [lindex $ex 1]
+         set lo1 [lindex $ex 2]
+         set la1 [lindex $ex 3]
+
+         set dx [expr int(($lo1-$lo0)/$res)]
+         set dy [expr int(($la1-$la0)/$res)]
+puts stderr "$dx $dy"
+
+         gdalband create TILE $dx $dy 1 Float32
+         gdalband define TILE -georef [ogrlayer define LCC2000VTILE -georef] -transform [list $lo0 $res 0.0 [expr $la0+$res] 0.0 $res]
+
+         GenX::Log DEBUG "   Rasterizing on subgrid" False
+         gdalband gridinterp TILE LCC2000VTILE FAST COVTYPE
+
+#   gdalfile open FILEOUT write [file rootname [file tail $file]].tif GeoTiff
+#   gdalband write TILE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+#   gdalfile close FILEOUT
+
+         #----- Apply Table conversion
+         GenX::Log DEBUG "   Averaging" False
+         vexpr TILE lut(TILE,FROMLCC2000V,TORPN)
+         fstdfield gridinterp $Grid TILE NORMALIZED_COUNT $Param(VegeTypes) False
+
+         gdalband free TILE
+         ogrlayer free LCC2000VTILE
+         ogrfile close LCC2000VFILE
+      }
+
+      #----- Use accumulator to figure out coverage in destination
+      #      But remove border of coverage since it will not be full
+      fstdfield gridinterp $Grid - ACCUM
+      vexpr GPXVSK !fpeel($Grid)
+      fstdfield stats $Grid -mask GPXVSK
+
+      vector free FROMLCC2000V TORPN
+   } else {
+      GenX::Log WARNING "The grid is not within LCC2000V limits"
    }
 }
 
