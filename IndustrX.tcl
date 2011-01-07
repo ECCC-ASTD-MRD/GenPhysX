@@ -398,7 +398,7 @@ proc IndustrX::Process { Coverage } {
    #----- Process for each NTS Sheets that were previously selected
    foreach feuillet $UrbanX::Param(NTSSheets) {
 
-      #Are there any CanVec files for this tile?      
+      #Are there any CanVec files for this tile?
       set s250 [string range $feuillet 0 2]
       set sl   [string tolower [string range $feuillet 3 3]]
       set s50  [string range $feuillet 4 5]
@@ -416,14 +416,14 @@ proc IndustrX::Process { Coverage } {
 
          #Si le traitement d'une province a déjà été partiellement effectué, écrire l'index de feuillet où reprendre le traitement.  Default à 1.
          #L'information se trouve dans le log du traitement précédemment effectué
-         if {$i < 1213 } {
+         if { $i < $Param(SMOKEIndex) } {
             GenX::Log INFO "Tile $i of $nbrfeuillets"
             GenX::Log INFO "Tile already processed"
             GenX::Log -
             incr i
 
          } else {
-            #calcul du temps de traitement d'un feuillet NTS 
+            #calcul du temps de traitement d'un feuillet NTS
             set t_feuillet [clock seconds]
 
             GenX::Log INFO "Tile $i of $nbrfeuillets"

@@ -61,18 +61,19 @@ namespace eval GenX { } {
    set Param(Cache)     {}                    ;#Input data cache list
    set Param(CacheMax)  20                    ;#Input data cache max
 
-   set Param(Vege)      ""                    ;#Vegetation data selected
-   set Param(Soil)      ""                    ;#Soil type data selected
-   set Param(Topo)      ""                    ;#Topography data selected
-   set Param(Mask)      ""                    ;#Mask data selected
-   set Param(GeoMask)   ""                    ;#Geographical mask data selected
-   set Param(Aspect)    ""                    ;#Slope and aspect selected
-   set Param(Check)     ""                    ;#Consistency checks
-   set Param(Sub)       ""                    ;#Subgrid calculations selected
-   set Param(Target)    ""                    ;#Model cible
-   set Param(Biogenic)  ""                    ;#Biogenic emissions data selected
-   set Param(Urban)     ""                    ;#Urban coverage
-   set Param(SMOKE)     ""                    ;#SMOKE emissions
+   set Param(Vege)       ""                    ;#Vegetation data selected
+   set Param(Soil)       ""                    ;#Soil type data selected
+   set Param(Topo)       ""                    ;#Topography data selected
+   set Param(Mask)       ""                    ;#Mask data selected
+   set Param(GeoMask)    ""                    ;#Geographical mask data selected
+   set Param(Aspect)     ""                    ;#Slope and aspect selected
+   set Param(Check)      ""                    ;#Consistency checks
+   set Param(Sub)        ""                    ;#Subgrid calculations selected
+   set Param(Target)     ""                    ;#Model cible
+   set Param(Biogenic)   ""                    ;#Biogenic emissions data selected
+   set Param(Urban)      ""                    ;#Urban coverage
+   set Param(SMOKE)      ""                    ;#SMOKE emissions
+   set Param(SMOKEIndex) 1                     ;#SMOKE restart index
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
@@ -606,6 +607,7 @@ proc GenX::CommandLine { } {
       \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Param(Biogenics)}" ([join $Param(Biogenic)])]
       \[-urban\]    [format "%-30s : Urban coverage {$Param(Urban)}" ([join $Param(Urban)])]
       \[-smoke\]    [format "%-30s : SMOKE emissions {$Param(SMOKE)}" ([join $Param(SMOKE)])]
+      \[-rindex\]   [format "%-30s : SMOKE restart index (default 1)" ($Param(SMOKEIndex))]
       \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" ($Param(Check))]
       \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Param(Subs)}" ($Param(Sub))]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
