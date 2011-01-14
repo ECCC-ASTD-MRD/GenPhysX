@@ -306,10 +306,6 @@ namespace eval UrbanX { } {
 
    set Param(BufferLayers)     { BS_2010009_0 TR_1760009_1 } ;# Layers from CanVec required for buffer
 
-   set Param(BufferFuncLayers) { BS_2010009_0 BS_2010009_2 } ;# Layers from CanVec required for buffer func
-
-   set Param(BufferFuncValues) { 1 2 } ;#what's that?
-
    #TEB Classes for CanVec
    #Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
    set Param(TEBClasses)         { 902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350 }
@@ -674,7 +670,6 @@ proc UrbanX::Sandwich { indexCouverture } {
    gdalband define RSANDWICH -georef UTMREF$indexCouverture
 
    #----- Rasterization of CanVec layers
-   GenX::Log INFO "Generating Sandwich"
    foreach file $Param(Files) {
       set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
       #entity contains an element of the form AA_9999999_9
@@ -1067,57 +1062,48 @@ proc UrbanX::Sandwich { indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::ChampsBuffers {indexCouverture } {
-
    #add proc to Metadata
    GenX::Procs
-
    variable Param
    variable Data
 
    GenX::Log INFO "Buffer zone processing for grass and fields identification"
-
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
    gdalband create RBUFFER $Param(Width) $Param(Height) 1 Byte
    eval gdalband define RBUFFER -georef UTMREF$indexCouverture
-# THE OLD WAY TO DO IT
-#   set i 0
-#   foreach sheet $Data(Sheets) path $Data(Paths) {
-#      foreach layer $Param(BufferFuncLayers) value $Param(BufferFuncValues) {
-#         set path [glob -nocomplain $path/${sheet}_$layer.shp]
-#         if { [file exists $path] } {
-#            set layer2 [lindex [ogrfile open SHAPE read $path] 0]
-#            eval ogrlayer read LAYER$i $layer2
-#            if  { $layer=="buildin_a" }  {
-#               ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM ${sheet}_$layer WHERE function NOT IN (3,4,14,36) "
-#               ogrlayer stats LAYER$i -buffer 0.00089993 8
-#            } elseif  { $layer=="buildin_p" }  {
-#               ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM ${sheet}_$layer WHERE function NOT IN (3,4,14,36) "
-#               ogrlayer stats LAYER$i -buffer 0.000224982 8
-#            }
-#            GenX::Log INFO "Buffering [ogrlayer define LAYER$i -nb] features from ${sheet}_$layer.shp as LAYER$i with buffer #value $value"
-#            gdalband gridinterp RBUFFER LAYER$i $Param(Mode) $value
-#            ogrlayer free LAYER$i
-#            ogrfile close SHAPE
-#         }
-#      }
-#      incr i
-#   }
 
+   set i 0
    foreach file $Param(Files) {
-      #read the shapefile and stock it in the object SHAPE
-      ogrfile open SHAPE read $file
-      if { [lsearch -exact $Param(BufferFuncLayers) $entity] !=-1 } {
+      #entity contains an element of the form AA_9999999_9
+      set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
+      if { $entity=="BS_2010009_0" || $entity=="BS_2010009_2" } {
+         #filename contains an element of the form 999a99_9_9_AA_9999999_9
+         set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
+         ogrfile open SHAPE read $file
          switch $entity {
             BS_2010009_0 {
             # Ponctual buildings
-            GenX::Log DEBUG "Buffering pontual buildings"
+            GenX::Log DEBUG "Buffering ponctual buildings"
+            set priority 666 ;# VALUE TO UPDATE
+            ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM $filename WHERE function NOT IN (3,4,14,36) "
+# Bug in spatial buffers
+#            ogrlayer stats LAYER$i -buffer 0.000224982 8
             }
             BS_2010009_2 {
             GenX::Log DEBUG "Buffering 2D buildings"
-            # 2D building
+            set priority 667 ;# VALUE TO UPDATE
+        # need updating this sqlselect
+            ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM $filename WHERE function NOT IN (3,4,14,36) "
+# Bug in spatial buffers
+#            ogrlayer stats LAYER$i -buffer 0.00089993 8
             }
          }
+         GenX::Log DEBUG "Buffering [ogrlayer define LAYER$i -nb] features from $filename as LAYER$i with buffer #priority $priority"
+         gdalband gridinterp RBUFFER LAYER$i $Param(Mode) $priority
+         ogrlayer free LAYER$i
+         ogrfile close SHAPE
+         incr i
       }
    }
 
@@ -1986,15 +1972,14 @@ proc UrbanX::Process { Coverage } {
    UrbanX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-   UrbanX::Sandwich $Coverage
+#   UrbanX::Sandwich $Coverage
 
    #-----La rasterization des hauteurs n'a pas vraiment sa place dans UrbanX... C'est one-shot.
    #UrbanX::Shp2Height $Coverage
 
    #----- Creates the fields and building vicinity output using spatial buffers
 # BUG SPATIAL BUFFERS MAKE IT CRASH
-   #UrbanX::ChampsBuffers 0
-#   UrbanX::ChampsBuffers $Coverage
+   UrbanX::ChampsBuffers $Coverage
 
    #----- Calculates the population density
 #   UrbanX::PopDens2Builtup $Coverage
