@@ -590,6 +590,7 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
 
    set zone     [expr int(ceil((180 + (($Lon1 + $Lon0)/2))/6))]
    set meridian [expr -((180-($zone*6))+3)]
+   GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian."
 
       eval georef create UTMREF$indexCouverture \
          \{PROJCS\[\"WGS_1984_UTM_Zone_${zone}N\",\
@@ -611,10 +612,35 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } indexCouverture } {
 
    set Param(Width)  [expr int(ceil(([lindex $xy1 0] - [lindex $xy0 0])/$Res))]
    set Param(Height) [expr int(ceil(([lindex $xy1 1] - [lindex $xy0 1])/$Res))]
+   GenX::Log INFO "File dimensions are $Param(Width) x $Param(Height) pixels"
 
    georef define UTMREF$indexCouverture -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
+}
 
-   GenX::Log INFO "UTM zone is $zone, with central meridian at $meridian. Dimension are $Param(Width)x$Param(Height)"
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::CANVECFindFiles>
+# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Revision :
+#
+# Goal     : Identify required CanVec files
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::CANVECFindFiles { } {
+   variable Param
+
+   #recherche des fichiers CanVec à rasteriser
+   GenX::Log INFO "Locating CanVec Files, extent considered: lower-left = $Param(Lat0), $Param(Lon0) top-right = $Param(Lat1), $Param(Lon1)"
+   GenX::Log DEBUG "Param(Entities): $Param(Entities)"
+   set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
+   #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
+   #Les paths des fichiers sont triés par feuillet NTS, puis suivant l'ordre donné dans Param(Entities).
+   #On a donc, dans l'ordre: feuillet1-entité1, feuillet1-entité2... feuillet1-entitéN, feuillet2-entité1, feuillet2-entité2... feuilletM-entitéN
 }
 
 #----------------------------------------------------------------------------
@@ -647,24 +673,13 @@ proc UrbanX::Sandwich { indexCouverture } {
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
    gdalband define RSANDWICH -georef UTMREF$indexCouverture
 
-   #recherche des fichiers CanVec à rasteriser
-   GenX::Log INFO "Locating CanVec Files"
-   GenX::Log INFO "$Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)"
-   set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
-   #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
-   #Les paths des fichiers sont triés par feuillet NTS, puis suivant l'ordre donné dans Param(Entities).
-   #On a donc, dans l'ordre: feuillet1-entité1, feuillet1-entité2... feuillet1-entitéN, feuillet2-entité1, feuillet2-entité2... feuilletM-entitéN
-
    #----- Rasterization of CanVec layers
    GenX::Log INFO "Generating Sandwich"
    foreach file $Param(Files) {
-
       set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
       #entity contains an element of the form AA_9999999_9
-
       set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
       #filename contains an element of the form 999a99_9_9_AA_9999999_9
-
       set priority [lindex $Param(Priorities) [lsearch -exact $Param(Entities) $entity]]
       #value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Entities)
 
@@ -1061,32 +1076,51 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 
    GenX::Log INFO "Buffer zone processing for grass and fields identification"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
    gdalband create RBUFFER $Param(Width) $Param(Height) 1 Byte
    eval gdalband define RBUFFER -georef UTMREF$indexCouverture
-   set i 0
-   foreach sheet $Data(Sheets) path $Data(Paths) {
-      foreach layer $Param(BufferFuncLayers) value $Param(BufferFuncValues) {
-         set path [glob -nocomplain $path/${sheet}_$layer.shp]
-         if { [file exists $path] } {
-            set layer2 [lindex [ogrfile open SHAPE read $path] 0]
-            eval ogrlayer read LAYER$i $layer2
-            if  { $layer=="buildin_a" }  {
-               ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM ${sheet}_$layer WHERE function NOT IN (3,4,14,36) "
-               ogrlayer stats LAYER$i -buffer 0.00089993 8
-            } elseif  { $layer=="buildin_p" }  {
-               ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM ${sheet}_$layer WHERE function NOT IN (3,4,14,36) "
-               ogrlayer stats LAYER$i -buffer 0.000224982 8
+# THE OLD WAY TO DO IT
+#   set i 0
+#   foreach sheet $Data(Sheets) path $Data(Paths) {
+#      foreach layer $Param(BufferFuncLayers) value $Param(BufferFuncValues) {
+#         set path [glob -nocomplain $path/${sheet}_$layer.shp]
+#         if { [file exists $path] } {
+#            set layer2 [lindex [ogrfile open SHAPE read $path] 0]
+#            eval ogrlayer read LAYER$i $layer2
+#            if  { $layer=="buildin_a" }  {
+#               ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM ${sheet}_$layer WHERE function NOT IN (3,4,14,36) "
+#               ogrlayer stats LAYER$i -buffer 0.00089993 8
+#            } elseif  { $layer=="buildin_p" }  {
+#               ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM ${sheet}_$layer WHERE function NOT IN (3,4,14,36) "
+#               ogrlayer stats LAYER$i -buffer 0.000224982 8
+#            }
+#            GenX::Log INFO "Buffering [ogrlayer define LAYER$i -nb] features from ${sheet}_$layer.shp as LAYER$i with buffer #value $value"
+#            gdalband gridinterp RBUFFER LAYER$i $Param(Mode) $value
+#            ogrlayer free LAYER$i
+#            ogrfile close SHAPE
+#         }
+#      }
+#      incr i
+#   }
+
+   foreach file $Param(Files) {
+      #read the shapefile and stock it in the object SHAPE
+      ogrfile open SHAPE read $file
+      if { [lsearch -exact $Param(BufferFuncLayers) $entity] !=-1 } {
+         switch $entity {
+            BS_2010009_0 {
+            # Ponctual buildings
+            GenX::Log DEBUG "Buffering pontual buildings"
             }
-            GenX::Log INFO "Buffering [ogrlayer define LAYER$i -nb] features from ${sheet}_$layer.shp as LAYER$i with buffer value $value"
-            gdalband gridinterp RBUFFER LAYER$i $Param(Mode) $value
-            ogrlayer free LAYER$i
-            ogrfile close SHAPE
+            BS_2010009_2 {
+            GenX::Log DEBUG "Buffering 2D buildings"
+            # 2D building
+            }
          }
       }
-      incr i
    }
+
    GenX::Log INFO "Cookie cutting grass and fields buffers and setting grass and fields and building vicinity values"
    gdalband create RBUFFERCUT $Param(Width) $Param(Height) 1 UInt16
    gdalband define RBUFFERCUT -georef UTMREF$indexCouverture
@@ -1099,8 +1133,8 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
    #gdalband write RBUFFER FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    #gdalfile close FILEOUT
 
-   file delete -force $GenX::Param(OutFile)_champs-only+building-vicinity.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_champs-only+building-vicinity.tif GeoTiff
+   file delete -force $GenX::Param(OutFile)_champs-only+building-vicinity_$indexCouverture.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_champs-only+building-vicinity_$indexCouverture.tif GeoTiff
    gdalband write RBUFFERCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 
    gdalfile close FILEOUT FSANDWICH
@@ -1304,7 +1338,7 @@ proc UrbanX::HeightGain {indexCouverture } {
 
    GenX::Log INFO "Evaluating height gain"
 
-   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity_$indexCouverture.tif]
    gdalband create RHAUTEURPROJ $Param(Width) $Param(Height) 1 Float32
    gdalband define RHAUTEURPROJ -georef UTMREF$indexCouverture
 
@@ -1579,7 +1613,7 @@ proc UrbanX::Priorities2TEB { } {
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
-   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity_$indexCouverture.tif]
    gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
 
    vector create LUT
@@ -1944,11 +1978,12 @@ proc UrbanX::Process { Coverage } {
 
    GenX::Log INFO "Coverage = $Coverage"
 
-   #----- Get the lat/lon and files parameters associated with the province
+   #----- Get the lat/lon and files parameters associated with the city or province
    UrbanX::AreaDefine    $Coverage
-
    #----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
    UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Coverage
+   #----- Identify CanVec files to process
+   UrbanX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
    UrbanX::Sandwich $Coverage
@@ -1957,10 +1992,12 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::Shp2Height $Coverage
 
    #----- Creates the fields and building vicinity output using spatial buffers
+# BUG SPATIAL BUFFERS MAKE IT CRASH
    #UrbanX::ChampsBuffers 0
+#   UrbanX::ChampsBuffers $Coverage
 
    #----- Calculates the population density
-   UrbanX::PopDens2Builtup $Coverage
+#   UrbanX::PopDens2Builtup $Coverage
 
    #----- Calculates building heights
    #UrbanX::HeightGain 0
