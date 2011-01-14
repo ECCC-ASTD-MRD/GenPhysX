@@ -1408,8 +1408,9 @@ proc GenX::LCC2000VFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    foreach id [ogrlayer pick NTSLAYER250K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
       set feuillet [ogrlayer define NTSLAYER250K -feature $id IDENTIFIAN]
       set s250 [string range $feuillet 0 2]
+      set maj  [string toupper [string range $feuillet 0 3]]
 
-      if { [llength [set path [glob -nocomplain $Path(LCC2000V)/${s250}/*LCC2000-V_${s250}*.shp]]] } {
+      if { [llength [set path [glob -nocomplain $Path(LCC2000V)/${s250}/*LCC2000-V_${maj}*.shp]]] } {
          set files [concat $files $path]
       }
    }
