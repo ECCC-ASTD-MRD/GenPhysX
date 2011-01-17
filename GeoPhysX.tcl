@@ -1106,62 +1106,57 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
    set lat1 [lindex $limits 2]
    set lon1 [lindex $limits 3]
 
-   set res  [expr 0.75/(60*60)]
-   set n    0
+   #----- Force NK to 26 by doing noop on gridinterp
+   fstdfield gridinterp $Grid $Grid NOP $Param(VegeTypes) False
+
+   #----- Create temporary per class field
+   vexpr GPXVG ${Grid}()()(0)
+   GenX::GridClear GPXVG 0.0
+
+   foreach rpn [lsort -unique [lindex $Const(LCC2000V2RPN) 1]] {
+      if { $rpn!=-99 } {
+         fstdfield copy GPXVG$rpn GPXVG
+      }
+   }
 
    #----- Loop over files
    if { [set nb [llength [set files [GenX::LCC2000VFindFiles $lat0 $lon0 $lat1 $lon1]]]] } {
 
       GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(LCC2000V2RPN) 0]\n   To  :[lindex $Const(LCC2000V2RPN) 1]"
-      vector create FROMLCC2000V [lindex $Const(LCC2000V2RPN) 0]
-      vector create TORPN        [lindex $Const(LCC2000V2RPN) 1]
-
       foreach file $files {
          GenX::Log DEBUG "   Processing file ([incr n]/$nb) $file" False
          ogrfile open LCC2000VFILE read $file
          eval ogrlayer read LCC2000VTILE LCC2000VFILE 0
 
-         set ex [ogrlayer stats LCC2000VTILE -extent]
-
-         set lo0 [lindex $ex 0]
-         set la0 [lindex $ex 1]
-         set lo1 [lindex $ex 2]
-         set la1 [lindex $ex 3]
-
-         set dx [expr int(($lo1-$lo0)/$res)]
-         set dy [expr int(($la1-$la0)/$res)]
-puts stderr "$dx $dy"
-
-         gdalband create TILE $dx $dy 1 Float32
-         gdalband define TILE -georef [ogrlayer define LCC2000VTILE -georef] -transform [list $lo0 $res 0.0 [expr $la0+$res] 0.0 $res]
-
-         GenX::Log DEBUG "   Rasterizing on subgrid" False
-         gdalband gridinterp TILE LCC2000VTILE FAST COVTYPE
-
-#   gdalfile open FILEOUT write [file rootname [file tail $file]].tif GeoTiff
-#   gdalband write TILE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-#   gdalfile close FILEOUT
-
-         #----- Apply Table conversion
-         GenX::Log DEBUG "   Averaging" False
-         vexpr TILE lut(TILE,FROMLCC2000V,TORPN)
-         fstdfield gridinterp $Grid TILE NORMALIZED_COUNT $Param(VegeTypes) False
-
-         gdalband free TILE
+         foreach vg [lindex $Const(LCC2000V2RPN) 0] rpn [lindex $Const(LCC2000V2RPN) 1] {
+            if { $rpn!=-99 && [set nbf [llength [ogrlayer define LCC2000VTILE -featureselect [list [list COVTYPE == $vg]]]]] } {
+               GenX::Log DEBUG "      Averaging $nbf features ($vg -> $rpn)" False
+               fstdfield clear GPXVG
+               fstdfield gridinterp GPXVG LCC2000VTILE ALIAS 1.0
+               vexpr GPXVG$rpn GPXVG$rpn+GPXVG
+            }
+         }
          ogrlayer free LCC2000VTILE
          ogrfile close LCC2000VFILE
       }
 
+      #----- Put back the per class field into the 3D field
+      foreach rpn [lsort -unique [lindex $Const(LCC2000V2RPN) 1]] {
+         if { $rpn!=-99 } {
+            set k [expr $rpn-1]
+            vexpr $Grid ${Grid}()()($k)=GPXVG$rpn
+         }
+         fstdfield free GPXVG$rpn
+      }
+
       #----- Use accumulator to figure out coverage in destination
       #      But remove border of coverage since it will not be full
-      fstdfield gridinterp $Grid - ACCUM
       vexpr GPXVSK !fpeel($Grid)
       fstdfield stats $Grid -mask GPXVSK
-
-      vector free FROMLCC2000V TORPN
    } else {
       GenX::Log WARNING "The grid is not within LCC2000V limits"
    }
+   fstdfield free GPXVG
 }
 
 #----------------------------------------------------------------------------
