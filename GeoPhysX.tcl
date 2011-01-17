@@ -132,9 +132,8 @@ namespace eval GeoPhysX { } {
                          {  2  3  3 4 25 25 25 4 4 26 22 23 7  7  7 11 14 13 14 15 15 15 15 21 13 13 13 13 13 23 23 22 24 24 24 25 25 25 23 } }
 
    #----- Correspondance de Sylvie Leroyer Decembre 2010 pour la conversion des classes LCC2000V vers les classes RPN
-   set Const(LCC2000V2RPN) { {   0   10  11  12 20 30 31 32 33 34 35 36 37 40 50 51 52 53 80 81 82 83 100 101 102 103 104 110 121 122 123 200 210 211 212 213 220 221 222 223 230 231 232 233 }
-                             { -99 -99  -99 -99  3 24  2 24 24 21 24 24 24 22 26 11 11 22 23 25 26 13  13  22  14  22  22  14  15  15  15  25   4   4   4   4  7    7   7   7  25  25  25  24 } }
-#                                                                                            23 23 23                                  13
+   set Const(LCC2000V2RPN) { {   0   10  11  12 20 30 31 32 33 34 35 36 37 40 50 51 52 53 80   81        82        83      100 101 102 103 104 110 121 122  123     200 210 211 212 213 220 221 222 223 230 231 232 233 }
+                             { -99 -99  -99 -99  3 24  2 24 24 21 24 24 24 22 26 11 11 22 23 { 25 23 } { 26 23 } { 13 23 }  13  22  14  22  22  14  15  15 { 15 13 } 25   4   4   4   4  7    7   7   7  25  25  25  24 } }
 }
 
 #----------------------------------------------------------------------------
@@ -1128,12 +1127,19 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
          ogrfile open LCC2000VFILE read $file
          eval ogrlayer read LCC2000VTILE LCC2000VFILE 0
 
-         foreach vg [lindex $Const(LCC2000V2RPN) 0] rpn [lindex $Const(LCC2000V2RPN) 1] {
+         #----- Loop on vege types and corresponding RPN classes
+         foreach vg [lindex $Const(LCC2000V2RPN) 0] rpns [lindex $Const(LCC2000V2RPN) 1] {
             if { $rpn!=-99 && [set nbf [llength [ogrlayer define LCC2000VTILE -featureselect [list [list COVTYPE == $vg]]]]] } {
-               GenX::Log DEBUG "      Averaging $nbf features ($vg -> $rpn)" False
+               GenX::Log DEBUG "      Averaging $nbf features ($vg -> $rpns)" False
+
+               #----- Rasterize using alias mode
                fstdfield clear GPXVG
                fstdfield gridinterp GPXVG LCC2000VTILE ALIAS 1.0
-               vexpr GPXVG$rpn GPXVG$rpn+GPXVG
+
+               #----- Add and split if neccassary to RPN classification
+               foreach rpn $rpns {
+                  vexpr GPXVG$rpn GPXVG$rpn+(GPXVG/[llength $rpn])
+               }
             }
          }
          ogrlayer free LCC2000VTILE
@@ -1244,7 +1250,7 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
    GenX::Log INFO "Averaging vegetation type using GlobCover database"
 
    #----- Open the file
-   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_200412_200606_V2.2_Global_CLA.tif
+   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_L4_200901_200912_V2.3.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLOBFILE]]]] } {
       GenX::Log WARNING "Specified grid does not intersect with GLOBCOVER database, vegetation will not be calculated"
