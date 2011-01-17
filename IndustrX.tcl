@@ -416,7 +416,7 @@ proc IndustrX::Process { Coverage } {
 
          #Si le traitement d'une province a déjà été partiellement effectué, écrire l'index de feuillet où reprendre le traitement.  Default à 1.
          #L'information se trouve dans le log du traitement précédemment effectué
-         if { $i < $Param(SMOKEIndex) } {
+         if { $i < $GenX::Param(SMOKEIndex) } {
             GenX::Log INFO "Tile $i of $nbrfeuillets"
             GenX::Log INFO "Tile already processed"
             GenX::Log -
