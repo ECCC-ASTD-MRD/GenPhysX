@@ -1112,9 +1112,11 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
    vexpr GPXVG ${Grid}()()(0)
    GenX::GridClear GPXVG 0.0
 
-   foreach rpn [lsort -unique [lindex $Const(LCC2000V2RPN) 1]] {
-      if { $rpn!=-99 } {
-         fstdfield copy GPXVG$rpn GPXVG
+   foreach rpns [lsort -unique [lindex $Const(LCC2000V2RPN) 1]] {
+      if { $rpns!=-99 } {
+         foreach rpn $rpns {
+            fstdfield copy GPXVG$rpn GPXVG
+         }
       }
    }
 
@@ -1129,7 +1131,7 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
 
          #----- Loop on vege types and corresponding RPN classes
          foreach vg [lindex $Const(LCC2000V2RPN) 0] rpns [lindex $Const(LCC2000V2RPN) 1] {
-            if { $rpn!=-99 && [set nbf [llength [ogrlayer define LCC2000VTILE -featureselect [list [list COVTYPE == $vg]]]]] } {
+            if { $rpns!=-99 && [set nbf [llength [ogrlayer define LCC2000VTILE -featureselect [list [list COVTYPE == $vg]]]]] } {
                GenX::Log DEBUG "      Averaging $nbf features ($vg -> $rpns)" False
 
                #----- Rasterize using alias mode
@@ -1147,12 +1149,14 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
       }
 
       #----- Put back the per class field into the 3D field
-      foreach rpn [lsort -unique [lindex $Const(LCC2000V2RPN) 1]] {
-         if { $rpn!=-99 } {
-            set k [expr $rpn-1]
-            vexpr $Grid ${Grid}()()($k)=GPXVG$rpn
+      foreach rpns [lsort -unique [lindex $Const(LCC2000V2RPN) 1]] {
+         foreach rpn $rpns {
+            if { $rpn!=-99 && [fstdfield is $rpn] } {
+               set k [expr $rpn-1]
+               vexpr $Grid ${Grid}()()($k)=GPXVG$rpn
+            }
+            fstdfield free GPXVG$rpn
          }
-         fstdfield free GPXVG$rpn
       }
 
       #----- Use accumulator to figure out coverage in destination
@@ -1853,7 +1857,6 @@ proc GeoPhysX::AverageGradient { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-
 proc GeoPhysX::AverageAspectTile { Grid Band } {
 
    #----- Calculate slope and aspect for the tile
