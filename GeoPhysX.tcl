@@ -1113,8 +1113,8 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
    GenX::GridClear GPXVG 0.0
 
    foreach rpns [lsort -unique [lindex $Const(LCC2000V2RPN) 1]] {
-      if { $rpns!=-99 } {
-         foreach rpn $rpns {
+      foreach rpn $rpns {
+         if { $rpn!=-99 && ![fstdfield is GPXVG$rpn] } {
             fstdfield copy GPXVG$rpn GPXVG
          }
       }
@@ -1151,7 +1151,7 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
       #----- Put back the per class field into the 3D field
       foreach rpns [lsort -unique [lindex $Const(LCC2000V2RPN) 1]] {
          foreach rpn $rpns {
-            if { $rpn!=-99 && [fstdfield is $rpn] } {
+            if { $rpn!=-99 && [fstdfield is GPXVG$rpn] } {
                set k [expr $rpn-1]
                vexpr $Grid ${Grid}()()($k)=GPXVG$rpn
             }
