@@ -24,7 +24,7 @@ namespace eval UrbanX { } {
    variable Const
    variable Meta
 
-   set Param(Version) 0.3
+   set Param(Version) 0.4
 
    set Param(Resolution) 5       ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
    set Param(Buffer)     0.001   ;# Includes about 200m buffers to account for off-zone buffers which would influence results
@@ -324,13 +324,11 @@ namespace eval UrbanX { } {
    set Param(VegeFilterType) LOWPASS
    set Param(VegeFilterSize) 99
 
-   #NOTE : les paths des fichiers suivants devront être modifiés lorsqu'il aura été décidé où ces fichiers seront localisés
-
-   #fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
-   #NOTE : ce fichier ne sert que dans la proc UrbanX::PopDens2Builtup.  Il n'a pas besoin de contenir les champs SMOKEi.  Toutefois, il doit être découpé selon l'index NTS 50K.
+# NOTE : les paths des fichiers suivants devront être modifiés lorsqu'il aura été décidé où ces fichiers seront localisés
+   # fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
+   # NOTE : ce fichier ne sert que dans la proc UrbanX::PopDens2Builtup.  Il n'a pas besoin de contenir les champs SMOKEi.  Toutefois, il doit être découpé selon l'index NTS 50K.
    set Param(PopFile2006SMOKE) $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
-
-   #fichier contenanant 1 polygone pour chaque province ou territoire du Canada
+   # Pour IndustrX seulement : fichier contenant 1 polygone pour chaque province ou territoire du Canada
    set Param(ProvincesGeom) $GenX::Path(StatCan)/Provinces_lcc-nad83.shp
 
    #fichier contenant l'index NTS à l'échelle 1:50000
@@ -659,10 +657,7 @@ proc UrbanX::CANVECFindFiles { } {
 proc UrbanX::Sandwich { indexCouverture } {
    variable Param
    variable Data
-
-   #add proc to Metadata
-   GenX::Procs
-
+   GenX::Procs ;# Adding the proc to the metadata log
    GenX::Log INFO "Beginning of procedure: Sandwich"
 
    #création de la raster qui contiendra la LULC
@@ -1048,7 +1043,8 @@ proc UrbanX::Sandwich { indexCouverture } {
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::ChampsBuffers>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Creation : Circa 2005 - Alexandre Leroux - CMC/CMOE
+# Revision : January 2011 - Alexandre Leroux - CMC/CMOE
 #
 # Goal     : Create the fields and building vicinity output using spatial buffers
 #
@@ -1062,8 +1058,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::ChampsBuffers {indexCouverture } {
-   #add proc to Metadata
-   GenX::Procs
+   GenX::Procs ;# Adding the proc to the metadata log
    variable Param
    variable Data
 
@@ -1129,7 +1124,7 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::PopDens2Builtup>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Creation : Circa 2005 - Alexandre Leroux - CMC/CMOE
 # Revision : July 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     : Reclassify the builtup areas with several thresholds related
@@ -1146,15 +1141,12 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::PopDens2Builtup { indexCouverture } {
-
-   #add proc to Metadata
-   GenX::Procs
-
-   GenX::Log INFO "Beginning of procedure : PopDens2BuiltupCanVec"
+   GenX::Procs ;# Adding the proc to the metadata log
+   GenX::Log DEBUG "Beginning of procedure: PopDens2BuiltupCanVec"
    variable Param
 
    #récupération de genphysx_sandwich.tif
-   GenX::Log DEBUG "Open and read Sandwich file."
+   GenX::Log DEBUG "Reading Sandwich file"
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
 
    #récupération du fichier de données socio-économiques
@@ -1176,24 +1168,21 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    gdalband define RDA -georef UTMREF$indexCouverture
 
    #rasterization des polygones de DA
-   GenX::Log INFO "Rasterization des polygones de DA sélectionnés."
-   GenX::Log INFO "Rasterize the selected dissemination area polygons."
+   GenX::Log DEBUG "Rasterize the selected dissemination area polygons."
    gdalband gridinterp RDA VPOPDENS FAST FEATURE_ID
 
    #comptage des pixels de la residential area pour chaque polygone de DA : increment de la table et buildings generals (ponctuels et surfaciques)
-   GenX::Log INFO "Counting pixels for residential areas and general function buildings for each dissemination area polygon."
+   GenX::Log DEBUG "Counting pixels for residential areas and general function buildings for each dissemination area polygon."
    vexpr VPOPDENS.POP_DENS tcount(VPOPDENS.POP_DENS,ifelse (RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
 
    #Calcul de la densité de population
-   GenX::Log INFO "Calculating population density values and ajustement if required."
+   GenX::Log INFO "Calculating population density values and adjustments if required"
    foreach n $da_select {
       #récupération de la valeur de population
       set pop [ogrlayer define VPOPDENS -feature $n POP_NEW]
-
       #calcul de l'aire de la residential area à l'aide du nombre de pixels comptés précédemment
       set nbrpixels [ogrlayer define VPOPDENS -feature $n POP_DENS]
       set area_pixels [expr ($nbrpixels*25.0/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
-
       #calcul de la densité de population : dentité = pop/aire_pixels
       if {$area_pixels != 0} {
          set densite_pixels [expr $pop/$area_pixels]
@@ -1203,8 +1192,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
       #calcul de l'aire à l'aide de la géométrie vectorielle
       set geom [ogrlayer define VPOPDENS -geometry $n]
-      set area_vect  [expr ([ogrgeometry stats $geom -area]/1000000.0)]
-
+      set area_vect [expr ([ogrgeometry stats $geom -area]/1000000.0)]
       #calcul de la densité de population : dentité = pop/aire_vect
       if {$area_vect != 0} {
          set densite_vect [expr $pop/$area_vect]
@@ -1233,7 +1221,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
       #fonction générale.
       if { $densite_div > 20} {
          set densite_choisie [expr ($densite_vect * 2.0)]
-         GenX::Log DEBUG "Ajustement of population density for polygon ID $n"
+         GenX::Log DEBUG "Adjustment of population density for polygon ID $n"
       } else {
          set densite_choisie $densite_pixels
       }
@@ -1243,7 +1231,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    unset da_select
 
    #Conversion de la densité de population en raster
-   GenX::Log INFO "Conversion of population density in a raster file."
+   GenX::Log DEBUG "Conversion of population density in a raster file."
    gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
    eval gdalband define RPOPDENS -georef UTMREF$indexCouverture
    gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) POP_DENS
@@ -1266,30 +1254,22 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
    vexpr RTEMP RSANDWICH==218
 
-   #LES LIGNES SUIVANTES SERONT À REMPLACER PAR LE BLOC IFELSE POUR DIFFÉRENCIER URBANX ET INDUSTRX
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
-   vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
-
-#    if {$GenX::Param(SMOKE)!="" } {
-#       #seuils de densité de population associés à SMOKE (IndustrX)
-#       GenX::Log INFO "Thresholds for IndustrX."
-#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
-#       vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
-#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
-#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
-#    } else {
-#       #seuils de densité de population associés à TEB (UrbanX)
-#       GenX::Log INFO "Thresholds for UrbanX"
-#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
-#       vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
-#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
-#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
-#       vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
-#    }
-
+   if {$GenX::Param(SMOKE)!="" } {
+      #seuils de densité de population associés à SMOKE (IndustrX)
+      GenX::Log INFO "Thresholds for IndustrX"
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
+   } else {
+      #seuils de densité de population associés à TEB (UrbanX)
+      GenX::Log INFO "Thresholds for UrbanX"
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
+   }
 
    #écriture du fichier genphysx_popdens-builtup.tif
    GenX::Log DEBUG "Generating output file, result of cookie cutting"
@@ -1316,12 +1296,8 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::HeightGain {indexCouverture } {
-
-   #add proc to Metadata
-   GenX::Procs
-
+   GenX::Procs ;# Adding the proc to the metadata log
    variable Param
-
    GenX::Log INFO "Evaluating height gain"
 
    gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity_$indexCouverture.tif]
@@ -1375,12 +1351,8 @@ proc UrbanX::HeightGain {indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::BuildingHeight {indexCouverture } {
-
-   #add proc to Metadata
-   GenX::Procs
-
+   GenX::Procs ;# Adding the proc to the metadata log
    variable Param
-
    GenX::Log INFO "Cookie cutting building heights and adding gain"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
@@ -1438,8 +1410,7 @@ proc UrbanX::BuildingHeight {indexCouverture } {
 proc UrbanX::EOSDvegetation {indexCouverture } {
    variable Param
    variable Const
-
-   GenX::Procs
+   GenX::Procs ;# Adding the proc to the metadata log
    GenX::Log INFO "Beginning of procedure : EOSDvegetation"
 
    #lecture du fichier créé précédemment lors de la proc SandwichCanVec
@@ -1506,8 +1477,7 @@ proc UrbanX::EOSDvegetation {indexCouverture } {
 proc UrbanX::LCC2000V {indexCouverture} {
    variable Param
    variable Const
-
-   GenX::Procs
+   GenX::Procs ;# Adding the proc to the metadata log
    GenX::Log INFO "Beginning of procedure : LCC2000V"
 
    GenX::Log DEBUG "Open and read Sandwich file."
@@ -1589,12 +1559,8 @@ proc UrbanX::LCC2000V {indexCouverture} {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Priorities2TEB { } {
-
-   #add proc to Metadata
-   GenX::Procs
-
+   GenX::Procs ;# Adding the proc to the metadata log
    variable Param
-
    GenX::Log INFO "Converting values to TEB classes"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
@@ -1635,12 +1601,8 @@ proc UrbanX::Priorities2TEB { } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::VegeMask { } {
-
-   #add proc to Metadata
-   GenX::Procs
-
+   GenX::Procs ;# Adding the proc to the metadata log
    variable Param
-
    GenX::Log INFO "Generating vegetation mask"
 
    gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
@@ -1696,9 +1658,7 @@ proc UrbanX::VegeMask { } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::CreateFSTDBand { Name Band } {
-
-   #add proc to Metadata
-   GenX::Procs
+   GenX::Procs ;# Adding the proc to the metadata log
 
    set NI [gdalband configure $Band -width]  ; # Number of X-grid points.
    set NJ [gdalband configure $Band -height] ; # Number of Y-grid points.
@@ -1747,10 +1707,7 @@ proc UrbanX::CreateFSTDBand { Name Band } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::TEB2FSTD { } {
-
-   #add proc to Metadata
-   GenX::Procs
-
+   GenX::Procs ;# Adding the proc to the metadata log
    GenX::Log INFO "Converting TEB raster to RPN"
 
    gdalband read BAND [gdalfile open FILE read $GenX::Param(OutFile)_TEB.tif]
@@ -1783,10 +1740,7 @@ proc UrbanX::TEB2FSTD { } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Shp2Height {indexCouverture } {
-
-   #add proc to Metadata
-   GenX::Procs
-
+   GenX::Procs ;# Adding the proc to the metadata log
    variable Param
 
    if { $Param(Shape)=="" } {
@@ -1828,9 +1782,7 @@ proc UrbanX::Shp2Height {indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::FilterGen { Type Size } {
-
-   #add proc to Metadata
-   GenX::Procs
+   GenX::Procs ;# Adding the proc to the metadata log
 
    #----- Est-ce cette proc maintenant dans le 'main code' de JP?
    #      Il manque les filtres median, directionel, lp/hp gaussien, Sobel/Roberts, FFT
@@ -1889,8 +1841,9 @@ proc UrbanX::FilterGen { Type Size } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Utilitaires { } {
-
    variable Param
+
+# This could be a 'switch' with the name of the Util
 
    #RÉINITIALISATION D'UN FICHIER DE DA
 #    puts "Utilitaire pour réinitialiser toutes les colonnes SMOKE d'un fichier de polygones de DA"
@@ -1936,7 +1889,7 @@ proc UrbanX::Utilitaires { } {
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::Process>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Creation : Circa 2005 - Alexandre Leroux - CMC/CMOE
 # Revision : August 2010 - Lucie Boucher - CMC/AQMAS
 #
 # Goal     :
@@ -1979,10 +1932,10 @@ proc UrbanX::Process { Coverage } {
 
    #----- Creates the fields and building vicinity output using spatial buffers
 # BUG SPATIAL BUFFERS MAKE IT CRASH
-   UrbanX::ChampsBuffers $Coverage
+#   UrbanX::ChampsBuffers $Coverage
 
    #----- Calculates the population density
-#   UrbanX::PopDens2Builtup $Coverage
+   UrbanX::PopDens2Builtup $Coverage
 
    #----- Calculates building heights
    #UrbanX::HeightGain 0
