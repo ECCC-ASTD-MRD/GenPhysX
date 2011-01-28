@@ -1639,8 +1639,12 @@ proc UrbanX::Process { Coverage } {
 
    #----- Get the lat/lon and files parameters associated with the city or province
    UrbanX::AreaDefine    $Coverage
+
    #----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
    GenX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Coverage
+   set UrbanX::Param(Width) $GenX::Param(Width)
+   set UrbanX::Param(Height) $GenX::Param(Height)
+
    #----- Identify CanVec files to process
    UrbanX::CANVECFindFiles
 
