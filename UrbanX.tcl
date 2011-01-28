@@ -336,7 +336,7 @@ namespace eval UrbanX { } {
    set Param(NTSFile) $GenX::Path(NTS)/decoupage50k_2.shp
 
    #entité CanVec déterminant la bordure des polygones NTS 50K
-   set Param(NTSLayer) {LI_1210009_2 }
+   set Param(NTSLayer) { LI_1210009_2 }
    #----- Correspondance de Lucie Boucher Octobe 2010 pour la conversion des classes LCC2000 vers les classes SMOKE
    set Const(LCC20002SMOKE) { { 0 10 11 12 20  30 31 32  33 34  35  36  37  40  50  51  52  53  80  81  82  83 100 101 102 103 104 110 121 122 123 200 210 211 212 213 220 221 222 223 230 231 232 233 }
                               { 0  0  0  0  0 500  0  0 501  0 502 503 504 505 506 507 508 509 510 511 512 513 514 515 516 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 } }
@@ -632,6 +632,7 @@ proc UrbanX::CANVECFindFiles { } {
    GenX::Log INFO "Locating CanVec Files, extent considered: lower-left = $Param(Lat0), $Param(Lon0) top-right = $Param(Lat1), $Param(Lon1)"
    GenX::Log DEBUG "Param(Entities): $Param(Entities)"
    set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
+   GenX::Log DEBUG "CanVec Files: $Param(Files)"
    #Param(Files) contains a list of elements of the form /cnfs/ops/production/cmoe/geo/CanVec/999/a/999a99/999a99_1_0_AA_9999999_0.shp
    #Les paths des fichiers sont triés par feuillet NTS, puis suivant l'ordre donné dans Param(Entities).
    #On a donc, dans l'ordre: feuillet1-entité1, feuillet1-entité2... feuillet1-entitéN, feuillet2-entité1, feuillet2-entité2... feuilletM-entitéN
@@ -1295,7 +1296,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::HeightGain {indexCouverture } {
+proc UrbanX::HeightGain { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
    GenX::Log INFO "Evaluating height gain"
@@ -1328,9 +1329,10 @@ proc UrbanX::HeightGain {indexCouverture } {
       GenX::Log WARNING "Strange value for Param(HeightGain): $Param(HeightGain)"
    }
 
-   file delete -force $GenX::Param(OutFile)_hauteur-champs.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_hauteur-champs.tif GeoTiff
+   file delete -force $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif GeoTiff
    gdalband write RHEIGHTCHAMPS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   GenX::Log INFO "The file $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif was generated"
 
    gdalfile close FILEOUT FCHAMPS
    gdalband free RCHAMPS RHEIGHTCHAMPS RHAUTEURPROJ
@@ -1355,7 +1357,7 @@ proc UrbanX::BuildingHeight {indexCouverture } {
    variable Param
    GenX::Log INFO "Cookie cutting building heights and adding gain"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
    gdalband read RHAUTEURWMASK [gdalfile open FHAUTEUR read $Param(HeightMaskFile)]
 
    gdalband create RHAUTEURWMASKPROJ $Param(Width) $Param(Height) 1 Float32
@@ -1385,12 +1387,12 @@ proc UrbanX::BuildingHeight {indexCouverture } {
 #   gdalfile open FILEOUT write $GenX::Param(OutFile)_hauteur-builtup+building.tif GeoTiff
 #   gdalband write RHAUTEURCUT FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 #   gdalfile close FILEOUT
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_hauteur-classes.tif GeoTiff
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif GeoTiff
    gdalband write RHAUTEURCLASS FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   GenX::Log INFO "The file $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif was generated"
 
    gdalfile close FILEOUT FSANDWICH
    gdalband free RHAUTEURCLASS RSANDWICH
-   file delete -force $GenX::Param(OutFile)_hauteur-champs.tif
 }
 
 #----------------------------------------------------------------------------
@@ -1547,7 +1549,7 @@ proc UrbanX::LCC2000V {indexCouverture} {
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::Priorities2TEB>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
 #
 # Goal     : Applies LUT to all processing results to generate TEB classes
 #
@@ -1558,15 +1560,15 @@ proc UrbanX::LCC2000V {indexCouverture} {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Priorities2TEB { } {
+proc UrbanX::Priorities2TEB {indexCouverture} {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
    GenX::Log INFO "Converting values to TEB classes"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
-   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
+   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
    gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity_$indexCouverture.tif]
-   gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
+   gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif]
 
    vector create LUT
    vector dim LUT { FROM TO }
@@ -1579,9 +1581,10 @@ proc UrbanX::Priorities2TEB { } {
    vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
    vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
 
-   file delete -force $GenX::Param(OutFile)_TEB.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB.tif GeoTiff
+   file delete -force $GenX::Param(OutFile)_TEB_$indexCouverture.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB_$indexCouverture.tif GeoTiff
    gdalband write RTEB FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB_$indexCouverture.tif was generated"
 
    gdalfile close FILEOUT FSANDWICH FPOPDENSCUT FCHAMPS FHAUTEURCLASS
    gdalband free RTEB RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS
@@ -1605,7 +1608,7 @@ proc UrbanX::VegeMask { } {
    variable Param
    GenX::Log INFO "Generating vegetation mask"
 
-   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
+   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB_$indexCouverture.tif]
 
    vexpr RTEBWMASK ifelse(RTEB>800,100,0)
 
@@ -1710,7 +1713,7 @@ proc UrbanX::TEB2FSTD { } {
    GenX::Procs ;# Adding the proc to the metadata log
    GenX::Log INFO "Converting TEB raster to RPN"
 
-   gdalband read BAND [gdalfile open FILE read $GenX::Param(OutFile)_TEB.tif]
+   gdalband read BAND [gdalfile open FILE read $GenX::Param(OutFile)_TEB_$indexCouverture.tif]
 
    UrbanX::CreateFSTDBand GRID BAND
 
@@ -1758,8 +1761,8 @@ proc UrbanX::Shp2Height {indexCouverture } {
    ogrlayer free LAYER
    ogrfile close SHAPE
 
-   file delete -force $GenX::Param(OutFile)_shp-height.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_shp-height.tif GeoTiff
+   file delete -force $GenX::Param(OutFile)_shp-height_$indexCouverture.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_shp-height_$indexCouverture.tif GeoTiff
    gdalband write RHAUTEURSHP FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 
    gdalfile close FILEOUT
@@ -1844,12 +1847,14 @@ proc UrbanX::DeleteTempFiles {indexCouverture} {
    file delete -force $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_EOSDVegetation_$indexCouverture.tif
-   file delete -force $GenX::Param(OutFile)_hauteur-champs.tif
+   file delete -force $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_popdens_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_champs-only+building-vicinity_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_sandwich_$indexCouverture.tif
-   file delete -force $GenX::Param(OutFile)_shp-height.tif
+   file delete -force $GenX::Param(OutFile)_shp-height_$indexCouverture.tif
+   file delete -force $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif
+
 }
 
 #----------------------------------------------------------------------------
@@ -1967,8 +1972,8 @@ proc UrbanX::Process { Coverage } {
 #   UrbanX::PopDens2Builtup $Coverage
 
    #----- Calculates building heights
-   #UrbanX::HeightGain 0
-   #UrbanX::BuildingHeight
+#   UrbanX::HeightGain $Coverage
+#   UrbanX::BuildingHeight $Coverage
 
    #------EOSD Vegetation
    #   UrbanX::EOSDvegetation $Coverage
@@ -1976,8 +1981,8 @@ proc UrbanX::Process { Coverage } {
    #-----LCC2000V Vegetation
    #UrbanX::LCC2000V $Coverage
 
-   #----- Applies LUT to all processing results to generate TEB classes.
-   UrbanX::Priorities2TEB
+   #----- Applies LUT to all processing results to generate TEB classes
+   UrbanX::Priorities2TEB $Coverage
 
    #----- Optional outputs:
    #UrbanX::VegeMask
