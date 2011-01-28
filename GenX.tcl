@@ -31,14 +31,15 @@
 #   GenX::GridCopy           { SourceField DestField }
 #   GenX::GridCopyDesc       { Field FileIn FileOut }
 #   GenX::GridGet            { File }
+#   GenX::CacheGet           { File { NoData "" } }
+#   GenX::CacheFree          { }
 #   GenX::ASTERGDEMFindFiles { Lat0 Lon0Lat1 Lon1 }
 #   GenX::CANVECFindFiles    { Lat0 Lon0 Lat1 Lon1 Layers }
 #   GenX::SRTMFindFiles      { Lat0 Lon0Lat1 Lon1 }
 #   GenX::CDEDFindFiles      { Lat0 Lon0 Lat1 Lon1 { Res 50 } }
 #   GenX::EOSDFindFiles      { Lat0 Lon0Lat1 Lon1 }
 #   GenX::LCC2000VFindFiles  { Lat0 Lon0 Lat1 Lon1 }
-#   GenX::CacheGet           { File { NoData "" } }
-#   GenX::CacheFree          { }
+#   GenX::UTMZoneDefine      { Lat0 Lon0 Lat1 Lon1 { Res 5 } { Name "" } }
 #
 #============================================================================
 
@@ -81,7 +82,6 @@ namespace eval GenX { } {
    set Param(Cell)      1                     ;#Grid cell dimension (1=1D(point 2=2D(area))
    set Param(Script)    ""                    ;#User definition script
    set Param(Process)   ""                    ;#Current processing id
-   set Param(GridBin)   gemgrid               ;#GEM grid generator application
    set Param(OutFile)   genphysx              ;#Output file prefix
    set Param(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
    set Param(NameFile)  ""                    ;#Namelist to use
@@ -93,7 +93,7 @@ namespace eval GenX { } {
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
-   set Param(Urbans)    { }
+   set Param(Urbans)    { HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
    set Param(Subs)      { STD }
@@ -104,7 +104,6 @@ namespace eval GenX { } {
    set Batch(Queue)    ""                    ;#Queue to use for the job
    set Batch(Mem)      1G                    ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
-   set Batch(CPUs)     2                     ;#Number of CPUs to use for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
    set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
 
@@ -329,7 +328,7 @@ proc GenX::Submit { } {
       exit 1
    } else {
       puts stdout "Using $Batch(Submit) to launch job ... "
-      set err [catch { exec $Batch(Submit) $job -cpus $Batch(CPUs) -threads 2 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) 2>@1 } msg]
+      set err [catch { exec $Batch(Submit) $job -threads 3 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) 2>@1 } msg]
       if { $err } {
          puts stdout "Could not launch job ($job) on $Batch(Host)\n\n\t$msg"
       } else {
@@ -1416,4 +1415,61 @@ proc GenX::LCC2000VFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    }
 
    return $files
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::UTMZoneDefine>
+# Creation : October 2010 - Alexandre Lerous, Lucie Boucher - CMC/AQMAS
+#
+# Goal     : define the UTM Zone
+#
+# Parameters :
+#   <Lat0>   : Lower left latitude
+#   <Lon0>   : Lower left longitude
+#   <Lat1>   : Top right latitude
+#   <Lon1>   : Top right longitude
+#   <Res>    : Spatial resolution, (Default 5)
+#   <Name>   : Georeference object name
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } { Name "" } } {
+   variable Param
+
+   set zone     [expr int(ceil((180+(($Lon1+$Lon0)/2))/6))]
+   set meridian [expr -((180-($zone*6))+3)]
+
+   if { $Name=="" } {
+      set Name UTMREF
+   }
+
+   eval georef create $Name \
+      \{PROJCS\[\"WGS_1984_UTM_Zone_${zone}N\",\
+         GEOGCS\[\"GCS_WGS_1984\",\
+            DATUM\[\"D_WGS_1984\",\
+               SPHEROID\[\"WGS_1984\",6378137.0,298.257223563\]\],\
+            PRIMEM\[\"Greenwich\",0.0\],\
+            UNIT\[\"Degree\",0.0174532925199433\]\],\
+         PROJECTION\[\"Transverse_Mercator\"\],\
+         PARAMETER\[\"False_Easting\",500000.0\],\
+         PARAMETER\[\"False_Northing\",0.0\],\
+         PARAMETER\[\"Central_Meridian\",$meridian\],\
+         PARAMETER\[\"Scale_Factor\",0.9996\],\
+         PARAMETER\[\"Latitude_Of_Origin\",0.0\],\
+         UNIT\[\"Meter\",1.0\]\]\}
+
+   set xy1 [georef unproject $Name $Lat1 $Lon1]
+   set xy0 [georef unproject $Name $Lat0 $Lon0]
+
+   set Param(Width)  [expr int(ceil(([lindex $xy1 0] - [lindex $xy0 0])/$Res))]
+   set Param(Height) [expr int(ceil(([lindex $xy1 1] - [lindex $xy0 1])/$Res))]
+
+   georef define $Name -transform [list [lindex $xy0 0] $Res 0.000000000000000 [lindex $xy0 1] 0.000000000000000 $Res]
+
+   GenX::Log DEBUG "UTM zone is $zone, with central meridian at $meridian and dimension $Param(Width)x$Param(Height)"
+
+   return $Name
 }

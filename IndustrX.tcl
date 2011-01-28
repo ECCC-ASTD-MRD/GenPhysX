@@ -158,10 +158,10 @@ proc IndustrX::NTSExtent { indexCouverture } {
    GenX::Log DEBUG "There are [ogrlayer define CANVECNTSLAYER -nb] NTS tiles in the CanVec NTS layer file (should be 1)"
 
    #définition du UTMREF pour la zone à traiter
-   UrbanX::UTMZoneDefine  $UrbanX::Param(Lat0) $UrbanX::Param(Lon0) $UrbanX::Param(Lat1) $UrbanX::Param(Lon1) $UrbanX::Param(Resolution) 1_$indexCouverture
+   GenX::UTMZoneDefine $UrbanX::Param(Lat0) $UrbanX::Param(Lon0) $UrbanX::Param(Lat1) $UrbanX::Param(Lon1) $UrbanX::Param(Resolution) TMPREF_$indexCouverture
 
    #conversion de l'index NTS50K en UTMREF pour obtenir des coordonnées xy
-   ogrlayer stats CANVECNTSLAYER -transform UTMREF1_$indexCouverture
+   ogrlayer stats CANVECNTSLAYER -transform TMPREF_$indexCouverture
 
    #trouve les limites xy en coordonnées UTM de la tuile NTS sélectionnée
    set xy [ogrlayer stats CANVECNTSLAYER -extent True]
@@ -358,7 +358,7 @@ proc IndustrX::Process { Coverage } {
    #----- Get the lat/lon and pr code parameters associated with the province
    UrbanX::AreaDefine    $Coverage
    #----- Defines the general  extents of the zone to be process, the central UTM zone and set the initial UTMREF
-   UrbanX::UTMZoneDefine $UrbanX::Param(Lat0) $UrbanX::Param(Lon0) $UrbanX::Param(Lat1) $UrbanX::Param(Lon1) $UrbanX::Param(Resolution) 0
+   GenX::UTMZoneDefine $UrbanX::Param(Lat0) $UrbanX::Param(Lon0) $UrbanX::Param(Lat1) $UrbanX::Param(Lon1) $UrbanX::Param(Resolution) UTMREF0
 
    #----- Ffinds all NTS Sheets that intersect with the province polygon
    #note : paramètre "0" passé à FindNTSSheets simplement pour avoir une valeur d'initialisation.  Lorsque la fonction est rappelée dans la boucle, plus
