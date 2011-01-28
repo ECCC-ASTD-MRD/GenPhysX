@@ -179,17 +179,17 @@ proc GeoPhysX::AverageTopo { Grid } {
    fstdfield define $Grid -NOMVAR ME -IP2 0
    vexpr $Grid ifelse($Grid==-99.0,0.0,$Grid)   ;#USGS NoData value
    vexpr $Grid ifelse($Grid<-32000,0.0,$Grid)   ;#SRTM and CDED NoData value
-   fstdfield write $Grid GPXOUTFILE -32 True
+   fstdfield write $Grid GPXOUTFILE -32 True $GenX::Param(Compress)
 
    #----- Save RMS
    fstdfield gridinterp GPXRMS - NOP True
    vexpr GPXRMS sqrt(GPXRMS)
    fstdfield define GPXRMS -NOMVAR MRMS -IP1 1200
-   fstdfield write GPXRMS GPXAUXFILE -32 True
+   fstdfield write GPXRMS GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Save resolution
    fstdfield define GPXRES -NOMVAR MRES -IP1 1200
-   fstdfield write GPXRES GPXAUXFILE -32 True
+   fstdfield write GPXRES GPXAUXFILE -32 True $GenX::Param(Compress)
 
    fstdfield free GPXRMS GPXRES GPXTSK
 }
@@ -596,17 +596,17 @@ proc GeoPhysX::AverageAspect { Grid } {
    fstdfield define GPXSLAS -NOMVAR SLA  -IP2 180
    fstdfield define GPXSLAW -NOMVAR SLA  -IP2 270
 
-   fstdfield write GPXFSA  GPXAUXFILE -32 True
-   fstdfield write GPXFSAN GPXAUXFILE -32 True
-   fstdfield write GPXFSAE GPXAUXFILE -32 True
-   fstdfield write GPXFSAS GPXAUXFILE -32 True
-   fstdfield write GPXFSAW GPXAUXFILE -32 True
+   fstdfield write GPXFSA  GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXFSAN GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXFSAE GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXFSAS GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXFSAW GPXAUXFILE -32 True $GenX::Param(Compress)
 
-   fstdfield write GPXSLA  GPXAUXFILE -32 True
-   fstdfield write GPXSLAN GPXAUXFILE -32 True
-   fstdfield write GPXSLAE GPXAUXFILE -32 True
-   fstdfield write GPXSLAS GPXAUXFILE -32 True
-   fstdfield write GPXSLAW GPXAUXFILE -32 True
+   fstdfield write GPXSLA  GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXSLAN GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXSLAE GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXSLAS GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXSLAW GPXAUXFILE -32 True $GenX::Param(Compress)
 
    fstdfield free GPXSLA GPXSLAN GPXSLAE GPXSLAS GPXSLAW GPXFSA GPXFSAN GPXFSAE GPXFSAS GPXFSAW
    gdalband free DEMTILE
@@ -682,7 +682,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
    fstdfield gridinterp GPXMASK - NOP True
    fstdfield define GPXMASK -NOMVAR MG -IP1 0
    vexpr GPXMASK ifelse(GPXMASK==-99.0,0.0,GPXMASK/100.0)
-   fstdfield write GPXMASK GPXOUTFILE -24 True
+   fstdfield write GPXMASK GPXOUTFILE -24 True $GenX::Param(Compress)
    fstdfield free MASKTILE
 }
 
@@ -735,7 +735,7 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
       #----- Save output
       fstdfield gridinterp GPXMASK - NOP True
       fstdfield define GPXMASK -NOMVAR MG -IP1 0
-      fstdfield write GPXMASK GPXOUTFILE -24 True
+      fstdfield write GPXMASK GPXOUTFILE -24 True $GenX::Param(Compress)
       fstdfield free MASKTILE
 
       gdalband free GLOBTILE
@@ -792,7 +792,7 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
       #----- Save output
       fstdfield gridinterp GPXMASK - NOP True
       fstdfield define GPXMASK -NOMVAR MG -IP1 0
-      fstdfield write GPXMASK GPXOUTFILE -24 True
+      fstdfield write GPXMASK GPXOUTFILE -24 True $GenX::Param(Compress)
 
       gdalband free GCLTILE
    }
@@ -855,7 +855,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    }
 
    fstdfield define GPXMASK -NOMVAR MG -IP1 0 -IP2 0
-   fstdfield write GPXMASK GPXOUTFILE -24 True
+   fstdfield write GPXMASK GPXOUTFILE -24 True $GenX::Param(Compress)
 
    ogrlayer free USLAKES CANVECTILE
 }
@@ -916,7 +916,7 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
    ogrfile close CANPROVFILE
 
    fstdfield define GPXMASK -NOMVAR MGGO -IP1 0 -IP2 0
-   fstdfield write GPXMASK GPXAUXFILE -24 True
+   fstdfield write GPXMASK GPXAUXFILE -24 True $GenX::Param(Compress)
 
    ogrlayer free CANPROV
 }
@@ -959,7 +959,7 @@ proc GeoPhysX::AverageVege { Grid } {
    #----- Save the 26 Vege types
    fstdfield define GPXVF -NOMVAR VF -IP2 0
    fstdfield stats GPXVF -levels $Param(VegeTypes) -leveltype UNDEFINED
-   fstdfield write GPXVF GPXAUXFILE -24 True
+   fstdfield write GPXVF GPXAUXFILE -24 True $GenX::Param(Compress)
 
    fstdfield free GPXVF
 }
@@ -1500,7 +1500,7 @@ proc GeoPhysX::AverageSand { Grid } {
 
       #----- Save output
       fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
-      fstdfield write GPXJ1 GPXAUXFILE -24 True
+      fstdfield write GPXJ1 GPXAUXFILE -24 True $GenX::Param(Compress)
    }
    fstdfield free SANDTILE GPXJ1 GPXJ1SK
 }
@@ -1628,11 +1628,11 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
    fstdfield define GPXBULKT -NOMVAR J4 -IP1 1199
    fstdfield define GPXOCT   -NOMVAR J5 -IP1 1199
 
-   fstdfield write GPXSANDT GPXAUXFILE -32 True
-   fstdfield write GPXCLAYT GPXAUXFILE -32 True
-   fstdfield write GPXGRAVT GPXAUXFILE -32 True
-   fstdfield write GPXBULKT GPXAUXFILE -32 True
-   fstdfield write GPXOCT   GPXAUXFILE -32 True
+   fstdfield write GPXSANDT GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXCLAYT GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXGRAVT GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXBULKT GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXOCT   GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Copy sub-surface data into 4 layers (needed by GEM)
    foreach ip1 { 1198 1197 1196 1195 } {
@@ -1642,11 +1642,11 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
       fstdfield define GPXBULKS -NOMVAR J4 -IP1 $ip1
       fstdfield define GPXOCS   -NOMVAR J5 -IP1 $ip1
 
-      fstdfield write GPXSANDS GPXAUXFILE -32 True
-      fstdfield write GPXCLAYS GPXAUXFILE -32 True
-      fstdfield write GPXGRAVS GPXAUXFILE -32 True
-      fstdfield write GPXBULKS GPXAUXFILE -32 True
-      fstdfield write GPXOCS   GPXAUXFILE -32 True
+      fstdfield write GPXSANDS GPXAUXFILE -32 True $GenX::Param(Compress)
+      fstdfield write GPXCLAYS GPXAUXFILE -32 True $GenX::Param(Compress)
+      fstdfield write GPXGRAVS GPXAUXFILE -32 True $GenX::Param(Compress)
+      fstdfield write GPXBULKS GPXAUXFILE -32 True $GenX::Param(Compress)
+      fstdfield write GPXOCS   GPXAUXFILE -32 True $GenX::Param(Compress)
    }
 
    vector free HWSDTABLE
@@ -1710,7 +1710,7 @@ proc GeoPhysX::AverageClay { Grid } {
 
       #----- Save output
       fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
-      fstdfield write GPXJ2 GPXAUXFILE -24 True
+      fstdfield write GPXJ2 GPXAUXFILE -24 True $GenX::Param(Compress)
    }
    fstdfield free CLAYTILE GPXJ2 GPXJ2SK
 }
@@ -1761,13 +1761,13 @@ proc GeoPhysX::AverageTopoLow { Grid } {
    fstdfield gridinterp GPXLOW - NOP True
    vexpr GPXLOW ifelse(GPXLOW==-99.0,0.0,GPXLOW)
    fstdfield define GPXLOW -NOMVAR MEL -IP1 0 -IP2 0
-   fstdfield write GPXLOW GPXAUXFILE -24 True
+   fstdfield write GPXLOW GPXAUXFILE -24 True $GenX::Param(Compress)
 
    #----- save <Hhr^2>ij
    fstdfield gridinterp GPXLRMS - NOP True
    vexpr GPXLRMS ifelse(GPXLRMS>0.0,GPXLRMS^0.5,0.0)
    fstdfield define GPXLRMS -NOMVAR LRMS -IP1 0
-   fstdfield write GPXLRMS GPXAUXFILE -24 True
+   fstdfield write GPXLRMS GPXAUXFILE -24 True $GenX::Param(Compress)
 
    fstdfield free LOWTILE LOWTILE2 GPXLRMS
 }
@@ -1829,15 +1829,15 @@ proc GeoPhysX::AverageGradient { Grid } {
    #----- Save output
    fstdfield gridinterp GPXGXX - NOP True
    fstdfield define GPXGXX -NOMVAR GXX -IP1 0
-   fstdfield write GPXGXX GPXAUXFILE -32 True
+   fstdfield write GPXGXX GPXAUXFILE -32 True $GenX::Param(Compress)
 
    fstdfield gridinterp GPXGYY - NOP True
    fstdfield define GPXGYY -NOMVAR GYY -IP1 0
-   fstdfield write GPXGYY GPXAUXFILE -32 True
+   fstdfield write GPXGYY GPXAUXFILE -32 True $GenX::Param(Compress)
 
    fstdfield gridinterp GPXGXY - NOP True
    fstdfield define GPXGXY -NOMVAR GXY -IP1 0
-   fstdfield write GPXGXY GPXAUXFILE -32 True
+   fstdfield write GPXGXY GPXAUXFILE -32 True $GenX::Param(Compress)
 
    fstdfield free GXYTILE GXYTILE1 GXYTILE2 GXYTILE1X GXYTILE2Y GPXGXX GPXGYY GPXGXY
 }
@@ -1957,9 +1957,9 @@ proc GeoPhysX::SubCorrectionFactor { } {
    GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc0) $Const(smallc1)
 
    fstdfield define GPXFLR -NOMVAR FLR -IP1 0 -IP2 0
-   fstdfield write GPXFLR GPXAUXFILE -24 True
+   fstdfield write GPXFLR GPXAUXFILE -24 True $GenX::Param(Compress)
    fstdfield define GPXFHR -NOMVAR FHR -IP1 0 -IP2 0
-   fstdfield write GPXFHR GPXAUXFILE -24 True
+   fstdfield write GPXFHR GPXAUXFILE -24 True $GenX::Param(Compress)
 
    #----- For low-res and hi-res (over land only)
    GenX::Log INFO "Computing low and high res fields over land only"
@@ -1971,9 +1971,9 @@ proc GeoPhysX::SubCorrectionFactor { } {
    GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc0) $Const(smallc1)
 
    fstdfield define GPXFLR -NOMVAR FLRP -IP1 0 -IP2 0
-   fstdfield write GPXFLR GPXAUXFILE -24 True
+   fstdfield write GPXFLR GPXAUXFILE -24 True $GenX::Param(Compress)
    fstdfield define GPXFHR -NOMVAR FHRP -IP1 0 -IP2 0
-   fstdfield write GPXFHR GPXAUXFILE -24 True
+   fstdfield write GPXFHR GPXAUXFILE -24 True $GenX::Param(Compress)
 
    fstdfield free GPXMG GPXDX GPXDY GPXFLR GPXFHR
 }
@@ -2000,7 +2000,7 @@ proc GeoPhysX::SubTopoFilter { } {
 
    fstdgrid zfilter GPXMF GenX::Settings
    fstdfield define GPXMF -NOMVAR MF -IP1 0 -IP2 0
-   fstdfield write GPXMF GPXOUTFILE -24 True
+   fstdfield write GPXMF GPXOUTFILE -24 True $GenX::Param(Compress)
 
    fstdfield free GPXMF
 }
@@ -2035,7 +2035,7 @@ proc GeoPhysX::SubLaunchingHeight { } {
    vexpr GPXLH 2.0*GPXMG*((GPXLRMS^2 - GPXMEL^2)^0.5)
    vexpr GPXLH ifelse(GPXLH>=$Const(lhmin),GPXLH,0.0)
    fstdfield define GPXLH -NOMVAR LH -IP1 0 -IP2 0
-   fstdfield write GPXLH GPXOUTFILE -32 True
+   fstdfield write GPXLH GPXOUTFILE -32 True $GenX::Param(Compress)
 
    fstdfield free GPXLH GPXMEL GPXLRMS GPXMG GPXFLR
 }
@@ -2078,19 +2078,19 @@ proc GeoPhysX::SubY789 { } {
    vexpr GPXY789 GPXMG*(GPXGXX*(GPXCOSA^2) + GPXGYY*(GPXSINA^2) - 2.0*GPXGXY*GPXSINA*GPXCOSA)
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
    fstdfield define GPXY789 -NOMVAR Y7 -IP1 0 -IP2 0
-   fstdfield write GPXY789 GPXOUTFILE -32 True
+   fstdfield write GPXY789 GPXOUTFILE -32 True $GenX::Param(Compress)
 
    GenX::Log INFO "Computing Y8"
    vexpr GPXY789 GPXMG*(GPXGXX*(GPXSINA^2) + GPXGYY*(GPXCOSA^2) + 2.0*GPXGXY*GPXSINA*GPXCOSA)
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
    fstdfield define GPXY789 -NOMVAR Y8 -IP1 0 -IP2 0
-   fstdfield write GPXY789 GPXOUTFILE -32 True
+   fstdfield write GPXY789 GPXOUTFILE -32 True $GenX::Param(Compress)
 
    GenX::Log INFO "Computing Y9"
    vexpr GPXY789 GPXMG*((GPXGXX-GPXGYY)*GPXSINA*GPXCOSA + GPXGXY*(GPXCOSA^2-GPXSINA^2))
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
    fstdfield define GPXY789 -NOMVAR Y9 -IP1 0 -IP2 0
-   fstdfield write GPXY789 GPXOUTFILE -32 True
+   fstdfield write GPXY789 GPXOUTFILE -32 True $GenX::Param(Compress)
 
    fstdfield free GPXGXX GPXGYY GPXGXY GPXMG GPXFLR GPXALP GPXCOSA GPXSINA GPXMG GPXLH GPXY789
 }
@@ -2131,7 +2131,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXSSS ifelse(GPXSSS>0.0,GPXSSS^0.5,0.0)
    vexpr GPXSSS ifelse(GPXMG>$Const(mgmin),GPXSSS,0.0)
    fstdfield define GPXSSS -NOMVAR SSS -IP1 0 -IP2 0
-   fstdfield write GPXSSS GPXAUXFILE -32 True
+   fstdfield write GPXSSS GPXAUXFILE -32 True $GenX::Param(Compress)
 
    vexpr GPXHCOEF (1.5 - 0.5*(GPXSSS-20.0)/680.0)
    vexpr GPXHCOEF ifelse(GPXSSS>700.0,1.0,GPXHCOEF)
@@ -2141,7 +2141,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZREF ifelse(GPXZREF>1500.0,1500.0,GPXZREF)
 
    fstdfield define GPXZREF -NOMVAR ZREF -IP1 0 -IP2 0
-   fstdfield write GPXZREF GPXAUXFILE -32 True
+   fstdfield write GPXZREF GPXAUXFILE -32 True $GenX::Param(Compress)
 
    vexpr GPXSLP (GPXHCOEF*GPXHCOEF*GPXSSS/$Const(lres))
 
@@ -2149,7 +2149,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZTP ifelse(GPXSLP>$Const(slpmin) || GPXZREF>$Const(zrefmin),1.0+GPXZREF*exp(-$Const(karman)/sqrt(0.5*$Const(drgcoef)*GPXSLP)),0.0)
    vexpr GPXZTP ifelse(GPXSSS<=$Const(sssmin),0.1*GPXSSS,GPXZTP)
    fstdfield define GPXZTP -NOMVAR ZTOP -IP1 0 -IP2 0
-   fstdfield write GPXZTP GPXAUXFILE -32 True
+   fstdfield write GPXZTP GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Local (vegetation) roughness length
    fstdfield read GPXZ0V1 GPXOUTFILE -1 "" 1199 -1 -1 "" "VF"
@@ -2164,7 +2164,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    }
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
    fstdfield define GPXZ0V1 -NOMVAR ZVG1 -IP1 0 -IP2 0
-   fstdfield write GPXZ0V1 GPXAUXFILE -32 True
+   fstdfield write GPXZ0V1 GPXAUXFILE -32 True $GenX::Param(Compress)
 
    GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
    foreach element [lrange $Param(VegeTypes) 3 end] zzov [lrange $Param(VegeZ0vTypes) 3 end] {
@@ -2175,7 +2175,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    }
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
    fstdfield define GPXZ0V1 -NOMVAR ZVG2 -IP1 0 -IP2 0
-   fstdfield write GPXZ0V1 GPXAUXFILE -32 True
+   fstdfield write GPXZ0V1 GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Roughness length over soil
    fstdfield read GPXGA GPXOUTFILE -1 "" 1198 -1 -1 "" "VF"
@@ -2187,11 +2187,11 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)              , $Const(z0def)                        , GPXZ0S)
    vexpr GPXZ0S ifelse(GPXGA>=(1.0-$Const(gamin))        , $Const(z0def)                        , GPXZ0S)
    fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0
-   fstdfield write GPXZ0S GPXAUXFILE -32 True
+   fstdfield write GPXZ0S GPXAUXFILE -32 True $GenX::Param(Compress)
 
    vexpr GPXZPS ifelse(GPXZ0S>0.0,ln(GPXZ0S),$Const(zpdef))
    fstdfield define GPXZPS -NOMVAR ZPS -IP1 0 -IP2 0
-   fstdfield write GPXZPS GPXAUXFILE -32 True
+   fstdfield write GPXZPS GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Roughness length over glaciers
    vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (1.0/ln(GPXZREF/GPXZTP      ))^2.0 , 0.0)
@@ -2201,28 +2201,28 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZ0G ifelse(GPXZ0G<$Const(z0def)        , $Const(z0def)                      , GPXZ0G)
    vexpr GPXZ0G ifelse(GPXGA<=$Const(gamin)        , $Const(z0def)                      , GPXZ0G)
    fstdfield define GPXZ0G -NOMVAR Z0G -IP1 0 -IP2 0
-   fstdfield write GPXZ0G GPXAUXFILE -32 True
+   fstdfield write GPXZ0G GPXAUXFILE -32 True $GenX::Param(Compress)
 
    vexpr GPXZPG ifelse(GPXZ0G>0.0,ln(GPXZ0G),$Const(zpdef) )
    fstdfield define GPXZPG -NOMVAR ZPG -IP1 0 -IP2 0
-   fstdfield write GPXZPG GPXAUXFILE -32 True
+   fstdfield write GPXZPG GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Fill some gaps
    vexpr GPXZ0S ifelse(GPXMG>$Const(mgmin) && GPXZTP<$Const(z0min) && GPXZ0V1<$Const(z0min) && GPXZ0G<$Const(z0min),$Const(z0def),GPXZ0S)
    fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0
-   fstdfield write GPXZ0S GPXAUXFILE -32 True
+   fstdfield write GPXZ0S GPXAUXFILE -32 True $GenX::Param(Compress)
    vexpr GPXZPS ifelse(GPXZ0S>0.0,ln(GPXZ0S),$Const(zpdef) )
    fstdfield define GPXZPS -NOMVAR ZPS -IP1 0 -IP2 0
-   fstdfield write GPXZPS GPXAUXFILE -32 True
+   fstdfield write GPXZPS GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Total roughness length
    vexpr GPXZP GPXMG*((1.0-GPXGA)*GPXZPS+GPXGA*GPXZPG)+(1.0-GPXMG)*ln(0.001)
    fstdfield define GPXZP -NOMVAR ZP0 -IP1 0 -IP2 0
-   fstdfield write GPXZP GPXAUXFILE -32 True
+   fstdfield write GPXZP GPXAUXFILE -32 True $GenX::Param(Compress)
 
    vexpr GPXZ0 exp(GPXZP)
    fstdfield define GPXZ0 -NOMVAR Z00 -IP1 0 -IP2 0
-   fstdfield write GPXZ0 GPXAUXFILE -32 True
+   fstdfield write GPXZ0 GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #------ Filter roughness length
    if { $GenX::Param(Z0Filter) } {
@@ -2231,11 +2231,11 @@ proc GeoPhysX::SubRoughnessLength { } {
    }
    vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
    fstdfield define GPXZ0 -NOMVAR Z0 -IP1 0 -IP2 0
-   fstdfield write GPXZ0 GPXOUTFILE -32 True
+   fstdfield write GPXZ0 GPXOUTFILE -32 True $GenX::Param(Compress)
 
    vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
    fstdfield define GPXZP -NOMVAR ZP -IP1 0 -IP2 0
-   fstdfield write GPXZP GPXOUTFILE -32 True
+   fstdfield write GPXZP GPXOUTFILE -32 True $GenX::Param(Compress)
 
    fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S \
        GPXZ0V2 GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF
@@ -2295,7 +2295,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
             break
          }
          fstdfield define GPXVF -NOMVAR VF -IP1 [expr 1200-$type]
-         fstdfield write GPXVF GPXOUTFILE -24 True
+         fstdfield write GPXVF GPXOUTFILE -24 True $GenX::Param(Compress)
       } else {
          GenX::Log WARNING "Could not find VF($type) field while checking VF"
          break
@@ -2304,7 +2304,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 
    if { [fstdfield is GPXVF2] } {
       fstdfield define GPXVF2 -NOMVAR GA -IP1 0
-      fstdfield write GPXVF2 GPXOUTFILE -24 True
+      fstdfield write GPXVF2 GPXOUTFILE -24 True $GenX::Param(Compress)
 
       #----- Calculate Dominant type and save
       GeoPhysX::DominantVege GPXVF2
@@ -2327,7 +2327,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
             GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J1"
          }
          fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
-         fstdfield write GPXJ1 GPXOUTFILE -24 True
+         fstdfield write GPXJ1 GPXOUTFILE -24 True $GenX::Param(Compress)
       } else {
          GenX::Log WARNING "Could not find J1($type) field, will not do the consistency check on J1($type)"
       }
@@ -2348,7 +2348,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
             break
          }
          fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
-         fstdfield write GPXJ2 GPXOUTFILE -24 True
+         fstdfield write GPXJ2 GPXOUTFILE -24 True $GenX::Param(Compress)
       } else {
          GenX::Log WARNING "Could not find J2($type) field, will not do the consistency check on J2($type)"
       }
@@ -2390,7 +2390,7 @@ proc GeoPhysX::DominantVege { Grid } {
       }
    }
    fstdfield define GPXVG -NOMVAR VG -IP1 0 -IP2 0
-   fstdfield write GPXVG GPXOUTFILE -24 True
+   fstdfield write GPXVG GPXOUTFILE -24 True $GenX::Param(Compress)
 
    fstdfield free GPXVF GPXVG GPXTP
 }

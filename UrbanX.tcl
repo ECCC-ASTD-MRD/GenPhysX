@@ -1410,7 +1410,7 @@ proc UrbanX::TEB2FSTD { } {
    fstdfield define GRID -NOMVAR UG
    fstdfield write TIC 1 -32 True
    fstdfield write TAC 1 -32 True
-   fstdfield write GRID 1 -16 True
+   fstdfield write GRID 1 -16 True $GenX::Param(Compress)
 
    fstdfile close 1
 }

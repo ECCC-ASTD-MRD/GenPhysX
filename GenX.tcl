@@ -1064,13 +1064,13 @@ proc GenX::GridGet { File } {
 
             fstdfield write TIC  GPXAUXFILE -32 True
             fstdfield write TAC  GPXAUXFILE -32 True
-            fstdfield write GRID GPXAUXFILE -32 True
+            fstdfield write GRID GPXAUXFILE -32 True $GenX::Param(Compress)
          }
       } else {
          #----- Otherwise, use the first field found as output grid
          fstdfield read GRID GPXGRIDFILE -1 "" -1 -1 -1 "" ""
          fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -IP1 $ip1
-         fstdfield write GRID GPXAUXFILE -32 True
+         fstdfield write GRID GPXAUXFILE -32 True $GenX::Param(Compress)
       }
    }
 
