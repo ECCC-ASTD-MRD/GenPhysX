@@ -27,20 +27,20 @@ namespace eval UrbanX { } {
    set Param(Version) 0.4
 
    set Param(Resolution) 5       ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
+# Param(Buffer) is unused at the moment... delete in favor of new method for account for off-zone buffers
    set Param(Buffer)     0.001   ;# Includes about 200m buffers to account for off-zone buffers which would influence results
    set Param(Mode)       FAST    ;# Rasterization mode: INCLUDED or FAST - fast is... much much faster!
    set Param(HeightGain) 0       ;# Default value if proc HeightGain is not ran
    set Param(Width)      0       ;# Largeur du domaine
    set Param(Height)     0       ;# Hauteur du domaine
-
    set Param(Lon1)           0.0 ;# Top right longitude
    set Param(Lat1)           0.0 ;# Top right latitude
    set Param(Lon0)           0.0 ;# Lower left longitude
    set Param(Lat0)           0.0 ;# Lower Left latitude
    set Param(HeightFile)     ""
    set Param(HeightMaskFile) ""
-   set Param(Shape)          ""
-   set Param(ShapeField)     ""
+   set Param(BuildingsShapefile)   "" ;# 2.5D buildings shapefile for a specific city
+   set Param(BuildingsHgtField)     "" ;# Name of the height attribute of the 2.5D buildings shapefile
 
    # Liste des entités CanVec qui doivent être rasterisées.
    # Ces entités sont classés par ordre décroissant de priorité
@@ -58,8 +58,7 @@ namespace eval UrbanX { } {
 
    set Param(BufferLayers)     { BS_2010009_0 TR_1760009_1 } ;# Layers from CanVec required for buffer
 
-   # TEB Classes for CanVec
-   # Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
+   # TEB Classes for CanVec. Ces valeurs sont associées aux entitées CanVec. Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT. La source des valeurs est le fichier UrbanX-LUT.xls
    set Param(TEBClasses)         { 902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350 }
 
    # SMOKE Classes for CanVec
@@ -140,8 +139,8 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat0)    45.30
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/cities/ottawa/ott_shp-height.tif
          set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/cities/ottawa/ott_shp-height.tif
-         set Param(Shape)      /data/cmoex7/afsralx/canyon-urbain/global_data/cities/ottawa/ott-buildings.shp
-         set Param(ShapeField) hgt
+         set Param(BuildingsShapefile)      /data/cmoex7/afsralx/canyon-urbain/global_data/cities/ottawa/ott-buildings.shp
+         set Param(BuildingsHgtField) hgt
       }
       "WINNIPEG" {
          set Param(Lon1)   -96.95
@@ -350,28 +349,20 @@ proc UrbanX::Sandwich { indexCouverture } {
    #----- Rasterization of CanVec layers
    foreach file $Param(Files) {
       set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
-      #entity contains an element of the form AA_9999999_9
+      # entity contains an element of the form AA_9999999_9
       set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
-      #filename contains an element of the form 999a99_9_9_AA_9999999_9
+      # filename contains an element of the form 999a99_9_9_AA_9999999_9
       set priority [lindex $Param(Priorities) [lsearch -exact $Param(Entities) $entity]]
-      #value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Entities)
-
+      # value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Entities)
       ogrfile open SHAPE read $file
-      #read the shapefile and stock it in the object SHAPE
 
-      #the following if/else evaluates if the layer requires some post-processing prior to rasterization or if it is rasterized with the general procedure
+      # The following if/else evaluates if the layer requires some post-processing prior to rasterization or if it is rasterized with the general procedure
       if { [lsearch -exact $Param(LayersPostPro) $entity] !=-1 } {
          switch $entity {
-
             BS_1370009_2 {
-            #residential areas
-            #Lors de la procédure sandwich, l'entité prend entièrement les valeurs suivantes : PRI = 218 ; TEB = 210 ; SMO = 1
-            #Lors de la procédure PopDens2Builtup, l'entité est découpée selon les seuils de densité de population suivants :
-               #0 <= densité < 2000 : PRI = 218 ; TEB = 210 ; SMO = 1
-               #2000 <= densité < 5000 : PRI = 217 ; TEB = 220 ; SMO = 2
-               #5000 <= densité < 15000 : PRI = 216 ; TEB = 230 ; SMO = 3
-               #15000 <= densité < 25000 : PRI = 215 ; TEB = 240 ; SMO = 4
-               #25000 <= densité : PRI = 214 ; TEB = 250 ; SMO = 5
+            # Residential areas
+            # Lors de la procédure sandwich, l'entité prend entièrement les valeurs suivantes : PRI = 218 ; TEB = 210 ; SMO = 1
+            # Lors de la procédure PopDens2Builtup, l'entité est découpée selon des seuils de densité de population
                GenX::Log DEBUG "Post-processing for Residential area, area"
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity as FEATURES with priority value 218"
@@ -452,7 +443,7 @@ proc UrbanX::Sandwich { indexCouverture } {
             }
             BS_2310009_1 {
                #entity : Pipeline (Sewage / liquid waste), line
-               GenX::Log DEBUG "Post-processing for Pipelines (Sewage / liquid waste), lines"
+               GenX::Log DEBUG "Post-processing for Pipelines (sewage / liquid waste), lines"
                #if relation2ground != 1 (aboveground), exclus; else, valeur générale
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (aboveground sewage pipeline entity) as FEATURES with priority value $priority"
@@ -571,7 +562,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                # else
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 58"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 169"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 169
             }
             HD_1470009_1 {
@@ -582,13 +573,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 142 141 140 144 143 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (definition = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE definition NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 145"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 145
             }
@@ -600,14 +591,14 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 172 171 178 179 175 173 176 177 173 180 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (definition = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 145"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE definition NOT IN ([join $funcs ,])"
+               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 181"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 181
             }
             IC_2600009_0 {
@@ -947,11 +938,11 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    } else {
       #seuils de densité de population associés à TEB (UrbanX)
       GenX::Log INFO "Thresholds for UrbanX"
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),1,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),2,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),3,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),4,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),5,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
    }
 
    #écriture du fichier genphysx_popdens-builtup.tif
@@ -1261,7 +1252,7 @@ proc UrbanX::Priorities2TEB {indexCouverture} {
    vexpr RTEB lut(RSANDWICH,LUT.FROM,LUT.TO)
    vector free LUT
 
-#   vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
+   vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
 #   vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
 #   vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
 # 3D buildings output is missing...
@@ -1432,7 +1423,7 @@ proc UrbanX::Shp2Height {indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
 
-   if { $Param(Shape)=="" } {
+   if { $Param(BuildingsShapefile)=="" } {
       return
    }
    GenX::Log INFO "Converting $GenX::Param(Urban) building shapefile to raster"
@@ -1440,9 +1431,9 @@ proc UrbanX::Shp2Height {indexCouverture } {
    gdalband create RHAUTEURSHP $Param(Width) $Param(Height) 1 Float32
    gdalband define RHAUTEURSHP -georef UTMREF$indexCouverture
 
-   set shp_layer [lindex [ogrfile open SHAPE read $Param(Shape)] 0]
+   set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
    eval ogrlayer read LAYER $shp_layer
-   gdalband gridinterp RHAUTEURSHP LAYER $Param(Mode) $Param(ShapeField)
+   gdalband gridinterp RHAUTEURSHP LAYER $Param(Mode) $Param(BuildingsHgtField)
 
    ogrlayer free LAYER
    ogrfile close SHAPE
@@ -1652,23 +1643,23 @@ proc UrbanX::Process { Coverage } {
    UrbanX::Sandwich $Coverage
 
    #-----La rasterization des hauteurs n'a pas vraiment sa place dans UrbanX... C'est one-shot.
-   UrbanX::Shp2Height $Coverage
+#   UrbanX::Shp2Height $Coverage
 
    #----- Creates the fields and building vicinity output using spatial buffers
 # BUG SPATIAL BUFFERS MAKE IT CRASH
-   UrbanX::ChampsBuffers $Coverage
+#   UrbanX::ChampsBuffers $Coverage
 
    #----- Calculates the population density
    UrbanX::PopDens2Builtup $Coverage
 
    #----- Calculates building heights
-   UrbanX::HeightGain $Coverage
-   UrbanX::BuildingHeight $Coverage
+#   UrbanX::HeightGain $Coverage
+#   UrbanX::BuildingHeight $Coverage
 
    #------EOSD Vegetation - ignore of LCC2000V is used
    #   UrbanX::EOSDvegetation $Coverage
    #-----LCC2000V Vegetation
-   UrbanX::LCC2000V $Coverage
+#   UrbanX::LCC2000V $Coverage
 
    #----- Applies LUT to all processing results to generate TEB classes
    UrbanX::Priorities2TEB $Coverage
