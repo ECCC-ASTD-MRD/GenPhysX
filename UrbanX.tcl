@@ -361,6 +361,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 
       # The following if/else evaluates if the layer requires some post-processing prior to rasterization or if it is rasterized with the general procedure
       if { [lsearch -exact $Param(LayersPostPro) $entity] !=-1 } {
+
          switch $entity {
             BS_1370009_2 {
             # Residential areas
@@ -697,7 +698,8 @@ proc UrbanX::Sandwich { indexCouverture } {
             }
          }
       } else {
-         #general procedure for rasterization : entities are not part of Param(LayersPostPro)
+
+         #general procedure for rasterization: entities that are not part of Param(LayersPostPro)
          eval ogrlayer read FEATURES SHAPE 0
          GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from file $file as FEATURES with priority value $priority, general procedure"
          gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $priority
@@ -755,7 +757,6 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
          ogrfile open SHAPE read $file
          switch $entity {
             BS_2010009_0 {
-            # Ponctual buildings
             GenX::Log DEBUG "Buffering ponctual buildings"
             set priority 666 ;# VALUE TO UPDATE
             ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM $filename WHERE function NOT IN (3,4,14,36) "
@@ -765,7 +766,7 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
             BS_2010009_2 {
             GenX::Log DEBUG "Buffering 2D buildings"
             set priority 667 ;# VALUE TO UPDATE
-        # need updating this sqlselect
+# need updating this sqlselect
             ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM $filename WHERE function NOT IN (3,4,14,36) "
 # Bug in spatial buffers
 #            ogrlayer stats LAYER$i -buffer 0.00089993 8
@@ -961,9 +962,9 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::HeightGain>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
 #
-# Goal     : Estimate DEM Height gain based on...
+# Goal     : Estimate DEM height gain from the STM-DEM minus CDED data substraction
 #
 # Parameters :
 #
@@ -1214,13 +1215,13 @@ proc UrbanX::LCC2000V { indexCouverture } {
 proc UrbanX::Priorities2TEB { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
-   GenX::Log INFO "Converting values to TEB classes"
+   GenX::Log INFO "Aggregating rasters into TEB classes"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
    gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity_$indexCouverture.tif]
-   gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif]
    gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V-LUT_$indexCouverture.tif]
+   gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif]
 
    vector create LUT
    vector dim LUT { FROM TO }
@@ -1230,12 +1231,10 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
    vector free LUT
 
    vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
-#   vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
+   vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
 #   vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
 # 3D buildings output is missing...
    vexpr RTEB ifelse((RLCC2000V!=0 && (RTEB==0 || RTEB==810 || RTEB==820 || RTEB==840)),RLCC2000V,RTEB)
-
-# LCC2000V output is missing...
 
    file delete -force $GenX::Param(OutFile)_TEB_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB_$indexCouverture.tif GeoTiff
@@ -1398,7 +1397,7 @@ proc UrbanX::TEB2FSTD { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Shp2Height {indexCouverture } {
+proc UrbanX::Shp2Height { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
 
@@ -1600,15 +1599,14 @@ proc UrbanX::Process { Coverage } {
    variable Param
    variable Meta
 
-   #pour employer un utilitaire, retirer le # des deux lignes suivantes et aller retirer les # associés à l'utilitaire choisi dans la proc UrbanX::Utilitaires
-   #UrbanX::Utilitaires
-   #   return
+   # pour employer un utilitaire, retirer le # des deux lignes suivantes et aller retirer les # associés à l'utilitaire choisi dans la proc UrbanX::Utilitaires
+   # UrbanX::Utilitaires
+   # return
 
    GenX::Log INFO "Coverage = $Coverage"
 
    #----- Get the lat/lon and files parameters associated with the city or province
    UrbanX::AreaDefine    $Coverage
-
    #----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
    GenX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Coverage
    set UrbanX::Param(Width) $GenX::Param(Width)
@@ -1618,25 +1616,25 @@ proc UrbanX::Process { Coverage } {
    UrbanX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-#   UrbanX::Sandwich $Coverage
+   UrbanX::Sandwich $Coverage
 
    #-----La rasterization des hauteurs n'a pas vraiment sa place dans UrbanX... C'est one-shot.
-#   UrbanX::Shp2Height $Coverage
+   UrbanX::Shp2Height $Coverage
 
    #----- Creates the fields and building vicinity output using spatial buffers
 # BUG SPATIAL BUFFERS MAKE IT CRASH
-#   UrbanX::ChampsBuffers $Coverage
+   UrbanX::ChampsBuffers $Coverage
 
    #----- Calculates the population density
-#   UrbanX::PopDens2Builtup $Coverage
+   UrbanX::PopDens2Builtup $Coverage
 
    #----- Calculates building heights
-#   UrbanX::HeightGain $Coverage
-#   UrbanX::BuildingHeight $Coverage
+   UrbanX::HeightGain $Coverage
+   UrbanX::BuildingHeight $Coverage
 
-   #------EOSD Vegetation - ignore of LCC2000V is used
+   #------EOSD Vegetation - ignore if LCC2000V is used
    #   UrbanX::EOSDvegetation $Coverage
-   #-----LCC2000V Vegetation
+   #------ Process LCC2000V vegetation
    UrbanX::LCC2000V $Coverage
 
    #----- Applies LUT to all processing results to generate TEB classes
@@ -1648,6 +1646,5 @@ proc UrbanX::Process { Coverage } {
 
 #   UrbanX::DeleteTempFiles $Coverage
 
-   #fin de la boucle sur la zone à traiter
    GenX::Log INFO "End of processing $Coverage with UrbanX"
 }
