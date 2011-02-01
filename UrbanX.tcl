@@ -356,6 +356,8 @@ proc UrbanX::Sandwich { indexCouverture } {
       set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
       # filename contains an element of the form 999a99_9_9_AA_9999999_9
       set priority [lindex $Param(Priorities) [lsearch -exact $Param(Entities) $entity]]
+
+      puts stderr ---------------------------....$priority.....
       # value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Entities)
       ogrfile open SHAPE read $file
 
