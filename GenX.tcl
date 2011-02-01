@@ -113,7 +113,6 @@ namespace eval GenX { } {
       set Path(DBase) $env(GENPHYSX_DBASE)
    } else {
       set Path(DBase) /data/shared_1_b0/armn
-#      set Path(DBase) /cnfs/ops/production/cmoe/geo
    }
 
    set Path(SandUSDA)  $Path(DBase)/db/sand_usda

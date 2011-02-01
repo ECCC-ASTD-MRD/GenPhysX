@@ -970,19 +970,21 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::HeightGain { indexCouverture } {
-   GenX::Procs ;# Adding the proc to the metadata log
    variable Param
+
+   GenX::Procs ;# Adding the proc to the metadata log
    GenX::Log INFO "Evaluating height gain"
 
    gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity_$indexCouverture.tif]
+
    gdalband create RHAUTEURPROJ $Param(Width) $Param(Height) 1 Float32
    gdalband define RHAUTEURPROJ -georef UTMREF$indexCouverture
+   gdalband stats RHAUTEURPROJ -nodata -9999
+
    #----- La vérification pourrait être fait dans un proc avec vérification des 4 points de la source
    gdalband read RHAUTEUR [gdalfile open FHAUTEUR read $Param(HeightFile)]
-   gdalband stats RHAUTEURPROJ -nodata -9999
-GenX::Log INFO "AAA Param(HeightFile): $Param(HeightFile)"
    gdalband gridinterp RHAUTEURPROJ RHAUTEUR
-GenX::Log INFO "BBB"
+
    gdalband free RHAUTEUR
    gdalfile close FHAUTEUR
 
@@ -1516,7 +1518,9 @@ proc UrbanX::FilterGen { Type Size } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::DeleteTempFiles {indexCouverture} {
+
    GenX::Log INFO "Deleting all temporary files"
+
    file delete -force $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_LCC2000V_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$indexCouverture.tif
@@ -1528,7 +1532,6 @@ proc UrbanX::DeleteTempFiles {indexCouverture} {
    file delete -force $GenX::Param(OutFile)_sandwich_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_shp-height_$indexCouverture.tif
    file delete -force $GenX::Param(OutFile)_hauteur-classes_$indexCouverture.tif
-
 }
 
 #----------------------------------------------------------------------------
@@ -1651,7 +1654,7 @@ proc UrbanX::Process { Coverage } {
 
    #----- Calculates building heights
 # deux gridinterp plantent dans les deux prochaines proc... étrange
-#   UrbanX::HeightGain $Coverage
+   UrbanX::HeightGain $Coverage
 #   UrbanX::BuildingHeight $Coverage
 
    #------EOSD Vegetation - ignore of LCC2000V is used
