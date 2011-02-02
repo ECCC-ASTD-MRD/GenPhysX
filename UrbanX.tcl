@@ -711,6 +711,7 @@ proc UrbanX::Sandwich { indexCouverture } {
                if { $indexCouverture=="OTTAWA"} {
                   GenX::Log INFO "Ignoring the QC_TR_1760009_1 layer for Ottawa to avoid duplicated roads with TR_1760009_1"
                } else {
+# VALIDER LES NOM D'ATTRIBUTS DANS _QC_
                   # Thus for MONTREAL, QUEBEC and QC (IndustrX)
                   GenX::Log INFO "Rasterizing QC_TR_1760009_1 for $indexCouverture"
                   # entity : Road segment [Geobase], line
@@ -1286,6 +1287,9 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
    vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
 #   vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
 # 3D buildings output is missing...
+   # Rasters must now be closed otherwise we blow up memory for large cities
+   gdalfile close FSANDWICH FPOPDENSCUT FCHAMPS FHAUTEURCLASS
+   gdalband free RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS
    vexpr RTEB ifelse((RLCC2000V!=0 && (RTEB==0 || RTEB==810 || RTEB==820 || RTEB==840)),RLCC2000V,RTEB)
 
    file delete -force $GenX::Param(OutFile)_TEB_$indexCouverture.tif
@@ -1293,8 +1297,8 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
    gdalband write RTEB FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    GenX::Log INFO "The file $GenX::Param(OutFile)_TEB_$indexCouverture.tif was generated"
 
-   gdalfile close FILEOUT FSANDWICH FPOPDENSCUT FCHAMPS FHAUTEURCLASS FLCC2000V
-   gdalband free RTEB RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS RLCC2000V
+   gdalfile close FILEOUT FLCC2000V
+   gdalband free RTEB RLCC2000V
 }
 
 #----------------------------------------------------------------------------
@@ -1696,7 +1700,7 @@ proc UrbanX::Process { Coverage } {
    #UrbanX::VegeMask
    #UrbanX::TEB2FSTD
 
-#   UrbanX::DeleteTempFiles $Coverage
+   UrbanX::DeleteTempFiles $Coverage
 
    GenX::Log INFO "End of processing $Coverage with UrbanX"
 }
