@@ -52,7 +52,7 @@ namespace eval UrbanX { } {
    set Param(Priorities)           { 224 223 222 221 220 219 218 217 216 215 214 213 212 211 210 209 208 207 206 205 204 203 202 201 200 199 198 197 196 195 194 193 192 191 190 189 188 187 186 185 184 183 182 181 180 179 178 177 176 175 174 173 172 171 170 169 168 167 166 165 164 163 162 161 160 159 158 157 156 155 154 153 152 151 150 149 148 147 146 145 144 143 142 141 140 139 138 137 136 135 134 133 132 131 130 129 128 127 126 125 124 123 122 121 120 119 118 117 116 115 114 113 112 111 110 109 108 107 106 105 104 103 102 101 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 }
 
    # Layers from CanVec requiring postprocessing - aucun tri particulier nécessaire pour cette liste d'entités
-   set Param(LayersPostPro)    { BS_1370009_2 BS_2010009_0 BS_2010009_2 BS_2060009_0 BS_2240009_1 BS_2310009_1 EN_1180009_1 HD_1450009_0 HD_1450009_1 HD_1450009_2 HD_1460009_0 HD_1460009_1 HD_1460009_2 HD_1470009_1 HD_1480009_2 IC_2600009_0 TR_1020009_1 TR_1190009_0 TR_1190009_2 TR_1760009_1 }
+   set Param(LayersPostPro)    { BS_1370009_2 BS_2010009_0 BS_2010009_2 BS_2060009_0 BS_2240009_1 BS_2310009_1 EN_1180009_1 HD_1450009_0 HD_1450009_1 HD_1450009_2 HD_1460009_0 HD_1460009_1 HD_1460009_2 HD_1470009_1 HD_1480009_2 IC_2600009_0 TR_1020009_1 TR_1190009_0 TR_1190009_2 TR_1760009_1 QC_TR_1760009_1 }
 
    set Param(WaterLayers)      { HD_1480009_2 } ;# Water layers from CanVec
 
@@ -351,17 +351,26 @@ proc UrbanX::Sandwich { indexCouverture } {
 
    #----- Rasterization of CanVec layers
    foreach file $Param(Files) {
-      set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
-      # entity contains an element of the form AA_9999999_9
-      set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
-      # filename contains an element of the form 999a99_9_9_AA_9999999_9
+      # Adjusting variables lenght if the layer contains the additionnal _QC_ identifier
+      if { [lsearch $file "*_QC_*"] !=-1 } {
+         # Case of a _QC_ layer
+         # entity contains an element of the form QC_AA_9999999_9
+         set entity [string range [file tail $file] 11 25] ;# strip full file path to keep layer name only
+         # filename contains an element of the form 999a99_9_9_QC_AA_9999999_9
+         set filename [string range [file tail $file] 0 25] ;# required by ogrlayer sqlselect
+      } else {
+         # entity contains an element of the form AA_9999999_9
+         set entity [string range [file tail $file] 11 22] ;# strip full file path to keep layer name only
+         # filename contains an element of the form 999a99_9_9_AA_9999999_9
+         set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
+      }
       set priority [lindex $Param(Priorities) [lsearch -exact $Param(Entities) $entity]]
+      GenX::Log DEBUG "Processing entity: $entity, priority: $priority, filename: $filename, file: $file"
 
-      puts stderr ---------------------------....$priority.....
       # value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Entities)
       ogrfile open SHAPE read $file
 
-      # The following if/else evaluates if the layer requires some post-processing prior to rasterization or if it is rasterized with the general procedure
+      # The following if/else evaluates if the layer requires some post-processing prior to rasterization or if it is rasterized with the generic procedure
       if { [lsearch -exact $Param(LayersPostPro) $entity] !=-1 } {
 
          switch $entity {
@@ -622,11 +631,11 @@ proc UrbanX::Sandwich { indexCouverture } {
             TR_1020009_1 {
                # entity : Railway, line
                GenX::Log DEBUG "Post-processing for Railway, line"
-               #support = 3 : bridge
+               # support = 3 : bridge
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (support = 3)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge railway) as FEATURES with priority value 2"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 2
-               #support != 3 ou 4 : not bridge, not tunnel
+               # support != 3 ou 4 : not bridge, not tunnel
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE support NOT IN (3,4)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge railway) as FEATURES with priority value 111"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 111
@@ -664,35 +673,76 @@ proc UrbanX::Sandwich { indexCouverture } {
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 147
             }
             TR_1760009_1 {
-               # entity : Road segment [Geobase], line
-               GenX::Log DEBUG "Post-processing for Road segment, lines"
+               if { $indexCouverture=="MONTREAL" || $indexCouverture=="QUEBEC" || $indexCouverture=="QC"} {
+                  GenX::Log INFO "Ignoring the TR_1760009_1 layer for $indexCouverture to avoid duplicated roads with QC_TR_1760009_1"
+               } else {
+                  # entity : Road segment [Geobase], line
+                  GenX::Log DEBUG "Post-processing for Road segment, lines"
 
-               #exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
-#               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
-#               GenX::Log INFO "Buffering general road segments to 12m"
-               gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
+                  #exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
+   #               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
+                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
+   #               GenX::Log INFO "Buffering general road segments to 12m"
+                  gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
 
-               #pavstatus = 2 : unpaved : routes non pavées n'étant pas des tunnels ou des snowsheds
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (unpaved road segments) as FEATURES with priority value 110"
-               #pas de buffer sur les routes non pavées
-               gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 110
+                  #pavstatus = 2 : unpaved : routes non pavées n'étant pas des tunnels ou des snowsheds
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
+                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (unpaved road segments) as FEATURES with priority value 110"
+                  #pas de buffer sur les routes non pavées
+                  gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 110
 
-               #roadclass in (1,2) : freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
-#               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
-#               GenX::Log INFO "Buffering highway road segments to 22m"
-               gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
+                  #roadclass in (1,2) : freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
+   #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
+   #               GenX::Log INFO "Buffering highway road segments to 22m"
+                  gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
 
-              #structype in (1,2,3,4) : bridge (tous les types de ponts)
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE structype IN (1,2,3,4)"
-#               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
-#               GenX::Log INFO "Buffering bridge road segments to 22m"
-               gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 1
+               #structype in (1,2,3,4) : bridge (tous les types de ponts)
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE structype IN (1,2,3,4)"
+   #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
+   #               GenX::Log INFO "Buffering bridge road segments to 22m"
+                  gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 1
+               }
+            }
+            QC_TR_1760009_1 {
+               if { $indexCouverture=="OTTAWA"} {
+                  GenX::Log INFO "Ignoring the QC_TR_1760009_1 layer for Ottawa to avoid duplicated roads with TR_1760009_1"
+               } else {
+                  # Thus for MONTREAL, QUEBEC and QC (IndustrX)
+                  GenX::Log INFO "Rasterizing QC_TR_1760009_1 for $indexCouverture"
+                  # entity : Road segment [Geobase], line
+                  GenX::Log DEBUG "Post-processing for Road segment, lines"
+
+                  #exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
+   #               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
+                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
+   #               GenX::Log INFO "Buffering general road segments to 12m"
+                  gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
+
+                  #pavstatus = 2 : unpaved : routes non pavées n'étant pas des tunnels ou des snowsheds
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
+                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (unpaved road segments) as FEATURES with priority value 110"
+                  #pas de buffer sur les routes non pavées
+                  gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 110
+
+                  #roadclass in (1,2) : freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
+   #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
+   #               GenX::Log INFO "Buffering highway road segments to 22m"
+                  gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
+
+               #structype in (1,2,3,4) : bridge (tous les types de ponts)
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE structype IN (1,2,3,4)"
+   #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
+   #               GenX::Log INFO "Buffering bridge road segments to 22m"
+                  gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 1
+               }
             }
             default {
                #the layer is part of Param(LayersPostPro) but no case has been defined for it
@@ -701,7 +751,7 @@ proc UrbanX::Sandwich { indexCouverture } {
          }
       } else {
 
-         #general procedure for rasterization: entities that are not part of Param(LayersPostPro)
+         # Generic rasterization: entities that are not part of Param(LayersPostPro)
          eval ogrlayer read FEATURES SHAPE 0
          GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from file $file as FEATURES with priority value $priority, general procedure"
          gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $priority
