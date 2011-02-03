@@ -719,7 +719,7 @@ proc GenX::ParseCommandLine { } {
          "compress"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Compress)] }
          "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Script)] }
          "process"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Process)] }
-         "help"      { GenX::CommandLine ; exit 1 }
+         "help"      { GenX::CommandLine ; exit 0 }
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
       }
    }
@@ -728,7 +728,7 @@ proc GenX::ParseCommandLine { } {
    if { ![string is digit $Log(Level)] } {
       if { [catch { set Log(Level) $Log($Log(Level)) }] } {
          GenX::Log ERROR "Invalid log level $Log(Level)"
-         exit 0
+         exit 1
       }
    }
 
