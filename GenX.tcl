@@ -102,7 +102,7 @@ namespace eval GenX { } {
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     hawa                  ;#Host onto which to submit the job
    set Batch(Queue)    ""                    ;#Queue to use for the job
-   set Batch(Mem)      1G                    ;#Memory needed for the job
+   set Batch(Mem)      2G                    ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
    set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
@@ -154,7 +154,7 @@ namespace eval GenX { } {
 
    #----- Log related variables
 
-   array set Log { Level 2 MUST -1 ERROR 0 WARNING 1 INFO 2 DEBUG 3 };
+   array set Log { Level INFO MUST -1 ERROR 0 WARNING 1 INFO 2 DEBUG 3 };
 
    gdalfile error QUIET
 }
@@ -327,7 +327,7 @@ proc GenX::Submit { } {
       exit 1
    } else {
       puts stdout "Using $Batch(Submit) to launch job ... "
-      set err [catch { exec $Batch(Submit) $job -threads 3 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) 2>@1 } msg]
+      set err [catch { exec $Batch(Submit) $job -threads 4 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) 2>@1 } msg]
       if { $err } {
          puts stdout "Could not launch job ($job) on $Batch(Host)\n\n\t$msg"
       } else {
@@ -584,7 +584,7 @@ proc GenX::CommandLine { } {
    Information parameters:
       \[-help\]     [format "%-30s : This information" ""]
       \[-version\]  [format "%-30s : GenPhysX version" ""]
-      \[-verbose\]  [format "%-30s : Trace level (0 none, 1 some, 2 more, 3 debug)" ($Log(Level))]
+      \[-verbose\]  [format "%-30s : Trace level (0 ERROR, 1 WARNING, 2 INFO, 3 DEBUG)" ($Log(Level))]
 
    Input parameters:
       \[-nml\]      [format "%-30s : GEM namelist definition file" ($Param(NameFile))]
@@ -670,6 +670,7 @@ proc GenX::ParseCommandLine { } {
    variable Param
    variable Path
    variable Batch
+   variable Log
 
    upvar argc gargc
    upvar argv gargv
@@ -720,6 +721,14 @@ proc GenX::ParseCommandLine { } {
          "process"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Process)] }
          "help"      { GenX::CommandLine ; exit 1 }
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
+      }
+   }
+
+   #----- Convert log level string to number if needed
+   if { ![string is digit $Log(Level)] } {
+      if { [catch { set Log(Level) $Log($Log(Level)) }] } {
+         GenX::Log ERROR "Invalid log level $Log(Level)"
+         exit 0
       }
    }
 
