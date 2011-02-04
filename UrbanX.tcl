@@ -1374,8 +1374,8 @@ proc UrbanX::VegeMask { } {
 proc UrbanX::CreateFSTDBand { Name Band } {
    GenX::Procs ;# Adding the proc to the metadata log
 
-   set NI [gdalband configure $Band -width]  ; # Number of X-grid points.
-   set NJ [gdalband configure $Band -height] ; # Number of Y-grid points.
+   set NI [gdalband define $Band -width]  ; # Number of X-grid points.
+   set NJ [gdalband define $Band -height] ; # Number of Y-grid points.
    set NK 1                                  ; # Number of Z-grid points.
 
    #----- Create and define tictic and tactac grid coordinates.
@@ -1409,7 +1409,7 @@ proc UrbanX::CreateFSTDBand { Name Band } {
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::TEB2FSTD>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
 #
 # Goal     :
 #
@@ -1420,16 +1420,16 @@ proc UrbanX::CreateFSTDBand { Name Band } {
 # Remarks : Can't work with files over 128 MEGS (e.g. MTL, VAN, TOR)
 #
 #----------------------------------------------------------------------------
-proc UrbanX::TEB2FSTD { } {
+proc UrbanX::TEB2FSTD { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
-   GenX::Log INFO "Converting TEB raster to RPN"
+   GenX::Log INFO "Converting TEB Classes raster to RPN fstd file"
 
    gdalband read BAND [gdalfile open FILE read $GenX::Param(OutFile)_TEB_$indexCouverture.tif]
 
    UrbanX::CreateFSTDBand GRID BAND
 
-   file delete -force $GenX::Param(OutFile)_TEB.fstd
-   fstdfile open 1 write $GenX::Param(OutFile)_TEB.fstd
+   file delete -force $GenX::Param(OutFile)_TEB_$indexCouverture.fstd
+   fstdfile open 1 write $GenX::Param(OutFile)_TEB_$indexCouverture.fstd
 
    fstdfield gridinterp GRID BAND
    fstdfield define GRID -NOMVAR UG
@@ -1669,38 +1669,38 @@ proc UrbanX::Process { Coverage } {
    set UrbanX::Param(Height) $GenX::Param(Height)
 
    #----- Identify CanVec files to process
-   UrbanX::CANVECFindFiles
+#   UrbanX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-   UrbanX::Sandwich $Coverage
+#   UrbanX::Sandwich $Coverage
 
    #-----La rasterization des hauteurs n'a pas vraiment sa place dans UrbanX... C'est one-shot.
-   UrbanX::Shp2Height $Coverage
+#   UrbanX::Shp2Height $Coverage
 
    #----- Creates the fields and building vicinity output using spatial buffers
 # BUG SPATIAL BUFFERS MAKE IT CRASH
-   UrbanX::ChampsBuffers $Coverage
+#   UrbanX::ChampsBuffers $Coverage
 
    #----- Calculates the population density
-   UrbanX::PopDens2Builtup $Coverage
+#   UrbanX::PopDens2Builtup $Coverage
 
    #----- Calculates building heights
-   UrbanX::HeightGain $Coverage
-   UrbanX::BuildingHeight $Coverage
+#   UrbanX::HeightGain $Coverage
+#   UrbanX::BuildingHeight $Coverage
 
    #------EOSD Vegetation - ignore if LCC2000V is used
    #   UrbanX::EOSDvegetation $Coverage
    #------ Process LCC2000V vegetation
-   UrbanX::LCC2000V $Coverage
+#   UrbanX::LCC2000V $Coverage
 
    #----- Applies LUT to all processing results to generate TEB classes
-   UrbanX::Priorities2TEB $Coverage
+#   UrbanX::Priorities2TEB $Coverage
 
    #----- Optional outputs:
    #UrbanX::VegeMask
-   #UrbanX::TEB2FSTD
+#   UrbanX::TEB2FSTD $Coverage
 
-   UrbanX::DeleteTempFiles $Coverage
+#   UrbanX::DeleteTempFiles $Coverage
 
    GenX::Log INFO "End of processing $Coverage with UrbanX"
 }
