@@ -1303,7 +1303,7 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::VegeMask>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
 #
 # Goal     : Generate and apply vegetation mask
 #
@@ -1315,6 +1315,7 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::VegeMask { } {
+# This proc is probably useless now that urban vegetation classes are managed by ISBA
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
    GenX::Log INFO "Generating vegetation mask"
@@ -1438,11 +1439,12 @@ proc UrbanX::TEB2FSTD { indexCouverture } {
    fstdfield write GRID 1 -16 True $GenX::Param(Compress)
 
    fstdfile close 1
+   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB_$indexCouverture.fstd was generated"
 }
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::Shp2Height>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
 #
 # Goal     :
 #
@@ -1460,7 +1462,7 @@ proc UrbanX::Shp2Height { indexCouverture } {
    if { $Param(BuildingsShapefile)=="" } {
       return
    }
-   GenX::Log INFO "Converting $GenX::Param(Urban) building shapefile to raster"
+   GenX::Log INFO "Converting $indexCouverture building shapefile to raster"
 
    gdalband create RHAUTEURSHP $Param(Width) $Param(Height) 1 Float32
    gdalband define RHAUTEURSHP -georef UTMREF$indexCouverture
@@ -1475,6 +1477,7 @@ proc UrbanX::Shp2Height { indexCouverture } {
    file delete -force $GenX::Param(OutFile)_shp-height_$indexCouverture.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_shp-height_$indexCouverture.tif GeoTiff
    gdalband write RHAUTEURSHP FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   GenX::Log INFO "The file $GenX::Param(OutFile)_shp-height_$indexCouverture.tif was generated"
 
    gdalfile close FILEOUT
    gdalband free RHAUTEURSHP
@@ -1674,8 +1677,8 @@ proc UrbanX::Process { Coverage } {
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
 #   UrbanX::Sandwich $Coverage
 
-   #-----La rasterization des hauteurs n'a pas vraiment sa place dans UrbanX... C'est one-shot.
-#   UrbanX::Shp2Height $Coverage
+   #----- Vector building height rasterization
+   UrbanX::Shp2Height $Coverage
 
    #----- Creates the fields and building vicinity output using spatial buffers
 # BUG SPATIAL BUFFERS MAKE IT CRASH
