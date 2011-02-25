@@ -231,9 +231,9 @@ proc IndustrX::Priorities2SMOKE { indexCouverture } {
    GenX::Log INFO "Converting values to SMOKE classes"
 
    #lecture des fichiers créés précédemment lors des procs SandwichCanVec et PopDens2BuiltupCanVec
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich_$indexCouverture.tif]
-   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup_$indexCouverture.tif]
-#   gdalband read RLCC2000VSMOKE [gdalfile open FLCC2000VSMOKE read $GenX::Param(OutFile)_LCC2000VSMOKE_$indexCouverture.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
+#   gdalband read RLCC2000VSMOKE [gdalfile open FLCC2000VSMOKE read $GenX::Param(OutFile)_LCC2000VSMOKE.tif]
 
    #passage des valeurs de priorités (sandwich) aux valeurs smoke dans RSMOKE
    vector create LUT
@@ -250,11 +250,11 @@ proc IndustrX::Priorities2SMOKE { indexCouverture } {
 #   vexpr RSMOKE ifelse(RSMOKE==0 || RSMOKE==200,RLCC2000VSMOKE,RSMOKE)
 
    #écriture du fichier de sortie
-   file delete -force $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif GeoTiff
+   file delete -force $GenX::Param(OutFile)_SMOKE.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_SMOKE.tif GeoTiff
    gdalband write RSMOKE FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
 
-   GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif was generated"
+   GenX::Log INFO "The file $GenX::Param(OutFile)_SMOKE.tif was generated"
 
    gdalfile close FILEOUT FSANDWICH FPOPDENSCUT ;#FLCC2000VSMOKE
    gdalband free RSMOKE RSANDWICH RPOPDENSCUT ;#RLCC2000VSMOKE
@@ -290,7 +290,7 @@ proc IndustrX::SMOKE2DA { indexCouverture } {
    #est ouvert et fermé dans le main, et non dans cette proc.
 
    #ouverture du fichier SMOKE.tif
-   gdalband read RSMOKE [gdalfile open FSMOKE read $GenX::Param(OutFile)_SMOKE_$indexCouverture.tif]
+   gdalband read RSMOKE [gdalfile open FSMOKE read $GenX::Param(OutFile)_SMOKE.tif]
 
    #sélection des polygones de DA ayant la valeur indexCouverture dans le champ SNRC
    set da_select [ogrlayer define VDASMOKE -featureselect [list [list SNRC == $indexCouverture]] ]
@@ -440,6 +440,7 @@ proc IndustrX::Process { Coverage } {
             #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
             set UrbanX::Param(t_Sandwich) 0
             if { ![file exists $GenX::Param(OutFile)_sandwich.tif] } {
+               UrbanX::CANVECFindFiles
                UrbanX::Sandwich $feuillet
             } else {
                GenX::Log INFO "File $GenX::Param(OutFile)_sandwich.tif already exists."
