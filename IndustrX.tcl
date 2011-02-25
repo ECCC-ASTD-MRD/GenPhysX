@@ -398,6 +398,7 @@ proc IndustrX::Process { Coverage } {
    #----- Process for each NTS Sheets that were previously selected
    foreach feuillet $UrbanX::Param(NTSSheets) {
 
+      set GenX::Param(OutFile) $feuillet
       #Are there any CanVec files for this tile?
       set s250 [string range $feuillet 0 2]
       set sl   [string tolower [string range $feuillet 3 3]]
@@ -438,43 +439,43 @@ proc IndustrX::Process { Coverage } {
 
             #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
             set UrbanX::Param(t_Sandwich) 0
-            if { ![file exists $GenX::Param(OutFile)_sandwich_$feuillet.tif] } {
+            if { ![file exists $GenX::Param(OutFile)_sandwich.tif] } {
                UrbanX::Sandwich $feuillet
             } else {
-               GenX::Log INFO "File $GenX::Param(OutFile)_sandwich_$feuillet.tif already exists."
+               GenX::Log INFO "File $GenX::Param(OutFile)_sandwich.tif already exists."
             }
 
             #----- Calculates the population density and split the residential areas according to population density thresholds
             set UrbanX::Param(t_PopDens2Builtup) 0
-            if { ![file exists $GenX::Param(OutFile)_popdens_$feuillet.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif] } {
+            if { ![file exists $GenX::Param(OutFile)_popdens.tif] || ![file exists $GenX::Param(OutFile)_popdens-builtup.tif] } {
                UrbanX::PopDens2Builtup $feuillet
             } else {
-               GenX::Log INFO "Files $GenX::Param(OutFile)_popdens_$feuillet.tif and $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif already exist."
+               GenX::Log INFO "Files $GenX::Param(OutFile)_popdens.tif and $GenX::Param(OutFile)_popdens-builtup.tif already exist."
             }
 
             #----- Applies LUT to all processing results to generate SMOKE classes and sets the values in the DA shapefile
-            if { ![file exists $GenX::Param(OutFile)_SMOKE_$feuillet.tif] } {
+            if { ![file exists $GenX::Param(OutFile)_SMOKE.tif] } {
                #----- Applies LUT to all processing results to generate SMOKE classes
                IndustrX::Priorities2SMOKE  $feuillet
                #----- Counts the SMOKE values and write the results in the dissemination area shapefile
                IndustrX::SMOKE2DA $feuillet
             } else {
-               GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE_$feuillet.tif already exist."
+               GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE.tif already exist."
             }
 
             #suppression des produits intermédiaires
-            file delete -force $GenX::Param(OutFile)_sandwich_$feuillet.tif
-            GenX::Log INFO "File $GenX::Param(OutFile)_sandwich_$feuillet.tif was deleted"
-            file delete -force $GenX::Param(OutFile)_popdens_$feuillet.tif
-            GenX::Log INFO "File $GenX::Param(OutFile)_popdens_$feuillet.tif was deleted"
-            file delete -force $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif
-            GenX::Log INFO "File $GenX::Param(OutFile)_popdens-builtup_$feuillet.tif was deleted"
-            file delete -force $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif
-            GenX::Log INFO "File $GenX::Param(OutFile)_EOSDVegetation_$feuillet.tif was deleted"
-            file delete -force $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif
-            GenX::Log INFO "File $GenX::Param(OutFile)_EOSDSMOKE_$feuillet.tif was deleted"
-            file delete -force $GenX::Param(OutFile)_SMOKE_$feuillet.tif
-            GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE_$feuillet.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_sandwich.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_sandwich.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_popdens.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_popdens.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_popdens-builtup.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_EOSDVegetation.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_EOSDVegetation.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_EOSDSMOKE.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_EOSDSMOKE.tif was deleted"
+            file delete -force $GenX::Param(OutFile)_SMOKE.tif
+            GenX::Log INFO "File $GenX::Param(OutFile)_SMOKE.tif was deleted"
 
             #affichage du temps de traitement du feuillet
             GenX::Log DEBUG "Processing the NTS tile $feuillet took [expr [clock seconds]-$t_feuillet] seconds"
