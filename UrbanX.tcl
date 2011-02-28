@@ -384,7 +384,7 @@ proc UrbanX::Sandwich { indexCouverture } {
             # Lors de la procédure sandwich, l'entité prend entièrement les valeurs suivantes : PRI = 218 ; TEB = 210 ; SMO = 1
             # Lors de la procédure PopDens2Builtup, l'entité est découpée selon des seuils de densité de population
                GenX::Log DEBUG "Post-processing for Residential area, area"
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename'"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity as FEATURES with priority value 218"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 218
             }
@@ -399,14 +399,14 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (function = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (function = $func)"
 #                  ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE function NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE function NOT IN ([join $funcs ,])"
 #               ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 33"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 33
@@ -420,13 +420,12 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 103 102 101 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (function = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE FUNCTION = $func"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
-
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE function NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE function NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 104"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 104
             }
@@ -438,13 +437,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 5 4 3 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 6"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 6
             }
@@ -456,7 +455,7 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 114 113 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
@@ -465,7 +464,7 @@ proc UrbanX::Sandwich { indexCouverture } {
                #entity : Pipeline (Sewage / liquid waste), line
                GenX::Log DEBUG "Post-processing for Pipelines (sewage / liquid waste), lines"
                #if relation2ground != 1 (aboveground), exclus; else, valeur générale
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = 1)"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (aboveground sewage pipeline entity) as FEATURES with priority value $priority"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $priority
             }
@@ -473,7 +472,7 @@ proc UrbanX::Sandwich { indexCouverture } {
                #entity : Pipeline, line
                GenX::Log DEBUG "Post-processing for Pipelines, lines"
                #if relation2ground != 1 (aboveground), exclus; else, valeur générale
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = 1)"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (aboveground pipeline entity) as FEATURES with priority value $priority"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $priority
             }
@@ -485,13 +484,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 43 42 41 44 45 37 40 38 39   46 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 47"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 47
             }
@@ -503,13 +502,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 124 123 122 125 126 118 121 119 120 127 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 128"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 128
             }
@@ -521,13 +520,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 154 153 152 155 156 148 151 149 150 157 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 128"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 158
             }
@@ -539,13 +538,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 56 57 53 52 48 50 49  55  54  51 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 58"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 58
             }
@@ -557,13 +556,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 137 138 134 133 129 131 130 136 135 132 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 58"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 139
             }
@@ -575,13 +574,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 167 168 164 163 159 161 160 166 165 162 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 169"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 169
             }
@@ -593,13 +592,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 142 141 140 144 143 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (definition = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (definition = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE definition NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE definition NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 145"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 145
             }
@@ -611,13 +610,13 @@ proc UrbanX::Sandwich { indexCouverture } {
                set vals  { 172 171 178 179 175 173 176 177 173 180 }
 
                foreach type $types func $funcs val $vals {
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (definition = $func)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (definition = $func)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                # else
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE definition NOT IN ([join $funcs ,])"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE definition NOT IN ([join $funcs ,])"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 181"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 181
             }
@@ -625,11 +624,11 @@ proc UrbanX::Sandwich { indexCouverture } {
                # entity : Mining area, point
                GenX::Log DEBUG "Post-processing for Mining area, point"
                #status = 1 : mines opérationnelles
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (status = 1)"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (status = 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (operational mines) as FEATURES with priority value 65"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 65
                #status != 1 : mines non opérationnelles
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (status != 1)"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (status != 1)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (non operational mines) as FEATURES with priority value 66"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 66
             }
@@ -637,11 +636,11 @@ proc UrbanX::Sandwich { indexCouverture } {
                # entity : Railway, line
                GenX::Log DEBUG "Post-processing for Railway, line"
                # support = 3 : bridge
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (support = 3)"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (support = 3)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge railway) as FEATURES with priority value 2"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 2
                # support != 3 ou 4 : not bridge, not tunnel
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE support NOT IN (3,4)"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE support NOT IN (3,4)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge railway) as FEATURES with priority value 111"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 111
             }
@@ -649,15 +648,15 @@ proc UrbanX::Sandwich { indexCouverture } {
                # entity : Runway, point
                GenX::Log DEBUG "Post-processing for Runway, point"
                #type = 1 : airport
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = 1 )"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 1 )"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (airport runway) as FEATURES with priority value 62"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 62
                #type = 2 ou 3 : heliport, hospital heliport
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type IN (2,3)"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type IN (2,3)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (heliport or hospital heliport runway) as FEATURES with priority value 7"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 7
                #type = 4 : water aerodrome
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = 4 )"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 4 )"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (water aerodrome runway) as FEATURES with priority value 61"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 61
             }
@@ -665,47 +664,47 @@ proc UrbanX::Sandwich { indexCouverture } {
                # entity : Runway, area
                GenX::Log DEBUG "Post-processing for Runway, areas"
                #type = 1 : airport
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = 1 )"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 1 )"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (airport runway) as FEATURES with priority value 201"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 201
                #type = 2 ou 3 : heliport, hospital heliport
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE type IN (2,3)"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type IN (2,3)"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (heliport or hospital heliport runway) as FEATURES with priority value 80"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 80
                #type = 4 : water aerodrome
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (type = 4 )"
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 4 )"
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (water aerodrome runway) as FEATURES with priority value 147"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 147
             }
             TR_1760009_1 {
                if { $indexCouverture=="MONTREAL" || $indexCouverture=="QUEBEC" || $indexCouverture=="QC"} {
-                  GenX::Log INFO "Ignoring the TR_1760009_1 layer for $indexCouverture to avoid duplicated roads with QC_TR_1760009_1"
+                  GenX::Log DEBUG "Ignoring the TR_1760009_1 layer for $indexCouverture to avoid duplicated roads with QC_TR_1760009_1"
                } else {
                   # entity : Road segment [Geobase], line
                   GenX::Log DEBUG "Post-processing for Road segment, lines"
 
                   #exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
    #               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
    #               GenX::Log INFO "Buffering general road segments to 12m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
 
                   #pavstatus = 2 : unpaved : routes non pavées n'étant pas des tunnels ou des snowsheds
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (unpaved road segments) as FEATURES with priority value 110"
                   #pas de buffer sur les routes non pavées
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 110
 
                   #roadclass in (1,2) : freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
    #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
    #               GenX::Log INFO "Buffering highway road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
 
                #structype in (1,2,3,4) : bridge (tous les types de ponts)
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE structype IN (1,2,3,4)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE structype IN (1,2,3,4)"
    #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
    #               GenX::Log INFO "Buffering bridge road segments to 22m"
@@ -715,36 +714,36 @@ proc UrbanX::Sandwich { indexCouverture } {
             QC_TR_1760009_1 {
                # This has been added to support CanVec-R7's new QC_TR layers, it may need revision for R8 (May 2011) or R9
                if { $indexCouverture=="OTTAWA"} {
-                  GenX::Log INFO "Ignoring the QC_TR_1760009_1 layer for Ottawa to avoid duplicated roads with TR_1760009_1"
+                  GenX::Log DEBUG "Ignoring the QC_TR_1760009_1 layer for Ottawa to avoid duplicated roads with TR_1760009_1"
                } else {
 # VALIDER LES NOM D'ATTRIBUTS DANS _QC_
                   # Thus for MONTREAL, QUEBEC and QC (IndustrX)
-                  GenX::Log INFO "Rasterizing QC_TR_1760009_1 for $indexCouverture"
+                  GenX::Log DEBUG "Rasterizing QC_TR_1760009_1 for $indexCouverture"
                   # entity : Road segment [Geobase], line
                   GenX::Log DEBUG "Post-processing for Road segment, lines"
 
                   #exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
    #               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
    #               GenX::Log INFO "Buffering general road segments to 12m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
 
                   #pavstatus = 2 : unpaved : routes non pavées n'étant pas des tunnels ou des snowsheds
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (unpaved road segments) as FEATURES with priority value 110"
                   #pas de buffer sur les routes non pavées
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 110
 
                   #roadclass in (1,2) : freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
    #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
    #               GenX::Log INFO "Buffering highway road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
 
                #structype in (1,2,3,4) : bridge (tous les types de ponts)
-                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM $filename WHERE structype IN (1,2,3,4)"
+                  ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE structype IN (1,2,3,4)"
    #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
    #               GenX::Log INFO "Buffering bridge road segments to 22m"
@@ -818,7 +817,7 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
             BS_2010009_0 {
             GenX::Log DEBUG "Buffering ponctual buildings"
             set priority 666 ;# VALUE TO UPDATE
-            ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM $filename WHERE function NOT IN (3,4,14,36) "
+            ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM '$filename' WHERE function NOT IN (3,4,14,36) "
 # Bug in spatial buffers
 #            ogrlayer stats LAYER$i -buffer 0.000224982 8
             }
@@ -826,7 +825,7 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
             GenX::Log DEBUG "Buffering 2D buildings"
             set priority 667 ;# VALUE TO UPDATE
 # need updating this sqlselect
-            ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM $filename WHERE function NOT IN (3,4,14,36) "
+            ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM '$filename' WHERE function NOT IN (3,4,14,36) "
 # Bug in spatial buffers
 #            ogrlayer stats LAYER$i -buffer 0.00089993 8
             }
