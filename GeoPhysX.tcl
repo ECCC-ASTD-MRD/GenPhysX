@@ -357,10 +357,12 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
    foreach file [GenX::SRTMFindFiles $la0 $lo0 $la1 $lo1] {
       GenX::Log DEBUG "   Processing SRTM file $file" False
       gdalband read SRTMTILE [gdalfile open SRTMFILE read $file]
-      gdalband stats SRTMTILE -nodata -32768 -celldim $GenX::Param(Cell)
+
+      gdalband stats SRTMTILE -celldim $GenX::Param(Cell)
 
       fstdfield gridinterp $Grid SRTMTILE AVERAGE False
       fstdfield gridinterp GPXRMS SRTMTILE AVERAGE_SQUARE False
+
       gdalfile close SRTMFILE
    }
    gdalband free SRTMTILE
