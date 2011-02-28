@@ -1043,6 +1043,7 @@ proc UrbanX::HeightGain { indexCouverture } {
 
    #----- La vérification pourrait être fait dans un proc avec vérification des 4 points de la source
    gdalband read RHAUTEUR [gdalfile open FHAUTEUR read $Param(HeightFile)]
+   GenX::Log WARNING "Next line crashes for Montreal, probably a real memory fault. The whole 2006 substraction should be re-coded to use GenPhysX and compute the output directly on the final grid"
    gdalband gridinterp RHAUTEURPROJ RHAUTEUR
    gdalband free RHAUTEUR
    gdalfile close FHAUTEUR
@@ -1279,7 +1280,7 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
    gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
    gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V-LUT.tif]
-   gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
+#   gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
 
    vector create LUT
    vector dim LUT { FROM TO }
@@ -1289,7 +1290,7 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
    vector free LUT
 
    vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
-   vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
+#   vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
 #   vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
 # 3D buildings output is missing...
    # Rasters must now be closed otherwise we blow up memory for large cities
@@ -1297,10 +1298,10 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
    gdalband free RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS
    vexpr RTEB ifelse((RLCC2000V!=0 && (RTEB==0 || RTEB==810 || RTEB==820 || RTEB==840)),RLCC2000V,RTEB)
 
-   file delete -force $GenX::Param(OutFile)_TEB_$indexCouverture.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB_$indexCouverture.tif GeoTiff
+   file delete -force $GenX::Param(OutFile)_TEB.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB.tif GeoTiff
    gdalband write RTEB FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB_$indexCouverture.tif was generated"
+   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB.tif was generated"
 
    gdalfile close FILEOUT FLCC2000V
    gdalband free RTEB RLCC2000V
@@ -1325,7 +1326,7 @@ proc UrbanX::VegeMask { } {
    variable Param
    GenX::Log INFO "Generating vegetation mask"
 
-   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB_$indexCouverture.tif]
+   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
 
    vexpr RTEBWMASK ifelse(RTEB>800,100,0)
 
@@ -1430,13 +1431,14 @@ proc UrbanX::TEB2FSTD { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
    GenX::Log INFO "Converting TEB Classes raster to RPN fstd file"
 
-   gdalband read BAND [gdalfile open FILE read $GenX::Param(OutFile)_TEB_$indexCouverture.tif]
+   gdalband read BAND [gdalfile open FILE read $GenX::Param(OutFile)_TEB.tif]
 
    UrbanX::CreateFSTDBand GRID BAND
 
-   file delete -force $GenX::Param(OutFile)_TEB_$indexCouverture.fstd
-   fstdfile open 1 write $GenX::Param(OutFile)_TEB_$indexCouverture.fstd
+   file delete -force $GenX::Param(OutFile)_TEB.fstd
+   fstdfile open 1 write $GenX::Param(OutFile)_TEB.fstd
 
+# The following lines crash
    fstdfield gridinterp GRID BAND
    fstdfield define GRID -NOMVAR UG
    fstdfield write TIC 1 -32 True
@@ -1444,7 +1446,7 @@ proc UrbanX::TEB2FSTD { indexCouverture } {
    fstdfield write GRID 1 -16 True $GenX::Param(Compress)
 
    fstdfile close 1
-   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB_$indexCouverture.fstd was generated"
+   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB.fstd was generated"
 }
 
 #----------------------------------------------------------------------------
@@ -1679,29 +1681,29 @@ proc UrbanX::Process { Coverage } {
    UrbanX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-   UrbanX::Sandwich $Coverage
+#   UrbanX::Sandwich $Coverage
 
    #----- Vector building height rasterization
-   UrbanX::Shp2Height $Coverage
+#   UrbanX::Shp2Height $Coverage
 
    #----- Creates the fields and building vicinity output using spatial buffers
 # BUG SPATIAL BUFFERS MAKE IT CRASH
-   UrbanX::ChampsBuffers $Coverage
+#   UrbanX::ChampsBuffers $Coverage
 
    #----- Calculates the population density
-   UrbanX::PopDens2Builtup $Coverage
+#   UrbanX::PopDens2Builtup $Coverage
 
-   #----- Calculates building heights
-   UrbanX::HeightGain $Coverage
-   UrbanX::BuildingHeight $Coverage
+   #----- Calculates building heights from SRTM-DEM MINUS CDED
+   #UrbanX::HeightGain $Coverage
+   #UrbanX::BuildingHeight $Coverage
 
    #------EOSD Vegetation - ignore if LCC2000V is used
    #   UrbanX::EOSDvegetation $Coverage
    #------ Process LCC2000V vegetation
-   UrbanX::LCC2000V $Coverage
+#   UrbanX::LCC2000V $Coverage
 
    #----- Applies LUT to all processing results to generate TEB classes
-   UrbanX::Priorities2TEB $Coverage
+#   UrbanX::Priorities2TEB $Coverage
 
    #----- Optional outputs:
    #UrbanX::VegeMask
