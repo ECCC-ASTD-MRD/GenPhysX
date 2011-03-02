@@ -493,8 +493,9 @@ proc IndustrX::Process { Coverage } {
    ogrlayer free VDASMOKE
 
    #écriture des métadonnées
+   set GenX::Param(OutFile) $Coverage
    append GenX::Meta(Footer) "Miscellaneous         :
-	Number of NTS tiles processed : [expr ($i-1)] / $nbrfeuillets\n"
+   Number of NTS tiles processed : [expr ($i-1)] / $nbrfeuillets\n"
 
    #fin de la boucle sur la zone à traiter
    GenX::Log INFO "End of processing $Coverage with IndustrX"
