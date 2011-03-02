@@ -394,6 +394,8 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat1)    49.40
          set Param(Lon0)   -123.30
          set Param(Lat0)    49.01
+         set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Vancouver/out.shp
+         set Param(BuildingsHgtField) hgt
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
          set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong_wmask
       }
@@ -402,6 +404,8 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat1)    45.70
          set Param(Lon0)   -73.98
          set Param(Lat0)    45.30
+         set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Montreal/bat_2d_st.shp
+         set Param(BuildingsHgtField) hauteur
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/mtl_dnec_-_srtm_utm5m_cropped
          set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/mtl_dnec_-_srtm_utm5m_cropped_wmask
       }
@@ -410,6 +414,8 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat1)    43.92
          set Param(Lon0)   -79.85
          set Param(Lat0)    43.49
+         set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Toronto/Toronto.shp
+         set Param(BuildingsHgtField) Elevation
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
          set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
@@ -418,10 +424,10 @@ proc UrbanX::AreaDefine { Coverage } {
          set Param(Lat1)    45.52
          set Param(Lon0)   -75.87
          set Param(Lat0)    45.30
+         set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Ottawa/buildings.shp
+         set Param(BuildingsHgtField) height
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/cities/ottawa/ott_shp-height.tif
          set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/cities/ottawa/ott_shp-height.tif
-         set Param(BuildingsShapefile)      /data/cmoex7/afsralx/canyon-urbain/global_data/cities/ottawa/ott-buildings.shp
-         set Param(BuildingsHgtField) hgt
       }
       "WINNIPEG" {
          set Param(Lon1)   -96.95
@@ -1723,10 +1729,10 @@ proc UrbanX::TEB2FSTD { indexCouverture } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::Shp2Height>
+# Name     : <UrbanX::BuildingsHeight2Raster>
 # Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
 #
-# Goal     :
+# Goal     : Converting buildings shapefiles to raster
 #
 # Parameters :
 #
@@ -1735,14 +1741,10 @@ proc UrbanX::TEB2FSTD { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Shp2Height { indexCouverture } {
+proc UrbanX::BuildingsHeight2Raster { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
-
-   if { $Param(BuildingsShapefile)=="" } {
-      return
-   }
-   GenX::Log INFO "Converting $indexCouverture building shapefile to raster"
+   GenX::Log INFO "Converting $indexCouverture buildings shapefile to raster"
 
    gdalband create RHAUTEURSHP $Param(Width) $Param(Height) 1 Float32
    gdalband define RHAUTEURSHP -georef UTMREF$indexCouverture
@@ -1754,10 +1756,10 @@ proc UrbanX::Shp2Height { indexCouverture } {
    ogrlayer free LAYER
    ogrfile close SHAPE
 
-   file delete -force $GenX::Param(OutFile)_shp-height.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_shp-height.tif GeoTiff
+   file delete -force $GenX::Param(OutFile)_buildings-height.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_buildings-height.tif GeoTiff
    gdalband write RHAUTEURSHP FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   GenX::Log INFO "The file $GenX::Param(OutFile)_shp-height.tif was generated"
+   GenX::Log INFO "The file $GenX::Param(OutFile)_buildings-height.tif was generated"
 
    gdalfile close FILEOUT
    gdalband free RHAUTEURSHP
@@ -1846,7 +1848,7 @@ proc UrbanX::DeleteTempFiles { indexCouverture } {
    file delete -force $GenX::Param(OutFile)_popdens.tif
    file delete -force $GenX::Param(OutFile)_champs-only+building-vicinity.tif
    file delete -force $GenX::Param(OutFile)_sandwich.tif
-   file delete -force $GenX::Param(OutFile)_shp-height.tif
+   file delete -force $GenX::Param(OutFile)_buildings-height.tif
 }
 
 #----------------------------------------------------------------------------
@@ -1956,8 +1958,10 @@ proc UrbanX::Process { Coverage } {
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
 #   UrbanX::Sandwich $Coverage
 
-   #----- Vector building height rasterization
-#   UrbanX::Shp2Height $Coverage
+   #----- Vector building height rasterization - done only if data exists over the city
+   if { $Param(BuildingsShapefile)!="" } {
+      UrbanX::BuildingsHeight2Raster $Coverage
+   }
 
    #----- Creates the fields and building vicinity output using spatial buffers
 # BUG SPATIAL BUFFERS MAKE IT CRASH
@@ -1976,7 +1980,7 @@ proc UrbanX::Process { Coverage } {
 #   UrbanX::LCC2000V $Coverage
 
    #----- Applies LUT to all processing results to generate TEB classes
-   UrbanX::Priorities2TEB $Coverage
+#   UrbanX::Priorities2TEB $Coverage
 
    #----- Optional outputs:
    #UrbanX::VegeMask
