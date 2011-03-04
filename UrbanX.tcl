@@ -361,6 +361,10 @@ namespace eval UrbanX { } {
       { 0 10 11 12 20  30  31 32  33 34  35  36  37  40  50  51  52  53  80  81  82  83 100 101 102 103 104 110 121 122 123 200 210 211 212 213 220 221 222 223 230 231 232 233 }
       { 0  0  0  0  0 500   0  0 501  0 502 503 504 505 506 507 508 509 510 511 512 513 514 515 516 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 }
       { 0  0  0  0  0   0 702  0   0  0 724 724 724 722 726 711 711 722 723 723 723 723 713 722 714 722 722 714 715 715 715 725 704 704 704 704 707 707 707 707 725 725 725 725 } }
+
+   # DEG2RAD(D)           ((D)*0.017453292519943295474371680598)
+   # RAD2M(R)             ((R)*6.36670701949370745569e+06)
+   set Param(Deg2M) [expr (0.017453292519943295474371680598*6.36670701949370745569e+06)]
 }
 
 #----------------------------------------------------------------------------
@@ -1765,6 +1769,46 @@ proc UrbanX::BuildingsHeight2Raster { indexCouverture } {
    gdalband free RHAUTEURSHP
 }
 
+
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::TEBParam100m>
+# Creation : March 2011 - Alexandre Leroux - CMC/CMOE
+#
+# Goal     : Compute TEB parameters on a 100m raster
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::TEBParam100m { indexCouverture } {
+   GenX::Procs ;# Adding the proc to the metadata log
+   variable Param
+
+   set res 100 ;# Aggretation spatial resolution, in meters
+   set resdeg [expr ($res/$Param(Deg2M))] ;# in degrees
+   GenX::Log INFO "Compute TEB geometric parameters on a $res\m raster"
+
+   GenX::UTMZoneDefine [expr ($Param(Lat0)+($resdeg))] [expr ($Param(Lon0)+($resdeg))] [expr ($Param(Lat1)+($resdeg))] [expr ($Param(Lon1)+($resdeg))] $res UTMREF100M$indexCouverture
+
+   set Param(Width100m)  [expr int(floor($Param(Width)/($res/$Param(Resolution))))]
+   set Param(Height100m) [expr int(floor($Param(Height)/($res/$Param(Resolution))))]
+   gdalband create RTEB100M $Param(Width100m) $Param(Height100m) 1 Float32
+   gdalband define RTEB100M -georef UTMREF100M$indexCouverture
+
+# calculations to come here
+
+   file delete -force $GenX::Param(OutFile)_TEBParams-100m.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEBParams-100m.tif GeoTiff
+   gdalband write RTEB100M FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   GenX::Log INFO "The file $GenX::Param(OutFile)_TEBParams-100m.tif was generated"
+   GenX::Log INFO "$GenX::Param(OutFile)_TEBParams-100m.tif is slightly smaller than $GenX::Param(OutFile)_TEB.tif to avoid missing data over boundaries"
+
+   gdalfile close FILEOUT
+   gdalband free RTEB100M
+}
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::FilterGen>
 # Creation : date? - Alexandre Leroux - CMC/CMOE
@@ -1960,7 +2004,7 @@ proc UrbanX::Process { Coverage } {
 
    #----- Vector building height rasterization - done only if data exists over the city
    if { $Param(BuildingsShapefile)!="" } {
-      UrbanX::BuildingsHeight2Raster $Coverage
+#      UrbanX::BuildingsHeight2Raster $Coverage
    }
 
    #----- Creates the fields and building vicinity output using spatial buffers
@@ -1981,6 +2025,9 @@ proc UrbanX::Process { Coverage } {
 
    #----- Applies LUT to all processing results to generate TEB classes
 #   UrbanX::Priorities2TEB $Coverage
+
+   #----- Computes TEB geometric parameters over on a 100m raster
+   UrbanX::TEBParam100m $Coverage
 
    #----- Optional outputs:
    #UrbanX::VegeMask
