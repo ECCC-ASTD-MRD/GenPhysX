@@ -364,7 +364,7 @@ namespace eval UrbanX { } {
 
    # DEG2RAD(D)           ((D)*0.017453292519943295474371680598)
    # RAD2M(R)             ((R)*6.36670701949370745569e+06)
-   set Param(Deg2M) [expr (0.017453292519943295474371680598*6.36670701949370745569e+06)]
+   set Param(Deg2M) [expr (0.017453292519943295474371680598*6.36670701949370745569e+06)] ;# doesn't take into account latitude effects
 }
 
 #----------------------------------------------------------------------------
@@ -1750,23 +1750,23 @@ proc UrbanX::BuildingHeights2Raster { indexCouverture } {
    variable Param
    GenX::Log INFO "Converting $indexCouverture buildings shapefile to raster"
 
-   gdalband create RHAUTEURSHP $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURSHP -georef UTMREF$indexCouverture
+   gdalband create RHAUTEURBLD $Param(Width) $Param(Height) 1 Float32
+   gdalband define RHAUTEURBLD -georef UTMREF$indexCouverture
 
    set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
    eval ogrlayer read LAYER $shp_layer
-   gdalband gridinterp RHAUTEURSHP LAYER $Param(Mode) $Param(BuildingsHgtField)
+   gdalband gridinterp RHAUTEURBLD LAYER $Param(Mode) $Param(BuildingsHgtField)
 
    ogrlayer free LAYER
    ogrfile close SHAPE
 
    file delete -force $GenX::Param(OutFile)_building-heights.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_building-heights.tif GeoTiff
-   gdalband write RHAUTEURSHP FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+   gdalband write RHAUTEURBLD FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
    GenX::Log INFO "The file $GenX::Param(OutFile)_building-heights.tif was generated"
 
    gdalfile close FILEOUT
-   gdalband free RHAUTEURSHP
+   gdalband free RHAUTEURBLD
 }
 
 
@@ -1789,7 +1789,7 @@ proc UrbanX::TEBParam100m { indexCouverture } {
 
    set res 100 ;# Aggretation spatial resolution, in meters
    set resdeg [expr ($res/$Param(Deg2M))] ;# in degrees
-   GenX::Log INFO "Compute TEB geometric parameters on a $res\m raster"
+   GenX::Log INFO "Computing TEB geometric parameters on a $res\m raster"
 
    GenX::UTMZoneDefine [expr ($Param(Lat0)+($resdeg))] [expr ($Param(Lon0)+($resdeg))] [expr ($Param(Lat1)+($resdeg))] [expr ($Param(Lon1)+($resdeg))] $res UTMREF100M$indexCouverture
 
@@ -1798,10 +1798,41 @@ proc UrbanX::TEBParam100m { indexCouverture } {
    gdalband create RTEB100M $Param(Width100m) $Param(Height100m) 1 Float32
    gdalband define RTEB100M -georef UTMREF100M$indexCouverture
 
-   # Averaging 3D buildings raster on the lower raster
+   # TEB param computations with 3D buildings
    if { $Param(BuildingsShapefile)!="" } {
+      GenX::Log INFO "Computing building heights average at $res\m (ignoring empty spaces)"
+      gdalband create RHBLDAVG $Param(Width100m) $Param(Height100m) 1 Float32
+      gdalband define RHBLDAVG -georef UTMREF100M$indexCouverture
       gdalband read RHAUTEURBLD [gdalfile open FILE read $GenX::Param(OutFile)_building-heights.tif]
-      gdalband gridinterp RTEB100M RHAUTEURBLD AVERAGE
+      gdalband stats RHAUTEURBLD -nodata 0 ;# to average buildings without empty spaces
+      gdalband gridinterp RHBLDAVG RHAUTEURBLD AVERAGE
+
+      file delete -force $GenX::Param(OutFile)_Building-heights-average.tif
+      gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-heights-average.tif GeoTiff
+      gdalband write RHBLDAVG FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+      GenX::Log INFO "The file $GenX::Param(OutFile)_Building-heights-average.tif was generated"
+      gdalband free RHBLDAVG
+      gdalfile close FILEOUT
+
+      GenX::Log INFO "Computing WALL_O_HOR at $res\m"
+      gdalband create RBLDPERIMETER $Param(Width) $Param(Height) 1 Float32
+      eval gdalband define RBLDPERIMETER -georef UTMREF$indexCouverture
+
+      set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
+      eval ogrlayer read LAYER $shp_layer
+      gdalband gridinterp RBLDPERIMETER LAYER FAST FEATURE_LENGTH
+
+      file delete -force $GenX::Param(OutFile)_Building-perimeter.tif
+      gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-perimeter.tif GeoTiff
+      gdalband write RBLDPERIMETER FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+      GenX::Log INFO "The file $GenX::Param(OutFile)_Building-perimeter.tif was generated"
+      # Average building perimeters to the aggregated raster
+#      gdalband gridinterp RTEB100M RBLDPERIMETER AVERAGE
+      gdalband free RBLDPERIMETER
+
+      gdalfile close FILEOUT
+      ogrlayer free LAYER
+      ogrfile close SHAPE
    }
 
    file delete -force $GenX::Param(OutFile)_TEBParams-100m.tif
@@ -1897,6 +1928,7 @@ proc UrbanX::DeleteTempFiles { indexCouverture } {
    file delete -force $GenX::Param(OutFile)_champs-only+building-vicinity.tif
    file delete -force $GenX::Param(OutFile)_sandwich.tif
    file delete -force $GenX::Param(OutFile)_building-heights.tif
+   file delete -force $GenX::Param(OutFile)_Building-heights-average.tif
 }
 
 #----------------------------------------------------------------------------
@@ -2008,7 +2040,7 @@ proc UrbanX::Process { Coverage } {
 
    #----- Vector building height rasterization - done only if data exists over the city
    if { $Param(BuildingsShapefile)!="" } {
-      UrbanX::BuildingHeights2Raster $Coverage
+#      UrbanX::BuildingHeights2Raster $Coverage
    }
 
    #----- Creates the fields and building vicinity output using spatial buffers
