@@ -1801,8 +1801,8 @@ proc UrbanX::TEBParam100m { indexCouverture } {
    # TEB param computations with 3D buildings
    if { $Param(BuildingsShapefile)!="" } {
       GenX::Log INFO "Computing building heights average at $res\m (ignoring empty spaces)"
-      gdalband create RHBLDAVG $Param(Width100m) $Param(Height100m) 1 Float32
-      gdalband define RHBLDAVG -georef UTMREF100M$indexCouverture
+      gdalband copy RHBLDAVG RTEB100M
+
       gdalband read RHAUTEURBLD [gdalfile open FILE read $GenX::Param(OutFile)_building-heights.tif]
       gdalband stats RHAUTEURBLD -nodata 0 ;# to average buildings without empty spaces
       gdalband gridinterp RHBLDAVG RHAUTEURBLD AVERAGE
@@ -1811,24 +1811,35 @@ proc UrbanX::TEBParam100m { indexCouverture } {
       gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-heights-average.tif GeoTiff
       gdalband write RHBLDAVG FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
       GenX::Log INFO "The file $GenX::Param(OutFile)_Building-heights-average.tif was generated"
-      gdalband free RHBLDAVG
       gdalfile close FILEOUT
 
       GenX::Log INFO "Computing WALL_O_HOR at $res\m"
-      gdalband create RBLDPERIMETER $Param(Width) $Param(Height) 1 Float32
-      eval gdalband define RBLDPERIMETER -georef UTMREF$indexCouverture
+      gdalband create RWALLOHOR $Param(Width100m) $Param(Height100m) 1 Float32
+      eval gdalband define RWALLOHOR -georef UTMREF100M$indexCouverture
 
-      set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
-      eval ogrlayer read LAYER $shp_layer
-      gdalband gridinterp RBLDPERIMETER LAYER FAST FEATURE_LENGTH
+      set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
+      vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)
 
-      file delete -force $GenX::Param(OutFile)_Building-perimeter.tif
-      gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-perimeter.tif GeoTiff
-      gdalband write RBLDPERIMETER FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-      GenX::Log INFO "The file $GenX::Param(OutFile)_Building-perimeter.tif was generated"
-      # Average building perimeters to the aggregated raster
-#      gdalband gridinterp RTEB100M RBLDPERIMETER AVERAGE
-      gdalband free RBLDPERIMETER
+      gdalband copy RBLDFRACTION RTEB100M ;# to create RBLDFRACTION
+      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM
+      gdalband free RSURFACEBLD
+
+      file delete -force $GenX::Param(OutFile)_Building-fraction.tif
+      gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-fraction.tif GeoTiff
+      gdalband write RBLDFRACTION FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+      GenX::Log INFO "The file $GenX::Param(OutFile)_Building-fraction.tif was generated"
+      gdalfile close FILEOUT
+
+      # WALL-O-HOR formulae provided by Sylvie Leroyer
+      set facteurWoH1 [expr 2/pow(($res),2)]
+      set facteurWoH2 [expr pow($Param(Resolution),2)]
+      vexpr RWALLOHOR RHBLDAVG*$facteurWoH1*(sqrt(RBLDFRACTION*$facteurWoH2))
+
+      file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
+      gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-WallOHor.tif GeoTiff
+      gdalband write RWALLOHOR FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+      GenX::Log INFO "The file $GenX::Param(OutFile)_Building-WallOHor.tif was generated"
+      gdalband free RWALLOHOR RHBLDAVG RHAUTEURBLD
 
       gdalfile close FILEOUT
       ogrlayer free LAYER
@@ -1929,6 +1940,8 @@ proc UrbanX::DeleteTempFiles { indexCouverture } {
    file delete -force $GenX::Param(OutFile)_sandwich.tif
    file delete -force $GenX::Param(OutFile)_building-heights.tif
    file delete -force $GenX::Param(OutFile)_Building-heights-average.tif
+   file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
+   file delete -force $GenX::Param(OutFile)_Building-fraction.tif
 }
 
 #----------------------------------------------------------------------------
