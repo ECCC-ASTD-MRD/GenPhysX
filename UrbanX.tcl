@@ -1801,7 +1801,7 @@ proc UrbanX::TEBParam100m { indexCouverture } {
    # TEB param computations with 3D buildings
    if { $Param(BuildingsShapefile)!="" } {
       GenX::Log INFO "Computing building heights average at $res\m (ignoring empty spaces)"
-      gdalband copy RHBLDAVG RTEB100M
+      gdalband copy RHBLDAVG RTEB100M     ;# to create RHBLDAVG
 
       gdalband read RHAUTEURBLD [gdalfile open FILE read $GenX::Param(OutFile)_building-heights.tif]
       gdalband stats RHAUTEURBLD -nodata 0 ;# to average buildings without empty spaces
@@ -1813,16 +1813,28 @@ proc UrbanX::TEBParam100m { indexCouverture } {
       GenX::Log INFO "The file $GenX::Param(OutFile)_Building-heights-average.tif was generated"
       gdalfile close FILEOUT
 
-      GenX::Log INFO "Computing WALL_O_HOR at $res\m"
-      gdalband create RWALLOHOR $Param(Width100m) $Param(Height100m) 1 Float32
-      eval gdalband define RWALLOHOR -georef UTMREF100M$indexCouverture
 
       set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
-      vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)
+      vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
 
+      GenX::Log INFO "Computing building fraction at $res\m"
       gdalband copy RBLDFRACTION RTEB100M ;# to create RBLDFRACTION
-      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM
+      set starttime [clock seconds]
+##      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM   ;# double-counting de tous les pixels on the edge
+#      gdalband gridinterp RBLDFRACTION RSURFACEBLD CONSERVATIVE 1 True ;# took 2691 seconds for Montreal
+      GenX::Log DEBUG "Time taken for RASTER CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
       gdalband free RSURFACEBLD
+
+
+# ESSAYER AVEC UN GRIDINTERP CONSERVATIVE FEATURE_AREA DES POLYGONES VECTORIELS ;# ... could test
+set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
+eval ogrlayer read LAYER $shp_layer
+set starttime [clock seconds]
+gdalband gridinterp RHAUTEURBLD LAYER CONSERVATIVE FEATURE_AREA
+GenX::Log DEBUG "Time taken for VECTOR CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
+ogrlayer free LAYER
+ogrfile close SHAPE
+
 
       file delete -force $GenX::Param(OutFile)_Building-fraction.tif
       gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-fraction.tif GeoTiff
@@ -1830,9 +1842,13 @@ proc UrbanX::TEBParam100m { indexCouverture } {
       GenX::Log INFO "The file $GenX::Param(OutFile)_Building-fraction.tif was generated"
       gdalfile close FILEOUT
 
+      GenX::Log INFO "Computing WALL_O_HOR at $res\m"
+      gdalband create RWALLOHOR $Param(Width100m) $Param(Height100m) 1 Float32
+      eval gdalband define RWALLOHOR -georef UTMREF100M$indexCouverture
+
       # WALL-O-HOR formulae provided by Sylvie Leroyer
       set facteurWoH1 [expr 2/pow(($res),2)]
-      set facteurWoH2 [expr pow($Param(Resolution),2)]
+      set facteurWoH2 [expr pow($res,2)]
       vexpr RWALLOHOR RHBLDAVG*$facteurWoH1*(sqrt(RBLDFRACTION*$facteurWoH2))
 
       file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
@@ -1846,6 +1862,7 @@ proc UrbanX::TEBParam100m { indexCouverture } {
       ogrfile close SHAPE
    }
 
+# RTEB100M not used at the moment...
    file delete -force $GenX::Param(OutFile)_TEBParams-100m.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_TEBParams-100m.tif GeoTiff
    gdalband write RTEB100M FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
