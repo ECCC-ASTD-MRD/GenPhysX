@@ -1760,10 +1760,10 @@ proc UrbanX::BuildingHeights2Raster { indexCouverture } {
    ogrlayer free LAYER
    ogrfile close SHAPE
 
-   file delete -force $GenX::Param(OutFile)_building-heights.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_building-heights.tif GeoTiff
+   file delete -force $GenX::Param(OutFile)_Building-heights.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-heights.tif GeoTiff
    gdalband write RHAUTEURBLD FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-   GenX::Log INFO "The file $GenX::Param(OutFile)_building-heights.tif was generated"
+   GenX::Log INFO "The file $GenX::Param(OutFile)_Building-heights.tif was generated"
 
    gdalfile close FILEOUT
    gdalband free RHAUTEURBLD
@@ -1771,7 +1771,7 @@ proc UrbanX::BuildingHeights2Raster { indexCouverture } {
 
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::TEBParam100m>
+# Name     : <UrbanX::TEBGeoParams>
 # Creation : March 2011 - Alexandre Leroux - CMC/CMOE
 #
 # Goal     : Compute TEB parameters on a 100m raster
@@ -1783,7 +1783,7 @@ proc UrbanX::BuildingHeights2Raster { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::TEBParam100m { indexCouverture } {
+proc UrbanX::TEBGeoParams { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
 
@@ -1800,62 +1800,86 @@ proc UrbanX::TEBParam100m { indexCouverture } {
 
    # TEB param computations with 3D buildings
    if { $Param(BuildingsShapefile)!="" } {
-      GenX::Log INFO "Computing building heights average at $res\m (ignoring empty spaces)"
-      gdalband copy RHBLDAVG RTEB100M     ;# to create RHBLDAVG
 
-      gdalband read RHAUTEURBLD [gdalfile open FILE read $GenX::Param(OutFile)_building-heights.tif]
+      gdalband read RHAUTEURBLD [gdalfile open RHAUTEURBLDFILE read $GenX::Param(OutFile)_Building-heights.tif]
       gdalband stats RHAUTEURBLD -nodata 0 ;# to average buildings without empty spaces
-      gdalband gridinterp RHBLDAVG RHAUTEURBLD AVERAGE
 
-      file delete -force $GenX::Param(OutFile)_Building-heights-average.tif
-      gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-heights-average.tif GeoTiff
-      gdalband write RHBLDAVG FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-      GenX::Log INFO "The file $GenX::Param(OutFile)_Building-heights-average.tif was generated"
-      gdalfile close FILEOUT
+      # Building heights average
+      set buildingheightfile $GenX::Param(OutFile)_Building-heights-average.tif
+      if { [file exists $buildingheightfile] } {
+         GenX::Log INFO "Using existing buildings heights average raster: $GenX::Param(OutFile)_Building-heights-average.tif"
+         gdalband read RHBLDAVG [gdalfile open FILE read $GenX::Param(OutFile)_Building-heights-average.tif]
+      } else {
+         GenX::Log INFO "Computing building heights average at $res\m (ignoring empty spaces)"
+         gdalband copy RHBLDAVG RTEB100M     ;# to create RHBLDAVG
+
+         gdalband gridinterp RHBLDAVG RHAUTEURBLD AVERAGE
+
+         file delete -force $GenX::Param(OutFile)_Building-heights-average.tif
+         gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-heights-average.tif GeoTiff
+         gdalband write RHBLDAVG FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+         GenX::Log INFO "The file $GenX::Param(OutFile)_Building-heights-average.tif was generated"
+         gdalfile close FILEOUT
+      }
+      gdalfile close FILE
+
+      # Building fraction
+      set buildingfractionfile $GenX::Param(OutFile)_Building-fraction.tif
+      if { [file exists $buildingfractionfile] } {
+         GenX::Log INFO "Using existing buildings fraction raster: $GenX::Param(OutFile)_Building-fraction.tif"
+         gdalband read RBLDFRACTION [gdalfile open FILE read $GenX::Param(OutFile)_Building-fraction.tif]
+         gdalfile close FILE
+      } else {
+         set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
+         vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
+
+         GenX::Log INFO "Computing building fraction at $res\m"
+         gdalband copy RBLDFRACTION RTEB100M ;# to create RBLDFRACTION
+         set starttime [clock seconds]
+   ##      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM   ;# double-counting de tous les pixels on the edge
+   #      gdalband gridinterp RBLDFRACTION RSURFACEBLD CONSERVATIVE 1 True ;# took 2691 seconds for Montreal
+         GenX::Log DEBUG "Time taken for RASTER CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
+         gdalband free RSURFACEBLD
+
+# ESSAYER AVEC UN GRIDINTERP CONSERVATIVE FEATURE_AREA DES POLYGONES VECTORIELS
+         set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
+         eval ogrlayer read LAYER $shp_layer
+         set starttime [clock seconds]
+         gdalband gridinterp RHAUTEURBLD LAYER CONSERVATIVE FEATURE_AREA
+         GenX::Log DEBUG "Time taken for VECTOR CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
+         ogrlayer free LAYER
+         ogrfile close SHAPE
 
 
-      set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
-      vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
+         file delete -force $GenX::Param(OutFile)_Building-fraction.tif
+         gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-fraction.tif GeoTiff
+         gdalband write RBLDFRACTION FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+         GenX::Log INFO "The file $GenX::Param(OutFile)_Building-fraction.tif was generated"
+         gdalfile close FILEOUT
+      }
 
-      GenX::Log INFO "Computing building fraction at $res\m"
-      gdalband copy RBLDFRACTION RTEB100M ;# to create RBLDFRACTION
-      set starttime [clock seconds]
-##      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM   ;# double-counting de tous les pixels on the edge
-#      gdalband gridinterp RBLDFRACTION RSURFACEBLD CONSERVATIVE 1 True ;# took 2691 seconds for Montreal
-      GenX::Log DEBUG "Time taken for RASTER CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
-      gdalband free RSURFACEBLD
+      # WALL_O_HOR
+      set wallohorfile $GenX::Param(OutFile)_Building-WallOHor.tif
+      if { [file exists $wallohorfile] } {
+         GenX::Log INFO "Using existing Wall-O-Hor raster: $GenX::Param(OutFile)_Building-WallOHor.tif"
+         gdalband read RWALLOHOR [gdalfile open WALLOHORFILE read $GenX::Param(OutFile)_Building-WallOHor.tif]
+         gdalfile close WALLOHORFILE
+      } else {
+         GenX::Log INFO "Computing WALL_O_HOR at $res\m"
+         gdalband create RWALLOHOR $Param(Width100m) $Param(Height100m) 1 Float32
+         eval gdalband define RWALLOHOR -georef UTMREF100M$indexCouverture
 
+         # WALL-O-HOR formulae provided by Sylvie Leroyer
+         set facteurWoH1 [expr 2/pow(($res),2)]
+         set facteurWoH2 [expr pow($res,2)]
+         vexpr RWALLOHOR RHBLDAVG*$facteurWoH1*(sqrt(RBLDFRACTION*$facteurWoH2))
 
-# ESSAYER AVEC UN GRIDINTERP CONSERVATIVE FEATURE_AREA DES POLYGONES VECTORIELS ;# ... could test
-set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
-eval ogrlayer read LAYER $shp_layer
-set starttime [clock seconds]
-gdalband gridinterp RHAUTEURBLD LAYER CONSERVATIVE FEATURE_AREA
-GenX::Log DEBUG "Time taken for VECTOR CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
-ogrlayer free LAYER
-ogrfile close SHAPE
-
-
-      file delete -force $GenX::Param(OutFile)_Building-fraction.tif
-      gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-fraction.tif GeoTiff
-      gdalband write RBLDFRACTION FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-      GenX::Log INFO "The file $GenX::Param(OutFile)_Building-fraction.tif was generated"
-      gdalfile close FILEOUT
-
-      GenX::Log INFO "Computing WALL_O_HOR at $res\m"
-      gdalband create RWALLOHOR $Param(Width100m) $Param(Height100m) 1 Float32
-      eval gdalband define RWALLOHOR -georef UTMREF100M$indexCouverture
-
-      # WALL-O-HOR formulae provided by Sylvie Leroyer
-      set facteurWoH1 [expr 2/pow(($res),2)]
-      set facteurWoH2 [expr pow($res,2)]
-      vexpr RWALLOHOR RHBLDAVG*$facteurWoH1*(sqrt(RBLDFRACTION*$facteurWoH2))
-
-      file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
-      gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-WallOHor.tif GeoTiff
-      gdalband write RWALLOHOR FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
-      GenX::Log INFO "The file $GenX::Param(OutFile)_Building-WallOHor.tif was generated"
-      gdalband free RWALLOHOR RHBLDAVG RHAUTEURBLD
+         file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
+         gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-WallOHor.tif GeoTiff
+         gdalband write RWALLOHOR FILEOUT { COMPRESS=NONE PROFILE=GeoTIFF }
+         GenX::Log INFO "The file $GenX::Param(OutFile)_Building-WallOHor.tif was generated"
+         gdalband free RWALLOHOR RHBLDAVG RHAUTEURBLD RBLDFRACTION
+      }
 
       gdalfile close FILEOUT
       ogrlayer free LAYER
@@ -1869,7 +1893,7 @@ ogrfile close SHAPE
    GenX::Log INFO "The file $GenX::Param(OutFile)_TEBParams-100m.tif was generated"
    GenX::Log INFO "$GenX::Param(OutFile)_TEBParams-100m.tif is slightly smaller than $GenX::Param(OutFile)_TEB.tif to avoid missing data over boundaries"
 
-   gdalfile close FILEOUT
+   gdalfile close FILEOUT RHAUTEURBLDFILE
    gdalband free RTEB100M
 }
 #----------------------------------------------------------------------------
@@ -1955,7 +1979,7 @@ proc UrbanX::DeleteTempFiles { indexCouverture } {
    file delete -force $GenX::Param(OutFile)_popdens.tif
    file delete -force $GenX::Param(OutFile)_champs-only+building-vicinity.tif
    file delete -force $GenX::Param(OutFile)_sandwich.tif
-   file delete -force $GenX::Param(OutFile)_building-heights.tif
+   file delete -force $GenX::Param(OutFile)_Building-heights.tif
    file delete -force $GenX::Param(OutFile)_Building-heights-average.tif
    file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
    file delete -force $GenX::Param(OutFile)_Building-fraction.tif
@@ -2093,7 +2117,7 @@ proc UrbanX::Process { Coverage } {
 #   UrbanX::Priorities2TEB $Coverage
 
    #----- Computes TEB geometric parameters over on a 100m raster
-   UrbanX::TEBParam100m $Coverage
+   UrbanX::TEBGeoParams $Coverage
 
    #----- Optional outputs:
    #UrbanX::VegeMask
