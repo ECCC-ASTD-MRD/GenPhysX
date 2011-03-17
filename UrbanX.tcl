@@ -1809,16 +1809,16 @@ proc UrbanX::TEBGeoParams { indexCouverture } {
       set buildingheightfile $GenX::Param(OutFile)_Building-heights-average.tif
       if { [file exists $buildingheightfile] } {
          GenX::Log INFO "Using existing buildings heights average raster: $GenX::Param(OutFile)_Building-heights-average.tif"
-         gdalband read RHBLDAVG [gdalfile open FILE read $GenX::Param(OutFile)_Building-heights-average.tif]
+         gdalband read RBLDHAVG [gdalfile open FILE read $GenX::Param(OutFile)_Building-heights-average.tif]
       } else {
          GenX::Log INFO "Computing building heights average at $res\m (ignoring empty spaces)"
-         gdalband copy RHBLDAVG RTEB100M     ;# to create RHBLDAVG
+         gdalband copy RBLDHAVG RTEB100M     ;# to create RBLDHAVG
 
-         gdalband gridinterp RHBLDAVG RHAUTEURBLD AVERAGE
+         gdalband gridinterp RBLDHAVG RHAUTEURBLD AVERAGE
 
          file delete -force $GenX::Param(OutFile)_Building-heights-average.tif
          gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-heights-average.tif GeoTiff
-         gdalband write RHBLDAVG FILEOUT
+         gdalband write RBLDHAVG FILEOUT
          GenX::Log INFO "The file $GenX::Param(OutFile)_Building-heights-average.tif was generated"
          gdalfile close FILEOUT
       }
@@ -1834,28 +1834,28 @@ proc UrbanX::TEBGeoParams { indexCouverture } {
          GenX::Log INFO "Computing building fraction at $res\m"
          gdalband copy RBLDFRACTION RTEB100M ;# to create RBLDFRACTION
 
-         # version RASTER du calcul - à remplacer par vector ci-dessous ? (bug double counting)
-#         set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
-#         vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
-#         set starttime [clock seconds]
-  ##      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM   ;# double-counting de tous les pixels on the edge
-#         gdalband gridinterp RBLDFRACTION RSURFACEBLD CONSERVATIVE 1 True ;# took 2691 seconds for Montreal
-#         GenX::Log DEBUG "Time taken for RASTER CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
-#         gdalband free RSURFACEBLD
+# version RASTER du calcul - à remplacer par vector ci-dessous ? (bug double counting)
+         set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
+         vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
+         set starttime [clock seconds]
+ ##      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM   ;# double-counting de tous les pixels on the edge
+         gdalband gridinterp RBLDFRACTION RSURFACEBLD CONSERVATIVE 1 True ;# took 2691 seconds for Montreal
+         GenX::Log DEBUG "Time taken for RASTER CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
+         gdalband free RSURFACEBLD
 
 
 # BUG DE DOUBLE COUNTING DES POLYGONES SE CHEVAUCHANT (reswitcher à fraction raster?)
-         set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
-         eval ogrlayer read LAYER $shp_layer
-         set starttime [clock seconds]
-         gdalband gridinterp RBLDFRACTION LAYER CONSERVATIVE FEATURE_AREA
-#         gdalband gridinterp RBLDFRACTION LAYER NORMALIZE FEATURE_AREA
-         GenX::Log DEBUG "Time taken for VECTOR CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
-#         GenX::Log DEBUG "Time taken for VECTOR NORMALIZE fraction [expr [clock seconds]-$starttime] seconds"
-# normalize puis enlever next line
-         vexpr RBLDFRACTION RBLDFRACTION/($res*$res) ;# To get a fraction between 0 and 1
-         ogrlayer free LAYER
-         ogrfile close SHAPE
+#         set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
+#         eval ogrlayer read LAYER $shp_layer
+#         set starttime [clock seconds]
+#         gdalband gridinterp RBLDFRACTION LAYER CONSERVATIVE FEATURE_AREA
+##         gdalband gridinterp RBLDFRACTION LAYER NORMALIZE FEATURE_AREA
+#         GenX::Log DEBUG "Time taken for VECTOR CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
+##         GenX::Log DEBUG "Time taken for VECTOR NORMALIZE fraction [expr [clock seconds]-$starttime] seconds"
+## normalize puis enlever next line
+#         vexpr RBLDFRACTION RBLDFRACTION/($res*$res) ;# To get a fraction between 0 and 1
+#         ogrlayer free LAYER
+#         ogrfile close SHAPE
 
 
          file delete -force $GenX::Param(OutFile)_Building-fraction.tif
@@ -1879,7 +1879,7 @@ proc UrbanX::TEBGeoParams { indexCouverture } {
          # WALL-O-HOR formulae provided by Sylvie Leroyer
          set facteurWoH1 [expr 2.0/pow(($res),2)]
          set facteurWoH2 [expr pow($res,2)]
-         vexpr RWALLOHOR RHBLDAVG*$facteurWoH1*(sqrt(RBLDFRACTION*$facteurWoH2))
+         vexpr RWALLOHOR RBLDHAVG*$facteurWoH1*(sqrt(RBLDFRACTION*$facteurWoH2))
 
          file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
          gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-WallOHor.tif GeoTiff
@@ -1895,21 +1895,21 @@ proc UrbanX::TEBGeoParams { indexCouverture } {
          gdalband read RZ0TOWN [gdalfile open Z0TOWNFILE read $GenX::Param(OutFile)_Building-Z0Town.tif]
          gdalfile close Z0TOWNFILE
       } else {
-         GenX::Log INFO "Computing Z0_TOWN at $res\m"
+         GenX::Log INFO "Computing Z0_TOWN at $res\m with the MacDonald 1998 Model"
 
-         vexpr RFRFACTOR RBLDFRACTION*(-1.0)*(RBLDFRACTION - 1.0)
-         vexpr RDISPLACEMENTHEIGHT RHBLDAVG*(1+(4.43^RFRFACTOR))
+         vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(4.43^(RBLDFRACTION*(-1.0))*(RBLDFRACTION - 1.0)))
+         vexpr RZ0TOWN RBLDHAVG*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*exp((-1.0)*0.4/min((0.003+0.3*RWALLOHOR/2.0)^0.5,0.3)+0.193))
 
          file delete -force $GenX::Param(OutFile)_Building-Z0Town.tif
          gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-Z0Town.tif GeoTiff
-         gdalband write RDISPLACEMENTHEIGHT FILEOUT
+         gdalband write RZ0TOWN FILEOUT
          gdalfile close FILEOUT
          GenX::Log INFO "The file $GenX::Param(OutFile)_Building-Z0Town.tif was generated"
 
-         gdalband free RFRFACTOR RDISPLACEMENTHEIGHT
+         gdalband free RDISPLACEMENTHEIGHT RZ0TOWN
       }
 
-      gdalband free RWALLOHOR RHBLDAVG RHAUTEURBLD RBLDFRACTION
+      gdalband free RWALLOHOR RBLDHAVG RHAUTEURBLD RBLDFRACTION
       gdalfile close FILEOUT
       ogrlayer free LAYER
       ogrfile close SHAPE
