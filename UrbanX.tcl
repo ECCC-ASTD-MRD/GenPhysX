@@ -1895,11 +1895,13 @@ proc UrbanX::TEBGeoParams { indexCouverture } {
          gdalband read RZ0TOWN [gdalfile open Z0TOWNFILE read $GenX::Param(OutFile)_Building-Z0Town.tif]
          gdalfile close Z0TOWNFILE
       } else {
-         GenX::Log INFO "Computing Z0_TOWN at $res\m with the MacDonald 1998 Model"
+         #GenX::Log INFO "Computing Z0_TOWN at $res\m with the MacDonald 1998 Model"
+         #vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(4.43^(RBLDFRACTION*(-1.0))*(RBLDFRACTION - 1.0)))
+         #vexpr RZ0TOWN RBLDHAVG*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*exp(-1.0*(0.5*1.0*1.2/0.4^2*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*(RWALLOHOR/2.0))^(-0.5))))
 
-         vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(4.43^(RBLDFRACTION*(-1.0))*(RBLDFRACTION - 1.0)))
+         GenX::Log INFO "Computing Z0_TOWN at $res\m with the Raupach 1994 Model"
+         vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(exp(-1.0*(7.5*2.0*RWALLOHOR/2.0)^0.5-1.0)/(7.5*2.0*RWALLOHOR/2.0)^0.5))
          vexpr RZ0TOWN RBLDHAVG*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*exp((-1.0)*0.4/min((0.003+0.3*RWALLOHOR/2.0)^0.5,0.3)+0.193))
-
          file delete -force $GenX::Param(OutFile)_Building-Z0Town.tif
          gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-Z0Town.tif GeoTiff
          gdalband write RZ0TOWN FILEOUT
