@@ -634,7 +634,7 @@ proc UrbanX::Sandwich { indexCouverture } {
    variable Param
    variable Data
    GenX::Procs ;# Adding the proc to the metadata log
-   GenX::Log INFO "Beginning of procedure"
+   GenX::Log INFO "Rasterizing, flattening and post-processing CanVec layers"
 
    #création de la raster qui contiendra la LULC
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
@@ -1164,7 +1164,7 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::PopDens2Builtup { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
-   GenX::Log DEBUG "Beginning of procedure: PopDens2BuiltupCanVec"
+   GenX::Log DEBUG "Reclassifying residential builtup areas using population density"
    variable Param
 
    #récupération de genphysx_sandwich.tif
@@ -1504,7 +1504,7 @@ proc UrbanX::LCC2000V { indexCouverture } {
    variable Param
    variable Const
    GenX::Procs ;# Adding the proc to the metadata log
-   GenX::Log INFO "Beginning of procedure"
+   GenX::Log INFO "Integrating LCC2000-V data for vegetated areas"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband copy RLCC2000V RSANDWICH
@@ -1791,14 +1791,19 @@ proc UrbanX::3DBuildings2Sandwich { indexCouverture } {
    GenX::Log INFO "Overwriting $indexCouverture CanVec sandwich by adding vector 3D buildings"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $GenX::Param(OutFile)_Building-heights.tif]
 
-   set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
-   eval ogrlayer read LAYER $shp_layer
-#   gdalband gridinterp RHAUTEURBLD LAYER $Param(Mode) $Param(BuildingsHgtField)
+   GenX::Log INFO "Adding new-only buildings to priority 104 (unknown or other 2D buildings)"
+   # On ignore les priorités <= 106 puisqu'elles sont soit des bâtiments existants soit au-dessus des bâtiments
+   vexpr RSANDWICH ifelse(((RHAUTEURBLD>0) && (RSANDWICH>=106)),104,RSANDWICH)
 
-   ogrlayer free LAYER
-   ogrfile close SHAPE
-   gdalband free RSANDWICH
+   file delete -force $GenX::Param(OutFile)_sandwich.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich.tif GeoTiff
+   gdalband write RSANDWICH FILEOUT
+   GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich.tif was overwritten"
+
+   gdalfile close FSANDWICH FHAUTEURBLD FILEOUT
+   gdalband free RSANDWICH RHAUTEURBLD
 }
 
 
@@ -2155,7 +2160,7 @@ proc UrbanX::Process { Coverage } {
    UrbanX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-#   UrbanX::Sandwich $Coverage
+   UrbanX::Sandwich $Coverage
 
    #----- Vector building height processing - done only if data exists over the city
    if { $Param(BuildingsShapefile)!="" } {
