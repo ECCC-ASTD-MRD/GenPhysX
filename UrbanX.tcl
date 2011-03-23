@@ -1366,7 +1366,7 @@ proc UrbanX::Dwellings2Builtup { indexCouverture } {
    vexpr VCENSUS.FARMS tcount(VCENSUS.FARMS,ifelse (RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
 
    #Calcul de la densité de population
-   GenX::Log INFO "Calculating population density values and adjustments if required"
+   GenX::Log INFO "Calculating dwellings density values and adjustments if required"
    foreach n $da_select {
       # Get the total dwelling values
       set pop [ogrlayer define VCENSUS -feature $n TDWELL]
@@ -1411,7 +1411,7 @@ proc UrbanX::Dwellings2Builtup { indexCouverture } {
       #fonction générale.
       if { $densite_div > 20} {
          set densite_choisie [expr ($densite_vect * 2.0)]
-         GenX::Log DEBUG "Adjustment of population density for polygon ID $n"
+         GenX::Log DEBUG "Adjustment of dwellings density for polygon ID $n"
       } else {
          set densite_choisie $densite_pixels
       }
@@ -1420,16 +1420,17 @@ proc UrbanX::Dwellings2Builtup { indexCouverture } {
 
    unset da_select
 
+# use un gdalband copy à la place ?
    #Conversion de la densité de population en raster
    GenX::Log DEBUG "Conversion of population density in a raster file"
-   gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
-   eval gdalband define RPOPDENS -georef UTMREF$indexCouverture
-   gdalband gridinterp RPOPDENS VCENSUS $Param(Mode) FARMS
+   gdalband create RDWELLINGS $Param(Width) $Param(Height) 1 Float32
+   eval gdalband define RDWELLINGS -georef UTMREF$indexCouverture
+   gdalband gridinterp RDWELLINGS VCENSUS $Param(Mode) FARMS
 
    #écriture du fichier genphysx_popdens.tif contenant la densité de population
    file delete -force $GenX::Param(OutFile)_dwellings-density.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_dwellings-density.tif GeoTiff
-   gdalband write RPOPDENS FILEOUT
+   gdalband write RDWELLINGS FILEOUT
    GenX::Log INFO "The file $GenX::Param(OutFile)_dwellings-density.tif was generated"
 
    gdalfile close FILEOUT
@@ -1437,38 +1438,18 @@ proc UrbanX::Dwellings2Builtup { indexCouverture } {
    ogrfile close SHAPE
    gdalband free RDA
 
-   #Cookie cutting population density and setting SMOKE/TEB values
-   GenX::Log INFO "Cookie cutting population density and setting SMOKE/TEB values"
-   gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
-   gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
-   vexpr RTEMP RSANDWICH==218
+   gdalband read RPOPDENS [gdalfile open FPOPDENS read $GenX::Param(OutFile)_popdens.tif]
 
-   if {$GenX::Param(SMOKE)!="" } {
-      #seuils de densité de population associés à SMOKE (IndustrX)
-      GenX::Log INFO "Applying thresholds for IndustrX"
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
-   } else {
-      #seuils de densité de population associés à TEB (UrbanX)
-      GenX::Log INFO "Applying thresholds for UrbanX"
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
-   }
+   vexpr RPOPDWERATIO RPOPDENS/RDWELLINGS
 
-   #écriture du fichier genphysx_popdens-builtup.tif
-#   GenX::Log DEBUG "Generating output file, result of cookie cutting"
-#   file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
-#   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
-#   gdalband write RPOPDENSCUT FILEOUT
-#   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup.tif was generated"
 
-   gdalfile close FSANDWICH FILEOUT
-   gdalband free RSANDWICH RPOPDENS RTEMP RPOPDENSCUT
+   file delete -force $GenX::Param(OutFile)_popdens-dwellings-ratio.tif
+   gdalfile open FPOPDWERATIO write $GenX::Param(OutFile)_popdens-dwellings-ratio.tif GeoTiff
+   gdalband write RPOPDWERATIO FPOPDWERATIO
+   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-dwellings-ratio.tif was generated"
+
+   gdalfile close FSANDWICH FILEOUT FPOPDENS FPOPDWERATIO
+   gdalband free RSANDWICH RDWELLINGS
 }
 
 
