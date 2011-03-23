@@ -346,15 +346,23 @@ namespace eval UrbanX { } {
 
 # NOTE : les paths des fichiers suivants devront être modifiés lorsqu'il aura été décidé où ces fichiers seront localisés
    # Fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
+
    # NOTE : ce fichier ne sert que dans la proc UrbanX::PopDens2Builtup.  Il n'a pas besoin de contenir les champs SMOKEi.  Toutefois, il doit être découpé selon l'index NTS 50K.
    set Param(PopFile2006SMOKE) $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
-   # Pour IndustrX seulement : fichier contenant 1 polygone pour chaque province ou territoire du Canada
+   # UrbanX pourrait utiliser da2006_pop_labour.shp à la place, en changeant d'attribut
+
+   # Next path needs to be updated and added to GenX
+   set Param(Census2006File) /data/cmoex7/afsralx/StatCan2006/da2006_pop_labour.shp
+
+
+   # Pour IndustrX seulement : fichier contenant 1 polygone pour chaque province ou territoire du Canada - pourrait être déplacé dans IndustrX
    set Param(ProvincesGeom) $GenX::Path(StatCan)/Provinces_lcc-nad83.shp
 
    # Fichier contenant l'index NTS à l'échelle 1:50000
    # Attention : s'assurer qu'il s'agit bien de l'index ayant servi au découpage du fichier PopFile2006SMOKE
+# À déplacer dans IndustrX
    set Param(NTSFile) $GenX::Path(NTS)/decoupage50k_2.shp
-
+# À déplacer dans IndustrX
    #entité CanVec déterminant la bordure des polygones NTS 50K
    set Param(NTSLayer) { LI_1210009_2 }
 
@@ -1164,10 +1172,9 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::PopDens2Builtup { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
-   GenX::Log DEBUG "Reclassifying residential builtup areas using population density"
+   GenX::Log INFO "Reclassifying residential builtup areas using population density"
    variable Param
 
-   #récupération de genphysx_sandwich.tif
    GenX::Log DEBUG "Reading Sandwich file"
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
 
@@ -1305,6 +1312,167 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <UrbanX::Dwellings2Builtup>
+# Creation : March 2011 - Alexandre Leroux - CMC/CMOE
+# Revision :
+#
+# Goal     :
+#
+#
+# Parameters :
+#      <indexCouverture>      : index à appliquer à la référence UTMREF
+#
+# Return: output files :
+#
+#
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Dwellings2Builtup { indexCouverture } {
+   GenX::Procs ;# Adding the proc to the metadata log
+#   GenX::Log INFO "Reclassifying residential builtup areas using population density"
+   GenX::Log INFO "Calculating dwellings density"
+   variable Param
+
+   GenX::Log DEBUG "Reading Sandwich file"
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+
+   #récupération du fichier de données socio-économiques
+   GenX::Log DEBUG "Open and read the Canada-wide dissemination area polygons file"
+   set layer [lindex [ogrfile open SHAPE read $Param(Census2006File)] 0]
+   eval ogrlayer read VCENSUS $layer
+
+   #----- Selecting only the required StatCan polygons - next is only useful to improve the speed of the layer substraction
+   GenX::Log DEBUG "Select the appropriate dissemination area polygons"
+   set da_select [ogrlayer pick VCENSUS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
+   ogrlayer define VCENSUS -featureselect [list [list index # $da_select]]
+
+   #   clear la colonne POP_DENS pour les polygones de DA sélectionnés
+   ogrlayer clear VCENSUS FARMS
+
+# use un gdalband copy à la place ?
+   #création d'un fichier de rasterization des polygones de DA
+   gdalband create RDA $Param(Width) $Param(Height) 1 Int32
+   gdalband clear RDA -1
+   gdalband define RDA -georef UTMREF$indexCouverture
+
+   #rasterization des polygones de DA
+   GenX::Log DEBUG "Rasterize the selected dissemination area polygons"
+   gdalband gridinterp RDA VCENSUS FAST FEATURE_ID
+
+   #comptage des pixels de la residential area pour chaque polygone de DA : increment de la table et buildings generals (ponctuels et surfaciques)
+   GenX::Log DEBUG "Counting pixels for residential areas and general function buildings for each dissemination area polygon"
+   vexpr VCENSUS.FARMS tcount(VCENSUS.FARMS,ifelse (RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
+
+   #Calcul de la densité de population
+   GenX::Log INFO "Calculating population density values and adjustments if required"
+   foreach n $da_select {
+      # Get the total dwelling values
+      set pop [ogrlayer define VCENSUS -feature $n TDWELL]
+      #calcul de l'aire de la residential area à l'aide du nombre de pixels comptés précédemment
+      set nbrpixels [ogrlayer define VCENSUS -feature $n FARMS]
+      set area_pixels [expr ($nbrpixels*25.0/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
+      #calcul de la densité de population : dentité = pop/aire_pixels
+      if {$area_pixels != 0} {
+         set densite_pixels [expr $pop/$area_pixels]
+      } else {
+         set densite_pixels 0
+      }
+
+      #calcul de l'aire à l'aide de la géométrie vectorielle
+      set geom [ogrlayer define VCENSUS -geometry $n]
+      set area_vect [expr ([ogrgeometry stats $geom -area]/1000000.0)]
+      #calcul de la densité de population : dentité = pop/aire_vect
+      if {$area_vect != 0} {
+         set densite_vect [expr $pop/$area_vect]
+      } else {
+         set densite_vect 0
+      }
+
+      #comparaison entre les deux densités calculées
+      if {$densite_pixels != 0} {
+         set densite_div [expr ($densite_pixels/$densite_vect)]
+      } else {
+         set densite_div 0
+      }
+
+      #affectation de la densité appropriée
+      #Note : la densité est généralement plus précise lorsque calculée à partir des pixels.
+      #Toutefois, il arrive que certains endoits reçoivent des valeurs extrêmes puisque, notamment,
+      #les polygones de DA ne sont pas snappés avec les zones résidentielles, ce qui peut entraîner
+      #des cas où toute la population d'un polygone se retrouve concentrée sur 1 ou 2 pixels.
+      #Afin d'éviter ces problèmes, si le ratio entre la densité calculée à l'aide des pixels et la densité
+      #calculée à l'aide de la géométrie dépasse un seuil, nous conserverons la deuxième option, qui
+      #répartit la population sur l'ensemble du territoire plutôt que sur 1 ou 2 pixels, et la multiplions par
+      #2 pour tenir compte du fait que l'ensemble du polygones n'est probablement pas résidentiel
+      #(présence de parcs, de bâtiments non résidentiels, d'industries, etc.).  Le seuil choisi est de 20, ce
+      #qui signifie que 95% du polygone n'est pas recouvert par les entités residential area ou bâtiments de
+      #fonction générale.
+      if { $densite_div > 20} {
+         set densite_choisie [expr ($densite_vect * 2.0)]
+         GenX::Log DEBUG "Adjustment of population density for polygon ID $n"
+      } else {
+         set densite_choisie $densite_pixels
+      }
+      ogrlayer define VCENSUS -feature $n FARMS $densite_choisie
+   }
+
+   unset da_select
+
+   #Conversion de la densité de population en raster
+   GenX::Log DEBUG "Conversion of population density in a raster file"
+   gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
+   eval gdalband define RPOPDENS -georef UTMREF$indexCouverture
+   gdalband gridinterp RPOPDENS VCENSUS $Param(Mode) FARMS
+
+   #écriture du fichier genphysx_popdens.tif contenant la densité de population
+   file delete -force $GenX::Param(OutFile)_dwellings-density.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_dwellings-density.tif GeoTiff
+   gdalband write RPOPDENS FILEOUT
+   GenX::Log INFO "The file $GenX::Param(OutFile)_dwellings-density.tif was generated"
+
+   gdalfile close FILEOUT
+   ogrlayer free VCENSUS
+   ogrfile close SHAPE
+   gdalband free RDA
+
+   #Cookie cutting population density and setting SMOKE/TEB values
+   GenX::Log INFO "Cookie cutting population density and setting SMOKE/TEB values"
+   gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
+   gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
+   vexpr RTEMP RSANDWICH==218
+
+   if {$GenX::Param(SMOKE)!="" } {
+      #seuils de densité de population associés à SMOKE (IndustrX)
+      GenX::Log INFO "Applying thresholds for IndustrX"
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
+   } else {
+      #seuils de densité de population associés à TEB (UrbanX)
+      GenX::Log INFO "Applying thresholds for UrbanX"
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
+   }
+
+   #écriture du fichier genphysx_popdens-builtup.tif
+#   GenX::Log DEBUG "Generating output file, result of cookie cutting"
+#   file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
+#   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
+#   gdalband write RPOPDENSCUT FILEOUT
+#   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup.tif was generated"
+
+   gdalfile close FSANDWICH FILEOUT
+   gdalband free RSANDWICH RPOPDENS RTEMP RPOPDENSCUT
+}
+
+
+#----------------------------------------------------------------------------
 # Name     : <UrbanX::HeightGain>
 # Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
 #
@@ -1375,7 +1543,7 @@ proc UrbanX::HeightGain { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::BuildingHeight {indexCouverture } {
+proc UrbanX::BuildingHeight { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
    GenX::Log INFO "Cookie cutting building heights and adding gain"
@@ -1432,7 +1600,7 @@ proc UrbanX::BuildingHeight {indexCouverture } {
 # Remarks : WARNING, EOST DATA DOES NOT COVER ALL CANADA
 #
 #----------------------------------------------------------------------------
-proc UrbanX::EOSDvegetation {indexCouverture } {
+proc UrbanX::EOSDvegetation { indexCouverture } {
 # THIS PROC COULD PROBABLY BE DELETED - NOT USED BY SMOKE OR TEB
    variable Param
    variable Const
@@ -2054,6 +2222,7 @@ proc UrbanX::DeleteTempFiles { indexCouverture } {
    file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
    file delete -force $GenX::Param(OutFile)_Building-fraction.tif
    file delete -force $GenX::Param(OutFile)_Building-Z0Town.tif
+   file delete -force $GenX::Param(OutFile)_dwellings-density.tif
 }
 
 #----------------------------------------------------------------------------
@@ -2173,8 +2342,9 @@ proc UrbanX::Process { Coverage } {
 # BUG SPATIAL BUFFERS MAKE IT CRASH
 #   UrbanX::ChampsBuffers $Coverage
 
-   #----- Calculates the population density
-#   UrbanX::PopDens2Builtup $Coverage
+   #----- StatCan Census data processing
+#   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
+   UrbanX::Dwellings2Builtup $Coverage    ;# Calculates dwellings density
 
    #----- Calculates building heights from SRTM-DEM MINUS CDED
    #UrbanX::HeightGain $Coverage
@@ -2189,7 +2359,7 @@ proc UrbanX::Process { Coverage } {
 #   UrbanX::Priorities2TEB $Coverage
 
    #----- Computes TEB geometric parameters over on a 100m raster
-   UrbanX::TEBGeoParams $Coverage
+#   UrbanX::TEBGeoParams $Coverage
 
    #----- Optional outputs:
    #UrbanX::VegeMask
