@@ -1167,7 +1167,7 @@ proc UrbanX::ChampsBuffers {indexCouverture } {
 #             genphysx_popdens.tif
 #             genphysx_popdens-builtup.tif
 #
-# Remarks :
+# Remarks : see Census documentation on CMC's wiki
 #
 #----------------------------------------------------------------------------
 proc UrbanX::PopDens2Builtup { indexCouverture } {
@@ -1180,7 +1180,11 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
    #récupération du fichier de données socio-économiques
    GenX::Log DEBUG "Open and read the Canada-wide dissemination area polygons file."
-   set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006SMOKE)] 0]
+   if {$GenX::Param(SMOKE)!="" } {
+      set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006SMOKE)] 0]
+   } else {
+      set layer [lindex [ogrfile open SHAPE read $Param(Census2006File)] 0]
+   }
    eval ogrlayer read VPOPDENS $layer
 
    #----- Selecting only the required StatCan polygons - next is only useful to improve the speed of the layer substraction
@@ -1189,7 +1193,8 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    ogrlayer define VPOPDENS -featureselect [list [list index # $da_select]]
 
    #   clear la colonne POP_DENS pour les polygones de DA sélectionnés
-   ogrlayer clear VPOPDENS POP_DENS
+   # au lieu de POP_DENS, on peut utiliser n'importe quel attribut inutilisé
+   ogrlayer clear VPOPDENS CSDUID
 
    #création d'un fichier de rasterization des polygones de DA
    gdalband create RDA $Param(Width) $Param(Height) 1 Int32
@@ -1202,16 +1207,22 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
    #comptage des pixels de la residential area pour chaque polygone de DA : increment de la table et buildings generals (ponctuels et surfaciques)
    GenX::Log DEBUG "Counting pixels for residential areas and general function buildings for each dissemination area polygon."
-   vexpr VPOPDENS.POP_DENS tcount(VPOPDENS.POP_DENS,ifelse (RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
+   vexpr VPOPDENS.CSDUID tcount(VPOPDENS.CSDUID, ifelse(RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
 
    #Calcul de la densité de population
    GenX::Log INFO "Calculating population density values and adjustments if required"
    foreach n $da_select {
       #récupération de la valeur de population
-      set pop [ogrlayer define VPOPDENS -feature $n POP_NEW]
+      if {$GenX::Param(SMOKE)!="" } {
+         set pop [ogrlayer define VPOPDENS -feature $n POP_NEW]
+      } else  {
+         # Could use DAPOP2006 instead, but generates a few problems of missing data
+         set pop [ogrlayer define VPOPDENS -feature $n POP]
+      }
       #calcul de l'aire de la residential area à l'aide du nombre de pixels comptés précédemment
-      set nbrpixels [ogrlayer define VPOPDENS -feature $n POP_DENS]
-      set area_pixels [expr ($nbrpixels*25.0/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
+      set nbrpixels [ogrlayer define VPOPDENS -feature $n CSDUID]
+      set area_pixels [expr ($nbrpixels*pow($Param(Resolution),2)/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
+#      set area_pixels [expr ($nbrpixels*25.0/1000000.0)]
       #calcul de la densité de population : dentité = pop/aire_pixels
       if {$area_pixels != 0} {
          set densite_pixels [expr $pop/$area_pixels]
@@ -1254,7 +1265,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
       } else {
          set densite_choisie $densite_pixels
       }
-      ogrlayer define VPOPDENS -feature $n POP_DENS $densite_choisie
+      ogrlayer define VPOPDENS -feature $n CSDUID $densite_choisie
    }
 
    unset da_select
@@ -1263,7 +1274,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    GenX::Log DEBUG "Conversion of population density in a raster file."
    gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
    eval gdalband define RPOPDENS -georef UTMREF$indexCouverture
-   gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) POP_DENS
+   gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) CSDUID
 
    #écriture du fichier genphysx_popdens.tif contenant la densité de population
    file delete -force $GenX::Param(OutFile)_popdens.tif
@@ -1277,27 +1288,31 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    ogrfile close SHAPE
    gdalband free RDA
 
-   #Cookie cutting population density and setting SMOKE/TEB values
-   GenX::Log INFO "Cookie cutting population density and setting SMOKE/TEB values"
+   GenX::Log DEBUG "Cookie cutting population density and setting SMOKE/TEB values"
    gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
    gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
-   vexpr RTEMP RSANDWICH==218
+   vexpr RRESIDENTIAL RSANDWICH==218
+   gdalband free RSANDWICH
 
    if {$GenX::Param(SMOKE)!="" } {
       #seuils de densité de population associés à SMOKE (IndustrX)
       GenX::Log INFO "Applying thresholds for IndustrX"
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<100),1,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=4000),4,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS<100),1,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=4000),4,RPOPDENSCUT)
    } else {
-      #seuils de densité de population associés à TEB (UrbanX)
-      GenX::Log INFO "Applying thresholds for UrbanX"
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS<2000),210,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
-      vexpr RPOPDENSCUT ifelse((RTEMP && RPOPDENS>=25000),250,RPOPDENSCUT)
+      GenX::Log INFO "Creating residential area classes based on population density"
+      # RPOPDENSCUT should be integer... the floor doesn't do that, but 'int' doesn't work
+      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS<100000),round(200+RPOPDENS/1000),RPOPDENSCUT)
+      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=100000),299,RPOPDENSCUT)
+      # Seuils de densité de population associés à TEB (UrbanX)
+#      GenX::Log INFO "Applying thresholds for UrbanX"
+#      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS<2000),210,RPOPDENSCUT)
+#      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && (RPOPDENS>=2000 && RPOPDENS<5000)),220,RPOPDENSCUT)
+#      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=5000 && RPOPDENS<15000),230,RPOPDENSCUT)
+#      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=15000 && RPOPDENS<25000),240,RPOPDENSCUT)
+#      vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=25000),250,RPOPDENSCUT)
    }
 
    #écriture du fichier genphysx_popdens-builtup.tif
@@ -1308,7 +1323,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup.tif was generated"
 
    gdalfile close FSANDWICH FILEOUT
-   gdalband free RSANDWICH RPOPDENS RTEMP RPOPDENSCUT
+   gdalband free RPOPDENS RRESIDENTIAL RPOPDENSCUT
 }
 
 #----------------------------------------------------------------------------
@@ -1326,7 +1341,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 #
 #
 #
-# Remarks :
+# Remarks : see Census documentation on CMC's wiki
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Dwellings2Builtup { indexCouverture } {
@@ -1368,11 +1383,11 @@ proc UrbanX::Dwellings2Builtup { indexCouverture } {
    #Calcul de la densité de population
    GenX::Log INFO "Calculating dwellings density values and adjustments if required"
    foreach n $da_select {
-      # Get the total dwelling values
+      # Get the total dwelling values, there is TDWELL and DATDWELL20, but DATDWELL20 seems to have missing values
       set pop [ogrlayer define VCENSUS -feature $n TDWELL]
       #calcul de l'aire de la residential area à l'aide du nombre de pixels comptés précédemment
       set nbrpixels [ogrlayer define VCENSUS -feature $n FARMS]
-      set area_pixels [expr ($nbrpixels*25.0/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
+      set area_pixels [expr ($nbrpixels*pow($Param(Resolution),2)/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
       #calcul de la densité de population : dentité = pop/aire_pixels
       if {$area_pixels != 0} {
          set densite_pixels [expr $pop/$area_pixels]
@@ -1725,9 +1740,9 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
    vector free LUT
 
    vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
+# next rasters are missing
 #   vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
 #   vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
-# 3D buildings output is missing...
    # Rasters must now be closed otherwise we blow up memory for large cities
    gdalfile close FSANDWICH FPOPDENSCUT FCHAMPS FHAUTEURCLASS
    gdalband free RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS
@@ -2082,6 +2097,7 @@ proc UrbanX::TEBGeoParams { indexCouverture } {
          gdalfile close Z0TOWNFILE
       } else {
          GenX::Log INFO "Computing Z0_TOWN at $res\m with the MacDonald 1998 Model"
+         # Note: the ^ operator can be used in vexpr, but not in expr
          vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(4.43^(RBLDFRACTION*(-1.0))*(RBLDFRACTION - 1.0)))
          vexpr RZ0TOWN RBLDHAVG*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*exp( -1.0*((0.5*1.0*1.2/0.4^2*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*(RWALLOHOR/2.0)))^( -0.5))))
 
@@ -2324,8 +2340,9 @@ proc UrbanX::Process { Coverage } {
 #   UrbanX::ChampsBuffers $Coverage
 
    #----- StatCan Census data processing
-#   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
-   UrbanX::Dwellings2Builtup $Coverage    ;# Calculates dwellings density
+   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
+   # Next line is useless for the data we have coz dwellings are not at the DA level, see wiki
+   #UrbanX::Dwellings2Builtup $Coverage    ;# Calculates dwellings density
 
    #----- Calculates building heights from SRTM-DEM MINUS CDED
    #UrbanX::HeightGain $Coverage
