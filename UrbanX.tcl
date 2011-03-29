@@ -1924,6 +1924,9 @@ proc UrbanX::BuildingHeights2Raster { indexCouverture } {
    eval ogrlayer read LAYER $shp_layer
    gdalband gridinterp RHAUTEURBLD LAYER $Param(Mode) $Param(BuildingsHgtField)
 
+   GenX::Log INFO "All buildings shorter than 5m set to an height of 5m"
+   vexpr RHAUTEURBLD ifelse(RHAUTEURBLD<5,5,RHAUTEURBLD)
+
    ogrlayer free LAYER
    ogrfile close SHAPE
 
@@ -2332,7 +2335,8 @@ proc UrbanX::Process { Coverage } {
    #----- Vector building height processing - done only if data exists over the city
    if { $Param(BuildingsShapefile)!="" } {
 #      UrbanX::BuildingHeights2Raster $Coverage    ;# Rasterizes building heights
-#      UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
+      # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
+      #UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
    }
 
    #----- Creates the fields and building vicinity output using spatial buffers
@@ -2340,7 +2344,7 @@ proc UrbanX::Process { Coverage } {
 #   UrbanX::ChampsBuffers $Coverage
 
    #----- StatCan Census data processing
-   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
+#   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
    # Next line is useless for the data we have coz dwellings are not at the DA level, see wiki
    #UrbanX::Dwellings2Builtup $Coverage    ;# Calculates dwellings density
 
@@ -2351,10 +2355,10 @@ proc UrbanX::Process { Coverage } {
    #------EOSD Vegetation - ignore if LCC2000V is used
    #   UrbanX::EOSDvegetation $Coverage
    #------ Process LCC2000V vegetation
-#   UrbanX::LCC2000V $Coverage
+   UrbanX::LCC2000V $Coverage
 
    #----- Applies LUT to all processing results to generate TEB classes
-#   UrbanX::Priorities2TEB $Coverage
+   UrbanX::Priorities2TEB $Coverage
 
    #----- Computes TEB geometric parameters over on a 100m raster
 #   UrbanX::TEBGeoParams $Coverage
