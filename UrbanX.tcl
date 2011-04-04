@@ -42,19 +42,16 @@ namespace eval UrbanX { } {
    set Param(BuildingsShapefile)   "" ;# 2.5D buildings shapefile for a specific city
    set Param(BuildingsHgtField)     "" ;# Name of the height attribute of the 2.5D buildings shapefile
 
-   # Liste des entités CanVec qui doivent être rasterisées.
-   # Ces entités sont classés par ordre décroissant de priorité
-   # Note : les entités dont le nom commence par pp_ ne sont pas des entités originant de CanVec, mais plutôt des conséquences du post-traitement. Ces éléments sont inclus dans cette liste pour que leurs valeurs de priorités apparaisent dans la variable Param(Priorities), afin de faire la correspondance avec les valeurs de TEB et de SMOKE.
 
-# OLD NOW WRONG:   set Param(Entities) { HD_1140009_2 FO_1080069_2 SS_1320019_2 SS_1320029_2 SS_1320059_2 SS_1320039_2 BS_1370009_2 pp_BS_1370009_2 pp_BS_1370009_2 pp_BS_1370009_2 pp_BS_1370009_2 IC_1360039_2 LX_2070009_2 LX_2270009_2 LX_1000089_2 LX_2500009_2 LX_1000039_2 LX_2480009_2 LX_2200009_2 LX_2560009_2 LX_2260009_2 LX_1000019_2 LX_2490009_2 TR_1190009_2 VE_1240009_2 LX_1000049_2 LX_2510009_2 LX_2400009_2 IC_1350059_2 FO_1080059_2 LX_1000079_2 FO_1080039_2 FO_1080049_2 IC_1350039_2 IC_1350049_2 IC_1350029_2 IC_1350019_2 EN_1360049_2 IC_2360009_2 IC_2110009_2 IC_1360019_2 IC_1360029_2 EN_1360059_2 HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 SS_1320049_2 HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_TR_1190009_2 FO_1080029_1 HD_1470009_1 pp_HD_1470009_1 pp_HD_1470009_1 pp_HD_1470009_1 pp_HD_1470009_1 pp_HD_1470009_1 HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 BS_2310009_1 LX_1000079_1 LX_2420009_1 BS_2240009_1 pp_BS_2240009_1 LX_2280009_1 TR_1020009_1 TR_1760009_1 pp_TR_1760009_1 pp_TR_1760009_1 EN_1180009_1 LX_2460009_2 BS_2080009_2 BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_TR_1190009_2 FO_1080079_0 IC_1360039_0 LX_1000029_0 LX_2030009_0 LX_2500009_0 LX_1000039_0 LX_2480009_0 LX_2220009_0 LX_1000019_0 LX_2490009_0 LX_2400009_0 IC_1350039_0 IC_1350049_0 IC_2600009_0 pp_IC_2600009_0 EN_1360049_0 EN_1360059_0 TR_1190009_0 pp_TR_1190009_0 LX_1000069_0 IC_1360029_0 HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 BS_2530009_0 BS_2440009_0 BS_2080009_0 BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 BS_2000009_0 EN_2170009_0 pp_TR_1190009_0 BS_2060009_0 pp_BS_2060009_0- Fix pp_BS_2060009_0 pp_BS_2060009_0 pp_TR_1020009_1 pp_TR_1760009_1 }
-
-   set Param(Entities) { LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V LCC2000-V HD_1140009_2 FO_1080069_2 SS_1320019_2 SS_1320029_2 SS_1320059_2 SS_1320039_2 BS_1370009_2 pp_BS_1370009_2 pp_BS_1370009_2 pp_BS_1370009_2 pp_BS_1370009_2 IC_1360039_2 LX_2070009_2 LX_2270009_2 LX_1000089_2 LX_2500009_2 LX_1000039_2 LX_2480009_2 LX_2200009_2 LX_2560009_2 LX_2260009_2 LX_1000019_2 LX_2490009_2 TR_1190009_2 VE_1240009_2 LX_1000049_2 LX_2510009_2 LX_2400009_2 IC_1350059_2 FO_1080059_2 LX_1000079_2 FO_1080039_2 FO_1080049_2 IC_1350039_2 IC_1350049_2 IC_1350029_2 IC_1350019_2 EN_1360049_2 IC_2360009_2 IC_2110009_2 IC_1360019_2 IC_1360029_2 EN_1360059_2 HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 pp_HD_1480009_2 SS_1320049_2 HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 pp_HD_1460009_2 HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_HD_1450009_2 pp_TR_1190009_2 FO_1080029_1 HD_1470009_1 pp_HD_1470009_1 pp_HD_1470009_1 pp_HD_1470009_1 pp_HD_1470009_1 pp_HD_1470009_1 HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 pp_HD_1460009_1 HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 pp_HD_1450009_1 BS_2310009_1 LX_1000079_1 LX_2420009_1 BS_2240009_1 pp_BS_2240009_1 LX_2280009_1 TR_1020009_1 TR_1760009_1 pp_TR_1760009_1 pp_TR_1760009_1 EN_1180009_1 LX_2460009_2 BS_2080009_2 BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_BS_2010009_2 pp_TR_1190009_2 FO_1080079_0 IC_1360039_0 LX_1000029_0 LX_2030009_0 LX_2500009_0 LX_1000039_0 LX_2480009_0 LX_2220009_0 LX_1000019_0 LX_2490009_0 LX_2400009_0 IC_1350039_0 IC_1350049_0 IC_2600009_0 pp_IC_2600009_0 EN_1360049_0 EN_1360059_0 TR_1190009_0 pp_TR_1190009_0 LX_1000069_0 IC_1360029_0 HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 pp_HD_1460009_0 HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 pp_HD_1450009_0 BS_2530009_0 BS_2440009_0 BS_2080009_0 BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 pp_BS_2010009_0 BS_2000009_0 EN_2170009_0 pp_TR_1190009_0 BS_2060009_0 pp_BS_2060009_0 pp_BS_2060009_0 pp_BS_2060009_0 pp_TR_1020009_1 pp_TR_1760009_1 }
-
-   #LUT of priority values for the CanVec layers to be processed
-   #Les valeurs de priorité sont en ordre décroissant, et leur index dans la liste correspond à celui de l'entité qui leur est associée dans Param(Entities)
-   set Param(Priorities)           { 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 999 224 223 222 221 220 219 218 217 216 215 214 213 212 211 210 209 208 207 206 205 204 203 202 201 200 199 198 197 196 195 194 193 192 191 190 189 188 187 186 185 184 183 182 181 180 179 178 177 176 175 174 173 172 171 170 169 168 167 166 165 164 163 162 161 160 159 158 157 156 155 154 153 152 151 150 149 148 147 146 145 144 143 142 141 140 139 138 137 136 135 134 133 132 131 130 129 128 127 126 125 124 123 122 121 120 119 118 117 116 115 114 113 112 111 110 109 108 107 106 105 104 103 102 101 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 }
-
-# BACKUP TRASHABLE  set Param(Priorities)           { 224 223 222 221 220 219 218 217 216 215 214 213 212 211 210 209 208 207 206 205 204 203 202 201 200 199 198 197 196 195 194 193 192 191 190 189 188 187 186 185 184 183 182 181 180 179 178 177 176 175 174 173 172 171 170 169 168 167 166 165 164 163 162 161 160 159 158 157 156 155 154 153 152 151 150 149 148 147 146 145 144 143 142 141 140 139 138 137 136 135 134 133 132 131 130 129 128 127 126 125 124 123 122 121 120 119 118 117 116 115 114 113 112 111 110 109 108 107 106 105 104 103 102 101 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 }
+   #----- Directory where to find processing procs
+   set dir [info script]
+   while { ![catch { set dir [file normalize [file link $dir]] }] } {}
+   set dir [file dirname $dir]
+   source $dir/UrbanX-ClassesLUT.tcl
+   set Param(Entities) [UrbanX-ClassesLUT::SetParamEntities]
+   set Param(Priorities) [UrbanX-ClassesLUT::SetParamPriorities]
+   set Param(TEBClasses) [UrbanX-ClassesLUT::SetParamTEBClasses]
+#   source $dir/UrbanX-TEBParamsLUT.tcl
 
    # Layers from CanVec requiring postprocessing - aucun tri particulier nécessaire pour cette liste d'entités
    set Param(LayersPostPro)    { BS_1370009_2 BS_2010009_0 BS_2010009_2 BS_2060009_0 BS_2240009_1 BS_2310009_1 EN_1180009_1 HD_1450009_0 HD_1450009_1 HD_1450009_2 HD_1460009_0 HD_1460009_1 HD_1460009_2 HD_1470009_1 HD_1480009_2 IC_2600009_0 TR_1020009_1 TR_1190009_0 TR_1190009_2 TR_1760009_1 QC_TR_1760009_1 }
@@ -62,271 +59,6 @@ namespace eval UrbanX { } {
    set Param(WaterLayers)      { HD_1480009_2 } ;# Water layers from CanVec
 
    set Param(BufferLayers)     { BS_2010009_0 TR_1760009_1 } ;# Layers from CanVec required for buffer
-
-   # TEB Classes for CanVec. Ces valeurs sont associées aux entitées CanVec. Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT. La source des valeurs est le fichier UrbanX-LUT.xls
-   set Param(TEBClasses)         { 702
-704
-704
-704
-704
-707
-707
-707
-707
-711
-711
-713
-714
-714
-715
-715
-715
-722
-722
-722
-722
-722
-723
-723
-723
-723
-724
-724
-724
-725
-725
-725
-725
-725
-726
-902
-820
-840
-820
-840
-840
-210
-220
-230
-240
-250
-410
-320
-820
-820
-820
-520
-820
-520
-520
-450
-360
-520
-310
-810
-102
-530
-530
-840
-903
-330
-830
-830
-830
-830
-830
-830
-320
-410
-450
-410
-410
-360
-901
-901
-901
-901
-901
-440
-901
-901
-901
-901
-901
-840
-901
-901
-901
-830
-830
-830
-830
-830
-830
-830
-830
-440
-440
-830
-440
-440
-440
-320
-320
-410
-440
-440
-440
-830
-901
-901
-901
-901
-430
-901
-901
-901
-901
-830
-830
-830
-830
-830
-830
-830
-830
-440
-440
-830
-440
-440
-440
-320
-320
-410
-440
-440
-430
-330
-520
-450
-450
-350
-340
-330
-320
-310
-430
-164
-410
-100
-160
-130
-140
-130
-160
-140
-130
-130
-130
-130
-120
-100
-140
-150
-140
-130
-130
-170
-160
-110
-160
-130
-160
-310
-830
-410
-100
-520
-820
-520
-170
-530
-360
-520
-530
-830
-830
-830
-830
-150
-360
-310
-440
-130
-410
-901
-901
-901
-830
-830
-830
-830
-830
-830
-830
-830
-440
-440
-830
-440
-440
-440
-320
-320
-410
-440
-440
-420
-104
-410
-100
-160
-130
-140
-130
-160
-140
-130
-130
-130
-130
-120
-100
-140
-150
-140
-130
-130
-170
-160
-110
-160
-130
-160
-420
-420
-310
-420
-420
-420
-420
-350
-350
- }
-
-
-# BACKUP TRASHABLE   set Param(TEBClasses)         { 902 820 840 820 840 840 210 220 230 240 250 410 320 820 820 820 520 820 520 520 450 360 520 310 810 120 530 530 840 903 330 830 830 830 830 830 830 320 410 450 410 410 360 901 901 901 901 901 440 901 901 901 901 901 840 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 440 830 901 901 901 901 430 901 901 901 901 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 430 330 520 450 450 350 340 330 320 310 430 120 410 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 310 0 410 110 520 820 520 110 530 360 520 530 830 830 830 830 110 360 310 440 110 410 910 910 910 830 830 830 830 830 830 830 830 440 440 830 440 440 440 320 320 410 440 440 420 140 410 110 110 110 110 110 110 110 112 111 112 111 112 112 110 111 110 112 111 110 110 111 110 112 110 420 420 310 420 420 420 420 350 350 }
 
    # SMOKE Classes for CanVec
    # Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
@@ -346,11 +78,7 @@ namespace eval UrbanX { } {
 
 # NOTE : les paths des fichiers suivants devront être modifiés lorsqu'il aura été décidé où ces fichiers seront localisés
    # Fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
-
-   # NOTE : ce fichier ne sert que dans la proc UrbanX::PopDens2Builtup.  Il n'a pas besoin de contenir les champs SMOKEi.  Toutefois, il doit être découpé selon l'index NTS 50K.
    set Param(PopFile2006SMOKE) $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
-   # UrbanX pourrait utiliser da2006_pop_labour.shp à la place, en changeant d'attribut
-
    # Next path needs to be updated and added to GenX
    set Param(Census2006File) /data/cmoex7/afsralx/StatCan2006/da2006_pop_labour.shp
 
@@ -360,9 +88,9 @@ namespace eval UrbanX { } {
 
    # Fichier contenant l'index NTS à l'échelle 1:50000
    # Attention : s'assurer qu'il s'agit bien de l'index ayant servi au découpage du fichier PopFile2006SMOKE
-# À déplacer dans IndustrX
+   # À déplacer dans IndustrX
    set Param(NTSFile) $GenX::Path(NTS)/decoupage50k_2.shp
-# À déplacer dans IndustrX
+   # À déplacer dans IndustrX
    #entité CanVec déterminant la bordure des polygones NTS 50K
    set Param(NTSLayer) { LI_1210009_2 }
 
@@ -1728,7 +1456,7 @@ proc UrbanX::Priorities2TEB { indexCouverture } {
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
-   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+#   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
    gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V-LUT.tif]
 #   gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
 
@@ -1879,7 +1607,7 @@ proc UrbanX::CreateFSTDBand { Name Band } {
 #----------------------------------------------------------------------------
 proc UrbanX::TEB2FSTD { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
-   GenX::Log INFO "Converting TEB Classes raster to RPN fstd file"
+   GenX::Log INFO "Computing TEB parameters on the target RPN fstd grid"
 
    gdalband read BAND [gdalfile open FILE read $GenX::Param(OutFile)_TEB.tif]
 
@@ -2330,11 +2058,11 @@ proc UrbanX::Process { Coverage } {
    UrbanX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-#   UrbanX::Sandwich $Coverage
+   UrbanX::Sandwich $Coverage
 
    #----- Vector building height processing - done only if data exists over the city
    if { $Param(BuildingsShapefile)!="" } {
-#      UrbanX::BuildingHeights2Raster $Coverage    ;# Rasterizes building heights
+      UrbanX::BuildingHeights2Raster $Coverage    ;# Rasterizes building heights
       # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
       #UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
    }
@@ -2344,11 +2072,11 @@ proc UrbanX::Process { Coverage } {
 #   UrbanX::ChampsBuffers $Coverage
 
    #----- StatCan Census data processing
-#   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
+   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
    # Next line is useless for the data we have coz dwellings are not at the DA level, see wiki
    #UrbanX::Dwellings2Builtup $Coverage    ;# Calculates dwellings density
 
-   #----- Calculates building heights from SRTM-DEM MINUS CDED
+   #----- Calculates building heights from SRTM-DEM minus CDED - UNUSED
    #UrbanX::HeightGain $Coverage
    #UrbanX::BuildingHeight $Coverage
 
@@ -2361,12 +2089,15 @@ proc UrbanX::Process { Coverage } {
    UrbanX::Priorities2TEB $Coverage
 
    #----- Computes TEB geometric parameters over on a 100m raster
-#   UrbanX::TEBGeoParams $Coverage
+   UrbanX::TEBGeoParams $Coverage
 
-   #----- Optional outputs:
+   #----- Optional vegetation mask to smooth the edges
    #UrbanX::VegeMask
+
+   #----- Computing TEB parameters on the FSTD target grid
 #   UrbanX::TEB2FSTD $Coverage
 
+   #----- Deleting all UrbanX temporary files
 #   UrbanX::DeleteTempFiles $Coverage
 
    GenX::Log INFO "End of processing $Coverage with UrbanX"
