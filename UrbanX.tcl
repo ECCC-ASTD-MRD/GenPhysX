@@ -1542,89 +1542,95 @@ proc UrbanX::VegeMask { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::CreateFSTDBand>
-# Creation : date? - Alexandre Leroux - CMC/CMOE
+# Name     : <UrbanX::TEB2FSTD>
+# Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
 #
-# Goal     :
+# Goal     : Computing TEB parameters on the target RPN fstd grid
 #
 # Parameters :
-#   <Name>   :
-#   <Band>   :
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::CreateFSTDBand { Name Band } {
+proc UrbanX::TEB2FSTD { Grid } {
    GenX::Procs ;# Adding the proc to the metadata log
+   variable Param
+   GenX::Log INFO "Computing TEB parameters on the target RPN fstd grid: $GenX::Param(GridFile)"
 
-   set NI [gdalband define $Band -width]  ; # Number of X-grid points.
-   set NJ [gdalband define $Band -height] ; # Number of Y-grid points.
-   set NK 1                                  ; # Number of Z-grid points.
+   UrbanX::ReadTEBParamsLUT
 
-   #----- Create and define tictic and tactac grid coordinates.
-   fstdfield create TIC $NI 1 1
-   fstdfield create TAC 1 $NJ 1
-   fstdfield define TIC -GRTYP L 0 0 1.0 1.0
-   fstdfield define TAC -GRTYP L 0 0 1.0 1.0
-   fstdfield define TIC -DEET 0 -NPAS 0 -IP1 0 -IP2 0 -IP3 0 -ETIKET $Name -NOMVAR ">>"  -TYPVAR X
-   fstdfield define TAC -DEET 0 -NPAS 0 -IP1 0 -IP2 0 -IP3 0 -ETIKET $Name -NOMVAR "^^"  -TYPVAR X
-   fstdfield configure TIC -interpdegree NEAREST
-   fstdfield configure TAC -interpdegree NEAREST
+#   file delete -force $GenX::Param(OutFile)_aux.fst
+#   fstdfile open FSTDOUT write $GenX::Param(OutFile)_aux.fst
+# file already open...
+#fstdfile open GPXAUXFILE write $GenX::Param(OutFile)$GenX::Param(Process)_aux.fst
 
-   #----- Compute tictic grid coordinates.
-   for { set i 0 } { $i < $NI } { incr i } {
-      set ll [gdalband stats $Band -gridpoint $i 0]
-      set lon [lindex $ll 1]
-      set lon [expr $lon<0?$lon+360:$lon]
-      fstdfield stats TIC -gridvalue $i 0 $lon
+   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
+   gdalfile close FTEB
+
+   # Getting the list of TEB parameters to average
+   set tebparams {}
+   set i 1 ;# 1 to ignore UX
+   while { [lindex $Param(xlsTEBParams) $i 0 ] !=""  } {
+      lappend tebparams [lindex $Param(xlsTEBParams) $i 0 ]
+      incr i
+   }
+   GenX::Log DEBUG "TEB parameters to average: $tebparams"
+
+   set i 1
+   foreach tebparam $tebparams {
+      GenX::Log INFO "Averaging TEB parameter $tebparam over target grid"
+
+      # Pushing the TEB parameter values to the 5m raster
+      vector create LUT
+      vector dim LUT { FROM TO }
+      vector set LUT.FROM [lindex $Param(xlsTEBParams) 0]
+      vector set LUT.TO   [lindex $Param(xlsTEBParams) $i]
+      vexpr RTEBPARAM lut(RTEB,LUT.FROM,LUT.TO)
+# example:     vexpr RHAUTEURCLASS ifelse(RHAUTEURWMASKPROJ>=30,lut(RSANDWICH,LUT.FROM,LUT.TO),RHAUTEURCLASS)
+      vector free LUT
+      incr i
+
+      fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
+      fstdfield define $Grid -NOMVAR $tebparam
+      fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
    }
 
-   #----- Compute tactac grid coordinates.
-   for { set j 0 } { $j< $NJ } { incr j } {
-      set ll [gdalband stats $Band -gridpoint 0 $j ]
-      fstdfield stats TAC -gridvalue 0 $j [lindex $ll 0]
-   }
 
-   fstdfield create $Name $NI $NJ $NK Int32
-   fstdfield define $Name -DEET 0 -NPAS 0 -IP1 0 -IP2 0 -IP3 0 -ETIKET $Name -NOMVAR GRID -TYPVAR X -IG1 0 -IG2 0 -IG3 0 -IG4 0 -GRTYP Z
-   fstdfield define $Name -positional TIC TAC
+   gdalband free RTEB RTEBPARAM
+
+# delete the next block
+#   fstdfield gridinterp GRID BAND
+#   fstdfield define GRID -NOMVAR UG
+#   fstdfield write TIC 1 -32 True
+#   fstdfield write TAC 1 -32 True
+#   fstdfield write GRID 1 -16 True $GenX::Param(Compress)
+
+   GenX::Log INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
 }
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::TEB2FSTD>
-# Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
+# Name     : <UrbanX::ReadTEBParamsLUT>
+# Creation : April 2011 - Alexandre Leroux - CMC/CMOE
 #
-# Goal     :
+# Goal     : Reading the TEB parameters LUT exported from the xls file
 #
 # Parameters :
 #
 # Return:
 #
-# Remarks : Can't work with files over 128 MEGS (e.g. MTL, VAN, TOR)
+# Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::TEB2FSTD { indexCouverture } {
+proc UrbanX::ReadTEBParamsLUT { } {
    GenX::Procs ;# Adding the proc to the metadata log
-   GenX::Log INFO "Computing TEB parameters on the target RPN fstd grid"
+   variable Param
+   GenX::Log INFO "Reading the TEB parameters LUT exported from the xls file"
 
-   gdalband read BAND [gdalfile open FILE read $GenX::Param(OutFile)_TEB.tif]
+# for testing purposes
+   set Param(xlsTEBParams) { { UX 100 310 810 901 } { AA 5 5 5 5 } { BB 4 4 4 4 } { CC 3 3 3 3 } }
 
-   UrbanX::CreateFSTDBand GRID BAND
-
-   file delete -force $GenX::Param(OutFile)_TEB.fstd
-   fstdfile open 1 write $GenX::Param(OutFile)_TEB.fstd
-
-# The following lines crash
-   fstdfield gridinterp GRID BAND
-   fstdfield define GRID -NOMVAR UG
-   fstdfield write TIC 1 -32 True
-   fstdfield write TAC 1 -32 True
-   fstdfield write GRID 1 -16 True $GenX::Param(Compress)
-
-   fstdfile close 1
-   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB.fstd was generated"
 }
 
 #----------------------------------------------------------------------------
@@ -1715,11 +1721,11 @@ proc UrbanX::3DBuildings2Sandwich { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::TEBGeoParams { indexCouverture } {
+proc UrbanX::TEBGeoParams { indexCouverture res } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
 
-   set res 100 ;# Aggretation spatial resolution, in meters
+# DELETE    set res 100 ;# Aggretation spatial resolution, in meters
    set resdeg [expr ($res/$Param(Deg2M))] ;# in degrees
    GenX::Log INFO "Computing TEB geometric parameters on a $res\m raster"
 
@@ -2033,7 +2039,7 @@ proc UrbanX::Utilitaires { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Process { Coverage } {
+proc UrbanX::Process { Coverage Grid } {
 
    GenX::Procs CANVEC StatCan EOSD
    GenX::Log INFO "Beginning of UrbanX"
@@ -2058,11 +2064,11 @@ proc UrbanX::Process { Coverage } {
    UrbanX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-   UrbanX::Sandwich $Coverage
+#   UrbanX::Sandwich $Coverage
 
    #----- Vector building height processing - done only if data exists over the city
    if { $Param(BuildingsShapefile)!="" } {
-      UrbanX::BuildingHeights2Raster $Coverage    ;# Rasterizes building heights
+#      UrbanX::BuildingHeights2Raster $Coverage    ;# Rasterizes building heights
       # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
       #UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
    }
@@ -2072,7 +2078,7 @@ proc UrbanX::Process { Coverage } {
 #   UrbanX::ChampsBuffers $Coverage
 
    #----- StatCan Census data processing
-   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
+#   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
    # Next line is useless for the data we have coz dwellings are not at the DA level, see wiki
    #UrbanX::Dwellings2Builtup $Coverage    ;# Calculates dwellings density
 
@@ -2083,22 +2089,24 @@ proc UrbanX::Process { Coverage } {
    #------EOSD Vegetation - ignore if LCC2000V is used
    #   UrbanX::EOSDvegetation $Coverage
    #------ Process LCC2000V vegetation
-   UrbanX::LCC2000V $Coverage
+#   UrbanX::LCC2000V $Coverage
 
    #----- Applies LUT to all processing results to generate TEB classes
-   UrbanX::Priorities2TEB $Coverage
+#   UrbanX::Priorities2TEB $Coverage
 
-   #----- Computes TEB geometric parameters over on a 100m raster
-   UrbanX::TEBGeoParams $Coverage
+   #----- Computes TEB geometric parameters over on a smaller raster, second arguement is the aggregation spatial resolution in meters
+#   UrbanX::TEBGeoParams $Coverage 100
 
    #----- Optional vegetation mask to smooth the edges
    #UrbanX::VegeMask
 
    #----- Computing TEB parameters on the FSTD target grid
-#   UrbanX::TEB2FSTD $Coverage
+   UrbanX::TEB2FSTD $Grid
 
    #----- Deleting all UrbanX temporary files
 #   UrbanX::DeleteTempFiles $Coverage
 
    GenX::Log INFO "End of processing $Coverage with UrbanX"
+
+# GenPhysX.tcl -urban MONTREAL -gridfile mtl_geophy_URB_548x419.std -result MONTREAL
 }

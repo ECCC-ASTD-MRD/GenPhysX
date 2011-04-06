@@ -236,7 +236,7 @@ proc GenX::Process { Grid } {
 
       #----- Urban parameters
       if { $Param(Urban)!="" } {
-         UrbanX::Process $Param(Urban)
+         UrbanX::Process $Param(Urban) $Grid
          #UrbanPhysX::Cover $Grid
       }
 
