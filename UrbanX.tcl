@@ -1559,79 +1559,44 @@ proc UrbanX::TEB2FSTD { Grid } {
    variable Param
    GenX::Log INFO "Computing TEB parameters on the target RPN fstd grid: $GenX::Param(GridFile)"
 
-   UrbanX::ReadTEBParamsLUT
+   GenX::Log DEBUG "Reading the TEB parameters LUT exported from the xls file"
+   set csvfile [open doc/TEB-Params_LUT.csv r]
 
-#   file delete -force $GenX::Param(OutFile)_aux.fst
-#   fstdfile open FSTDOUT write $GenX::Param(OutFile)_aux.fst
-# file already open...
-#fstdfile open GPXAUXFILE write $GenX::Param(OutFile)$GenX::Param(Process)_aux.fst
+   vector create CSVTEBPARAMS
+
+   # setting the dimensions of the vector
+   gets $csvfile head
+   set head [split $head ,]
+   vector dim CSVTEBPARAMS $head
+
+   while { ![eof $csvfile] } {
+      gets $csvfile line
+      if { $line!="" } {
+         set line [split $line ,]
+         vector append CSVTEBPARAMS $line
+      }
+   }
 
    gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
    gdalfile close FTEB
 
-   # Getting the list of TEB parameters to average
-   set tebparams {}
-   set i 1 ;# 1 to ignore UX
-   while { [lindex $Param(xlsTEBParams) $i 0 ] !=""  } {
-      lappend tebparams [lindex $Param(xlsTEBParams) $i 0 ]
-      incr i
-   }
-   GenX::Log DEBUG "TEB parameters to average: $tebparams"
-
-   set i 1
-   foreach tebparam $tebparams {
+   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {
       GenX::Log INFO "Averaging TEB parameter $tebparam over target grid"
 
       # Pushing the TEB parameter values to the 5m raster
-      vector create LUT
-      vector dim LUT { FROM TO }
-      vector set LUT.FROM [lindex $Param(xlsTEBParams) 0]
-      vector set LUT.TO   [lindex $Param(xlsTEBParams) $i]
-      vexpr RTEBPARAM lut(RTEB,LUT.FROM,LUT.TO)
-# example:     vexpr RHAUTEURCLASS ifelse(RHAUTEURWMASKPROJ>=30,lut(RSANDWICH,LUT.FROM,LUT.TO),RHAUTEURCLASS)
-      vector free LUT
-      incr i
+      vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.TEB_Class,CSVTEBPARAMS.$tebparam)
+      gdalband stats RTEBPARAM -nodata -9999
 
       fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
       fstdfield define $Grid -NOMVAR $tebparam
       fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
    }
 
-
-   gdalband free RTEB RTEBPARAM
-
-# delete the next block
-#   fstdfield gridinterp GRID BAND
-#   fstdfield define GRID -NOMVAR UG
-#   fstdfield write TIC 1 -32 True
-#   fstdfield write TAC 1 -32 True
-#   fstdfield write GRID 1 -16 True $GenX::Param(Compress)
-
    GenX::Log INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
+   vector free CSVTEBPARAMS
+   gdalband free RTEB RTEBPARAM
 }
 
-#----------------------------------------------------------------------------
-# Name     : <UrbanX::ReadTEBParamsLUT>
-# Creation : April 2011 - Alexandre Leroux - CMC/CMOE
-#
-# Goal     : Reading the TEB parameters LUT exported from the xls file
-#
-# Parameters :
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc UrbanX::ReadTEBParamsLUT { } {
-   GenX::Procs ;# Adding the proc to the metadata log
-   variable Param
-   GenX::Log INFO "Reading the TEB parameters LUT exported from the xls file"
-
-# for testing purposes
-   set Param(xlsTEBParams) { { UX 100 310 810 901 } { AA 5 5 5 5 } { BB 4 4 4 4 } { CC 3 3 3 3 } }
-
-}
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::BuildingHeights2Raster>
