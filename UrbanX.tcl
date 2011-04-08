@@ -1032,6 +1032,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    } else {
       GenX::Log INFO "Creating residential area classes based on population density"
       # RPOPDENSCUT should be integer... the floor doesn't do that, but 'int' doesn't work
+# try with expr int(x)
       vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS<100000),round(200+RPOPDENS/1000),RPOPDENSCUT)
       vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=100000),299,RPOPDENSCUT)
       # Seuils de densité de population associés à TEB (UrbanX)
@@ -1559,7 +1560,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    variable Param
    GenX::Log INFO "Computing TEB parameters on the target RPN fstd grid: $GenX::Param(GridFile)"
 
-   GenX::Log DEBUG "Reading the TEB parameters LUT exported from the xls file"
+   GenX::Log DEBUG "Reading the TEB parameters LUT in csv exported from the TEB-Params_LUT.xls file"
    set csvfile [open doc/TEB-Params_LUT.csv r]
 
    vector create CSVTEBPARAMS
@@ -1576,25 +1577,61 @@ proc UrbanX::TEB2FSTD { Grid } {
          vector append CSVTEBPARAMS $line
       }
    }
+   close $csvfile
 
    gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
    gdalfile close FTEB
 
    foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {
-      GenX::Log INFO "Averaging TEB parameter $tebparam over target grid"
-
-      # Pushing the TEB parameter values to the 5m raster
+      GenX::Log DEBUG "Copying the $tebparam values to the 5m raster with LUT"
       vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.TEB_Class,CSVTEBPARAMS.$tebparam)
-      gdalband stats RTEBPARAM -nodata -9999
 
+      set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
+      set ip1 [expr int($ip1)] ;# IP1 must be an integer
+
+      # Fixing Etiket (NOMVAR) names from unique values to their RPN value
+      set ip1_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
+      set ip1_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
+      if { [lsearch $ip1_5lettres $tebparam ] !=-1} {
+         set tebparam [lindex $ip1_fixed [lsearch $ip1_5lettres $tebparam]]
+      }
+
+      GenX::Log INFO "Averaging TEB parameter $tebparam (IP1=$ip1) values over target grid"
+      gdalband stats RTEBPARAM -nodata -9999
       fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
-      fstdfield define $Grid -NOMVAR $tebparam
+
+      fstdfield define $Grid -NOMVAR $tebparam -IP1 $ip1
       fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
    }
-
-   GenX::Log INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
    vector free CSVTEBPARAMS
    gdalband free RTEB RTEBPARAM
+
+   fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
+
+   # Building height min computation
+   GenX::Log INFO "Computing geometric Building Height Minimum HMIN (IP1=0) values over target grid"
+   fstdfield gridinterp $Grid BLDHFIELD MINIMUM
+   fstdfield define $Grid -NOMVAR HMIN -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+
+   # Wall-O-Hor calculations
+   GenX::Log INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
+   # WALL-O-HOR formulae provided by Sylvie Leroyer
+   vexpr REZ (ddx($Grid)+ddy($Grid))/2  ;# spatial resolution in meters of the target grid
+   vexpr WHORFIELD BLDHFIELD*(2.0/REZ^2)*(sqrt(BLDFFIELD*REZ^2))
+   fstdfield define WHORFIELD -NOMVAR WHOR -IP1 0
+   fstdfield write WHORFIELD GPXAUXFILE -32 True $GenX::Param(Compress)
+
+   # Z0_TOWN calculations
+   GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN Z0TW (IP1=0) values with the MacDonald 1998 Model over target grid"
+   vexpr DISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD-1.0))) ;# Computing Displacement height
+   vexpr $Grid BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))
+   fstdfield define $Grid -NOMVAR Z0TW -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield free BLDHFIELD BLDFFIELD WHORFIELD REZ
+
+   GenX::Log INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
 }
 
 
@@ -1690,7 +1727,6 @@ proc UrbanX::TEBGeoParams { indexCouverture res } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
 
-# DELETE    set res 100 ;# Aggretation spatial resolution, in meters
    set resdeg [expr ($res/$Param(Deg2M))] ;# in degrees
    GenX::Log INFO "Computing TEB geometric parameters on a $res\m raster"
 
