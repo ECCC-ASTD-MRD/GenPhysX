@@ -1602,6 +1602,23 @@ proc UrbanX::TEB2FSTD { Grid } {
 
       fstdfield define $Grid -NOMVAR $tebparam -IP1 $ip1
       fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+
+      if { $tebparam == "BLDH"} {
+#         gdalband free RTEB ;# to avoid a real Memory fault
+         # Building height variance computation
+#         GenX::Log INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid"
+puts AAA
+#         fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+puts BBB
+#         fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD True
+puts CCC
+#         fstdfield define $Grid -NOMVAR HVAR -IP1 0
+#         fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+puts DDD
+#         fstdfield free BLDHFIELD
+#         gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif] ;# reopening since closed for memory purposes
+#         gdalfile close FTEB
+      }
    }
    vector free CSVTEBPARAMS
    gdalband free RTEB RTEBPARAM
@@ -1609,10 +1626,25 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
 
+# résultat des prochaines lignes non validé
+   # Overwriting to minimum building height
+   GenX::Log INFO "Overwriting minimum building height average (BLDH) to 0.5m"
+   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
+   vexpr $Grid ifelse(((BLDFFIELD==0) && (PAVFFIELD!=0)),0.5,BLDHFIELD)
+   fstdfield define $Grid -NOMVAR BLDH -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield free PAVFFIELD
+
    # Building height min computation
-   GenX::Log INFO "Computing geometric Building Height Minimum HMIN (IP1=0) values over target grid"
+   GenX::Log INFO "Computing Building Height Minimum HMIN (IP1=0) values over target grid"
    fstdfield gridinterp $Grid BLDHFIELD MINIMUM
    fstdfield define $Grid -NOMVAR HMIN -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+
+   # Building height max computation
+   GenX::Log INFO "Computing Building Height Maximum HMAX (IP1=0) values over target grid"
+   fstdfield gridinterp $Grid BLDHFIELD MAXIMUM
+   fstdfield define $Grid -NOMVAR HMAX -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
    # Wall-O-Hor calculations
