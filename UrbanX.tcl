@@ -1612,25 +1612,34 @@ proc UrbanX::TEB2FSTD { Grid } {
    GenX::Log INFO "Overwriting areas without any TEB class to \"nodata\""
    vexpr RTEB ifelse(RTEB==0,-9999,RTEB)
 
-   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {
-#   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 4 4]
+#   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end]
+   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 3 3] {
       GenX::Log DEBUG "Copying the $tebparam values to the 5m raster with LUT"
       vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.TEB_Class,CSVTEBPARAMS.$tebparam)
+
+# for debugging purposes, writing TEB parameter values at 5m in a file
+gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the write!
+file delete -force $GenX::Param(OutFile)_TEB-$tebparam.tif
+gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB-$tebparam.tif GeoTiff
+gdalband write RTEBPARAM FILEOUT
+gdalfile close FILEOUT
+GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved for debugging purposes"
+
 
       set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
       set ip1 [expr int($ip1)] ;# IP1 must be an integer
 
-      # Fixing Etiket (NOMVAR) names from unique values to their RPN value
-      set ip1_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
-      set ip1_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
-      if { [lsearch $ip1_5lettres $tebparam ] !=-1} {
-         set tebparam [lindex $ip1_fixed [lsearch $ip1_5lettres $tebparam]]
+      # Fixing NOMVAR names from unique values to their RPN value
+      set nomvar_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
+      set nomvar_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
+      if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
+         set tebparam [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
       }
 
       GenX::Log INFO "Averaging TEB parameter $tebparam (IP1=$ip1) values over target grid"
-      gdalband stats RTEBPARAM -nodata -9999
-      fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
 
+#      gdalband stats RTEBPARAM -nodata -9999   ;# If this is done before the gdalband write, the line crashes
+      fstdfield gridinterp $Grid RTEBPARAM AVERAGE True ;# does not work with gdalband, get 'invalid band' error
       fstdfield define $Grid -NOMVAR $tebparam -IP1 $ip1
       fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
@@ -1638,7 +1647,7 @@ proc UrbanX::TEB2FSTD { Grid } {
         # Building height variance computation
          set memoryrequired [expr 5*$Param(Width)*$Param(Height)*4/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct
          if { $memoryrequired > 1600 } {
-            GenX::Log WARNING "Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid. Memory requirements over $memoryrequired megs"
+            GenX::Log WARNING "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid"
          } else {
             GenX::Log INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid"
             gdalband free RTEB ;# to reduce possibilities of a real memory fault
@@ -1664,9 +1673,10 @@ proc UrbanX::TEB2FSTD { Grid } {
          fstdfield define $Grid -NOMVAR HMAX -IP1 0
          fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
       }
+      gdalband free RTEBPARAM
    }
    vector free CSVTEBPARAMS
-   gdalband free RTEB RTEBPARAM
+   gdalband free RTEB
 
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
