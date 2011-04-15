@@ -73,19 +73,19 @@ namespace eval UrbanX { } {
 # NOTE : les paths des fichiers suivants devront être modifiés lorsqu'il aura été décidé où ces fichiers seront localisés
    # Fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
    set Param(PopFile2006SMOKE) $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
-   # Next path needs to be updated and added to GenX
+# Next path needs to be updated and added to GenX
    set Param(Census2006File) /data/cmoex7/afsralx/StatCan2006/da2006_pop_labour.shp
 
+# Next file should be moved to the data repertory with $GenX::Path()
+   set Param(TEBParamsLUTCSVFile) doc/TEB-Params_LUT.csv
 
    # Pour IndustrX seulement : fichier contenant 1 polygone pour chaque province ou territoire du Canada - pourrait être déplacé dans IndustrX
    set Param(ProvincesGeom) $GenX::Path(StatCan)/Provinces_lcc-nad83.shp
 
-   # Fichier contenant l'index NTS à l'échelle 1:50000
+   # À déplacer dans IndustrX - Fichier contenant l'index NTS à l'échelle 1:50000
    # Attention : s'assurer qu'il s'agit bien de l'index ayant servi au découpage du fichier PopFile2006SMOKE
-   # À déplacer dans IndustrX
    set Param(NTSFile) $GenX::Path(NTS)/decoupage50k_2.shp
-   # À déplacer dans IndustrX
-   #entité CanVec déterminant la bordure des polygones NTS 50K
+   # À déplacer dans IndustrX - entité CanVec déterminant la bordure des polygones NTS 50K
    set Param(NTSLayer) { LI_1210009_2 }
 
    # Vector 1: LCC2000 classes, vector 2: SMOKE LUT by Lucie in October 2010, vector 3: UrbanX LUT by Alex in February 2011
@@ -142,11 +142,11 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          set Param(Lat1)    45.70
          set Param(Lon0)   -73.98
          set Param(Lat0)    45.30
-#delete
-#set Param(Lon1)   -73.55
-#set Param(Lat1)    45.50
-#set Param(Lon0)   -73.58
-#set Param(Lat0)    45.45
+# For testing purposes, small region near carrière Miron (overwrited if -gridfile specified)
+set Param(Lon1)   -73.60
+set Param(Lat1)    45.57
+set Param(Lon0)   -73.65
+set Param(Lat0)    45.50
          set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Montreal/bat_2d_st.shp
          set Param(BuildingsHgtField) hauteur
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/mtl_dnec_-_srtm_utm5m_cropped
@@ -323,12 +323,13 @@ proc UrbanX::AreaDefine { Coverage Grid } {
 
    if { $GenX::Param(GridFile)!="" } {
       GenX::Log INFO "Using spatial extent of the $GenX::Param(GridFile) file"
-# this is wrong since it's not the real extent that is retrieved
       set limits [georef limit [fstdfield define $Grid -georef]]
       set Param(Lat0) [lindex $limits 0]
       set Param(Lon0) [lindex $limits 1]
       set Param(Lat1) [lindex $limits 2]
       set Param(Lon1) [lindex $limits 3]
+   } else {
+      GenX::Log ERROR "You NEED to specify -gridfile in order to generate $Param(OutFile)_aux.fst"
    }
 }
 
@@ -1072,8 +1073,8 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    GenX::Log DEBUG "Generating output file, result of the cookie cutting"
    file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
-#   gdalband write RPOPDENSCUT FILEOUT
-   gdalband write TEST1 FILEOUT
+   gdalband write RPOPDENSCUT FILEOUT
+#   gdalband write TEST1 FILEOUT
    GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup.tif was generated"
 
    gdalfile close FSANDWICH FILEOUT
@@ -1587,11 +1588,12 @@ proc UrbanX::TEB2FSTD { Grid } {
    GenX::Log INFO "Computing TEB parameters on the target RPN fstd grid: $GenX::Param(GridFile)"
 
    GenX::Log DEBUG "Reading the TEB parameters LUT in csv exported from the TEB-Params_LUT.xls file"
-   set csvfile [open doc/TEB-Params_LUT.csv r]
+   set csvfile [open $Param(TEBParamsLUTCSVFile) r]
+#   set csvfile [open doc/TEB-Params_LUT.csv r]
 
    vector create CSVTEBPARAMS
 
-   # setting the dimensions of the vector
+   # Setting the dimensions of the vector
    gets $csvfile head
    set head [split $head ,]
    vector dim CSVTEBPARAMS $head
@@ -1612,19 +1614,22 @@ proc UrbanX::TEB2FSTD { Grid } {
    GenX::Log INFO "Overwriting areas without any TEB class to \"nodata\""
    vexpr RTEB ifelse(RTEB==0,-9999,RTEB)
 
+   fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
+
 #   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end]
-   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 3 3] {
+   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 4] {
       GenX::Log DEBUG "Copying the $tebparam values to the 5m raster with LUT"
       vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.TEB_Class,CSVTEBPARAMS.$tebparam)
 
-# for debugging purposes, writing TEB parameter values at 5m in a file
-gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the write!
-file delete -force $GenX::Param(OutFile)_TEB-$tebparam.tif
-gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB-$tebparam.tif GeoTiff
-gdalband write RTEBPARAM FILEOUT
-gdalfile close FILEOUT
-GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved for debugging purposes"
+      gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
+      fstdfield clear $Grid 0
 
+      # For debugging purposes, writing TEB parameter values at 5m in a file
+      #file delete -force $GenX::Param(OutFile)_TEB-$tebparam.tif
+      #gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB-$tebparam.tif GeoTiff
+      #gdalband write RTEBPARAM FILEOUT
+      #gdalfile close FILEOUT
+      #GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved for debugging purposes"
 
       set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
       set ip1 [expr int($ip1)] ;# IP1 must be an integer
@@ -1638,8 +1643,7 @@ GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved 
 
       GenX::Log INFO "Averaging TEB parameter $tebparam (IP1=$ip1) values over target grid"
 
-#      gdalband stats RTEBPARAM -nodata -9999   ;# If this is done before the gdalband write, the line crashes
-      fstdfield gridinterp $Grid RTEBPARAM AVERAGE True ;# does not work with gdalband, get 'invalid band' error
+      fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
       fstdfield define $Grid -NOMVAR $tebparam -IP1 $ip1
       fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
@@ -1652,6 +1656,7 @@ GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved 
             GenX::Log INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid"
             gdalband free RTEB ;# to reduce possibilities of a real memory fault
             fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+            fstdfield clear $Grid 0
             fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD True
             fstdfield define $Grid -NOMVAR HVAR -IP1 0
             fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
@@ -1663,12 +1668,14 @@ GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved 
 
          # Building height min computation
          GenX::Log INFO "Computing Building Height Minimum HMIN (IP1=0) values over target grid"
+         fstdfield clear $Grid 0
          fstdfield gridinterp $Grid RTEBPARAM MINIMUM
          fstdfield define $Grid -NOMVAR HMIN -IP1 0
          fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
          # Building height max computation
          GenX::Log INFO "Computing Building Height Maximum HMAX (IP1=0) values over target grid"
+         fstdfield clear $Grid 0
          fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
          fstdfield define $Grid -NOMVAR HMAX -IP1 0
          fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
@@ -1681,25 +1688,36 @@ GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved 
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
 
-# résultat des prochaines lignes non validé
+# This is incomplete... sylvie and nathalie want something more more complext
    # Overwriting to minimum building height
-   GenX::Log INFO "Overwriting minimum building height average (BLDH) to 0.5m"
-   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
-   vexpr $Grid ifelse(((BLDFFIELD==0) && (PAVFFIELD!=0)),3,BLDHFIELD)
-   fstdfield define $Grid -NOMVAR BLDH -IP1 0
+#   GenX::Log INFO "Overwriting minimum building height average (BLDH) to 3m"
+#   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
+#   fstdfield clear $Grid 0
+#   vexpr $Grid ifelse(((BLDFFIELD==0) && (PAVFFIELD!=0)),3,BLDHFIELD)
+#   fstdfield define $Grid -NOMVAR BLDH -IP1 0
+#   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+
+
+   GenX::Log INFO "Computing SUMF: sum of VEGF, BLDF and PAVF, for validation purposes"
+   fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGFF"
+   fstdfield clear $Grid 0
+   vexpr $Grid VEGFFIELD+BLDFFIELD+PAVFFIELD
+   fstdfield define $Grid -NOMVAR SUMF -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
-   fstdfield free PAVFFIELD
+   fstdfield free PAVFFIELD VEGFFIELD
 
    # Wall-O-Hor calculations
    GenX::Log INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
+   fstdfield clear $Grid 0
    # WALL-O-HOR formulae provided by Sylvie Leroyer
-   vexpr REZ (ddx($Grid)+ddy($Grid))/2  ;# spatial resolution in meters of the target grid
+   vexpr REZ (ddx($Grid)+ddy($Grid))/2  ;# spatial resolution of the target grid in meters
    vexpr WHORFIELD BLDHFIELD*(2.0/REZ^2)*(sqrt(BLDFFIELD*REZ^2))
    fstdfield define WHORFIELD -NOMVAR WHOR -IP1 0
    fstdfield write WHORFIELD GPXAUXFILE -32 True $GenX::Param(Compress)
 
    # Z0_TOWN calculations
    GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN Z0TW (IP1=0) values with the MacDonald 1998 Model over target grid"
+   fstdfield clear $Grid 0
    vexpr DISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD-1.0))) ;# Computing Displacement height
    vexpr $Grid BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))
    fstdfield define $Grid -NOMVAR Z0TW -IP1 0
@@ -2134,7 +2152,7 @@ proc UrbanX::Process { Coverage Grid } {
    UrbanX::CANVECFindFiles
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-#   UrbanX::Sandwich $Coverage
+   UrbanX::Sandwich $Coverage
 
    #----- Vector building height processing - done only if data exists over the city
    if { $Param(BuildingsShapefile)!="" } {
@@ -2148,7 +2166,7 @@ proc UrbanX::Process { Coverage Grid } {
 #   UrbanX::ChampsBuffers $Coverage
 
    #----- StatCan Census data processing
-#   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
+   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
    # Next line is useless for the data we have coz dwellings are not at the DA level, see wiki
    #UrbanX::Dwellings2Builtup $Coverage    ;# Calculates dwellings density
 
@@ -2159,10 +2177,10 @@ proc UrbanX::Process { Coverage Grid } {
    #------EOSD Vegetation - ignore if LCC2000V is used
    #   UrbanX::EOSDvegetation $Coverage
    #------ Process LCC2000V vegetation
-#   UrbanX::LCC2000V $Coverage
+   UrbanX::LCC2000V $Coverage
 
    #----- Applies LUT to all processing results to generate TEB classes
-#   UrbanX::Priorities2TEB $Coverage
+   UrbanX::Priorities2TEB $Coverage
 
    #----- Computes TEB geometric parameters over on a smaller raster, second arguement is the aggregation spatial resolution in meters
 #   UrbanX::TEBGeoParams $Coverage 100
@@ -2178,6 +2196,9 @@ proc UrbanX::Process { Coverage Grid } {
 
    GenX::Log INFO "End of processing $Coverage with UrbanX"
 
+# This one is too big:
 # GenPhysX.tcl -urban MONTREAL -gridfile mtl_geophy_URB_548x419.std -result MONTREAL
+# This one is generally ok (in terms of memory requirements)
 # GenPhysX.tcl -urban MONTREAL -gridfile smaller_grid_MTL.std -result MONTREAL -verbose 3
+# GenPhysX.tcl -urban MONTREAL -gridfile mtl_1grid.std -result MTL1GRIDFILE -verbose 3
 }
