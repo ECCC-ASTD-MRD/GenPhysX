@@ -1616,8 +1616,8 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
-#   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end]
-   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 4] {
+   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {
+#   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 4]
       GenX::Log DEBUG "Copying the $tebparam values to the 5m raster with LUT"
       vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.TEB_Class,CSVTEBPARAMS.$tebparam)
 
@@ -1691,7 +1691,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 # This is incomplete... sylvie and nathalie want something more more complext
    # Overwriting to minimum building height
 #   GenX::Log INFO "Overwriting minimum building height average (BLDH) to 3m"
-#   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
+   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
 #   fstdfield clear $Grid 0
 #   vexpr $Grid ifelse(((BLDFFIELD==0) && (PAVFFIELD!=0)),3,BLDHFIELD)
 #   fstdfield define $Grid -NOMVAR BLDH -IP1 0
@@ -1699,7 +1699,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 
 
    GenX::Log INFO "Computing SUMF: sum of VEGF, BLDF and PAVF, for validation purposes"
-   fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGFF"
+   fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGF"
    fstdfield clear $Grid 0
    vexpr $Grid VEGFFIELD+BLDFFIELD+PAVFFIELD
    fstdfield define $Grid -NOMVAR SUMF -IP1 0
