@@ -1623,7 +1623,11 @@ proc UrbanX::TEB2FSTD { Grid } {
 
       fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
       fstdfield define $Grid -NOMVAR $tebparam -IP1 $ip1
-      fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+      if { $tebparam == "VF"} {
+         fstdfield write $Grid GPXOUTFILE -32 True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
+      } else {
+         fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+      }
 
       if { $tebparam == "BLDH"} {
         # Building height variance computation
@@ -1665,19 +1669,10 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
-
-# This is incomplete... sylvie and nathalie want something more more complext
-   # Overwriting to minimum building height
-#   GenX::Log INFO "Overwriting minimum building height average (BLDH) to 3m"
-#   fstdfield clear $Grid 0
-#   vexpr $Grid ifelse(((BLDFFIELD==0) && (PAVFFIELD!=0)),3,BLDHFIELD)
-#   fstdfield define $Grid -NOMVAR BLDH -IP1 0
-#   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
-
-
-   GenX::Log INFO "Computing SUMF: sum of VEGF, BLDF and PAVF, for validation purposes"
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
    fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGF"
+
+   GenX::Log INFO "Computing SUMF: sum of VEGF, BLDF and PAVF, for validation purposes"
    fstdfield clear $Grid 0
    vexpr $Grid VEGFFIELD+BLDFFIELD+PAVFFIELD
    fstdfield define $Grid -NOMVAR SUMF -IP1 0
@@ -1998,6 +1993,8 @@ proc UrbanX::FilterGen { Type Size } {
    return $kernel
 }
 
+
+
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::DeleteTempFiles>
 # Creation : January 2011 - Alexandre Leroux - CMC/CMOE
@@ -2165,11 +2162,12 @@ proc UrbanX::Process { Coverage Grid } {
    #----- Computes TEB geometric parameters over on a smaller raster, second arguement is the aggregation spatial resolution in meters
 #   UrbanX::TEBGeoParams $Coverage 100
 
-   #----- Optional vegetation mask to smooth the edges
+   #----- Optional vegetation mask to smooth the edges - NOT REQUIRED ANYMORE?
    #UrbanX::VegeMask
 
    #----- Computing TEB parameters on the FSTD target grid
    UrbanX::TEB2FSTD $Grid
+   GeoPhysX::DominantVege $Grid ;# Adding DominantVG "VG IP1=0"
 
    #----- Deleting all UrbanX temporary files
    UrbanX::DeleteTempFiles $Coverage
