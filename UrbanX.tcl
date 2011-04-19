@@ -59,12 +59,19 @@ namespace eval UrbanX { } {
 
    # SMOKE Classes for CanVec
    # Ces valeurs sont associées aux entitées CanVec.  Elles doivent être dans le même ordre que Param(Entities) et Param(Priorities), pour l'association de LUT
-   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 2 3 4 5 43 0 0 30 29 0 28 27 0 0 0 0 22 0 0 0 0 33 0 26 0 0 36 37 34 35 39 40 41 32 31 42 74 73 67 66 71 70 68 69 72 64 65 0 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 23 0 63 61 62 58 59 60 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 26 25 0 0 0 0 0 0 0 0 21 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 24 0 43 0 28 29 0 28 0 0 0 0 36 37 0 38 39 42 22 23 47 31 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 0 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 0 0 24 0 44 45 46 0 0 }
+   set Param(SMOKEClasses)       { 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 2 3 4 5 43 0 0 30 29 0 28 27 0 0 0 0 22 0 0 0 0 33 0 26 0 0 36 37 34 35 39 40 41 32 31 42 74 73 67 66 71 70 68 69 72 64 65 0 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 23 0 63 61 62 58 59 60 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 26 25 0 0 0 0 0 0 0 0 21 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 24 0 43 0 28 29 0 28 0 0 0 0 36 37 0 38 39 42 22 23 47 31 0 0 0 0 0 0 0 0 0 0 0 57 51 52 51 48 49 50 54 56 55 53 0 0 0 6 16 7 19 19 16 19 8 9 19 10 11 12 19 13 19 19 14 15 16 17 18 19 20 0 0 24 0 44 45 46 0 0 }
 
-   # Making certain classes LUTs have the same length
-   if { !(([llength $Param(Priorities)] == [llength $Param(SMOKEClasses)]) && ([llength $Param(Priorities)] == [llength $Param(TEBClasses)])) } {
-      GenX::Log ERROR "ERROR: Param(Priorities) = [llength $Param(Priorities)], Param(TEBClasses) = [llength $Param(TEBClasses)], Param(SMOKEClasses) = [llength $Param(SMOKEClasses)]"
-      break
+   # Making certain LUTs have the same length
+   if {$GenX::Param(SMOKE)!="" } {
+      if { !(([llength $Param(Priorities)] == [llength $Param(SMOKEClasses)]) && ([llength $Param(Priorities)] == [llength $Param(TEBClasses)])) } {
+         GenX::Log ERROR "ERROR: Param(Priorities) = [llength $Param(Priorities)], Param(TEBClasses) = [llength $Param(TEBClasses)], Param(SMOKEClasses) = [llength $Param(SMOKEClasses)]"
+         break
+      }
+   } else {
+      if { !(([llength $Param(Priorities)] == [llength $Param(Entities)]) && ([llength $Param(Priorities)] == [llength $Param(TEBClasses)])) } {
+         GenX::Log ERROR "ERROR: Param(Priorities) = [llength $Param(Priorities)], Param(TEBClasses) = [llength $Param(TEBClasses)], Param(Entities) = [llength $Param(Entities)]"
+         break
+      }
    }
 
    set Param(VegeFilterType) LOWPASS
@@ -143,10 +150,10 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          set Param(Lon0)   -73.98
          set Param(Lat0)    45.30
 # For testing purposes, small region near carrière Miron (overwrited if -gridfile specified)
-set Param(Lon1)   -73.60
-set Param(Lat1)    45.57
-set Param(Lon0)   -73.65
-set Param(Lat0)    45.50
+#set Param(Lon1)   -73.60
+#set Param(Lat1)    45.57
+#set Param(Lon0)   -73.65
+#set Param(Lat0)    45.50
          set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Montreal/bat_2d_st.shp
          set Param(BuildingsHgtField) hauteur
          set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/mtl_dnec_-_srtm_utm5m_cropped
@@ -1042,32 +1049,6 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
       # Original code:
             vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS<100000),round(200+RPOPDENS/1000),RPOPDENSCUT)
             vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=100000),299,RPOPDENSCUT)
-      # Next lines are a breakup of the two previous lines to avoid a memory fault, at least on the Montreal fstd grid
-
-# next lines fail because the Byte and Int16 don't work... while they should, it's on JP's side
-#puts AAA
-#      vexpr (Int16)TEST1 ifelse(RRESIDENTIAL && RPOPDENS<100000, 1, 0)
-#      vexpr TEST1 ifelse(RRESIDENTIAL && RPOPDENS<100000, 1, 0)
-#puts BBB
-#      vexpr (Int16)TEST2 ifelse(RRESIDENTIAL && RPOPDENS>=100000, 1, 0)
-#      vexpr TEST2 ifelse(RRESIDENTIAL && RPOPDENS>=100000, 1, 0)
-#      gdalband free RRESIDENTIAL
-#puts CCC
-#      vexpr (Int16)RPOPDENSCLASS round(200+RPOPDENS/1000)
-#      vexpr RPOPDENS RPOPDENS/1000
-#puts CCC1
-#      vexpr RPOPDENS 200+RPOPDENS
-#puts CCC2
-#      vexpr RPOPDENSCLASS round(RPOPDENS)
-#      gdalband free RPOPDENS
-#puts DDD
-#      vexpr RPOPDENSCUT ifelse(TEST1,RPOPDENSCLASS,RPOPDENSCUT)
-#      gdalband free TEST1 RPOPDENSCLASS
-#puts EEE
-#      vexpr RPOPDENSCUT ifelse(TEST2,299,RPOPDENSCUT)
-#puts FFF
-#      vexpr (Int16)RPOPDENSCUT RPOPDENSCUT
-#puts GGG
    }
 
    GenX::Log DEBUG "Generating output file, result of the cookie cutting"
@@ -1589,12 +1570,9 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    GenX::Log DEBUG "Reading the TEB parameters LUT in csv exported from the TEB-Params_LUT.xls file"
    set csvfile [open $Param(TEBParamsLUTCSVFile) r]
-#   set csvfile [open doc/TEB-Params_LUT.csv r]
 
    vector create CSVTEBPARAMS
-
-   # Setting the dimensions of the vector
-   gets $csvfile head
+   gets $csvfile head ;# Setting the dimension of the vector
    set head [split $head ,]
    vector dim CSVTEBPARAMS $head
 
@@ -1610,9 +1588,9 @@ proc UrbanX::TEB2FSTD { Grid } {
    gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
    gdalfile close FTEB
 
-# Normally, this shouldn't be needed, but since there are many holes in OutFile_TEB.tif at the moment
-   GenX::Log INFO "Overwriting areas without any TEB class to \"nodata\""
-   vexpr RTEB ifelse(RTEB==0,-9999,RTEB)
+   # Normally, this shouldn't be needed, but since there are many holes in OutFile_TEB.tif at the moment
+   GenX::Log INFO "Overwriting areas without any TEB class to Building vicinity (class 510) - this is a temporary fix for the spatial buffers bug"
+   vexpr RTEB ifelse(RTEB==0,510,RTEB)
 
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
@@ -1649,11 +1627,11 @@ proc UrbanX::TEB2FSTD { Grid } {
 
       if { $tebparam == "BLDH"} {
         # Building height variance computation
-         set memoryrequired [expr 5*$Param(Width)*$Param(Height)*4/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct
+         set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
          if { $memoryrequired > 1600 } {
             GenX::Log WARNING "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid"
          } else {
-            GenX::Log INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid"
+            GenX::Log INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid (RAM needed: $memoryrequired)"
             gdalband free RTEB ;# to reduce possibilities of a real memory fault
             fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
             fstdfield clear $Grid 0
@@ -1691,7 +1669,6 @@ proc UrbanX::TEB2FSTD { Grid } {
 # This is incomplete... sylvie and nathalie want something more more complext
    # Overwriting to minimum building height
 #   GenX::Log INFO "Overwriting minimum building height average (BLDH) to 3m"
-   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
 #   fstdfield clear $Grid 0
 #   vexpr $Grid ifelse(((BLDFFIELD==0) && (PAVFFIELD!=0)),3,BLDHFIELD)
 #   fstdfield define $Grid -NOMVAR BLDH -IP1 0
@@ -1699,6 +1676,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 
 
    GenX::Log INFO "Computing SUMF: sum of VEGF, BLDF and PAVF, for validation purposes"
+   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
    fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGF"
    fstdfield clear $Grid 0
    vexpr $Grid VEGFFIELD+BLDFFIELD+PAVFFIELD
@@ -1719,7 +1697,8 @@ proc UrbanX::TEB2FSTD { Grid } {
    GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN Z0TW (IP1=0) values with the MacDonald 1998 Model over target grid"
    fstdfield clear $Grid 0
    vexpr DISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD-1.0))) ;# Computing Displacement height
-   vexpr $Grid BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))
+# DELETE THIS LINE if next one works   vexpr $Grid BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))
+   vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))) ;# ifelse required to avoid dividing by 0
    fstdfield define $Grid -NOMVAR Z0TW -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
    fstdfield free BLDHFIELD BLDFFIELD WHORFIELD REZ
@@ -2051,6 +2030,7 @@ proc UrbanX::DeleteTempFiles { indexCouverture } {
    file delete -force $GenX::Param(OutFile)_Building-fraction.tif
    file delete -force $GenX::Param(OutFile)_Building-Z0Town.tif
    file delete -force $GenX::Param(OutFile)_dwellings-density.tif
+   file delete -force $GenX::Param(OutFile)_TEB.tif
 }
 
 #----------------------------------------------------------------------------
@@ -2192,7 +2172,7 @@ proc UrbanX::Process { Coverage Grid } {
    UrbanX::TEB2FSTD $Grid
 
    #----- Deleting all UrbanX temporary files
-#   UrbanX::DeleteTempFiles $Coverage
+   UrbanX::DeleteTempFiles $Coverage
 
    GenX::Log INFO "End of processing $Coverage with UrbanX"
 
