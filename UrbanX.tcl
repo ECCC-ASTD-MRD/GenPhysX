@@ -65,12 +65,12 @@ namespace eval UrbanX { } {
    if {$GenX::Param(SMOKE)!="" } {
       if { !(([llength $Param(Priorities)] == [llength $Param(SMOKEClasses)]) && ([llength $Param(Priorities)] == [llength $Param(TEBClasses)])) } {
          GenX::Log ERROR "ERROR: Param(Priorities) = [llength $Param(Priorities)], Param(TEBClasses) = [llength $Param(TEBClasses)], Param(SMOKEClasses) = [llength $Param(SMOKEClasses)]"
-         break
+         exit 1;
       }
    } else {
       if { !(([llength $Param(Priorities)] == [llength $Param(Entities)]) && ([llength $Param(Priorities)] == [llength $Param(TEBClasses)])) } {
          GenX::Log ERROR "ERROR: Param(Priorities) = [llength $Param(Priorities)], Param(TEBClasses) = [llength $Param(TEBClasses)], Param(Entities) = [llength $Param(Entities)]"
-         break
+         exit 1;
       }
    }
 
@@ -133,6 +133,7 @@ proc UrbanX::AreaDefine { Coverage Grid } {
    }
 
 # Param(HeightFile) and Param(HeightMaskFile) will need to be removed or updated
+   # All the lat long coordinates in there are used for development purposes - lat long are overwritten with the target grid extent
    switch $Coverage {
       "VANCOUVER" {
          set Param(Lon1)   -122.50
@@ -328,7 +329,7 @@ proc UrbanX::AreaDefine { Coverage Grid } {
       }
    }
 
-   if { $GenX::Param(GridFile)!="" } {
+   if { $GenX::Param(GridFile)!="" || $Coverage=="GRIDFILE" } {
       GenX::Log INFO "Using spatial extent of the $GenX::Param(GridFile) file"
       set limits [georef limit [fstdfield define $Grid -georef]]
       set Param(Lat0) [lindex $limits 0]
@@ -1632,7 +1633,8 @@ proc UrbanX::TEB2FSTD { Grid } {
       if { $tebparam == "BLDH"} {
         # Building height variance computation
          set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
-         if { $memoryrequired > 1600 } {
+         if { $memoryrequired > 0 } {
+            # Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
             GenX::Log WARNING "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid"
          } else {
             GenX::Log INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid (RAM needed: $memoryrequired)"
@@ -2166,11 +2168,11 @@ proc UrbanX::Process { Coverage Grid } {
    #UrbanX::VegeMask
 
    #----- Computing TEB parameters on the FSTD target grid
-   UrbanX::TEB2FSTD $Grid
-   GeoPhysX::DominantVege $Grid ;# Adding DominantVG "VG IP1=0"
+#   UrbanX::TEB2FSTD $Grid
+#   GeoPhysX::DominantVege $Grid ;# Adding DominantVG "VG IP1=0"
 
    #----- Deleting all UrbanX temporary files
-   UrbanX::DeleteTempFiles $Coverage
+#   UrbanX::DeleteTempFiles $Coverage
 
    GenX::Log INFO "End of processing $Coverage with UrbanX"
 

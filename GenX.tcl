@@ -93,7 +93,7 @@ namespace eval GenX { } {
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
-   set Param(Urbans)    { HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
+   set Param(Urbans)    { GRIDFILE HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
    set Param(Subs)      { STD }
@@ -603,7 +603,7 @@ proc GenX::CommandLine { } {
       \[-soil\]     [format "%-30s : Soil method(s) among {$Param(Soils)}" ([join $Param(Soil)])]
       \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Param(Aspects)}" ([join $Param(Aspect)])]
       \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Param(Biogenics)}" ([join $Param(Biogenic)])]
-      \[-urban\]    [format "%-30s : Urban coverage {$Param(Urban)}" ([join $Param(Urban)])]
+      \[-urban\]    [format "%-30s : Urban coverage {$Param(Urbans)}" ([join $Param(Urban)])]
       \[-smoke\]    [format "%-30s : SMOKE emissions {$Param(SMOKE)}" ([join $Param(SMOKE)])]
       \[-rindex\]   [format "%-30s : SMOKE restart index (default 1)" ($Param(SMOKEIndex))]
       \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" ($Param(Check))]
