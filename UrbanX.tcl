@@ -2168,11 +2168,11 @@ proc UrbanX::Process { Coverage Grid } {
    #UrbanX::VegeMask
 
    #----- Computing TEB parameters on the FSTD target grid
-#   UrbanX::TEB2FSTD $Grid
-#   GeoPhysX::DominantVege $Grid ;# Adding DominantVG "VG IP1=0"
+   UrbanX::TEB2FSTD $Grid
+   GeoPhysX::DominantVege $Grid ;# Adding DominantVG "VG IP1=0"
 
    #----- Deleting all UrbanX temporary files
-#   UrbanX::DeleteTempFiles $Coverage
+   UrbanX::DeleteTempFiles $Coverage
 
    GenX::Log INFO "End of processing $Coverage with UrbanX"
 
