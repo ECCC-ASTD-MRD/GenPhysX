@@ -24,7 +24,7 @@ namespace eval UrbanX { } {
    variable Const
    variable Meta
 
-   set Param(Version) 0.4
+   set Param(Version) 0.9
 
    set Param(Resolution) 5       ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
 # Param(Buffer) is unused at the moment... delete in favor of new method for account for off-zone buffers
@@ -328,20 +328,27 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          set Param(Lat0)    51.0
          set Param(ProvinceCode) 62 ;# PR code from StatCan
       }
-
       default {
          if { ![fstdfield is $Grid] } {
-            GenX::Log ERROR "Invalid grid definition, will not process urban parameters."
+            GenX::Log ERROR "Invalid grid definition, will not process urban parameters"
             return False
          }
          GenX::Log INFO "Using spatial extent of the $GenX::Param(GridFile) file"
-
          set limits [georef limit [fstdfield define $Grid -georef]]
          set Param(Lat0) [lindex $limits 0]
          set Param(Lon0) [lindex $limits 1]
          set Param(Lat1) [lindex $limits 2]
          set Param(Lon1) [lindex $limits 3]
       }
+   }
+
+   if { $GenX::Param(GridFile)!="" && $Coverage!="" } {
+      GenX::Log INFO "Using spatial extent of the $GenX::Param(GridFile) file"
+      set limits [georef limit [fstdfield define $Grid -georef]]
+      set Param(Lat0) [lindex $limits 0]
+      set Param(Lon0) [lindex $limits 1]
+      set Param(Lat1) [lindex $limits 2]
+      set Param(Lon1) [lindex $limits 3]
    }
 
    return True
@@ -841,7 +848,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 #           with 3.3.0
 #
 #----------------------------------------------------------------------------
-proc UrbanX::ChampsBuffers {indexCouverture } {
+proc UrbanX::ChampsBuffers { indexCouverture } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
    variable Data
@@ -1069,147 +1076,6 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    gdalband free RPOPDENS RRESIDENTIAL RPOPDENSCUT
 }
 
-#----------------------------------------------------------------------------
-# Name     : <UrbanX::Dwellings2Builtup>
-# Creation : March 2011 - Alexandre Leroux - CMC/CMOE
-# Revision :
-#
-# Goal     :
-#
-#
-# Parameters :
-#      <indexCouverture>      : index à appliquer à la référence UTMREF
-#
-# Return: output files :
-#
-#
-#
-# Remarks : see Census documentation on CMC's wiki
-#
-#----------------------------------------------------------------------------
-proc UrbanX::Dwellings2Builtup { indexCouverture } {
-   GenX::Procs ;# Adding the proc to the metadata log
-#   GenX::Log INFO "Reclassifying residential builtup areas using population density"
-   GenX::Log INFO "Calculating dwellings density"
-   variable Param
-
-   GenX::Log DEBUG "Reading Sandwich file"
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
-
-   #récupération du fichier de données socio-économiques
-   GenX::Log DEBUG "Open and read the Canada-wide dissemination area polygons file"
-   set layer [lindex [ogrfile open SHAPE read $Param(Census2006File)] 0]
-   eval ogrlayer read VCENSUS $layer
-
-   #----- Selecting only the required StatCan polygons - next is only useful to improve the speed of the layer substraction
-   GenX::Log DEBUG "Select the appropriate dissemination area polygons"
-   set da_select [ogrlayer pick VCENSUS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
-   ogrlayer define VCENSUS -featureselect [list [list index # $da_select]]
-
-   #   clear la colonne POP_DENS pour les polygones de DA sélectionnés
-   ogrlayer clear VCENSUS FARMS
-
-# use un gdalband copy à la place ?
-   #création d'un fichier de rasterization des polygones de DA
-   gdalband create RDA $Param(Width) $Param(Height) 1 Int32
-   gdalband clear RDA -1
-   gdalband define RDA -georef UTMREF$indexCouverture
-
-   #rasterization des polygones de DA
-   GenX::Log DEBUG "Rasterize the selected dissemination area polygons"
-   gdalband gridinterp RDA VCENSUS FAST FEATURE_ID
-
-   #comptage des pixels de la residential area pour chaque polygone de DA : increment de la table et buildings generals (ponctuels et surfaciques)
-   GenX::Log DEBUG "Counting pixels for residential areas and general function buildings for each dissemination area polygon"
-   vexpr VCENSUS.FARMS tcount(VCENSUS.FARMS,ifelse (RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
-
-   #Calcul de la densité de population
-   GenX::Log INFO "Calculating dwellings density values and adjustments if required"
-   foreach n $da_select {
-      # Get the total dwelling values, there is TDWELL and DATDWELL20, but DATDWELL20 seems to have missing values
-      set pop [ogrlayer define VCENSUS -feature $n TDWELL]
-      #calcul de l'aire de la residential area à l'aide du nombre de pixels comptés précédemment
-      set nbrpixels [ogrlayer define VCENSUS -feature $n FARMS]
-      set area_pixels [expr ($nbrpixels*pow($Param(Resolution),2)/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
-      #calcul de la densité de population : dentité = pop/aire_pixels
-      if {$area_pixels != 0} {
-         set densite_pixels [expr $pop/$area_pixels]
-      } else {
-         set densite_pixels 0
-      }
-
-      #calcul de l'aire à l'aide de la géométrie vectorielle
-      set geom [ogrlayer define VCENSUS -geometry $n]
-      set area_vect [expr ([ogrgeometry stats $geom -area]/1000000.0)]
-      #calcul de la densité de population : dentité = pop/aire_vect
-      if {$area_vect != 0} {
-         set densite_vect [expr $pop/$area_vect]
-      } else {
-         set densite_vect 0
-      }
-
-      #comparaison entre les deux densités calculées
-      if {$densite_pixels != 0} {
-         set densite_div [expr ($densite_pixels/$densite_vect)]
-      } else {
-         set densite_div 0
-      }
-
-      #affectation de la densité appropriée
-      #Note : la densité est généralement plus précise lorsque calculée à partir des pixels.
-      #Toutefois, il arrive que certains endoits reçoivent des valeurs extrêmes puisque, notamment,
-      #les polygones de DA ne sont pas snappés avec les zones résidentielles, ce qui peut entraîner
-      #des cas où toute la population d'un polygone se retrouve concentrée sur 1 ou 2 pixels.
-      #Afin d'éviter ces problèmes, si le ratio entre la densité calculée à l'aide des pixels et la densité
-      #calculée à l'aide de la géométrie dépasse un seuil, nous conserverons la deuxième option, qui
-      #répartit la population sur l'ensemble du territoire plutôt que sur 1 ou 2 pixels, et la multiplions par
-      #2 pour tenir compte du fait que l'ensemble du polygones n'est probablement pas résidentiel
-      #(présence de parcs, de bâtiments non résidentiels, d'industries, etc.).  Le seuil choisi est de 20, ce
-      #qui signifie que 95% du polygone n'est pas recouvert par les entités residential area ou bâtiments de
-      #fonction générale.
-      if { $densite_div > 20} {
-         set densite_choisie [expr ($densite_vect * 2.0)]
-         GenX::Log DEBUG "Adjustment of dwellings density for polygon ID $n"
-      } else {
-         set densite_choisie $densite_pixels
-      }
-      ogrlayer define VCENSUS -feature $n FARMS $densite_choisie
-   }
-
-   unset da_select
-
-# use un gdalband copy à la place ?
-   #Conversion de la densité de population en raster
-   GenX::Log DEBUG "Conversion of population density in a raster file"
-   gdalband create RDWELLINGS $Param(Width) $Param(Height) 1 Float32
-   eval gdalband define RDWELLINGS -georef UTMREF$indexCouverture
-   gdalband gridinterp RDWELLINGS VCENSUS $Param(Mode) FARMS
-
-   #écriture du fichier genphysx_popdens.tif contenant la densité de population
-   file delete -force $GenX::Param(OutFile)_dwellings-density.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_dwellings-density.tif GeoTiff
-   gdalband write RDWELLINGS FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_dwellings-density.tif was generated"
-
-   gdalfile close FILEOUT
-   ogrlayer free VCENSUS
-   ogrfile close SHAPE
-   gdalband free RDA
-
-   gdalband read RPOPDENS [gdalfile open FPOPDENS read $GenX::Param(OutFile)_popdens.tif]
-
-   vexpr RPOPDWERATIO RPOPDENS/RDWELLINGS
-
-
-   file delete -force $GenX::Param(OutFile)_popdens-dwellings-ratio.tif
-   gdalfile open FPOPDWERATIO write $GenX::Param(OutFile)_popdens-dwellings-ratio.tif GeoTiff
-   gdalband write RPOPDWERATIO FPOPDWERATIO
-   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-dwellings-ratio.tif was generated"
-
-   gdalfile close FSANDWICH FILEOUT FPOPDENS FPOPDWERATIO
-   gdalband free RSANDWICH RDWELLINGS
-}
-
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::HeightGain>
@@ -1407,7 +1273,7 @@ proc UrbanX::EOSDvegetation { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::LCC2000V { indexCouverture } {
+proc UrbanX::LCC2000V { } {
    variable Param
    variable Const
    GenX::Procs ;# Adding the proc to the metadata log
@@ -1423,7 +1289,7 @@ proc UrbanX::LCC2000V { indexCouverture } {
       ogrfile open SHAPELCC2000V read $file
       eval ogrlayer read LAYERLCC2000V$j SHAPELCC2000V 0 ;# read the LCC2000V file
 
-      GenX::Log DEBUG "Rasterize the selected LCC2000-V (this step can take several minutes...)"
+      GenX::Log DEBUG "Rasterizing the selected LCC2000-V 1:250k NTS sheet (this step can take several minutes...)"
       set t_gridinterp [clock seconds]
       gdalband gridinterp RLCC2000V LAYERLCC2000V$j $Param(Mode) COVTYPE
       GenX::Log DEBUG "Time required for LCC2000V rasterization: [expr [clock seconds]-$t_gridinterp] seconds"
@@ -1464,7 +1330,7 @@ proc UrbanX::LCC2000V { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Priorities2TEB { indexCouverture } {
+proc UrbanX::Priorities2TEB { } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
    GenX::Log INFO "Aggregating rasters into TEB classes"
@@ -1723,20 +1589,28 @@ proc UrbanX::TEB2FSTD { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::BuildingHeights2Raster { indexCouverture } {
+proc UrbanX::BuildingHeights2Raster { } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
-   GenX::Log INFO "Converting $indexCouverture buildings shapefile to raster"
-
-   gdalband create RHAUTEURBLD $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURBLD -georef UTMREF$indexCouverture
+   GenX::Log INFO "Converting 2.5D buildings shapefile to raster"
 
    set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
    eval ogrlayer read LAYER $shp_layer
+
+   set extent [ogrlayer stats LAYER -extent] ;# in UTM
+   set rwidth [expr int(ceil(([lindex $extent 2]-[lindex $extent 0])))/$Param(Resolution)]
+   set rheight [expr int(ceil(([lindex $extent 3]-[lindex $extent 1])))/$Param(Resolution)]
+
+   georef copy UTMREFCROPPED [ogrlayer define LAYER -georef] ;# Retrieving georef from the shapefile
+   georef define UTMREFCROPPED -transform [list [lindex $extent 0] $Param(Resolution) 0.000000000000000 [lindex $extent 1] 0.000000000000000 $Param(Resolution)]
+
+   gdalband create RHAUTEURBLD $rwidth $rheight 1 Float32
+   gdalband define RHAUTEURBLD -georef UTMREFCROPPED
+
    gdalband gridinterp RHAUTEURBLD LAYER $Param(Mode) $Param(BuildingsHgtField)
 
-   GenX::Log INFO "All buildings shorter than 5m set to an height of 5m"
-   vexpr RHAUTEURBLD ifelse(RHAUTEURBLD<5,5,RHAUTEURBLD)
+   GenX::Log INFO "All buildings shorter than 3m set to an height of 3m"
+   vexpr RHAUTEURBLD ifelse(RHAUTEURBLD<3 && RHAUTEURBLD>0,3,RHAUTEURBLD)
 
    ogrlayer free LAYER
    ogrfile close SHAPE
@@ -1763,10 +1637,10 @@ proc UrbanX::BuildingHeights2Raster { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::3DBuildings2Sandwich { indexCouverture } {
+proc UrbanX::3DBuildings2Sandwich { } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
-   GenX::Log INFO "Overwriting $indexCouverture CanVec sandwich by adding vector 3D buildings"
+   GenX::Log INFO "Overwriting $Coverage CanVec sandwich by adding vector 3D buildings"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $GenX::Param(OutFile)_Building-heights.tif]
@@ -1786,7 +1660,7 @@ proc UrbanX::3DBuildings2Sandwich { indexCouverture } {
 
 
 #----------------------------------------------------------------------------
-# Name     : <UrbanX::TEBGeoParams>
+# Name     : <UrbanX::3DBld2TEBGeoParams>
 # Creation : March 2011 - Alexandre Leroux - CMC/CMOE
 #
 # Goal     : Compute TEB parameters on a 100m raster
@@ -1798,65 +1672,43 @@ proc UrbanX::3DBuildings2Sandwich { indexCouverture } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::TEBGeoParams { indexCouverture res } {
+proc UrbanX::3DBld2TEBGeoParams { Grid } {
    GenX::Procs ;# Adding the proc to the metadata log
    variable Param
 
-   set resdeg [expr ($res/$Param(Deg2M))] ;# in degrees
-   GenX::Log INFO "Computing TEB geometric parameters on a $res\m raster"
+   GenX::Log INFO "Computing TEB geometric parameters using the 2.5D buildings"
 
-   GenX::UTMZoneDefine [expr ($Param(Lat0)+($resdeg))] [expr ($Param(Lon0)+($resdeg))] [expr ($Param(Lat1)+($resdeg))] [expr ($Param(Lon1)+($resdeg))] $res UTMREF100M$indexCouverture
+   # Building heights average
+   gdalband read RHAUTEURBLD [gdalfile open RHAUTEURBLDFILE read $GenX::Param(OutFile)_Building-heights.tif]
+   gdalband stats RHAUTEURBLD -nodata 0 ;# to average buildings without empty spaces
+   fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
-# move to local var
-   set lowrezwidth  [expr int(floor($Param(Width)/($res/$Param(Resolution))))]
-   set lowrezheight [expr int(floor($Param(Height)/($res/$Param(Resolution))))]
-   gdalband create RTEB100M $lowrezwidth $lowrezheight 1 Float32
-   gdalband define RTEB100M -georef UTMREF100M$indexCouverture
+   GenX::Log INFO "Overwriting building heights average (BLDH) where there are 2.5D buildings"
+   fstdfield clear $Grid 0
+   fstdfield gridinterp $Grid RHAUTEURBLD AVERAGE
 
-   # TEB param computations with 3D buildings
-   if { $Param(BuildingsShapefile)!="" } {
+   fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+   vexpr $Grid ifelse($Grid==0, BLDHFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+   fstdfield free BLDHFIELD ;# invalid field because it has been overwritten
 
-      gdalband read RHAUTEURBLD [gdalfile open RHAUTEURBLDFILE read $GenX::Param(OutFile)_Building-heights.tif]
-      gdalband stats RHAUTEURBLD -nodata 0 ;# to average buildings without empty spaces
+   fstdfield define $Grid -NOMVAR BLDH -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
-      # Building heights average
-      set buildingheightfile $GenX::Param(OutFile)_Building-heights-average.tif
-      if { [file exists $buildingheightfile] } {
-         GenX::Log INFO "Using existing buildings heights average raster: $GenX::Param(OutFile)_Building-heights-average.tif"
-         gdalband read RBLDHAVG [gdalfile open FILE read $GenX::Param(OutFile)_Building-heights-average.tif]
-      } else {
-         GenX::Log INFO "Computing building heights average at $res\m (ignoring empty spaces)"
-         gdalband copy RBLDHAVG RTEB100M     ;# to create RBLDHAVG
 
-         gdalband gridinterp RBLDHAVG RHAUTEURBLD AVERAGE
+   # Building fraction
+   GenX::Log INFO "Overwriting building fraction (BLDF) where there are 2.5D buildings"
+   fstdfield clear $Grid 0
 
-         file delete -force $GenX::Param(OutFile)_Building-heights-average.tif
-         gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-heights-average.tif GeoTiff
-         gdalband write RBLDHAVG FILEOUT
-         GenX::Log INFO "The file $GenX::Param(OutFile)_Building-heights-average.tif was generated"
-         gdalfile close FILEOUT
-      }
-      gdalfile close FILE
-
-      # Building fraction
-      set buildingfractionfile $GenX::Param(OutFile)_Building-fraction.tif
-      if { [file exists $buildingfractionfile] } {
-         GenX::Log INFO "Using existing buildings fraction raster: $GenX::Param(OutFile)_Building-fraction.tif"
-         gdalband read RBLDFRACTION [gdalfile open FILE read $GenX::Param(OutFile)_Building-fraction.tif]
-         gdalfile close FILE
-      } else {
-         GenX::Log INFO "Computing building fraction at $res\m"
-         gdalband copy RBLDFRACTION RTEB100M ;# to create RBLDFRACTION
-
+   vexpr REZ (ddx($Grid)+ddy($Grid))/2  ;# spatial resolution of the target grid in meters
+   set res [fstdfield stats REZ -avg]
+   fstdfield free REZ
+   set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
+   vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
 # version RASTER du calcul - à remplacer par vector ci-dessous ? (bug double counting)
-         set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
-         vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
-         set starttime [clock seconds]
- ##      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM   ;# double-counting de tous les pixels on the edge
-         gdalband gridinterp RBLDFRACTION RSURFACEBLD CONSERVATIVE 1 True ;# took 2691 seconds for Montreal
-         GenX::Log DEBUG "Time taken for RASTER CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
-         gdalband free RSURFACEBLD
-
+   set starttime [clock seconds]
+##      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM   ;# double-counting de tous les pixels on the edge
+   fstdfield gridinterp $Grid RSURFACEBLD CONSERVATIVE 1 True
+   GenX::Log DEBUG "Time taken for RASTER CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
 
 # BUG DE DOUBLE COUNTING DES POLYGONES SE CHEVAUCHANT (reswitcher à fraction raster?)
 #         set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
@@ -1872,77 +1724,61 @@ proc UrbanX::TEBGeoParams { indexCouverture res } {
 #         ogrfile close SHAPE
 
 
-         file delete -force $GenX::Param(OutFile)_Building-fraction.tif
-         gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-fraction.tif GeoTiff
-         gdalband write RBLDFRACTION FILEOUT
-         GenX::Log INFO "The file $GenX::Param(OutFile)_Building-fraction.tif was generated"
-         gdalfile close FILEOUT
-      }
+   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
+   vexpr $Grid ifelse($Grid==0, BLDFFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+   fstdfield free BLDFFIELD ;# invalid field because it has been overwritten
 
-      # WALL_O_HOR
-      set wallohorfile $GenX::Param(OutFile)_Building-WallOHor.tif
-      if { [file exists $wallohorfile] } {
-         GenX::Log INFO "Using existing Wall-O-Hor raster: $GenX::Param(OutFile)_Building-WallOHor.tif"
-         gdalband read RWALLOHOR [gdalfile open WALLOHORFILE read $GenX::Param(OutFile)_Building-WallOHor.tif]
-         gdalfile close WALLOHORFILE
-      } else {
-         GenX::Log INFO "Computing WALL_O_HOR at $res\m"
-         gdalband create RWALLOHOR $lowrezwidth $lowrezheight 1 Float32
-         eval gdalband define RWALLOHOR -georef UTMREF100M$indexCouverture
+   fstdfield define $Grid -NOMVAR BLDF -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+# the overwriting is not done yet
 
-         # WALL-O-HOR formulae provided by Sylvie Leroyer
-         set facteurWoH1 [expr 2.0/pow(($res),2)]
-         set facteurWoH2 [expr pow($res,2)]
-         vexpr RWALLOHOR RBLDHAVG*$facteurWoH1*(sqrt(RBLDFRACTION*$facteurWoH2))
-
-         file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
-         gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-WallOHor.tif GeoTiff
-         gdalband write RWALLOHOR FILEOUT
-         gdalfile close FILEOUT
-         GenX::Log INFO "The file $GenX::Param(OutFile)_Building-WallOHor.tif was generated"
-      }
-
-      # Z0_TOWN
-      set z0townfile $GenX::Param(OutFile)_Building-Z0Town.tif
-      if { [file exists $z0townfile] } {
-         GenX::Log INFO "Using existing Z0_Town raster: $GenX::Param(OutFile)_Building-Z0Town.tif"
-         gdalband read RZ0TOWN [gdalfile open Z0TOWNFILE read $GenX::Param(OutFile)_Building-Z0Town.tif]
-         gdalfile close Z0TOWNFILE
-      } else {
-         GenX::Log INFO "Computing Z0_TOWN at $res\m with the MacDonald 1998 Model"
-         # Note: the ^ operator can be used in vexpr, but not in expr
-         vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(4.43^(RBLDFRACTION*(-1.0))*(RBLDFRACTION - 1.0)))
-         vexpr RZ0TOWN RBLDHAVG*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*exp( -1.0*((0.5*1.0*1.2/0.4^2*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*(RWALLOHOR/2.0)))^( -0.5))))
-
-         #GenX::Log INFO "Computing Z0_TOWN at $res\m with the Raupach 1994 Model"
-         #vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(exp(-1.0*(7.5*2.0*RWALLOHOR/2.0)^0.5-1.0)/(7.5*2.0*RWALLOHOR/2.0)^0.5))
-         #vexpr RZ0TOWN RBLDHAVG*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*exp((-1.0)*0.4/min((0.003+0.3*RWALLOHOR/2.0)^0.5,0.3)+0.193))
-
-         file delete -force $GenX::Param(OutFile)_Building-Z0Town.tif
-         gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-Z0Town.tif GeoTiff
-         gdalband write RZ0TOWN FILEOUT
-         gdalfile close FILEOUT
-         GenX::Log INFO "The file $GenX::Param(OutFile)_Building-Z0Town.tif was generated"
-
-         gdalband free RDISPLACEMENTHEIGHT RZ0TOWN
-      }
-
-      gdalband free RWALLOHOR RBLDHAVG RHAUTEURBLD RBLDFRACTION
-      gdalfile close FILEOUT
-      ogrlayer free LAYER
-      ogrfile close SHAPE
-   }
+#   file delete -force $GenX::Param(OutFile)_Building-fraction.tif
+#   gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-fraction.tif GeoTiff
+#   gdalband write RBLDFRACTION FILEOUT
+#   GenX::Log INFO "The file $GenX::Param(OutFile)_Building-fraction.tif was generated"
+#   gdalfile close FILEOUT
 
 
-# RTEB100M not used at the moment...
-#   file delete -force $GenX::Param(OutFile)_TEBParams-$res\m.tif
-#   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEBParams-$res\m.tif GeoTiff
-#   gdalband write RTEB100M FILEOUT
-#   GenX::Log INFO "The file $GenX::Param(OutFile)_TEBParams-$res\m.tif was generated"
-#   GenX::Log INFO "$GenX::Param(OutFile)_TEBParams-$res\m.tif is slightly smaller than $GenX::Param(OutFile)_TEB.tif to avoid missing data over boundaries"
+   # WALL_O_HOR
+   GenX::Log INFO "Overwriting WALL_O_HOR (WHOR) where there are 2.5D buildings"
 
-   gdalfile close FILEOUT RHAUTEURBLDFILE
-   gdalband free RTEB100M
+   fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
+   fstdfield clear $Grid 0
+
+   # WALL-O-HOR formulae provided by Sylvie Leroyer
+   set facteurWoH1 [expr 2.0/pow(($res),2)]
+   set facteurWoH2 [expr pow($res,2)]
+   vexpr $Grid BLDHFIELD*$facteurWoH1*(sqrt(BLDFFIELD*$facteurWoH2))
+
+   fstdfield read WHORFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "WHOR"
+   vexpr $Grid ifelse($Grid==0, WHORFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+   fstdfield free WHORFIELD ;# invalid field because it has been overwritten
+
+   fstdfield define $Grid -NOMVAR WHOR -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+
+
+   # Z0_TOWN
+   GenX::Log INFO "Overwriting Z0_TOWN (Z0TW) where there are 2.5D buildings with the MacDonald 1998 Model"
+   fstdfield read WHORFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "WHOR"
+
+   # Note: the ^ operator can be used in vexpr, but not in expr
+   vexpr RDISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD - 1.0)))
+   vexpr $Grid BLDHFIELD*((1.0-RDISPH/BLDHFIELD)*exp( -1.0*((0.5*1.0*1.2/0.4^2*((1.0-RDISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))
+
+   #GenX::Log INFO "Computing Z0_TOWN at $res\m with the Raupach 1994 Model"
+   #vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(exp(-1.0*(7.5*2.0*RWALLOHOR/2.0)^0.5-1.0)/(7.5*2.0*RWALLOHOR/2.0)^0.5))
+   #vexpr RZ0TOWN RBLDHAVG*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*exp((-1.0)*0.4/min((0.003+0.3*RWALLOHOR/2.0)^0.5,0.3)+0.193))
+
+   fstdfield read Z0TWFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0TW"
+   vexpr $Grid ifelse($Grid==0, Z0TWFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+   fstdfield free Z0TWFIELD ;# invalid field because it has been overwritten
+
+   fstdfield define $Grid -NOMVAR Z0TW -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+
+   fstdfield free BLDHFIELD BLDFFIELD WHORFIELD RDISPH
 }
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::FilterGen>
@@ -2018,7 +1854,7 @@ proc UrbanX::FilterGen { Type Size } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::DeleteTempFiles { indexCouverture } {
+proc UrbanX::DeleteTempFiles { } {
    GenX::Log INFO "Deleting all temporary files"
 
    file delete -force $GenX::Param(OutFile)_LCC2000V-LUT.tif
@@ -2034,7 +1870,6 @@ proc UrbanX::DeleteTempFiles { indexCouverture } {
    file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
    file delete -force $GenX::Param(OutFile)_Building-fraction.tif
    file delete -force $GenX::Param(OutFile)_Building-Z0Town.tif
-   file delete -force $GenX::Param(OutFile)_dwellings-density.tif
    file delete -force $GenX::Param(OutFile)_TEB.tif
 }
 
@@ -2120,6 +1955,7 @@ proc UrbanX::Utilitaires { } {
 #----------------------------------------------------------------------------
 proc UrbanX::Process { Coverage Grid } {
 
+# why is that EOSD required in the next line?!
    GenX::Procs CANVEC StatCan EOSD
    GenX::Log INFO "Beginning of UrbanX over $Coverage"
 
@@ -2128,9 +1964,8 @@ proc UrbanX::Process { Coverage Grid } {
 
    #----- Get the lat/lon and files parameters associated with the city or province
    if { ![UrbanX::AreaDefine $Coverage $Grid] } {
-      return
+      return ;# Stopping UrbanX if no area or gridfile is given
    }
-
    #----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
    GenX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Coverage
    set Param(Width) $GenX::Param(Width)
@@ -2144,19 +1979,18 @@ proc UrbanX::Process { Coverage Grid } {
 
    #----- Vector building height processing - done only if data exists over the city
    if { $Param(BuildingsShapefile)!="" } {
-#      UrbanX::BuildingHeights2Raster $Coverage    ;# Rasterizes building heights
+      UrbanX::BuildingHeights2Raster   ;# Rasterizes building heights
       # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
+      ## move?? next proc after TEB2FSTD and update from priority to TEB class
       #UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
    }
 
    #----- Creates the fields and building vicinity output using spatial buffers
-# BUG SPATIAL BUFFERS MAKE IT CRASH
+## BUG SPATIAL BUFFERS MAKE IT CRASH
 #   UrbanX::ChampsBuffers $Coverage
 
    #----- StatCan Census data processing
    UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
-   # Next line is useless for the data we have coz dwellings are not at the DA level, see wiki
-   #UrbanX::Dwellings2Builtup $Coverage    ;# Calculates dwellings density
 
    #----- Calculates building heights from SRTM-DEM minus CDED - UNUSED
    #UrbanX::HeightGain $Coverage
@@ -2165,13 +1999,10 @@ proc UrbanX::Process { Coverage Grid } {
    #------EOSD Vegetation - ignore if LCC2000V is used
    #   UrbanX::EOSDvegetation $Coverage
    #------ Process LCC2000V vegetation
-   UrbanX::LCC2000V $Coverage
+   UrbanX::LCC2000V
 
    #----- Applies LUT to all processing results to generate TEB classes
-   UrbanX::Priorities2TEB $Coverage
-
-   #----- Computes TEB geometric parameters over on a smaller raster, second arguement is the aggregation spatial resolution in meters
-#   UrbanX::TEBGeoParams $Coverage 100
+   UrbanX::Priorities2TEB
 
    #----- Optional vegetation mask to smooth the edges - NOT REQUIRED ANYMORE?
    #UrbanX::VegeMask
@@ -2179,9 +2010,12 @@ proc UrbanX::Process { Coverage Grid } {
    #----- Computing TEB parameters on the FSTD target grid
    UrbanX::TEB2FSTD $Grid
    GeoPhysX::DominantVege $Grid ;# Adding DominantVG "VG IP1=0"
-
+   if { $Param(BuildingsShapefile)!="" } {
+      #----- Computes TEB geometric parameters from 3D buildings
+      UrbanX::3DBld2TEBGeoParams $Grid
+   }
    #----- Deleting all UrbanX temporary files
-   UrbanX::DeleteTempFiles $Coverage
+   UrbanX::DeleteTempFiles
 
    GenX::Log INFO "End of processing $Coverage with UrbanX"
 
@@ -2190,4 +2024,6 @@ proc UrbanX::Process { Coverage Grid } {
 # This one is generally ok (in terms of memory requirements)
 # GenPhysX.tcl -urban MONTREAL -gridfile smaller_grid_MTL.std -result MONTREAL -verbose 3
 # GenPhysX.tcl -urban MONTREAL -gridfile mtl_1grid.std -result MTL1GRIDFILE -verbose 3
+# GenPhysX.tcl -urban VANCOUVER -gridfile a_vnc_genphysx.fst -result VANCOUVERMERCREDI
+# GenPhysX.tcl -urban TORONTO -gridfile ME_Toronto_b.std -result TORONTOMERCREDI -verbose 3
 }
