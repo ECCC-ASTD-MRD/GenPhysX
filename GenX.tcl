@@ -93,7 +93,7 @@ namespace eval GenX { } {
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
-   set Param(Urbans)    { GRIDFILE HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
+   set Param(Urbans)    { True HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
    set Param(Subs)      { STD }
@@ -500,7 +500,7 @@ proc GenX::MetaData { Grid } {
 #   <Argv>   : Liste des arguments
 #   <Argc>   : Nombre d'arguments
 #   <No>     : Index dans la liste complete des arguments
-#   <Multi>  : Multiplicite des valeurs (0=True,1=1 valeur,2=Multiples valeurs)
+#   <Multi>  : Multiplicite des valeurs (0=True,1=1 valeur,2=Multiples valeurs, 3=True ou 1 valeur)
 #   <Var>    : Variable a a assigner les arguments
 #   <Values> : Valid values accepted
 #
@@ -522,6 +522,12 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
       set idx [incr No]
       set var {}
 
+      if { $Multi==3 } {
+         set var True
+      } else {
+         set var {}
+      }
+
       #----- Parcourir les arguments du token specifie
       while { ([string is double [lindex $Argv $No]] || [string index [lindex $Argv $No] 0]!="-") && $No<$Argc } {
 
@@ -539,7 +545,7 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
                }
             }
          }
-         if { $Multi==1 } {
+         if { $Multi==1 || $Multi==3 } {
             set var $vs
          } else {
             eval lappend var $vs
@@ -553,10 +559,11 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
          exit 1;
       }
 
-      if { $No!=$idx } {
+      if { [string index [lindex $Argv $No] 0]=="-" } {
          incr No -1
       }
    }
+
    return $No
 }
 
@@ -710,7 +717,7 @@ proc GenX::ParseCommandLine { } {
          "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Sub)]; incr flags }
          "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Aspect)]; incr flags }
          "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
-         "urban"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Urban) $GenX::Param(Urbans)]; incr flags }
+         "urban"     { set i [GenX::ParseArgs $gargv $gargc $i 3 GenX::Param(Urban) $GenX::Param(Urbans)]; incr flags }
          "smoke"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(SMOKE) $GenX::Param(SMOKES)]; incr flags }
          "rindex"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(SMOKEIndex)] }
          "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Check)]; incr flags }

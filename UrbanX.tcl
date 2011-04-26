@@ -119,6 +119,7 @@ namespace eval UrbanX { } {
 #   <Coverage>   : zone to process, either city or province ( default settings on Quebec City)
 #
 # Return:
+#   <..>         : Code de reussite (True ou False)
 #
 # Remarks : Param(HeightFile) and Param(HeightMaskFile) will need to be removed or updated
 #
@@ -327,18 +328,23 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          set Param(Lat0)    51.0
          set Param(ProvinceCode) 62 ;# PR code from StatCan
       }
+
+      default {
+         if { ![fstdfield is $Grid] } {
+            GenX::Log ERROR "Invalid grid definition, will not process urban parameters."
+            return False
+         }
+         GenX::Log INFO "Using spatial extent of the $GenX::Param(GridFile) file"
+
+         set limits [georef limit [fstdfield define $Grid -georef]]
+         set Param(Lat0) [lindex $limits 0]
+         set Param(Lon0) [lindex $limits 1]
+         set Param(Lat1) [lindex $limits 2]
+         set Param(Lon1) [lindex $limits 3]
+      }
    }
 
-   if { $GenX::Param(GridFile)!="" || $Coverage=="GRIDFILE" } {
-      GenX::Log INFO "Using spatial extent of the $GenX::Param(GridFile) file"
-      set limits [georef limit [fstdfield define $Grid -georef]]
-      set Param(Lat0) [lindex $limits 0]
-      set Param(Lon0) [lindex $limits 1]
-      set Param(Lat1) [lindex $limits 2]
-      set Param(Lon1) [lindex $limits 3]
-   } else {
-      GenX::Log ERROR "You NEED to specify -gridfile in order to generate $Param(OutFile)_aux.fst"
-   }
+   return True
 }
 
 #----------------------------------------------------------------------------
@@ -2121,7 +2127,10 @@ proc UrbanX::Process { Coverage Grid } {
    variable Meta
 
    #----- Get the lat/lon and files parameters associated with the city or province
-   UrbanX::AreaDefine $Coverage $Grid
+   if { ![UrbanX::AreaDefine $Coverage $Grid] } {
+      return
+   }
+
    #----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
    GenX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Coverage
    set Param(Width) $GenX::Param(Width)

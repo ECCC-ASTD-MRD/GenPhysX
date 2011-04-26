@@ -711,7 +711,8 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
    GenX::GridClear GPXMASK 0.0
 
    #----- Open the file
-   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_200412_200606_V2.2_Global_CLA.tif
+#   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_200412_200606_V2.2_Global_CLA.tif
+   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_L4_200901_200912_V2.3.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLOBFILE]]]] } {
       GenX::Log WARNING "Specified grid does not intersect with GLOBCOVER database, mask will not be calculated"
