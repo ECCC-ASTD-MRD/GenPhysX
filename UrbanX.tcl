@@ -1695,6 +1695,32 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
 
+   # Building height min computation
+   GenX::Log INFO "Overwriting Building Height Minimum HMIN (IP1=0) where there are 2.5D buildings"
+   fstdfield clear $Grid 0
+   fstdfield gridinterp $Grid RHAUTEURBLD MINIMUM
+
+   fstdfield read HMINFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMIN"
+   vexpr $Grid ifelse($Grid==0, HMINFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+   fstdfield free HMINFIELD ;# invalid field because it has been overwritten
+
+   fstdfield define $Grid -NOMVAR HMIN -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+
+
+   # Building height max computation
+   GenX::Log INFO "Overwriting Building Height Maximum HMAX (IP1=0) where there are 2.5D buildings"
+   fstdfield clear $Grid 0
+   fstdfield gridinterp $Grid RHAUTEURBLD MAXIMUM
+
+   fstdfield read HMAXFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMAX"
+   vexpr $Grid ifelse($Grid==0, HMAXFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+   fstdfield free HMAXFIELD ;# invalid field because it has been overwritten
+
+   fstdfield define $Grid -NOMVAR HMAX -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+
+
    # Building fraction
    GenX::Log INFO "Overwriting building fraction (BLDF) where there are 2.5D buildings"
    fstdfield clear $Grid 0
@@ -1704,6 +1730,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield free REZ
    set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
    vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
+   gdalband free RHAUTEURBLD
 # version RASTER du calcul - à remplacer par vector ci-dessous ? (bug double counting)
    set starttime [clock seconds]
 ##      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM   ;# double-counting de tous les pixels on the edge
@@ -1730,7 +1757,6 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
 
    fstdfield define $Grid -NOMVAR BLDF -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
-# the overwriting is not done yet
 
 #   file delete -force $GenX::Param(OutFile)_Building-fraction.tif
 #   gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-fraction.tif GeoTiff
