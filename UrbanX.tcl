@@ -1185,7 +1185,7 @@ proc UrbanX::LCC2000V { } {
       ogrfile open SHAPELCC2000V read $file
       eval ogrlayer read LAYERLCC2000V$j SHAPELCC2000V 0 ;# read the LCC2000V file
 
-      GenX::Log DEBUG "Rasterizing the selected LCC2000-V 1:250k NTS sheet (this step can take several minutes...)"
+      GenX::Log DEBUG "Rasterizing the selected LCC2000-V 1:250k NTS sheet"
       set t_gridinterp [clock seconds]
       gdalband gridinterp RLCC2000V LAYERLCC2000V$j $Param(Mode) COVTYPE
       GenX::Log DEBUG "Time required for LCC2000V rasterization: [expr [clock seconds]-$t_gridinterp] seconds"
@@ -1580,8 +1580,9 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    GenX::Log INFO "Overwriting building heights average (BLDH) where there are 2.5D buildings"
    fstdfield clear $Grid 0
    fstdfield gridinterp $Grid RHAUTEURBLD AVERAGE
+   fstdfield copy BLDHEXTENT $Grid ;# BLDHEXTENT is needed below
 
-   fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+   fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH" ;# BLDH before the addition of 2.5D buildings BLDH
    vexpr $Grid ifelse($Grid==0, BLDHFIELD, $Grid) ;# to overwrite only where there is 2.5D data
    fstdfield free BLDHFIELD ;# invalid field because it has been overwritten
 
@@ -1594,7 +1595,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield clear $Grid 0
    fstdfield gridinterp $Grid RHAUTEURBLD MINIMUM
 
-   fstdfield read HMINFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMIN"
+   fstdfield read HMINFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMIN" ;# HMIN before the addition of 2.5D buildings HMIN
    vexpr $Grid ifelse($Grid==0, HMINFIELD, $Grid) ;# to overwrite only where there is 2.5D data
    fstdfield free HMINFIELD ;# invalid field because it has been overwritten
 
@@ -1607,7 +1608,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield clear $Grid 0
    fstdfield gridinterp $Grid RHAUTEURBLD MAXIMUM
 
-   fstdfield read HMAXFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMAX"
+   fstdfield read HMAXFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMAX" ;# HMAX before the addition of 2.5D buildings HMAX
    vexpr $Grid ifelse($Grid==0, HMAXFIELD, $Grid) ;# to overwrite only where there is 2.5D data
    fstdfield free HMAXFIELD ;# invalid field because it has been overwritten
 
@@ -1625,25 +1626,21 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
    vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
    gdalband free RHAUTEURBLD
-# version RASTER du calcul - à remplacer par vector ci-dessous ? (bug double counting)
-   set starttime [clock seconds]
-##      gdalband gridinterp RBLDFRACTION RSURFACEBLD SUM   ;# double-counting de tous les pixels on the edge
+   # fstdfield gridinterp $Grid RSURFACEBLD SUM   ;# can't use at the moment: double-counting de tous les pixels on the edge
    fstdfield gridinterp $Grid RSURFACEBLD CONSERVATIVE 1 True
-   GenX::Log DEBUG "Time taken for RASTER CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
 
-# BUG DE DOUBLE COUNTING DES POLYGONES SE CHEVAUCHANT (reswitcher à fraction raster?)
-#         set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
-#         eval ogrlayer read LAYER $shp_layer
-#         set starttime [clock seconds]
-#         gdalband gridinterp RBLDFRACTION LAYER CONSERVATIVE FEATURE_AREA
-##         gdalband gridinterp RBLDFRACTION LAYER NORMALIZE FEATURE_AREA
-#         GenX::Log DEBUG "Time taken for VECTOR CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
-##         GenX::Log DEBUG "Time taken for VECTOR NORMALIZE fraction [expr [clock seconds]-$starttime] seconds"
-## normalize puis enlever next line
-#         vexpr RBLDFRACTION RBLDFRACTION/($res*$res) ;# To get a fraction between 0 and 1
-#         ogrlayer free LAYER
-#         ogrfile close SHAPE
-
+   # BUG DE DOUBLE COUNTING DES POLYGONES SE CHEVAUCHANT (reswitcher à fraction raster?)
+   #         set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
+   #         eval ogrlayer read LAYER $shp_layer
+   #         set starttime [clock seconds]
+   #         gdalband gridinterp RBLDFRACTION LAYER CONSERVATIVE FEATURE_AREA
+   ##         gdalband gridinterp RBLDFRACTION LAYER NORMALIZE FEATURE_AREA
+   #         GenX::Log DEBUG "Time taken for VECTOR CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
+   ##         GenX::Log DEBUG "Time taken for VECTOR NORMALIZE fraction [expr [clock seconds]-$starttime] seconds"
+   ## normalize puis enlever next line
+   #         vexpr RBLDFRACTION RBLDFRACTION/($res*$res) ;# To get a fraction between 0 and 1
+   #         ogrlayer free LAYER
+   #         ogrfile close SHAPE
 
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
    vexpr $Grid ifelse($Grid==0, BLDFFIELD, $Grid) ;# to overwrite only where there is 2.5D data
@@ -1652,11 +1649,45 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield define $Grid -NOMVAR BLDF -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
+   # Updating VEGF and PAVF
+   GenX::Log INFO "Updating VEGF and PAVF according to new BLDF where there are 2.5D buildings"
+
+   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
+   fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGF"
+   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
+
+   fstdfield clear $Grid 0
+   vexpr NEWVEGFFIELD VEGFFIELD/(VEGFFIELD+PAVFFIELD)*(1-BLDFFIELD) ;# BLDFFIELD is the new one
+   vexpr $Grid ifelse(BLDHEXTENT>0, NEWVEGFFIELD, VEGFFIELD) ;# Overwriting only over 2.5D buildings extent
+   fstdfield free NEWVEGFFIELD
+
+   fstdfield define $Grid -NOMVAR VEGF -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+
+   fstdfield clear $Grid 0
+   vexpr NEWPAVFFIELD PAVFFIELD/(VEGFFIELD+PAVFFIELD)*(1-BLDFFIELD) ;# BLDFFIELD is the new one
+   vexpr $Grid ifelse(BLDHEXTENT>0, NEWPAVFFIELD, PAVFFIELD) ;# Overwriting only over 2.5D buildings extent
+   fstdfield free NEWPAVFFIELD BLDHEXTENT
+
+   fstdfield define $Grid -NOMVAR PAVF -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield free VEGFFIELD PAVFFIELD ;# Freeing because they don't reflect what's in the grid anymore
+
+   # Updating SUMF
+   GenX::Log INFO "Updating SUMF using the new BLDF, VEGF and PAVF values"
+   fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGF" ;# Reading the updated values
+   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF" ;# Reading the updated values
+   fstdfield clear $Grid 0
+   vexpr $Grid BLDFFIELD+VEGFFIELD+PAVFFIELD
+   fstdfield define $Grid -NOMVAR SUMF -IP1 0
+   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield free PAVFFIELD VEGFFIELD
+
+
    # WALL_O_HOR
    GenX::Log INFO "Overwriting WALL_O_HOR (WHOR) where there are 2.5D buildings"
 
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
-   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
    fstdfield clear $Grid 0
 
    # WALL-O-HOR formulae provided by Sylvie Leroyer
@@ -1693,6 +1724,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
 
    fstdfield free BLDHFIELD BLDFFIELD WHORFIELD RDISPH
 }
+
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::FilterGen>
 # Creation : date? - Alexandre Leroux - CMC/CMOE
@@ -1928,7 +1960,7 @@ proc UrbanX::Process { Coverage Grid } {
       #----- Deleting all UrbanX temporary files
       UrbanX::DeleteTempFiles
    } else {
-      puts "No '-gridfile' specified: won't compute TEB parameters, keeping intermediary GeoTIFF files"
+      GenX::Log INFO "No '-gridfile' specified: won't compute TEB parameters, keeping intermediary GeoTIFF files"
    }
    GenX::Log INFO "End of UrbanX"
 }
