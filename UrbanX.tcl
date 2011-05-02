@@ -24,7 +24,7 @@ namespace eval UrbanX { } {
    variable Const
    variable Meta
 
-   set Param(Version) 0.9        ;# UrbanX version number
+   set Param(Version)    0.9     ;# UrbanX version number
    set Param(Resolution) 5       ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
    set Param(Mode)       FAST    ;# Rasterization mode: INCLUDED or FAST - fast is... much much faster!
    set Param(HeightGain) 0       ;# Default value if proc HeightGain is not ran
@@ -123,7 +123,6 @@ proc UrbanX::AreaDefine { Coverage Grid } {
       set GenX::Param(OutFile) $Coverage
    }
 
-# Param(HeightFile) and Param(HeightMaskFile) will need to be removed or updated
    # Lat long coordinates are used when no GRIDFILE is specified, otherwise, coordinates are overwritten by target grid extent
    switch $Coverage {
       # $Coverage is the "-urban" argument
@@ -159,8 +158,6 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          set Param(Lat0)    43.49
          set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Toronto/Toronto.shp
          set Param(BuildingsHgtField) Elevation
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
       "OTTAWA" {
          set Param(Lon1)   -75.56
@@ -177,56 +174,42 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          set Param(Lat1)    49.98
          set Param(Lon0)   -97.34
          set Param(Lat0)    49.75
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
       "CALGARY" {
          set Param(Lon1)   -113.90
          set Param(Lat1)    51.18
          set Param(Lon0)   -114.28
          set Param(Lat0)    50.87
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
       "HALIFAX" {
          set Param(Lon1)   -63.36
          set Param(Lat1)    44.83
          set Param(Lon0)   -63.80
          set Param(Lat0)    44.56
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
       "REGINA" {
          set Param(Lon1)   -104.50
          set Param(Lat1)    50.54
          set Param(Lon0)   -104.72
          set Param(Lat0)    50.38
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
       "EDMONTON" {
          set Param(Lon1)   -113.19
          set Param(Lat1)    53.70
          set Param(Lon0)   -113.73
          set Param(Lat0)    53.38
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
       "VICTORIA" {
          set Param(Lon1)   -123.22
          set Param(Lat1)    48.55
          set Param(Lon0)   -123.54
          set Param(Lat0)    48.39
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
       "QUEBEC" {
          set Param(Lon1)   -71.10
          set Param(Lat1)    46.94
          set Param(Lon0)   -71.47
          set Param(Lat0)    46.68
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong ;# TO UPDATE ****
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
       }
       "TN" {
          set Param(Lon1)   -52.5
@@ -853,7 +836,7 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
             BS_2010009_2 {
             GenX::Log DEBUG "Buffering 2D buildings"
             set priority 667 ;# VALUE TO UPDATE
-# need updating this sqlselect
+# need updating the attribute values in this sqlselect
             ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM '$filename' WHERE function NOT IN (3,4,14,36) "
 # Bug in spatial buffers
 #            ogrlayer stats LAYER$i -buffer 0.00089993 8
@@ -954,7 +937,6 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
       # calcul de l'aire de la residential area à l'aide du nombre de pixels comptés précédemment
       set nbrpixels [ogrlayer define VPOPDENS -feature $n CSDUID]
       set area_pixels [expr ($nbrpixels*pow($Param(Resolution),2)/1000000.0)] ;#nbr de pixels * (5m*5m) de résolution / 1000000 m² par km² = area en km²
-#      set area_pixels [expr ($nbrpixels*25.0/1000000.0)]
       # calcul de la densité de population : dentité = pop/aire_pixels
       if {$area_pixels != 0} {
          set densite_pixels [expr $pop/$area_pixels]
@@ -979,18 +961,18 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
          set densite_div 0
       }
 
-      #affectation de la densité appropriée
-      #Note : la densité est généralement plus précise lorsque calculée à partir des pixels.
-      #Toutefois, il arrive que certains endoits reçoivent des valeurs extrêmes puisque, notamment,
-      #les polygones de DA ne sont pas snappés avec les zones résidentielles, ce qui peut entraîner
-      #des cas où toute la population d'un polygone se retrouve concentrée sur 1 ou 2 pixels.
-      #Afin d'éviter ces problèmes, si le ratio entre la densité calculée à l'aide des pixels et la densité
-      #calculée à l'aide de la géométrie dépasse un seuil, nous conserverons la deuxième option, qui
-      #répartit la population sur l'ensemble du territoire plutôt que sur 1 ou 2 pixels, et la multiplions par
-      #2 pour tenir compte du fait que l'ensemble du polygones n'est probablement pas résidentiel
-      #(présence de parcs, de bâtiments non résidentiels, d'industries, etc.).  Le seuil choisi est de 20, ce
-      #qui signifie que 95% du polygone n'est pas recouvert par les entités residential area ou bâtiments de
-      #fonction générale.
+      # Affectation de la densité appropriée
+      # Note : la densité est généralement plus précise lorsque calculée à partir des pixels.
+      # Toutefois, il arrive que certains endoits reçoivent des valeurs extrêmes puisque, notamment,
+      # les polygones de DA ne sont pas snappés avec les zones résidentielles, ce qui peut entraîner
+      # des cas où toute la population d'un polygone se retrouve concentrée sur 1 ou 2 pixels.
+      # Afin d'éviter ces problèmes, si le ratio entre la densité calculée à l'aide des pixels et la densité
+      # calculée à l'aide de la géométrie dépasse un seuil, nous conserverons la deuxième option, qui
+      # répartit la population sur l'ensemble du territoire plutôt que sur 1 ou 2 pixels, et la multiplions par
+      # 2 pour tenir compte du fait que l'ensemble du polygones n'est probablement pas résidentiel
+      # (présence de parcs, de bâtiments non résidentiels, d'industries, etc.).  Le seuil choisi est de 20, ce
+      # qui signifie que 95% du polygone n'est pas recouvert par les entités residential area ou bâtiments de
+      # fonction générale.
       if { $densite_div > 20} {
          set densite_choisie [expr ($densite_vect * 2.0)]
          GenX::Log DEBUG "Adjustment of population density for polygon ID $n"
@@ -1233,9 +1215,9 @@ proc UrbanX::Priorities2TEB { } {
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
-#   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+   # gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
    gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V-LUT.tif]
-#   gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
+   # gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
 
    vector create LUT
    vector dim LUT { FROM TO }
@@ -1245,9 +1227,9 @@ proc UrbanX::Priorities2TEB { } {
    vector free LUT
 
    vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
-# next rasters are missing
-#   vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
-#   vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
+   # next rasters are not generated at the moment
+   # vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
+   # vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
    # Rasters must now be closed otherwise we blow up memory for large cities
    gdalfile close FSANDWICH FPOPDENSCUT FCHAMPS FHAUTEURCLASS
    gdalband free RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS
@@ -1297,7 +1279,7 @@ proc UrbanX::VegeMask { } {
       vexpr RTEBWMASK ifelse(RTEB==901,901,RTEBWMASK)
       gdalband stats RTEBWMASK -nodata 901
       vexpr VEGEMASK fkernel(RTEBWMASK,FILTER)
-#      vexpr VEGEMASK fcentile(RTEBWMASK,3,0.5) ;# fcentile is fmedian, fmax, fmin à la fois
+      # vexpr VEGEMASK fcentile(RTEBWMASK,3,0.5) ;# fcentile is fmedian, fmax, fmin à la fois
 
       file delete -force $fileRTEBfilter
       gdalfile open FILEOUT write $fileRTEBfilter GeoTiff
