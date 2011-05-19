@@ -125,7 +125,7 @@ if { [llength $grids]>1 } {
    #----- Merge results
    GenX::Log INFO "Merging results"
    set Param(Process) 0
-   foreach grid $grids {
+   foreach grid [lreverse $grids] {
       set err [catch { exec editfst+ -i 0 -e -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst } msg]
       if { $err } {
          GenX::Log ERROR "Problems while merging results from grid #$Param(Process):\n\n\t:msg"

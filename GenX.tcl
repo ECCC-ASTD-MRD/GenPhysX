@@ -115,17 +115,17 @@ namespace eval GenX { } {
       set Path(DBase) /data/shared_1_b0/armn
    }
 
-   set Path(SandUSDA)  $Path(DBase)/db/sand_usda
-   set Path(SandFAO)   $Path(DBase)/db/sand_fao
-   set Path(SandAGRC)  $Path(DBase)/db/sand_argc
-   set Path(ClayUSDA)  $Path(DBase)/db/clay_usda
-   set Path(ClayFAO)   $Path(DBase)/db/clay_fao
-   set Path(ClayAGRC)  $Path(DBase)/db/clay_argc
-   set Path(TopoUSGS)  $Path(DBase)/db/me_usgs2002
-   set Path(MaskUSGS)  $Path(DBase)/db/mg_usgs2002
-   set Path(VegeUSGS)  $Path(DBase)/db/vg_usgs2002
-   set Path(TopoLow)   $Path(DBase)/db/data_lres
-   set Path(Grad)      $Path(DBase)/db/data_grad
+   set Path(SandUSDA)  $Path(DBase)/RPN/sand_usda
+   set Path(SandFAO)   $Path(DBase)/RPN/sand_fao
+   set Path(SandAGRC)  $Path(DBase)/RPN/sand_argc
+   set Path(ClayUSDA)  $Path(DBase)/RPN/clay_usda
+   set Path(ClayFAO)   $Path(DBase)/RPN/clay_fao
+   set Path(ClayAGRC)  $Path(DBase)/RPN/clay_argc
+   set Path(TopoUSGS)  $Path(DBase)/RPN/me_usgs2002
+   set Path(MaskUSGS)  $Path(DBase)/RPN/mg_usgs2002
+   set Path(VegeUSGS)  $Path(DBase)/RPN/vg_usgs2002
+   set Path(TopoLow)   $Path(DBase)/RPN/data_lres
+   set Path(Grad)      $Path(DBase)/RPN/data_grad
    set Path(HWSD)      $Path(DBase)/HWSD
    set Path(SRTM)      $Path(DBase)/SRTMv4
    set Path(CDED)      $Path(DBase)/CDED
@@ -137,7 +137,7 @@ namespace eval GenX { } {
    set Path(CANVEC)    $Path(DBase)/CanVec
    set Path(CORINE)    $Path(DBase)/CORINE
    set Path(GlobCover) $Path(DBase)/GlobCover
-   set Path(GLC2000)   $Path(DBase)/GLC2000
+   set Path(GLC2000)   $Path(DBase)/GLC2000_USGS
    set Path(CCRS)      $Path(DBase)/CCRS-LC2005
    set Path(Various)   $Path(DBase)/Various
    set Path(BELD3)     $Path(DBase)/BELD3

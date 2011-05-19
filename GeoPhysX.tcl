@@ -121,8 +121,8 @@ namespace eval GeoPhysX { } {
                               {   2   3  4  5  4  7  7 14  14  14  24 15 15 20  21  24  23  23  23  24  25  26  26 } }
 
    #----- Correspondance de Douglas Chan Mai 2010 pour la conversion des classes GCL2000 vers les classes RPN
-   set Const(GLC20002RPN) { { 1 2 3 4 5 6   7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22  23 }
-                            { 5 7 7 4 6 25 23 23 25 25 26 11 13 13 23 15 15 15 24  3  2 21 -99  } }
+   set Const(GLC20002RPN) { { 1 2 3 4 5 6   7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22  23 200}
+                            { 5 7 7 4 6 25 23 23 25 25 26 11 13 13 23 15 15 15 24  3  2 21 -99 1 } }
 
    #----- Correspondance de Stephane Belair decembre 2008 pour la conversion des classes CCRS vers les classes RPN
    set Const(CCRS2RPN) { { 39 37 38 1 3 4 6 7 8 9 10 5 2 11 12 16 20 18 17 26 27 28 29 36 21 22 23 24 25 19 32 30 33 34 35 13 14 15 31 }
@@ -769,7 +769,7 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
    GenX::GridClear GPXMASK 0.0
 
    #----- Open the file
-   gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1.tif
+   gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1-glcc_bats.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLCFILE]]]] } {
       GenX::Log WARNING "Specified grid does not intersect with GLC2000 database, mask will not be calculated"
@@ -787,7 +787,7 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
             gdalband read GLCTILE { { GLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLCTILE -nodata 255 -celldim $GenX::Param(Cell)
 
-            vexpr GLCTILE ifelse(GLCTILE==20,0.0,1.0)
+            vexpr GLCTILE ifelse(GLCTILE==20 || GLCTILE==200,0.0,1.0)
             fstdfield gridinterp GPXMASK GLCTILE AVERAGE False
          }
       }
@@ -1319,7 +1319,7 @@ proc GeoPhysX::AverageVegeGLC2000 { Grid } {
    GenX::Log INFO "Averaging vegetation type using GLC2000 database"
 
    #----- Open the file
-   gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1.tif
+   gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1-glcc_bats.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLCFILE]]]] } {
       GenX::Log WARNING "Specified grid does not intersect with GLC2000 database, vegetation will not be calculated"
