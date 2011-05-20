@@ -74,8 +74,9 @@ namespace eval UrbanX { } {
 # NOTE : les paths des fichiers suivants devront être modifiés lorsqu'il aura été décidé où ces fichiers seront localisés
    # Fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
    set Param(PopFile2006SMOKE) $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
-# Next path needs to be updated and added to GenX
-   set Param(Census2006File) /data/cmoex7/afsralx/StatCan2006/da2006_pop_labour.shp
+   # Next path needs to be updated and added to GenX
+#   set Param(Census2006File) /data/cmoex7/afsralx/StatCan2006/da2006_pop_labour.shp
+   set Param(Census2006File) /cnfs/dev/cmoe/afsralx/StatCan2006/da2006_pop_labour.shp
 
 # Next file should be moved to the data repertory with $GenX::Path()
    set Param(TEBParamsLUTCSVFile) doc/TEB-Params_LUT.csv
@@ -133,8 +134,8 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          set Param(Lat0)    49.01
          set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Vancouver/out.shp
          set Param(BuildingsHgtField) hgt
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong_wmask
+         set Param(HeightFile) /cnfs/dev/cmoe/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong
+         set Param(HeightMaskFile) /cnfs/dev/cmoe/afsralx/canyon-urbain/global_data/srtm-dnec/srtm-dnec_van_latlong_wmask
       }
       "MONTREAL" {
          set Param(Lon1)   -73.35
@@ -148,8 +149,8 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          #set Param(Lat0)    45.50
          set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Montreal/bat_2d_st.shp
          set Param(BuildingsHgtField) hauteur
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/mtl_dnec_-_srtm_utm5m_cropped
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/srtm-dnec/mtl_dnec_-_srtm_utm5m_cropped_wmask
+         set Param(HeightFile) /cnfs/dev/cmoe/afsralx/canyon-urbain/global_data/srtm-dnec/mtl_dnec_-_srtm_utm5m_cropped
+         set Param(HeightMaskFile) /cnfs/dev/cmoe/afsralx/canyon-urbain/global_data/srtm-dnec/mtl_dnec_-_srtm_utm5m_cropped_wmask
       }
       "TORONTO" {
          set Param(Lon1)   -79.12
@@ -166,8 +167,8 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          set Param(Lat0)    45.30
          set Param(BuildingsShapefile) /cnfs/ops/production/cmoe/geo/Vector/Cities/Ottawa/buildings.shp
          set Param(BuildingsHgtField) height
-         set Param(HeightFile) /data/cmoex7/afsralx/canyon-urbain/global_data/cities/ottawa/ott_shp-height.tif
-         set Param(HeightMaskFile) /data/cmoex7/afsralx/canyon-urbain/global_data/cities/ottawa/ott_shp-height.tif
+         set Param(HeightFile) /cnfs/dev/cmoe/afsralx/canyon-urbain/global_data/cities/ottawa/ott_shp-height.tif
+         set Param(HeightMaskFile) /cnfs/dev/cmoe/afsralx/canyon-urbain/global_data/cities/ottawa/ott_shp-height.tif
       }
       "WINNIPEG" {
          set Param(Lon1)   -96.95
