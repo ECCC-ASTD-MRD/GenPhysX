@@ -126,15 +126,15 @@ if { [llength $grids]>1 } {
    GenX::Log INFO "Merging results"
    set Param(Process) 0
    foreach grid [lreverse $grids] {
-      set err [catch { exec editfst+ -i 0 -e -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst } msg]
+      set err [catch { exec editfst+ -i 0 -e -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst 2>@1 } msg]
       if { $err } {
-         GenX::Log ERROR "Problems while merging results from grid #$Param(Process):\n\n\t:msg"
+         GenX::Log ERROR "Problems while merging results from grid #$Param(Process):\n\n\t:$msg"
       } else {
          file delete $GenX::Param(OutFile)$Param(Process).fst
       }
-      set err [catch { exec editfst+ -i 0 -e -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst } msg]
+      set err [catch { exec editfst+ -i 0 -e -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst 2>@1 } msg]
       if { $err } {
-         GenX::Log ERROR "Problems while merging auxiliary results from grid #$Param(Process):\n\n\t:msg"
+         GenX::Log ERROR "Problems while merging auxiliary results from grid #$Param(Process):\n\n\t:$msg"
       } else {
          file delete $GenX::Param(OutFile)$Param(Process)_aux.fst
       }
