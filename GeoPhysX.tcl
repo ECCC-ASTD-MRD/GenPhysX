@@ -45,6 +45,7 @@
 #   GeoPhysX::AverageSand          { Grid }
 #   GeoPhysX::AverageClay          { Grid }
 #   GeoPhysX::AverageSoilHWSD      { Grid }
+#   GeoPhysX::AverageSoilJPL       { Grid }
 #
 #   GeoPhysX::SubCorrectionFilter  { FieldRes FieldDX FieldDY DBR C1 C2 }
 #   GeoPhysX::SubCorrectionFactor  { }
@@ -1442,6 +1443,8 @@ proc GeoPhysX::AverageSoil { Grid } {
 
    if { [lindex $GenX::Param(Soil) 0]=="HWSD" } {
       GeoPhysX::AverageSoilHWSD $Grid
+   } elseif { [lindex $GenX::Param(Soil) 0]=="JPL" } {
+      GeoPhysX::AverageSoilJPL $Grid
    } else {
       GeoPhysX::AverageSand $Grid
       GeoPhysX::AverageClay $Grid
@@ -1506,6 +1509,99 @@ proc GeoPhysX::AverageSand { Grid } {
       fstdfield write GPXJ1 GPXAUXFILE -24 True $GenX::Param(Compress)
    }
    fstdfield free SANDTILE GPXJ1 GPXJ1SK
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageSoilJPL>
+# Creation : July 2011 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the sand percentage through averaging based on JPL
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the sand percentage
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+
+proc GeoPhysX::AverageSoilJPL { Grid } {
+   variable Param
+
+   GenX::Procs
+   fstdfield copy GPXJ1 $Grid
+   fstdfield copy GPXJ2 $Grid
+
+   GenX::GridClear { GPXJ1 GPXJ2 } 0.0
+
+   #----- Open the file
+   gdalfile open JPLFILE read $GenX::Path(JPL)/sand_M03.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef JPLFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with JPL database, mask will not be calculated"
+   } else {
+      GenX::Log INFO "Grid intersection with JPL database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read JPLTILE { { JPLFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats JPLTILE -nodata -999900 -celldim $GenX::Param(Cell)
+            vexpr JPLTILE JPLTILE*100.0
+
+            fstdfield gridinterp GPXJ1 JPLTILE AVERAGE False
+         }
+      }
+      fstdfield gridinterp GPXJ1 - NOP True
+
+      #----- Save output (Same for all layers)
+      foreach type $Param(SandTypes) {
+         fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
+         fstdfield write GPXJ1 GPXAUXFILE -24 True $GenX::Param(Compress)
+      }
+      gdalband free JPLTILE
+   }
+   gdalfile close JPLFILE
+
+   #----- Open the file
+   gdalfile open JPLFILE read $GenX::Path(JPL)/clay_M03.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef JPLFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with JPL database, mask will not be calculated"
+   } else {
+      GenX::Log INFO "Grid intersection with JPL database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read JPLTILE { { JPLFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats JPLTILE -nodata -999900 -celldim $GenX::Param(Cell)
+            vexpr JPLTILE JPLTILE*100.0
+
+            fstdfield gridinterp GPXJ2 JPLTILE AVERAGE False
+         }
+      }
+      fstdfield gridinterp GPXJ2 - NOP True
+
+      #----- Save output (Same for all layers)
+      foreach type $Param(SandTypes) {
+         fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
+         fstdfield write GPXJ2 GPXAUXFILE -24 True $GenX::Param(Compress)
+      }
+      gdalband free JPLTILE
+   }
+   gdalfile close JPLFILE
 }
 
 #----------------------------------------------------------------------------

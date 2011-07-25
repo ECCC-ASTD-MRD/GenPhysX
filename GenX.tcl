@@ -89,7 +89,7 @@ namespace eval GenX { } {
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE }
-   set Param(Soils)     { USDA AGRC FAO HWSD }
+   set Param(Soils)     { USDA AGRC FAO HWSD JPL }
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
@@ -142,6 +142,8 @@ namespace eval GenX { } {
    set Path(Various)   $Path(DBase)/Various
    set Path(BELD3)     $Path(DBase)/BELD3
    set Path(LCC2000V)  $Path(DBase)/LCC2000V
+   set Path(JPL)       $Path(DBase)/JPL
+
    set Path(StatCan)   /data/aqli04/afsulub/StatCan2006
 
    #----- Metadata related variables
