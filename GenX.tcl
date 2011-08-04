@@ -79,6 +79,7 @@ namespace eval GenX { } {
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
    set Param(Compress)  False                 ;#Compress standard file output
+   set Param(NBits)     32                    ;#Compress standard file output
    set Param(Cell)      1                     ;#Grid cell dimension (1=1D(point 2=2D(area))
    set Param(Script)    ""                    ;#User definition script
    set Param(Process)   ""                    ;#Current processing id
@@ -623,6 +624,7 @@ proc GenX::CommandLine { } {
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
       \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" ($Param(Cell))]
       \[-compress\] [format "%-30s : Compress standard file output" ($Param(Compress))]
+      \[-nbits\]    [format "%-30s : Maximum number of bits to use to save RPN fields" ($Param(NBits))]
 
    Batch mode parameters:
       \[-batch\]    [format "%-30s : Launch in batch mode" ""]
@@ -727,6 +729,7 @@ proc GenX::ParseCommandLine { } {
          "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Z0Filter)]; incr flags }
          "celldim"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Cell)] }
          "compress"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Compress)] }
+         "nbits"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(NBits)] }
          "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Script)] }
          "process"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Process)] }
          "help"      { GenX::CommandLine ; exit 0 }
@@ -1077,18 +1080,18 @@ proc GenX::GridGet { File } {
             incr tip1 -1
 
             #----- Write the grid and descriptors to output files
-            fstdfield write TIC  GPXOUTFILE -32 True
-            fstdfield write TAC  GPXOUTFILE -32 True
+            fstdfield write TIC  GPXOUTFILE 0 True
+            fstdfield write TAC  GPXOUTFILE 0 True
 
-            fstdfield write TIC  GPXAUXFILE -32 True
-            fstdfield write TAC  GPXAUXFILE -32 True
-            fstdfield write GRID GPXAUXFILE -32 True $GenX::Param(Compress)
+            fstdfield write TIC  GPXAUXFILE 0 True
+            fstdfield write TAC  GPXAUXFILE 0 True
+            fstdfield write GRID GPXAUXFILE -16 True $GenX::Param(Compress)
          }
       } else {
          #----- Otherwise, use the first field found as output grid
          fstdfield read GRID GPXGRIDFILE -1 "" -1 -1 -1 "" ""
          fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -IP1 $tip1
-         fstdfield write GRID GPXAUXFILE -32 True $GenX::Param(Compress)
+         fstdfield write GRID GPXAUXFILE -16 True $GenX::Param(Compress)
       }
    }
 

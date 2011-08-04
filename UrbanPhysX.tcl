@@ -163,7 +163,7 @@ proc UrbanPhysX::Cover { Grid } {
    }
    #----- Save urban UR field
    fstdfield define GPXSUM -NOMVAR UR -IP1 0
-   fstdfield write GPXSUM GPXOUTFILE -32 True $GenX::Param(Compress)
+   fstdfield write GPXSUM GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Remove urban class (21)
    vexpr GPXVF GPXVF()()(20) = 0.0
@@ -188,7 +188,7 @@ proc UrbanPhysX::Cover { Grid } {
    }
 
    #----- Save urban adjusted vege
-   fstdfield write GPXVF GPXAUXFILE -32 False $GenX::Param(Compress)
+   fstdfield write GPXVF GPXAUXFILE -$GenX::Param(NBits) False $GenX::Param(Compress)
 
    #----- Parse each urban characteristic
    foreach type $Param(Types) var $Param(Vars) ip1 $Param(IP1s) {
@@ -208,7 +208,7 @@ proc UrbanPhysX::Cover { Grid } {
 
       #----- Save urban fields
       fstdfield define GPXAGG -NOMVAR $var -IP1 $ip1
-      fstdfield write GPXAGG GPXOUTFILE -32 True $GenX::Param(Compress)
+      fstdfield write GPXAGG GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    }
 
 #   #----- Dynamical roughness calculation for vegetation and soils
@@ -221,7 +221,7 @@ proc UrbanPhysX::Cover { Grid } {
 #   vexpr GPXZ0 exp(GPXZ0)
 
 #   fstdfield define GPXZ0 -NOMVAR Z0TO
-#   fstdfield write GPXZ0 GPXOUTFILE -32 False  $GenX::Param(Compress)
+#   fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) False  $GenX::Param(Compress)
 
    fstdfield free GPXSUM GPXAGG GPXVF GPXUF GPXZ0
 }

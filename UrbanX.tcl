@@ -1375,9 +1375,9 @@ proc UrbanX::TEB2FSTD { Grid } {
       fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
       fstdfield define $Grid -NOMVAR $tebparam -IP1 $ip1
       if { $tebparam == "VF"} {
-         fstdfield write $Grid GPXOUTFILE -32 True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
+         fstdfield write $Grid GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
       } else {
-         fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
       }
 
       if { $tebparam == "BLDH"} {
@@ -1393,7 +1393,7 @@ proc UrbanX::TEB2FSTD { Grid } {
             fstdfield clear $Grid 0
             fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD True
             fstdfield define $Grid -NOMVAR HVAR -IP1 0
-            fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
             fstdfield free BLDHFIELD
 
             gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif] ;# reopening since closed for memory purposes
@@ -1405,14 +1405,14 @@ proc UrbanX::TEB2FSTD { Grid } {
          fstdfield clear $Grid 0
          fstdfield gridinterp $Grid RTEBPARAM MINIMUM
          fstdfield define $Grid -NOMVAR HMIN -IP1 0
-         fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
          # Building height max computation
          GenX::Log INFO "Computing Building Height Maximum HMAX (IP1=0) values over target grid"
          fstdfield clear $Grid 0
          fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
          fstdfield define $Grid -NOMVAR HMAX -IP1 0
-         fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
       }
       gdalband free RTEBPARAM
    }
@@ -1428,7 +1428,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield clear $Grid 0
    vexpr $Grid VEGFFIELD+BLDFFIELD+PAVFFIELD
    fstdfield define $Grid -NOMVAR SUMF -IP1 0
-   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield free PAVFFIELD VEGFFIELD
 
    # Wall-O-Hor calculations
@@ -1438,7 +1438,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    vexpr REZ (ddx($Grid)+ddy($Grid))/2  ;# spatial resolution of the target grid in meters
    vexpr WHORFIELD BLDHFIELD*(2.0/REZ^2)*(sqrt(BLDFFIELD*REZ^2))
    fstdfield define WHORFIELD -NOMVAR WHOR -IP1 0
-   fstdfield write WHORFIELD GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write WHORFIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    # Z0_TOWN calculations
    GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN Z0TW (IP1=0) values with the MacDonald 1998 Model over target grid"
@@ -1446,7 +1446,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    vexpr DISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD-1.0))) ;# Computing Displacement height
    vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))) ;# ifelse required to avoid dividing by 0
    fstdfield define $Grid -NOMVAR Z0TW -IP1 0
-   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+   fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield free BLDHFIELD BLDFFIELD WHORFIELD REZ
 
    GenX::Log INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
