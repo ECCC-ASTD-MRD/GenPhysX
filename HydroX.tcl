@@ -7,7 +7,7 @@
 # Project    : Geophysical field generator.
 # File       : HydroX.tcl
 # Creation   : August 2011 - J.P. Gauthier - CMC/CMOE
-# Revision   : $Id $
+# Revision   : $Id$
 # Description: Definitions of functions related to hydrological fields
 #
 # Remarks  :
