@@ -38,6 +38,7 @@
 #   GenX::SRTMFindFiles      { Lat0 Lon0Lat1 Lon1 }
 #   GenX::CDEDFindFiles      { Lat0 Lon0 Lat1 Lon1 { Res 50 } }
 #   GenX::EOSDFindFiles      { Lat0 Lon0Lat1 Lon1 }
+#   GenX::NHNFindFiles       { Lat0 Lon0 Lat1 Lon1 }
 #   GenX::LCC2000VFindFiles  { Lat0 Lon0 Lat1 Lon1 }
 #   GenX::UTMZoneDefine      { Lat0 Lon0 Lat1 Lon1 { Res 5 } { Name "" } }
 #
@@ -72,6 +73,7 @@ namespace eval GenX { } {
    set Param(Sub)        ""                    ;#Subgrid calculations selected
    set Param(Target)     ""                    ;#Model cible
    set Param(Biogenic)   ""                    ;#Biogenic emissions data selected
+   set Param(Hydro)      ""                    ;#Hydrographic data
    set Param(Urban)      ""                    ;#Urban coverage
    set Param(SMOKE)      ""                    ;#SMOKE emissions
    set Param(SMOKEIndex) 1                     ;#SMOKE restart index
@@ -94,6 +96,7 @@ namespace eval GenX { } {
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
+   set Param(Hydros)    { NHN }
    set Param(Urbans)    { True HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
@@ -144,6 +147,7 @@ namespace eval GenX { } {
    set Path(BELD3)     $Path(DBase)/BELD3
    set Path(LCC2000V)  $Path(DBase)/LCC2000V
    set Path(JPL)       $Path(DBase)/JPL
+   set Path(NHN)       $Path(DBase)/NHN
 
    set Path(StatCan)   /data/aqli04/afsulub/StatCan2006
 
@@ -235,6 +239,11 @@ proc GenX::Process { Grid } {
       if { $Param(Biogenic)!="" } {
          BioGenX::CalcEmissions  $Grid
          BioGenX::TransportableFractions $Grid
+      }
+
+      #-----Hydrologc parameters
+      if { $Param(Hydro)!="" } {
+         HydroX::DrainDensity $Grid
       }
 
       #----- Urban parameters
@@ -434,6 +443,7 @@ proc GenX::MetaData { Grid } {
    set version "GenX($Param(Version))"
    catch { append version ", GeoPhysX($GeoPhysX::Param(Version))" }
    catch { append version ", BioGenX($BioGenX::Param(Version))" }
+   catch { append version ", HydroX($HydroX::Param(Version))" }
    catch { append version ", UrbanX($UrbanX::Param(Version))" }
    catch { append version ", IndustrX($IndustrX::Param(Version))" }
 
@@ -613,6 +623,7 @@ proc GenX::CommandLine { } {
       \[-soil\]     [format "%-30s : Soil method(s) among {$Param(Soils)}" ([join $Param(Soil)])]
       \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Param(Aspects)}" ([join $Param(Aspect)])]
       \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Param(Biogenics)}" ([join $Param(Biogenic)])]
+      \[-hydro\]    [format "%-30s : Hydrographic method(s) among {$Param(Hydros)}" ([join $Param(Hydro)])]
       \[-urban\]    [format "%-30s : Urban coverage {$Param(Urbans)}" ([join $Param(Urban)])]
       \[-smoke\]    [format "%-30s : SMOKE emissions {$Param(SMOKE)}" ([join $Param(SMOKE)])]
       \[-rindex\]   [format "%-30s : SMOKE restart index (default 1)" ($Param(SMOKEIndex))]
@@ -721,6 +732,7 @@ proc GenX::ParseCommandLine { } {
          "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Sub)]; incr flags }
          "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Aspect)]; incr flags }
          "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
+         "hydro"     { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Hydro) $GenX::Param(Hydros)]; incr flags }
          "urban"     { set i [GenX::ParseArgs $gargv $gargc $i 3 GenX::Param(Urban) $GenX::Param(Urbans)]; incr flags }
          "smoke"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(SMOKE) $GenX::Param(SMOKES)]; incr flags }
          "rindex"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(SMOKEIndex)] }
@@ -785,6 +797,13 @@ proc GenX::ParseCommandLine { } {
       if { $Param(Check)=="" } {
             GenX::Log ERROR "To generate biogenic emissions fields you must use the -check option."
             GenX::Continue
+      }
+   }
+
+   if { $Param(Hydro)!="" } {
+      if { $Param(Mask)=="" } {
+         GenX::Log ERROR "To generate hydrographic type fields you need to generate the mask"
+         GenX::Continue
       }
    }
 
@@ -1393,6 +1412,43 @@ proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
       set s250 [string range $feuillet 0 3]
       if { [file exists [set path $Path(EOSD)/${s250}_lc_1/${s250}_lc_1.tif]] } {
          lappend files $path
+      }
+   }
+   return $files
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::NHNFindFiles>
+# Creation : August 2011 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Get the NHN data filenames covering an area.
+#
+# Parameters :
+#  <Lat0>    : Lower left corner latitude
+#  <Lon0>    : Lower left corner longitude
+#  <Lat1>    : Upper right corner latitude
+#  <Lon1>    : Upper right corner longitude
+#
+# Return:
+#   <Files>  : List of files with coverage intersecting with area
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
+   variable Path
+
+   if { ![ogrlayer is NHNLAYER] } {
+      set nhn_layer [lindex [ogrfile open NHNINDEX read $Path(NHN)/index/NHN_INDEX_06_INDEX_WORKUNIT_LIMIT_2.shp] 0]
+      eval ogrlayer read NHNLAYER $nhn_layer
+   }
+
+   set files { }
+   foreach id [ogrlayer pick NHNLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
+      set feuillet [ogrlayer define NHNLAYER -feature $id DATASETNAM]
+
+      if { [llength [set path [glob -nocomplain $Path(NHN)/shp_fr/[string range $feuillet 0 1]/RHN_${feuillet}_*]]] } {
+         lappend files $Path(NHN)/shp_fr/[string range $feuillet 0 1]/RHN_${feuillet}
       }
    }
    return $files
