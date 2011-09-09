@@ -20,6 +20,7 @@
 #============================================================================
 
 namespace eval UrbanX { } {
+   global GENPHYSX_HOME
    variable Param
    variable Const
    variable Meta
@@ -40,10 +41,8 @@ namespace eval UrbanX { } {
    set Param(BuildingsHgtField)     "" ;# Name of the height attribute of the 2.5D buildings shapefile
 
    #----- Directory where to find processing procs
-   set dir [info script]
-   while { ![catch { set dir [file normalize [file link $dir]] }] } {}
-   set dir [file dirname $dir]
-   source $dir/UrbanX-ClassesLUT.tcl
+   source $GENPHYSX_HOME/UrbanX-ClassesLUT.tcl
+
    set Param(Entities) [UrbanX-ClassesLUT::SetParamEntities]
    set Param(Priorities) [UrbanX-ClassesLUT::SetParamPriorities]
    set Param(TEBClasses) [UrbanX-ClassesLUT::SetParamTEBClasses]
@@ -79,7 +78,7 @@ namespace eval UrbanX { } {
    set Param(Census2006File) /cnfs/dev/cmoe/afsralx/StatCan2006/da2006_pop_labour.shp
 
 # Next file should be moved to the data repertory with $GenX::Path()
-   set Param(TEBParamsLUTCSVFile) doc/TEB-Params_LUT.csv
+   set Param(TEBParamsLUTCSVFile) $GENPHYSX_HOME/doc/TEB-Params_LUT.csv
 
    # Pour IndustrX seulement : fichier contenant 1 polygone pour chaque province ou territoire du Canada - pourrait être déplacé dans IndustrX
    set Param(ProvincesGeom) $GenX::Path(StatCan)/Provinces_lcc-nad83.shp

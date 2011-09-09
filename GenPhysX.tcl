@@ -63,17 +63,17 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.4.
 #============================================================================
 
 #----- Directory where to find processing procs
-set dir [info script]
-while { ![catch { set dir [file normalize [file link $dir]] }] } {}
-set dir [file dirname $dir]
+set GENPHYSX_HOME [info script]
+while { ![catch { set GENPHYSX_HOME [file normalize [file link $GENPHYSX_HOME]] }] } {}
+set GENPHYSX_HOME [file dirname $GENPHYSX_HOME]
 
-source $dir/GenX.tcl
-source $dir/GeoPhysX.tcl
-source $dir/BioGenX.tcl
-source $dir/HydroX.tcl
-source $dir/UrbanPhysX.tcl
-source $dir/UrbanX.tcl
-source $dir/IndustrX.tcl
+source $GENPHYSX_HOME/GenX.tcl
+source $GENPHYSX_HOME/GeoPhysX.tcl
+source $GENPHYSX_HOME/BioGenX.tcl
+source $GENPHYSX_HOME/HydroX.tcl
+source $GENPHYSX_HOME/UrbanPhysX.tcl
+source $GENPHYSX_HOME/UrbanX.tcl
+source $GENPHYSX_HOME/IndustrX.tcl
 
 #----- Parse the arguments
 GenX::ParseCommandLine
