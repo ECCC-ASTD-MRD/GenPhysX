@@ -2197,7 +2197,7 @@ proc GeoPhysX::SubY789 { } {
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::SubRoughnessLength>
 # Creation : Septembre 2007 - Ayrton Zadra - CMC/CMOE
-#
+#                
 # Goal     : Calculates the roughness length.
 #
 # Parameters   :
@@ -2306,6 +2306,20 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield define GPXZPG -NOMVAR ZPG -IP1 0 -IP2 0
    fstdfield write GPXZPG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
+  #----- Roughness length over water
+   vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (1.0/ln(GPXZREF/GPXZTP      ))^2.0 , 0.0)
+   vexpr GPXW2  ifelse(GPXZREF>0.001               , (1.0/ln(GPXZREF/0.001))^2.0        , 0.0)
+   vexpr GPXZ0W ifelse((GPXW1+GPXW2)>0.0           , GPXZREF*exp(-1.0/sqrt(GPXW1+GPXW2)), 0.0)
+   vexpr GPXZ0W ifelse(GPXZREF<=$Const(zrefmin)    , 0.001                              , GPXZ0W)
+   vexpr GPXZ0W ifelse(GPXZ0W<$Const(z0def)        , $Const(z0def)                      , GPXZ0W)
+   vexpr GPXZ0W ifelse((1.0-GPXMG)<=$Const(mgmin)  , $Const(z0def)                      , GPXZ0W)
+   fstdfield define GPXZ0W -NOMVAR Z0W -IP1 0 -IP2 0
+   fstdfield write GPXZ0W GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   vexpr GPXZPW ifelse(GPXZ0W>0.0,ln(GPXZ0W),$Const(zpdef) )
+   fstdfield define GPXZPW -NOMVAR ZPW -IP1 0 -IP2 0
+   fstdfield write GPXZPW GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
    #----- Fill some gaps
    vexpr GPXZ0S ifelse(GPXMG>$Const(mgmin) && GPXZTP<$Const(z0min) && GPXZ0V1<$Const(z0min) && GPXZ0G<$Const(z0min),$Const(z0def),GPXZ0S)
    fstdfield define GPXZ0S -NOMVAR Z0S -IP1 0 -IP2 0
@@ -2315,7 +2329,9 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZPS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Total roughness length
-   vexpr GPXZP GPXMG*((1.0-GPXGA)*GPXZPS+GPXGA*GPXZPG)+(1.0-GPXMG)*ln(0.001)
+   GeoPhysX::Compute_GA GPXGA GPXGA
+   vexpr GPXZP GPXMG*((1.0-GPXGA)*GPXZPS+GPXGA*GPXZPG)+(1.0-GPXMG)*GPXZPW
+
    fstdfield define GPXZP -NOMVAR ZP0 -IP1 0 -IP2 0
    fstdfield write GPXZP GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
@@ -2336,7 +2352,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield define GPXZP -NOMVAR ZP -IP1 0 -IP2 0
    fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S \
+   fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S GPXZ0W GPXZPW \
        GPXZ0V2 GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF
 }
 
@@ -2402,8 +2418,9 @@ proc GeoPhysX::CheckConsistencyStandard { } {
    }
 
    if { [fstdfield is GPXVF2] } {
-      fstdfield define GPXVF2 -NOMVAR GA -IP1 0
-      fstdfield write GPXVF2 GPXOUTFILE -24 True $GenX::Param(Compress)
+      GeoPhysX::Compute_GA GPXGA GPXVF2
+      fstdfield define GPXGA -NOMVAR GA -IP1 0
+      fstdfield write GPXGA GPXOUTFILE -24 True $GenX::Param(Compress)
 
       #----- Calculate Dominant type and save
       GeoPhysX::DominantVege GPXVF2
@@ -2452,7 +2469,43 @@ proc GeoPhysX::CheckConsistencyStandard { } {
          GenX::Log WARNING "Could not find J2($type) field, will not do the consistency check on J2($type)"
       }
    }
-   fstdfield free GPXJ1 GPXJ2 GPXMG GPXVF GPXVF2 GPXVF3
+   fstdfield free GPXJ1 GPXJ2 GPXMG GPXVF GPXVF2 GPXVF3 GPXGA
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::Diag>
+# Creation : Aout 2011 - Nathalie Gauthier/Vahn Souvanlasy - 
+#
+# Goal     : Calculates GA
+#
+# Parameters   :
+#
+#    <gpxga>   : result field containing GA
+#    <vf2>     : VF2 input field
+#
+# Return:
+#
+# Remarks : GA is glacier fraction relative to continental surface only
+#
+#    GA =  VF2 / SUM(VF 4..26 + VF2)
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::Compute_GA  { gpxga vf2 } {
+   variable Param
+
+   fstdfield copy  SUMVF4_26  $vf2
+   GenX::GridClear SUMVF4_26 0.0
+   foreach type [lrange $Param(VegeTypes) 3 end] {
+      if { ![catch { fstdfield read GPXVF GPXOUTFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
+         vexpr SUMVF4_26  SUMVF4_26+GPXVF
+      } else {
+         GenX::Log WARNING "Could not find VF($type) field while processing VG"
+      }
+   }
+
+   vexpr SUMVFGA  SUMVF4_26+$vf2
+   vexpr $gpxga ifelse(SUMVFGA>0.001,($vf2/SUMVFGA),0.0)
+   fstdfield free SUMVFGA SUMVF4_26
 }
 
 #----------------------------------------------------------------------------
