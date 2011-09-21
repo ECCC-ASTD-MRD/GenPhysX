@@ -1691,7 +1691,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
 
    # Note: the ^ operator can be used in vexpr, but not in expr
    vexpr RDISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD - 1.0)))
-   vexpr $Grid BLDHFIELD*((1.0-RDISPH/BLDHFIELD)*exp( -1.0*((0.5*1.0*1.2/0.4^2*((1.0-RDISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))
+   vexpr $Grid ifelse(BLDHFIELD==0,0,BLDHFIELD*((1.0-RDISPH/BLDHFIELD)*exp( -1.0*((0.5*1.0*1.2/0.4^2*((1.0-RDISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5)))))
 
    #GenX::Log INFO "Computing Z0_TOWN at $res\m with the Raupach 1994 Model"
    #vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(exp(-1.0*(7.5*2.0*RWALLOHOR/2.0)^0.5-1.0)/(7.5*2.0*RWALLOHOR/2.0)^0.5))
