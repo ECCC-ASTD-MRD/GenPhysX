@@ -2197,7 +2197,7 @@ proc GeoPhysX::SubY789 { } {
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::SubRoughnessLength>
 # Creation : Septembre 2007 - Ayrton Zadra - CMC/CMOE
-#                
+#
 # Goal     : Calculates the roughness length.
 #
 # Parameters   :
@@ -2306,7 +2306,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield define GPXZPG -NOMVAR ZPG -IP1 0 -IP2 0
    fstdfield write GPXZPG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-  #----- Roughness length over water
+   #----- Roughness length over water
    vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (1.0/ln(GPXZREF/GPXZTP      ))^2.0 , 0.0)
    vexpr GPXW2  ifelse(GPXZREF>0.001               , (1.0/ln(GPXZREF/0.001))^2.0        , 0.0)
    vexpr GPXZ0W ifelse((GPXW1+GPXW2)>0.0           , GPXZREF*exp(-1.0/sqrt(GPXW1+GPXW2)), 0.0)
@@ -2473,15 +2473,15 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::Diag>
-# Creation : Aout 2011 - Nathalie Gauthier/Vahn Souvanlasy - 
+# Name     : <GeoPhysX::Compute_GA>
+# Creation : Aout 2011 - Nathalie Gauthier/Vahn Souvanlasy -
 #
 # Goal     : Calculates GA
 #
 # Parameters   :
 #
-#    <gpxga>   : result field containing GA
-#    <vf2>     : VF2 input field
+#    <GPXGA>   : result field containing GA
+#    <VF2>     : VF2 input field
 #
 # Return:
 #
@@ -2490,11 +2490,12 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 #    GA =  VF2 / SUM(VF 4..26 + VF2)
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::Compute_GA  { gpxga vf2 } {
+proc GeoPhysX::Compute_GA  { GPXGA VF2 } {
    variable Param
 
-   fstdfield copy  SUMVF4_26  $vf2
+   fstdfield copy  SUMVF4_26 $VF2
    GenX::GridClear SUMVF4_26 0.0
+
    foreach type [lrange $Param(VegeTypes) 3 end] {
       if { ![catch { fstdfield read GPXVF GPXOUTFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
          vexpr SUMVF4_26  SUMVF4_26+GPXVF
@@ -2503,8 +2504,8 @@ proc GeoPhysX::Compute_GA  { gpxga vf2 } {
       }
    }
 
-   vexpr SUMVFGA  SUMVF4_26+$vf2
-   vexpr $gpxga ifelse(SUMVFGA>0.001,($vf2/SUMVFGA),0.0)
+   vexpr SUMVFGA  SUMVF4_26+$VF2
+   vexpr $GPXGA ifelse(SUMVFGA>0.001,($VF2/SUMVFGA),0.0)
    fstdfield free SUMVFGA SUMVF4_26
 }
 
