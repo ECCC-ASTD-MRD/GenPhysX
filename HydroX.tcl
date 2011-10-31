@@ -72,15 +72,18 @@ proc HydroX::DrainDensity { Grid } {
 
    GenX::GridClear [list $Grid GPXRIVERSUM GPXLAKESUM GPXLAKEAREA] 0.0
 
-   foreach path [GenX::NHNFindFiles $la0 $lo0 $la1 $lo1] {
-      GenX::Log DEBUG "   Processing NHN path $path" False
+   set n 0
+   set files [GenX::NHNFindFiles $la0 $lo0 $la1 $lo1]
+
+   foreach path $files {
+      GenX::Log DEBUG "   Processing NHN path $path ([incr n]/[llength $files])" False
 
       #----- Lire la donnee des rivieres
       foreach file [glob ${path}_?_?_HD_COURSDEAU_1.shp] {
          set layers [ogrfile open FILERIVER read ${file}]
          ogrlayer read LINES FILERIVER 0
 
-         fstdfield gridinterp GPXRIVERSUM LINES LENGTH_CONSERVATIVE FEATURE_LENGTH
+         fstdfield gridinterp GPXRIVERSUM LINES LENGTH_CONSERVATIVE FEATURE_LENGTH_METER
 
          ogrfile close FILERIVER
       }
@@ -90,8 +93,8 @@ proc HydroX::DrainDensity { Grid } {
          set layers [ogrfile open FILELAKE read ${file}]
          ogrlayer read AREAS FILELAKE 0
 
-         fstdfield gridinterp GPXLAKESUM  AREAS LENGTH_CONSERVATIVE FEATURE_LENGTH
-         fstdfield gridinterp GPXLAKEAREA AREAS CONSERVATIVE FEATURE_AREA
+         fstdfield gridinterp GPXLAKESUM  AREAS LENGTH_CONSERVATIVE FEATURE_LENGTH_METER
+         fstdfield gridinterp GPXLAKEAREA AREAS CONSERVATIVE FEATURE_AREA_METER
 
          ogrfile close  FILELAKE
       }
