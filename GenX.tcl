@@ -1113,6 +1113,7 @@ proc GenX::GridGet { File } {
          fstdfield write GRID GPXAUXFILE -16 True $GenX::Param(Compress)
       }
    }
+   fstdfield free GRID TIC TAC
 
    #----- Read every grids available
    set i 0
@@ -1124,7 +1125,6 @@ proc GenX::GridGet { File } {
    }
 
    fstdfile close GPXGRIDFILE
-   fstdfield free GRID TIC TAC
 
    #----- Check if we're in a sub-process, if so return only the needed grid
    if { $Param(Process)!="" } {
