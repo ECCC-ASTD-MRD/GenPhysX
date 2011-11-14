@@ -685,7 +685,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
    fstdfield gridinterp GPXMASK - NOP True
    fstdfield define GPXMASK -NOMVAR MG -IP1 0
    vexpr GPXMASK ifelse(GPXMASK==-99.0,0.0,GPXMASK/100.0)
-   fstdfield write GPXMASK GPXOUTFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
    fstdfield free MASKTILE
 }
 
@@ -739,7 +739,7 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
       #----- Save output
       fstdfield gridinterp GPXMASK - NOP True
       fstdfield define GPXMASK -NOMVAR MG -IP1 0
-      fstdfield write GPXMASK GPXOUTFILE -24 True $GenX::Param(Compress)
+      fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
       fstdfield free MASKTILE
 
       gdalband free GLOBTILE
@@ -796,7 +796,7 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
       #----- Save output
       fstdfield gridinterp GPXMASK - NOP True
       fstdfield define GPXMASK -NOMVAR MG -IP1 0
-      fstdfield write GPXMASK GPXOUTFILE -24 True $GenX::Param(Compress)
+      fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
       gdalband free GCLTILE
    }
@@ -859,7 +859,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    }
 
    fstdfield define GPXMASK -NOMVAR MG -IP1 0 -IP2 0
-   fstdfield write GPXMASK GPXOUTFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    ogrlayer free USLAKES CANVECTILE
 }
@@ -920,7 +920,7 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
    ogrfile close CANPROVFILE
 
    fstdfield define GPXMASK -NOMVAR MGGO -IP1 0 -IP2 0
-   fstdfield write GPXMASK GPXAUXFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXMASK GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    ogrlayer free CANPROV
 }
@@ -958,12 +958,13 @@ proc GeoPhysX::AverageVege { Grid } {
          "CORINE"    { GeoPhysX::AverageVegeCORINE    GPXVF ;#----- CORINE over Europe only vege averaging method }
       }
    }
+   fstdfield free GPXVSK
    fstdfield gridinterp GPXVF - NOP True
 
    #----- Save the 26 Vege types
    fstdfield define GPXVF -NOMVAR VF -IP2 0
    fstdfield stats GPXVF -levels $Param(VegeTypes) -leveltype UNDEFINED
-   fstdfield write GPXVF GPXAUXFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXVF GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    fstdfield free GPXVF
 }
@@ -1067,11 +1068,15 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
          gdalfile close EOSDFILE
       }
 
-      #----- Use accumulator to figure out coverage in destination
-      #      But remove border of coverage since it will not be full
-      fstdfield gridinterp $Grid - ACCUM
-      vexpr GPXVSK !fpeel($Grid)
-      fstdfield stats $Grid -mask GPXVSK
+      #----- If there is other DB to process
+      if { [lsearch -exact $GenX::Param(Vege) EOSD]<[expr [llength $GenX::Param(Vege)]-1] } {
+
+         #----- Use accumulator to figure out coverage in destination
+         #      But remove border of coverage since it will not be full
+         fstdfield gridinterp $Grid - ACCUM
+         vexpr GPXVSK !fpeel($Grid)
+         fstdfield stats $Grid -mask GPXVSK
+      }
 
       gdalband free EOSDTILE
       vector free FROMEOSD TORPN
@@ -1163,10 +1168,13 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
          }
       }
 
-      #----- Use accumulator to figure out coverage in destination
-      #      But remove border of coverage since it will not be full
-      vexpr GPXVSK !fpeel($Grid)
-      fstdfield stats $Grid -mask GPXVSK
+      #----- If there is other DB to process
+      if { [lsearch -exact $GenX::Param(Vege) LCC2000V]<[expr [llength $GenX::Param(Vege)]-1] } {
+         #----- Use accumulator to figure out coverage in destination
+         #      But remove border of coverage since it will not be full
+         vexpr GPXVSK !fpeel($Grid)
+         fstdfield stats $Grid -mask GPXVSK
+      }
    } else {
       GenX::Log WARNING "The grid is not within LCC2000V limits"
    }
@@ -1223,11 +1231,14 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
          }
       }
 
-      #----- Use accumulator to figure out coverage in destination
-      #      But remove border of coverage since it will not be full
-      fstdfield gridinterp $Grid - ACCUM
-      vexpr GPXVSK !fpeel($Grid)
-      fstdfield stats $Grid -mask GPXVSK
+      #----- If there is other DB to process
+      if { [lsearch -exact $GenX::Param(Vege) CORINE]<[expr [llength $GenX::Param(Vege)]-1] } {
+         #----- Use accumulator to figure out coverage in destination
+         #      But remove border of coverage since it will not be full
+         fstdfield gridinterp $Grid - ACCUM
+         vexpr GPXVSK !fpeel($Grid)
+         fstdfield stats $Grid -mask GPXVSK
+      }
 
       gdalband free CORINETILE
       vector free FROMCORINE TORPN
@@ -1285,11 +1296,14 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
          }
       }
 
-      #----- Use accumulator to figure out coverage in destination
-      #      But remove border of coverage since it will not be full
-      fstdfield gridinterp $Grid - ACCUM
-      vexpr GPXVSK !fpeel($Grid)
-      fstdfield stats $Grid -mask GPXVSK
+      #----- If there is other DB to process
+      if { [lsearch -exact $GenX::Param(Vege) GLOBCOVER]<[expr [llength $GenX::Param(Vege)]-1] } {
+         #----- Use accumulator to figure out coverage in destination
+         #      But remove border of coverage since it will not be full
+         fstdfield gridinterp $Grid - ACCUM
+         vexpr GPXVSK !fpeel($Grid)
+         fstdfield stats $Grid -mask GPXVSK
+      }
 
       gdalband free GLOBTILE
       vector free FROMGLOB TORPN
@@ -1347,11 +1361,14 @@ proc GeoPhysX::AverageVegeGLC2000 { Grid } {
          }
       }
 
-      #----- Use accumulator to figure out coverage in destination
-      #      But remove border of coverage since it will not be full
-      fstdfield gridinterp $Grid - ACCUM
-      vexpr GPXVSK !fpeel($Grid)
-      fstdfield stats $Grid -mask GPXVSK
+      #----- If there is other DB to process
+      if { [lsearch -exact $GenX::Param(Vege) GLC2000]<[expr [llength $GenX::Param(Vege)]-1] } {
+         #----- Use accumulator to figure out coverage in destination
+         #      But remove border of coverage since it will not be full
+         fstdfield gridinterp $Grid - ACCUM
+         vexpr GPXVSK !fpeel($Grid)
+         fstdfield stats $Grid -mask GPXVSK
+      }
 
       gdalband free GLCTILE
       vector free FROMGLC TORPN
@@ -1409,11 +1426,14 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
          }
       }
 
-      #----- Use accumulator to figure out coverage in destination
-      #      But remove border of coverage since it will not be full
-      fstdfield gridinterp $Grid - ACCUM
-      vexpr GPXVSK !fpeel($Grid)
-      fstdfield stats $Grid -mask GPXVSK
+      #----- If there is other DB to process
+      if { [lsearch -exact $GenX::Param(Vege) CCRS]<[expr [llength $GenX::Param(Vege)]-1] } {
+         #----- Use accumulator to figure out coverage in destination
+         #      But remove border of coverage since it will not be full
+         fstdfield gridinterp $Grid - ACCUM
+         vexpr GPXVSK !fpeel($Grid)
+         fstdfield stats $Grid -mask GPXVSK
+      }
 
       gdalband free CCRSTILE
       vector free FROMCCRS TORPN
@@ -1506,7 +1526,7 @@ proc GeoPhysX::AverageSand { Grid } {
 
       #----- Save output
       fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
-      fstdfield write GPXJ1 GPXAUXFILE -24 True $GenX::Param(Compress)
+      fstdfield write GPXJ1 GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
    }
    fstdfield free SANDTILE GPXJ1 GPXJ1SK
 }
@@ -1563,7 +1583,7 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
       #----- Save output (Same for all layers)
       foreach type $Param(SandTypes) {
          fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
-         fstdfield write GPXJ1 GPXAUXFILE -24 True $GenX::Param(Compress)
+         fstdfield write GPXJ1 GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
       }
       gdalband free JPLTILE
    }
@@ -1597,7 +1617,7 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
       #----- Save output (Same for all layers)
       foreach type $Param(SandTypes) {
          fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
-         fstdfield write GPXJ2 GPXAUXFILE -24 True $GenX::Param(Compress)
+         fstdfield write GPXJ2 GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
       }
       gdalband free JPLTILE
    }
@@ -1809,7 +1829,7 @@ proc GeoPhysX::AverageClay { Grid } {
 
       #----- Save output
       fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
-      fstdfield write GPXJ2 GPXAUXFILE -24 True $GenX::Param(Compress)
+      fstdfield write GPXJ2 GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
    }
    fstdfield free CLAYTILE GPXJ2 GPXJ2SK
 }
@@ -1860,13 +1880,13 @@ proc GeoPhysX::AverageTopoLow { Grid } {
    fstdfield gridinterp GPXLOW - NOP True
    vexpr GPXLOW ifelse(GPXLOW==-99.0,0.0,GPXLOW)
    fstdfield define GPXLOW -NOMVAR MEL -IP1 0 -IP2 0
-   fstdfield write GPXLOW GPXAUXFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXLOW GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    #----- save <Hhr^2>ij
    fstdfield gridinterp GPXLRMS - NOP True
    vexpr GPXLRMS ifelse(GPXLRMS>0.0,GPXLRMS^0.5,0.0)
    fstdfield define GPXLRMS -NOMVAR LRMS -IP1 0
-   fstdfield write GPXLRMS GPXAUXFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXLRMS GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    fstdfield free LOWTILE LOWTILE2 GPXLRMS
 }
@@ -2056,9 +2076,9 @@ proc GeoPhysX::SubCorrectionFactor { } {
    GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc0) $Const(smallc1)
 
    fstdfield define GPXFLR -NOMVAR FLR -IP1 0 -IP2 0
-   fstdfield write GPXFLR GPXAUXFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXFLR GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
    fstdfield define GPXFHR -NOMVAR FHR -IP1 0 -IP2 0
-   fstdfield write GPXFHR GPXAUXFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXFHR GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    #----- For low-res and hi-res (over land only)
    GenX::Log INFO "Computing low and high res fields over land only"
@@ -2070,9 +2090,9 @@ proc GeoPhysX::SubCorrectionFactor { } {
    GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc0) $Const(smallc1)
 
    fstdfield define GPXFLR -NOMVAR FLRP -IP1 0 -IP2 0
-   fstdfield write GPXFLR GPXAUXFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXFLR GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
    fstdfield define GPXFHR -NOMVAR FHRP -IP1 0 -IP2 0
-   fstdfield write GPXFHR GPXAUXFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXFHR GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    fstdfield free GPXMG GPXDX GPXDY GPXFLR GPXFHR
 }
@@ -2410,7 +2430,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
             break
          }
          fstdfield define GPXVF -NOMVAR VF -IP1 [expr 1200-$type]
-         fstdfield write GPXVF GPXOUTFILE -24 True $GenX::Param(Compress)
+         fstdfield write GPXVF GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
       } else {
          GenX::Log WARNING "Could not find VF($type) field while checking VF"
          break
@@ -2420,7 +2440,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
    if { [fstdfield is GPXVF2] } {
       GeoPhysX::Compute_GA GPXGA GPXVF2
       fstdfield define GPXGA -NOMVAR GA -IP1 0
-      fstdfield write GPXGA GPXOUTFILE -24 True $GenX::Param(Compress)
+      fstdfield write GPXGA GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
       #----- Calculate Dominant type and save
       GeoPhysX::DominantVege GPXVF2
@@ -2443,7 +2463,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
             GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J1"
          }
          fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
-         fstdfield write GPXJ1 GPXOUTFILE -24 True $GenX::Param(Compress)
+         fstdfield write GPXJ1 GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
       } else {
          GenX::Log WARNING "Could not find J1($type) field, will not do the consistency check on J1($type)"
       }
@@ -2464,7 +2484,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
             break
          }
          fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
-         fstdfield write GPXJ2 GPXOUTFILE -24 True $GenX::Param(Compress)
+         fstdfield write GPXJ2 GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
       } else {
          GenX::Log WARNING "Could not find J2($type) field, will not do the consistency check on J2($type)"
       }
@@ -2543,7 +2563,7 @@ proc GeoPhysX::DominantVege { Grid } {
       }
    }
    fstdfield define GPXVG -NOMVAR VG -IP1 0 -IP2 0
-   fstdfield write GPXVG GPXOUTFILE -24 True $GenX::Param(Compress)
+   fstdfield write GPXVG GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    fstdfield free GPXVF GPXVG GPXTP
 }
