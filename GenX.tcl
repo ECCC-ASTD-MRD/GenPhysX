@@ -1439,16 +1439,16 @@ proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
 
    if { ![ogrlayer is NHNLAYER] } {
-      set nhn_layer [lindex [ogrfile open NHNINDEX read $Path(NHN)/index/NHN_INDEX_06_INDEX_WORKUNIT_LIMIT_2.shp] 0]
+      set nhn_layer [lindex [ogrfile open NHNINDEX read $Path(NHN)/index/NHN_INDEX_07_INDEX_WORKUNIT_LIMIT_2.shp] 0]
       eval ogrlayer read NHNLAYER $nhn_layer
    }
 
    set files { }
    foreach id [ogrlayer pick NHNLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
       set feuillet [ogrlayer define NHNLAYER -feature $id DATASETNAM]
-
-      if { [llength [set path [glob -nocomplain $Path(NHN)/shp_fr/[string range $feuillet 0 1]/RHN_${feuillet}_*]]] } {
-         lappend files $Path(NHN)/shp_fr/[string range $feuillet 0 1]/RHN_${feuillet}
+      set wscmda [ogrlayer define NHNLAYER -feature $id WSCMDA]
+      if { [llength [set path [glob -nocomplain $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*]]] } {
+         lappend files $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}
       }
    }
    return $files
