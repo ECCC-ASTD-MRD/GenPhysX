@@ -440,7 +440,7 @@ proc IndustrX::Process { Coverage } {
             #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
             set UrbanX::Param(t_Sandwich) 0
             if { ![file exists $GenX::Param(OutFile)_sandwich.tif] } {
-               UrbanX::CANVECFindFiles
+               set UrbanX::Param(Files) [GenX::CANVECFindFiles $UrbanX::Param(Lat0) $UrbanX::Param(Lon0) $UrbanX::Param(Lat1) $UrbanX::Param(Lon1) $UrbanX::Param(Entities)]
                UrbanX::Sandwich $feuillet
             } else {
                GenX::Log INFO "File $GenX::Param(OutFile)_sandwich.tif already exists."
