@@ -94,6 +94,51 @@ namespace eval UrbanX { } {
       { 0 10 11 12 20  30  31 32  33 34  35  36  37  40  50  51  52  53  80  81  82  83 100 101 102 103 104 110 121 122 123 200 210 211 212 213 220 221 222 223 230 231 232 233 }
       { 0  0  0  0  0 500   0  0 501  0 502 503 504 505 506 507 508 509 510 511 512 513 514 515 516 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 }
       { 0  0  0  0  0   0 702  0   0  0 724 724 724 722 726 711 711 722 723 723 723 723 713 722 714 722 722 714 715 715 715 725 704 704 704 704 707 707 707 707 725 725 725 725 } }
+
+#
+# Lookup Table for redistribution of PAVF and BLDF into other TEB parameters
+#
+   set  Param(BLDFvsLUT)  { 
+              {BLDH 0 7.0}
+              {Z0RF 0 0.15} 
+              {ALRF 0 0.15} 
+              {ALWL 0 0.25} 
+              {EMRF 0 0.91} 
+              {EMWL 0 0.85} 
+              {HCRF 1 3000000} 
+              {HCWL 1 1550000} 
+              {HCRF 2 1500000} 
+              {HCWL 2 1550000} 
+              {HCRF 3 290000} 
+              {HCWL 3 290000} 
+              {TCRF 1 1.51} 
+              {TCWL 1 0.9338} 
+              {TCRF 2 0.15} 
+              {TCWL 2 0.9338} 
+              {TCRF 3 0.04} 
+              {TCWL 3 0.05} 
+              {DPRF 1 0.05} 
+              {DPWL 1 0.02} 
+              {DPRF 2 0.4} 
+              {DPWL 2 0.125} 
+              {DPRF 3 0.1} 
+              {DPWL 3 0.05} 
+              }
+
+   set  Param(PAVFvsLUT)  { 
+              {Z0RD 0 0.05} 
+              {ALRD 0 0.16} 
+              {EMRD 0 0.93} 
+              {HCRD 1 1000000} 
+              {HCRD 2 3000000} 
+              {HCRD 3 1300000} 
+              {TCRD 1 0.7} 
+              {TCRD 2 1.8} 
+              {TCRD 3 0.3} 
+              {DPRD 1 0.08} 
+              {DPRD 2 0.2} 
+              {DPRD 3 1.0} 
+              }
 }
 
 #----------------------------------------------------------------------------
@@ -1329,7 +1374,7 @@ proc UrbanX::TEB2FSTD { Grid } {
       vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.TEB_Class,CSVTEBPARAMS.$tebparam)
 
       gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
-      fstdfield clear $Grid 0
+      GenX::GridClear $Grid 0.0
 
       # For debugging purposes, writing TEB parameter values at 5m in a file
       #file delete -force $GenX::Param(OutFile)_TEB-$tebparam.tif
@@ -1345,20 +1390,30 @@ proc UrbanX::TEB2FSTD { Grid } {
       set nomvar_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
       set nomvar_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
       if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
-         set tebparam [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
+         set nomvar [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
+      } else {
+         set nomvar $tebparam
       }
 
-      GenX::Log INFO "Averaging TEB parameter $tebparam (IP1=$ip1) values over target grid"
-
-      fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
-      fstdfield define $Grid -NOMVAR $tebparam -IP1 $ip1
-      if { $tebparam == "VF"} {
+# rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
+      if { $nomvar == "VEGF"} {
+         set nomvar "NATF"
+      }
+# initialize Grid with 0.0
+      GenX::GridClear $Grid 0.0
+# dont waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
+      if { $tebparam != "VF21" } {
+         GenX::Log INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over target grid"
+         fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
+      }
+      fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
+      if { $nomvar == "VF"} {
          fstdfield write $Grid GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
       } else {
          fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
       }
 
-      if { $tebparam == "BLDH"} {
+      if { $nomvar == "BLDH"} {
         # Building height variance computation
          set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
          if { $memoryrequired > 0 } {
@@ -1368,7 +1423,7 @@ proc UrbanX::TEB2FSTD { Grid } {
             GenX::Log INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid (RAM needed: $memoryrequired)"
             gdalband free RTEB ;# to reduce possibilities of a real memory fault
             fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
-            fstdfield clear $Grid 0
+            GenX::GridClear $Grid 0.0
             fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD True
             fstdfield define $Grid -NOMVAR HVAR -IP1 0
             fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
@@ -1380,14 +1435,14 @@ proc UrbanX::TEB2FSTD { Grid } {
 
          #----- Building height min computation
          GenX::Log INFO "Computing Building Height Minimum HMIN (IP1=0) values over target grid"
-         fstdfield clear $Grid 0
+         GenX::GridClear $Grid 0.0
          fstdfield gridinterp $Grid RTEBPARAM MINIMUM
          fstdfield define $Grid -NOMVAR HMIN -IP1 0
          fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
          #----- Building height max computation
          GenX::Log INFO "Computing Building Height Maximum HMAX (IP1=0) values over target grid"
-         fstdfield clear $Grid 0
+         GenX::GridClear $Grid 0.0
          fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
          fstdfield define $Grid -NOMVAR HMAX -IP1 0
          fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
@@ -1397,35 +1452,113 @@ proc UrbanX::TEB2FSTD { Grid } {
    vector free CSVTEBPARAMS
    gdalband free RTEB
 
+# Balancing BLDF versus PAVF values and redistribute the other parameters accordingly
+   UrbanX::Balance_BLDFvsPAVF
+
+# Need to re-normalize VF due to changes made to PAVF and BLDF
+   UrbanX::NormalizeVFvsPAVFBLDF
+
+   fstdfield read Z0RDFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0RD"
+   fstdfield read Z0RFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0RF"
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
-   fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGF"
+   fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
 
-   GenX::Log INFO "Computing SUMF: sum of VEGF, BLDF and PAVF, for validation purposes"
-   fstdfield clear $Grid 0
-   vexpr $Grid VEGFFIELD+BLDFFIELD+PAVFFIELD
+# generate VF21 temporary for computation of VG
+   vexpr VF21 "BLDFFIELD + PAVFFIELD"
+   fstdfield define VF21 -NOMVAR VF -IP1 [expr 1200-21]
+   fstdfield write VF21 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield free VF21
+
+   GenX::Log INFO "Computing SUMF: sum of NATF, BLDF and PAVF, for validation purposes"
+   GenX::GridClear $Grid 0.0
+   vexpr $Grid NATFFIELD+BLDFFIELD+PAVFFIELD
    fstdfield define $Grid -NOMVAR SUMF -IP1 0
    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield free PAVFFIELD VEGFFIELD
 
-   #----- Wall-O-Hor calculations
-   GenX::Log INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
-   fstdfield clear $Grid 0
-   # WALL-O-HOR formulae provided by Sylvie Leroyer
+   # Wall-O-Hor calculation
+   GenX::GridClear $Grid 0.0
+
+#   # WALL-O-HOR formulae provided by Sylvie Leroyer
    vexpr REZ (ddx($Grid)+ddy($Grid))/2  ;# spatial resolution of the target grid in meters
-   vexpr WHORFIELD BLDHFIELD*(2.0/REZ^2)*(sqrt(BLDFFIELD*REZ^2))
+
+   # WALL-O-HOR formulae provided by SL in wich the vegetation surface is withdrawn only for urbanised area
+   GenX::Log INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
+   vexpr SURFTILE (ddx($Grid)*ddy($Grid))  ;# tile surface of the target grid in meters^2
+   vexpr WHORFIELD ifelse(NATFFIELD==1,0,BLDHFIELD*(2.0/(SURFTILE*(1.0-NATFFIELD)))*(sqrt(BLDFFIELD*SURFTILE))) ;#ifelse required to avoid division by 0
+   vexpr WHORFIELD ifelse((BLDFFIELD+PAVFFIELD)>0.2,WHORFIELD,BLDHFIELD*(2.0/SURFTILE)*(sqrt(BLDFFIELD*SURFTILE)))
    fstdfield define WHORFIELD -NOMVAR WHOR -IP1 0
    fstdfield write WHORFIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
+   # WALL-O-HOR2 formulae provided by SL in which the vegetation surface is withdrawn everywhere
+   vexpr WHOR2FIELD ifelse(NATFFIELD==1,0,BLDHFIELD*(2.0/(SURFTILE*(1.0-NATFFIELD)))*(sqrt(BLDFFIELD*SURFTILE))) ;#ifelse required to avoid division by 0
+   fstdfield define WHOR2FIELD -NOMVAR WHR2 -IP1 0
+   fstdfield write WHOR2FIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   # WALL-O-HOR3 formulae provided by SL (original one)
+   vexpr WHOR3FIELD BLDHFIELD*(2.0/SURFTILE)*(sqrt(BLDFFIELD*SURFTILE))
+   fstdfield define WHOR3FIELD -NOMVAR WHR3 -IP1 0
+   fstdfield write WHOR3FIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
    #------ Z0_TOWN calculations
    GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN Z0TW (IP1=0) values with the MacDonald 1998 Model over target grid"
-   fstdfield clear $Grid 0
+   GenX::GridClear $Grid 0.0
+
    vexpr DISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD-1.0))) ;# Computing Displacement height
    vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))) ;# ifelse required to avoid dividing by 0
+
+   vexpr DISPBLDH ifelse(BLDHFIELD==0,0, DISPH/BLDHFIELD)
+
+   vexpr $Grid ifelse(BLDFFIELD>0.9,max(Z0RFFIELD,$Grid),$Grid)  ;# we are on a roof surface --> use roof Z0
+   vexpr $Grid ifelse(PAVFFIELD>0.9,max(Z0RDFIELD,$Grid),$Grid)  ;# we are on a paved surface --> use paved Z0
+
+   vexpr Z0ZH ifelse(BLDHFIELD==0,0, $Grid/BLDHFIELD)
+
    fstdfield define $Grid -NOMVAR Z0TW -IP1 0
    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   fstdfield define DISPBLDH -NOMVAR DPBH -IP1 0
+   fstdfield write DISPBLDH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield define Z0ZH  -NOMVAR Z0H -IP1 0
+   fstdfield write Z0ZH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   # Z0_TOWN2 
+   GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN2 ZTW2 (IP1=0) values use WHR2"
+   GenX::GridClear $Grid 0.0
+
+   vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHOR2FIELD/2.0)))^( -0.5))))) ;# ifelse required to avoid dividing by 0
+   vexpr $Grid ifelse(BLDFFIELD>0.9,max(Z0RFFIELD,$Grid),$Grid)  ;# we are on a roof surface --> use roof Z0
+   vexpr $Grid ifelse(PAVFFIELD>0.9,max(Z0RDFIELD,$Grid),$Grid)  ;# we are on a paved surface --> use paved Z0
+
+   vexpr ZZH2 ifelse(BLDHFIELD==0,0, $Grid/BLDHFIELD)
+
+   fstdfield define $Grid -NOMVAR ZTW2 -IP1 0
+   fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   fstdfield define ZZH2  -NOMVAR Z0H2 -IP1 0
+   fstdfield write ZZH2 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   # Z0_TOWN3 
+   GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN3 ZTW3 (IP1=0) values use WHR3"
+   GenX::GridClear $Grid 0.0
+
+   vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHOR3FIELD/2.0)))^( -0.5))))) ;# ifelse required to avoid dividing by 0
+   vexpr $Grid ifelse(BLDFFIELD>0.9,max(Z0RFFIELD,$Grid),$Grid)  ;# we are on a roof surface --> use roof Z0
+   vexpr $Grid ifelse(PAVFFIELD>0.9,max(Z0RDFIELD,$Grid),$Grid)  ;# we are on a paved surface --> use paved Z0
+
+   vexpr ZZH3 ifelse(BLDHFIELD==0,0, $Grid/BLDHFIELD)
+
+   fstdfield define $Grid -NOMVAR ZTW3 -IP1 0
+   fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   fstdfield define ZZH3  -NOMVAR Z0H3 -IP1 0
+   fstdfield write ZZH3 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   fstdfield free Z0RDFIELD Z0RFFIELD PAVFFIELD WHOR2FIELD WHOR3FIELD
+
    fstdfield free BLDHFIELD BLDFFIELD WHORFIELD REZ
+   fstdfield free NATFFIELD SURFTILE PAVFFIELD
 
    GenX::Log INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
 }
@@ -1540,7 +1673,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
    GenX::Log INFO "Overwriting building heights average (BLDH) where there are 2.5D buildings"
-   fstdfield clear $Grid 0
+   GenX::GridClear $Grid 0.0
    fstdfield gridinterp $Grid RHAUTEURBLD AVERAGE
    fstdfield copy BLDHEXTENT $Grid ;# BLDHEXTENT is needed below
 
@@ -1553,7 +1686,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
 
    #----- Building height min computation
    GenX::Log INFO "Overwriting Building Height Minimum HMIN (IP1=0) where there are 2.5D buildings"
-   fstdfield clear $Grid 0
+   GenX::GridClear $Grid 0.0
    fstdfield gridinterp $Grid RHAUTEURBLD MINIMUM
 
    fstdfield read HMINFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMIN" ;# HMIN before the addition of 2.5D buildings HMIN
@@ -1565,7 +1698,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
 
    #----- Building height max computation
    GenX::Log INFO "Overwriting Building Height Maximum HMAX (IP1=0) where there are 2.5D buildings"
-   fstdfield clear $Grid 0
+   GenX::GridClear $Grid 0.0
    fstdfield gridinterp $Grid RHAUTEURBLD MAXIMUM
 
    fstdfield read HMAXFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMAX" ;# HMAX before the addition of 2.5D buildings HMAX
@@ -1577,11 +1710,12 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
 
    #----- Building fraction
    GenX::Log INFO "Overwriting building fraction (BLDF) where there are 2.5D buildings"
-   fstdfield clear $Grid 0
+   GenX::GridClear $Grid 0.0
 
    vexpr REZ (ddx($Grid)+ddy($Grid))/2  ;# spatial resolution of the target grid in meters
    set res [fstdfield stats REZ -avg]
    fstdfield free REZ
+
    set facteurfraction [expr 1/pow($res/$Param(Resolution),2)]
    vexpr RSURFACEBLD ifelse(RHAUTEURBLD==0,0,$facteurfraction)      ;# creates RSURFACEBLD
    gdalband free RHAUTEURBLD
@@ -1603,55 +1737,61 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
 
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
    vexpr $Grid ifelse($Grid==0, BLDFFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+   fstdfield free BLDFFIELD ;# invalid field because it has been overwritten
 
    fstdfield define $Grid -NOMVAR BLDF -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
-   #----- Updating VEGF and PAVF
-   GenX::Log INFO "Updating VEGF and PAVF according to new BLDF where there are 2.5D buildings"
+   #----- Updating NATF and PAVF
+   GenX::Log INFO "Updating NATF and PAVF according to new BLDF where there are 2.5D buildings"
 
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
-   fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGF"
+   fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
 
-   fstdfield clear $Grid 0
-   vexpr NEWVEGFFIELD VEGFFIELD/(VEGFFIELD+PAVFFIELD)*(1-BLDFFIELD) ;# BLDFFIELD is the new one
-   vexpr $Grid ifelse(BLDHEXTENT>0, NEWVEGFFIELD, VEGFFIELD) ;# Overwriting only over 2.5D buildings extent
-   fstdfield free NEWVEGFFIELD
+   GenX::GridClear $Grid 0.0
+   vexpr NEWNATFFIELD NATFFIELD/(NATFFIELD+PAVFFIELD)*(1-BLDFFIELD) ;# BLDFFIELD is the new one
+   vexpr $Grid ifelse(BLDHEXTENT>0, NEWNATFFIELD, NATFFIELD) ;# Overwriting only over 2.5D buildings extent
+   fstdfield free NEWNATFFIELD
 
-   fstdfield define $Grid -NOMVAR VEGF -IP1 0
+   fstdfield define $Grid -NOMVAR NATF -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
-   fstdfield clear $Grid 0
-   vexpr NEWPAVFFIELD PAVFFIELD/(VEGFFIELD+PAVFFIELD)*(1-BLDFFIELD) ;# BLDFFIELD is the new one
+   GenX::GridClear $Grid 0.0
+   vexpr NEWPAVFFIELD PAVFFIELD/(NATFFIELD+PAVFFIELD)*(1-BLDFFIELD) ;# BLDFFIELD is the new one
    vexpr $Grid ifelse(BLDHEXTENT>0, NEWPAVFFIELD, PAVFFIELD) ;# Overwriting only over 2.5D buildings extent
    fstdfield free NEWPAVFFIELD BLDHEXTENT
 
    fstdfield define $Grid -NOMVAR PAVF -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
-   fstdfield free VEGFFIELD PAVFFIELD ;# Freeing because they don't reflect what's in the grid anymore
+   fstdfield free NATFFIELD PAVFFIELD ;# Freeing because they don't reflect what's in the grid anymore
 
    #----- Updating SUMF
-   GenX::Log INFO "Updating SUMF using the new BLDF, VEGF and PAVF values"
-   fstdfield read VEGFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "VEGF" ;# Reading the updated values
+   GenX::Log INFO "Updating SUMF using the new BLDF, NATF and PAVF values"
+   fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF" ;# Reading the updated values
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF" ;# Reading the updated values
 
-   fstdfield clear $Grid 0
-   vexpr $Grid BLDFFIELD+VEGFFIELD+PAVFFIELD
+   GenX::GridClear $Grid 0.0
+   vexpr $Grid BLDFFIELD+NATFFIELD+PAVFFIELD
    fstdfield define $Grid -NOMVAR SUMF -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
-   fstdfield free PAVFFIELD VEGFFIELD
+   fstdfield free PAVFFIELD NATFFIELD
 
    #----- WALL_O_HOR
    GenX::Log INFO "Overwriting WALL_O_HOR (WHOR) where there are 2.5D buildings"
 
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
-   fstdfield clear $Grid 0
+   GenX::GridClear $Grid 0.0
 
    #----- WALL-O-HOR formulae provided by Sylvie Leroyer
    set facteurWoH1 [expr 2.0/pow(($res),2)]
    set facteurWoH2 [expr pow($res,2)]
    vexpr $Grid BLDHFIELD*$facteurWoH1*(sqrt(BLDFFIELD*$facteurWoH2))
+
+   # WALL-O-HOR formulae provided by SL in wich the vegetation surface is withdrawn
+   GenX::GridClear $Grid 0.0
+   vexpr SURFTILE (ddx($Grid)*ddy($Grid))  ;# tile surface of the target grid in meters^2
+   vexpr $Grid ifelse(NATFFIELD==1,0,BLDHFIELD*(2.0/(SURFTILE*(1.0-NATFFIELD)))*(sqrt(BLDFFIELD*SURFTILE))) ;#ifelse required to avoid division by 0
 
    fstdfield read WHORFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "WHOR"
    vexpr $Grid ifelse($Grid==0, WHORFIELD, $Grid) ;# to overwrite only where there is 2.5D data
@@ -1674,12 +1814,14 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
 
    fstdfield read Z0TWFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0TW"
    vexpr $Grid ifelse($Grid==0, Z0TWFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+   vexpr $Grid ifelse(BLDFFIELD>0.9,max(Z0RFFIELD,$Grid),$Grid)
+   vexpr $Grid ifelse(PAVFFIELD>0.9,max(Z0RDFIELD,$Grid),$Grid)
    fstdfield free Z0TWFIELD ;# invalid field because it has been overwritten
 
    fstdfield define $Grid -NOMVAR Z0TW -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
-   fstdfield free BLDHFIELD BLDFFIELD WHORFIELD RDISPH
+   fstdfield free BLDHFIELD BLDFFIELD NATFFIELD PAVFFIELD WHORFIELD RDISPH SURFTILE
 }
 
 #----------------------------------------------------------------------------
@@ -1740,6 +1882,515 @@ proc UrbanX::FilterGen { Type Size } {
    return $kernel
 }
 
+#----------------------------------------------------------------------------
+# Name     : <BLDF_Top_Filter>
+# Creation : October 2011 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : replace all values greater than a threshold
+#            with nearby average if any
+#
+# Parameters :
+#   <Grid>        : Grid to process
+#   <threshold>   : limit of acceptable value
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::BLDF_Top_Filter { Grid threshold } {
+
+   set ni [fstdfield define $Grid -NI]
+   set nj [fstdfield define $Grid -NJ]
+
+   set changed 0
+   for { set j 0 } { $j < $nj } {incr j} {
+      for { set i 0 } { $i < $ni } {incr i} {
+         set val  [fstdfield stat $Grid -gridvalue $i $j]
+         switch -regexp -- $val {
+            .NaN {
+               set val $threshold
+            }
+            default {
+            }
+         }
+
+         if { $val >= $threshold } {
+            puts "Averaging:  $i $j : $val"
+            set value $val
+            set range 1
+            while {($value >= $threshold)&&($range <= 2)} {
+               set value [UrbanX::Grid_NearestAverage $Grid $i $j $range]
+               incr range
+            }
+            if { $value < $threshold } {
+               fstdfield stat $Grid -gridvalue $i $j $value
+               puts "Replaced $val by $value at ($i $j) range=$range"
+               incr changed
+            }
+         }
+      }
+   }
+   return $changed
+}
+
+#----------------------------------------------------------------------------
+# Name     : <Balance_BLDFvsPAVF>
+# Creation : October 2011 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : check consistency between BLDF and PAVF
+#            for case where:
+#               (pavf > 0) and (bldf == 0)
+#                   find avg coarser value of bldf
+#                   or  bldf=0.01*pavf
+#               (pavf == 0) and (bldf > 0)
+#                   find avg coarser value of pavf
+#                   or  pavf=0.01*bldf
+#
+# Parameters : none
+#
+# Return:
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Balance_BLDFvsPAVF { } {
+
+   UrbanX::Preload_PavBldParams
+
+   set GridBLDF WKBLDFFIELD
+   set GridPAVF WKPAVFFIELD
+
+   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
+   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
+
+   fstdfield copy $GridBLDF BLDFFIELD
+   fstdfield copy $GridPAVF PAVFFIELD
+
+   set ni [fstdfield define $GridBLDF -NI]
+   set nj [fstdfield define $GridBLDF -NJ]
+
+   set cnt_bogus_bldf 0
+   set cnt_bogus_pavf 0
+   set cnt_found_bldf 0
+   set cnt_found_pavf 0
+
+   set maxrange 2
+   for { set j 0 } { $j < $nj } {incr j} {
+      for { set i 0 } { $i < $ni } {incr i} {
+
+         set pavf  [fstdfield stat PAVFFIELD -gridvalue $i $j]
+         set bldf  [fstdfield stat BLDFFIELD -gridvalue $i $j]
+
+         if { ($pavf > 0.0)&&($bldf == 0) } {
+            set range 0
+            while {($bldf == 0)&&($range < $maxrange)} {
+               incr range
+               set bldf [UrbanX::Grid_NearestAverage BLDFFIELD $i $j $range]
+            }
+            if { $bldf == 0.0 } {
+               set bldf [expr 0.01*$pavf]
+               incr cnt_bogus_bldf
+               # must set associated TEB params using default values from LUT
+               UrbanX::Assign_DefaultPAVFBLDF $i $j
+            } else {
+               incr cnt_found_bldf
+               # must set associated TEB params using Nearest Average also
+               UrbanX::Assign_AverageParams $i $j $range $bldf $pavf
+            }
+            # remove from PAVF what we added to BLDF if (bldf+pavf)>1.0
+            set sum [expr $pavf + $bldf]
+            if  { $sum > 1.0 } {
+               set pavf [expr 1.0 - $bldf]
+               fstdfield stat $GridPAVF -gridvalue $i $j $pavf
+            }
+            fstdfield stat $GridBLDF -gridvalue $i $j $bldf
+         } elseif { ($pavf == 0)&&($bldf > 0.0) } {
+            set range 0
+            while {($pavf == 0)&&($range < $maxrange)} {
+               incr range
+               set pavf [UrbanX::Grid_NearestAverage PAVFFIELD $i $j $range]
+            }
+            if { $pavf == 0.0 } {
+               set pavf [expr 0.01*$bldf]
+               incr cnt_bogus_pavf
+               # must set associated TEB params using default values from LUT
+               UrbanX::Assign_DefaultPAVFBLDF $i $j
+            } else {
+               # Impose max building fraction to avoid 0**(-0.5) in Z0_TOWN calculation
+               if { $bldf > 0.99 } {
+                  set bldf 0.99
+                  set pavf 0.01
+               }
+               incr cnt_found_pavf
+               # must set associated TEB params using Nearest Average also
+               UrbanX::Assign_AverageParams $i $j $range $bldf $pavf
+            }
+
+            fstdfield stat $GridPAVF -gridvalue $i $j $pavf
+            set sum [expr $pavf + $bldf]
+            if  { $sum > 1.0 } {
+               set bldf [expr 1.0 - $pavf]
+               fstdfield stat $GridBLDF -gridvalue $i $j $bldf
+            }
+            # must set associated TEB params using Nearest Average also
+            UrbanX::Assign_AverageParams $i $j $range $bldf $pavf
+         } elseif { ($pavf > 0.0)&&($bldf > 0.0) } {
+            set sum [expr $pavf + $bldf]
+            if  { $sum > 1.0 } {
+               set bldf [expr 1.0 - $pavf]
+               fstdfield stat $GridBLDF -gridvalue $i $j $bldf
+            }
+            UrbanX::Check_HasPAVFBLDF $i $j $bldf $pavf
+         }
+      }
+   }
+
+   GenX::Log INFO "Bogused BLDF=$cnt_bogus_bldf   Found coarser BLDF=$cnt_found_bldf"
+   GenX::Log INFO "Bogused PAVF=$cnt_bogus_pavf   Found coarser PAVF=$cnt_found_pavf"
+
+   set changed [expr $cnt_bogus_pavf+$cnt_bogus_bldf+$cnt_found_bldf+$cnt_found_pavf]
+
+   set  auxfile  GPXAUXFILE
+
+   fstdfield define $GridPAVF -NOMVAR PAVF -IP1 0
+   fstdfield write $GridPAVF $auxfile -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   fstdfield define $GridBLDF -NOMVAR BLDF -IP1 0
+   fstdfield write $GridBLDF $auxfile -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   vexpr NATFFIELD  "1 - ($GridPAVF+$GridBLDF)"
+   fstdfield define NATFFIELD -NOMVAR NATF -IP1 0
+   fstdfield write NATFFIELD $auxfile -$GenX::Param(NBits) True $GenX::Param(Compress)
+   GenX::Log INFO "Rewrote NATF as 1-(BLDF+PAVF)"
+
+   UrbanX::Save_LoadedPavBldParams $auxfile
+
+   fstdfield free $GridPAVF $GridBLDF NATFFIELD
+   UrbanX::Free_LoadedPavBLdParams
+
+   return $changed
+}
+ 
+#----------------------------------------------------------------------------
+# Name     : <Preload_PavBldParams>
+# Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Preloading all TEB params associated with BLDF and PAVF
+#            We need to modify them at discreet grid point accordingly
+#
+# Parameters : none
+#
+# Return:
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Preload_PavBldParams { } {
+   variable Param
+
+   set    list $Param(BLDFvsLUT)
+   append list $Param(PAVFvsLUT)
+
+   foreach  p $list {
+      set nomvar [lindex $p 0]
+      set ip1 [lindex $p 1]
+      set PLVAR  "PB_$nomvar$ip1"
+      if { $ip1 > 0 } {
+         set ip1 [expr 1200-$ip1]
+      }
+      if { $nomvar == "VF" } {
+         fstdfield read $PLVAR GPXOUTFILE -1 "" $ip1 -1 -1 "" "$nomvar"
+      } else {
+         fstdfield read $PLVAR GPXAUXFILE -1 "" $ip1 -1 -1 "" "$nomvar"
+      }
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <Save_LoadedPavBldParams>
+# Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Save all TEB params associated with BLDF and PAVF
+#
+# Parameters :
+#      auxfile   : output aux file
+#
+# Return:
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Save_LoadedPavBldParams { auxfile } {
+   variable Param
+
+   set    list $Param(BLDFvsLUT)
+   append list $Param(PAVFvsLUT)
+
+   foreach  p $list {
+      set nomvar [lindex $p 0]
+      set ip1 [lindex $p 1]
+      set PLVAR  "PB_$nomvar$ip1"
+      fstdfield write $PLVAR $auxfile -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <Free_LoadedPavBLdParams>
+# Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : cleanup memory allocated for storing TEB params associated 
+#            with BLDF and PAVF
+#
+# Parameters :
+#
+# Return:
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Free_LoadedPavBLdParams { } {
+   variable Param
+
+   set    list $Param(BLDFvsLUT)
+   append list $Param(PAVFvsLUT)
+
+   foreach  p $list {
+      set nomvar [lindex $p 0]
+      set ip1 [lindex $p 1]
+      set PLVAR  "PB_$nomvar$ip1"
+      fstdfield free $PLVAR
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <Assign_DefaultPAVFBLDF>
+# Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : assign default a value from LUT on TEB params associated 
+#            with BLDF and PAVF
+#
+# Parameters :
+#      [ i  j ] :  grid point position
+#
+# Return:
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Assign_DefaultPAVFBLDF { i j } {
+   variable Param
+
+   foreach  p $Param(BLDFvsLUT) {
+      set nomvar [lindex $p 0]
+      set ip1 [lindex $p 1]
+      set PLVAR  "PB_$nomvar$ip1"
+
+      set value [lindex $p 2]
+      fstdfield stat $PLVAR -gridvalue $i $j $value
+   }
+
+   foreach  p $Param(PAVFvsLUT) {
+      set nomvar [lindex $p 0]
+      set ip1 [lindex $p 1]
+      set PLVAR  "PB_$nomvar$ip1"
+
+      set value [lindex $p 2]
+      fstdfield stat $PLVAR -gridvalue $i $j $value
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <Check_HasPAVFBLDF>
+# Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : check if associated TEB parameters of BLDF PAVF
+#            has a value assigned, if not, assign a default from LUT
+#
+# Parameters :
+#      [ i  j ] :  grid point position
+#      bldf     :  current BLDF value
+#      pavf     :  current PAVF value
+#
+# Return:
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Check_HasPAVFBLDF { i j bldf pavf } {
+   variable Param
+
+   set    list $Param(BLDFvsLUT)
+   append list $Param(PAVFvsLUT)
+
+   foreach  p $list {
+      set nomvar [lindex $p 0]
+      set ip1 [lindex $p 1]
+      set PLVAR  "PB_$nomvar$ip1"
+
+      set value [fstdfield stat $PLVAR -gridvalue $i $j]
+      if { $value == 0.0 } {
+         GenX::Log INFO "Warning: ($i,$j) $nomvar$ip1 has no value, correcting it with LUT BLDF=$bldf PAVF=$pavf"
+         set value [lindex $p 2]
+         fstdfield stat $PLVAR -gridvalue $i $j $value
+      }
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <Assign_AverageParams>
+# Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : assign an average value to all associated TEB parameters of BLDF PAVF
+#            if no value found, assign a default from LUT
+#
+# Parameters :
+#      [ i  j ] :  grid point position
+#      range    :  Delta to look for values
+#      bldf     :  current BLDF value
+#      pavf     :  current PAVF value
+#
+# Return:
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Assign_AverageParams { i j range bldf pavf } {
+   variable Param
+
+   foreach  p $Param(BLDFvsLUT) {
+      set nomvar [lindex $p 0]
+      set ip1 [lindex $p 1]
+      set PLVAR  "PB_$nomvar$ip1"
+      set value [UrbanX::Grid_NearestAverage $PLVAR $i $j $range]
+# if there's nothing nearby then also use value from LUT
+      if { $value <= 0 } {
+         set value [lindex $p 2]
+      }
+      fstdfield stat $PLVAR -gridvalue $i $j $value
+   }
+
+   foreach  p $Param(PAVFvsLUT) {
+      set nomvar [lindex $p 0]
+      set ip1 [lindex $p 1]
+      set PLVAR  "PB_$nomvar$ip1"
+      set value [UrbanX::Grid_NearestAverage $PLVAR $i $j $range]
+# if there's nothing nearby then also use value from LUT
+      if { $value <= 0 } {
+         set value [lindex $p 2]
+      }
+      fstdfield stat $PLVAR -gridvalue $i $j $value
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <Grid_NearestAverage>
+# Creation : October 2011 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Obtain the average value near a grid point (i, j) within a range
+#
+# Parameters :
+#   <Grid>     : Grid to process
+#   <i0 j0>    : location of grid point
+#   <range>    : 
+#
+# Return: averaged value
+#
+# Remarks :
+#    return 0.0 if no value found
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Grid_NearestAverage { Grid  i0  j0  range } {
+
+   set ni [fstdfield define $Grid -NI]
+   set nj [fstdfield define $Grid -NJ]
+
+   set i1 [expr $i0 - $range]
+   if { $i1 < 0 } {
+      set i1 0
+   }
+   set j1 [expr $j0 - $range]
+   if { $j1 < 0 } {
+      set j1 0
+   }
+   set i2 [expr $i0 + $range]
+   if { $i2 >= $ni } {
+      set i2 [expr $ni-1]
+   }
+   set j2 [expr $j0 + $range]
+   if { $j2 >= $nj } {
+      set j2 [expr $nj-1]
+   }
+
+   set sum  0.0
+   set cnt  0
+   for { set j $j1 } { $j <= $j2 } { incr j } {
+      for { set i $i1 } { $i <= $i2 } { incr i } {
+         set val  [fstdfield stat $Grid -gridvalue $i $j]
+         switch -regexp -- $val {
+            0 {
+            }
+            .NaN {
+            }
+            default {
+               set sum [expr $sum + $val]
+               incr cnt
+            }
+         }
+      }
+   }
+
+   if { $cnt == 0 } {
+      return 0.0
+   } else {
+     return [expr $sum / $cnt]
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <NormalizeVFvsPAVFBLDF>
+# Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : make sure VF1 + VF2 + ... + VF21 + ... + VF26 + BLDF + PAVF = 1.0
+#
+# Parameters : none
+#
+# Return:
+#
+# Remarks :
+#   BLDF and PAVF are fixed, only VF values are rescale to fit 
+#
+#----------------------------------------------------------------------------
+proc UrbanX::NormalizeVFvsPAVFBLDF { } {
+
+   set  VegeTypes {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26}
+
+   fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
+   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
+   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
+
+   fstdfield copy SumVF NATFFIELD
+   GenX::GridClear SumVF 0.0
+#
+# VF21 must be 0.0 already here
+#
+   foreach type $GeoPhysX::Param(VegeTypes) {
+      fstdfield read GPXVF GPXOUTFILE -1 "" [expr 1200-$type] -1 -1 "" "VF"
+      vexpr SumVF  "SumVF + GPXVF"
+   }
+
+   vexpr KFIELD  "BLDFFIELD + PAVFFIELD"
+   vexpr SFIELD  "ifelse(SumVF==0.0,1.0,(1.0-KFIELD)/SumVF)"
+   GenX::GridClear SumVF 0.0
+
+   foreach type $VegeTypes {
+      fstdfield read GPXVF GPXOUTFILE -1 "" [expr 1200-$type] -1 -1 "" "VF"
+      vexpr GPXVF  "GPXVF * SFIELD"
+      vexpr SumVF  "SumVF + GPXVF"
+      fstdfield define GPXVF -NOMVAR VF -IP1 [expr 1200-$type]
+      fstdfield write GPXVF GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
+
+   vexpr GPXVF  "SumVF - NATFFIELD"
+   set min  [lindex [fstdfield stats GPXVF -min] 0]
+   set max  [lindex [fstdfield stats GPXVF -max] 0]
+   GenX::Log INFO "Checking difference between NATF and normalized Sum(VF1..26): min=$min max=$max"
+
+   vexpr SumVF  "SumVF + BLDFFIELD + PAVFFIELD"
+   set min  [lindex [fstdfield stats SumVF -min] 0]
+   set max  [lindex [fstdfield stats SumVF -max] 0]
+   GenX::Log INFO "Checking Sum(VF1..26) + BLDF + PAVF: min=$min max=$max"
+   fstdfield define SumVF -NOMVAR SUMV -IP1 0
+   fstdfield write SumVF GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   fstdfield free PAVFFIELD BLDFFIELD NATFFIELD GPXVF SumVF
+}
 
 
 #----------------------------------------------------------------------------
@@ -1914,6 +2565,13 @@ proc UrbanX::Process { Coverage Grid } {
    if { $GenX::Param(GridFile)!="" } {
       UrbanX::TEB2FSTD $Grid
       GeoPhysX::DominantVege $Grid ;# Adding DominantVG "VG IP1=0"
+      #  VF21 was filled with PAVF and BLDF,  clear it after VG is done
+      fstdfield copy VF21FIELD $Grid
+      GenX::GridClear VF21FIELD 0.0
+      fstdfield define VF21FIELD -NOMVAR VF -IP1 [expr 1200-21]
+      fstdfield write VF21FIELD GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield free VF21FIELD
+
       if { $Param(BuildingsShapefile)!="" } {
          #----- Computes TEB geometric parameters from 3D buildings
          UrbanX::3DBld2TEBGeoParams $Grid
