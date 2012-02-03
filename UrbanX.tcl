@@ -100,6 +100,7 @@ namespace eval UrbanX { } {
 #
    set  Param(BLDFvsLUT)  { 
               {BLDH 0 7.0}
+              {BLDW 0 14.0}
               {Z0RF 0 0.15} 
               {ALRF 0 0.15} 
               {ALWL 0 0.25} 
@@ -1369,7 +1370,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
-   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {
+   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end]  {
       GenX::Log DEBUG "Copying the $tebparam values to the 5m raster with LUT"
       vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.TEB_Class,CSVTEBPARAMS.$tebparam)
 
@@ -1461,6 +1462,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield read Z0RDFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0RD"
    fstdfield read Z0RFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0RF"
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+   fstdfield read BLDWFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDW"
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
@@ -1477,31 +1479,21 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield define $Grid -NOMVAR SUMF -IP1 0
    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   # Wall-O-Hor calculation
-   GenX::GridClear $Grid 0.0
-
 #   # WALL-O-HOR formulae provided by Sylvie Leroyer
-   vexpr REZ (ddx($Grid)+ddy($Grid))/2  ;# spatial resolution of the target grid in meters
 
-   # WALL-O-HOR formulae provided by SL in wich the vegetation surface is withdrawn only for urbanised area
+# bldw ---> mean width of building (BLDWFIELD)  --> add colomn 
+
+   # Wall-O-Hor calculation
    GenX::Log INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
-   vexpr SURFTILE (ddx($Grid)*ddy($Grid))  ;# tile surface of the target grid in meters^2
-   vexpr WHORFIELD ifelse(NATFFIELD==1,0,BLDHFIELD*(2.0/(SURFTILE*(1.0-NATFFIELD)))*(sqrt(BLDFFIELD*SURFTILE))) ;#ifelse required to avoid division by 0
-   vexpr WHORFIELD ifelse((BLDFFIELD+PAVFFIELD)>0.2,WHORFIELD,BLDHFIELD*(2.0/SURFTILE)*(sqrt(BLDFFIELD*SURFTILE)))
+   GenX::GridClear $Grid 0.0
+   # WALL-O-HOR formulae provided by SL in wich the vegetation surface is withdrawn
+   GenX::Log INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
+   vexpr WHORFIELD "ifelse(NATFFIELD==1||BLDWFIELD==0,0,BLDHFIELD*2.0*BLDFFIELD/(BLDWFIELD *(1.0-NATFFIELD)))" ;#ifelse required to avoid division by 0
+
    fstdfield define WHORFIELD -NOMVAR WHOR -IP1 0
    fstdfield write WHORFIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   # WALL-O-HOR2 formulae provided by SL in which the vegetation surface is withdrawn everywhere
-   vexpr WHOR2FIELD ifelse(NATFFIELD==1,0,BLDHFIELD*(2.0/(SURFTILE*(1.0-NATFFIELD)))*(sqrt(BLDFFIELD*SURFTILE))) ;#ifelse required to avoid division by 0
-   fstdfield define WHOR2FIELD -NOMVAR WHR2 -IP1 0
-   fstdfield write WHOR2FIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
-   # WALL-O-HOR3 formulae provided by SL (original one)
-   vexpr WHOR3FIELD BLDHFIELD*(2.0/SURFTILE)*(sqrt(BLDFFIELD*SURFTILE))
-   fstdfield define WHOR3FIELD -NOMVAR WHR3 -IP1 0
-   fstdfield write WHOR3FIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
-   #------ Z0_TOWN calculations
+   # Z0_TOWN calculation
    GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN Z0TW (IP1=0) values with the MacDonald 1998 Model over target grid"
    GenX::GridClear $Grid 0.0
 
@@ -1523,42 +1515,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield define Z0ZH  -NOMVAR Z0H -IP1 0
    fstdfield write Z0ZH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   # Z0_TOWN2 
-   GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN2 ZTW2 (IP1=0) values use WHR2"
-   GenX::GridClear $Grid 0.0
-
-   vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHOR2FIELD/2.0)))^( -0.5))))) ;# ifelse required to avoid dividing by 0
-   vexpr $Grid ifelse(BLDFFIELD>0.9,max(Z0RFFIELD,$Grid),$Grid)  ;# we are on a roof surface --> use roof Z0
-   vexpr $Grid ifelse(PAVFFIELD>0.9,max(Z0RDFIELD,$Grid),$Grid)  ;# we are on a paved surface --> use paved Z0
-
-   vexpr ZZH2 ifelse(BLDHFIELD==0,0, $Grid/BLDHFIELD)
-
-   fstdfield define $Grid -NOMVAR ZTW2 -IP1 0
-   fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
-   fstdfield define ZZH2  -NOMVAR Z0H2 -IP1 0
-   fstdfield write ZZH2 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
-   # Z0_TOWN3 
-   GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN3 ZTW3 (IP1=0) values use WHR3"
-   GenX::GridClear $Grid 0.0
-
-   vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHOR3FIELD/2.0)))^( -0.5))))) ;# ifelse required to avoid dividing by 0
-   vexpr $Grid ifelse(BLDFFIELD>0.9,max(Z0RFFIELD,$Grid),$Grid)  ;# we are on a roof surface --> use roof Z0
-   vexpr $Grid ifelse(PAVFFIELD>0.9,max(Z0RDFIELD,$Grid),$Grid)  ;# we are on a paved surface --> use paved Z0
-
-   vexpr ZZH3 ifelse(BLDHFIELD==0,0, $Grid/BLDHFIELD)
-
-   fstdfield define $Grid -NOMVAR ZTW3 -IP1 0
-   fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
-   fstdfield define ZZH3  -NOMVAR Z0H3 -IP1 0
-   fstdfield write ZZH3 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
-   fstdfield free Z0RDFIELD Z0RFFIELD PAVFFIELD WHOR2FIELD WHOR3FIELD
-
-   fstdfield free BLDHFIELD BLDFFIELD WHORFIELD REZ
-   fstdfield free NATFFIELD SURFTILE PAVFFIELD
+   fstdfield free BLDHFIELD BLDWFIELD BLDFFIELD NATFFIELD WHORFIELD REZ SURFTILE Z0RDFIELD Z0RFFIELD PAVFFIELD WHOR2FIELD WHOR3FIELD Z0ZH DISPBLDH DISPH
 
    GenX::Log INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
 }
@@ -1990,7 +1947,7 @@ proc UrbanX::Balance_BLDFvsPAVF { } {
                set bldf [expr 0.01*$pavf]
                incr cnt_bogus_bldf
                # must set associated TEB params using default values from LUT
-               UrbanX::Assign_DefaultPAVFBLDF $i $j
+               UrbanX::Assign_DefaultPAVFBLDF $i $j $pavf
             } else {
                incr cnt_found_bldf
                # must set associated TEB params using Nearest Average also
@@ -2013,7 +1970,7 @@ proc UrbanX::Balance_BLDFvsPAVF { } {
                set pavf [expr 0.01*$bldf]
                incr cnt_bogus_pavf
                # must set associated TEB params using default values from LUT
-               UrbanX::Assign_DefaultPAVFBLDF $i $j
+               UrbanX::Assign_DefaultPAVFBLDF $i $j $pavf
             } else {
                # Impose max building fraction to avoid 0**(-0.5) in Z0_TOWN calculation
                if { $bldf > 0.99 } {
@@ -2168,7 +2125,7 @@ proc UrbanX::Free_LoadedPavBLdParams { } {
 # Return:
 #
 #----------------------------------------------------------------------------
-proc UrbanX::Assign_DefaultPAVFBLDF { i j } {
+proc UrbanX::Assign_DefaultPAVFBLDF { i j pavf } {
    variable Param
 
    foreach  p $Param(BLDFvsLUT) {
@@ -2177,6 +2134,13 @@ proc UrbanX::Assign_DefaultPAVFBLDF { i j } {
       set PLVAR  "PB_$nomvar$ip1"
 
       set value [lindex $p 2]
+# override default value of BLDW when PAVF == 1.0
+      if { $pavf == 1.0 } {
+         if { [string compare $nomvar "BLDW"] == 0 } {
+            set value 50.0
+         }
+      }
+
       fstdfield stat $PLVAR -gridvalue $i $j $value
    }
 
@@ -2218,7 +2182,6 @@ proc UrbanX::Check_HasPAVFBLDF { i j bldf pavf } {
 
       set value [fstdfield stat $PLVAR -gridvalue $i $j]
       if { $value == 0.0 } {
-         GenX::Log INFO "Warning: ($i,$j) $nomvar$ip1 has no value, correcting it with LUT BLDF=$bldf PAVF=$pavf"
          set value [lindex $p 2]
          fstdfield stat $PLVAR -gridvalue $i $j $value
       }
