@@ -1467,12 +1467,6 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
 
-# generate VF21 temporary for computation of VG
-   vexpr VF21 "BLDFFIELD + PAVFFIELD"
-   fstdfield define VF21 -NOMVAR VF -IP1 [expr 1200-21]
-   fstdfield write VF21 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield free VF21
-
    GenX::Log INFO "Computing SUMF: sum of NATF, BLDF and PAVF, for validation purposes"
    GenX::GridClear $Grid 0.0
    vexpr $Grid NATFFIELD+BLDFFIELD+PAVFFIELD
@@ -1721,12 +1715,19 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
 
    fstdfield define $Grid -NOMVAR PAVF -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
-   fstdfield free NATFFIELD PAVFFIELD ;# Freeing because they don't reflect what's in the grid anymore
+   fstdfield free NATFFIELD PAVFFIELD BLDFFIELD ;# Freeing because they don't reflect what's in the grid anymore
+
+# Balancing BLDF versus PAVF values and redistribute the other parameters accordingly
+   UrbanX::Balance_BLDFvsPAVF
+
+# Need to re-normalize VF due to changes made to PAVF and BLDF
+   UrbanX::NormalizeVFvsPAVFBLDF
 
    #----- Updating SUMF
    GenX::Log INFO "Updating SUMF using the new BLDF, NATF and PAVF values"
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF" ;# Reading the updated values
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF" ;# Reading the updated values
+   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
 
    GenX::GridClear $Grid 0.0
    vexpr $Grid BLDFFIELD+NATFFIELD+PAVFFIELD
@@ -1738,6 +1739,9 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    GenX::Log INFO "Overwriting WALL_O_HOR (WHOR) where there are 2.5D buildings"
 
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+   fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF" ;# Reading the updated values
+   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF" ;# Reading the updated values
+   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
    GenX::GridClear $Grid 0.0
 
    #----- WALL-O-HOR formulae provided by Sylvie Leroyer
@@ -1770,6 +1774,9 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    #vexpr RZ0TOWN RBLDHAVG*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*exp((-1.0)*0.4/min((0.003+0.3*RWALLOHOR/2.0)^0.5,0.3)+0.193))
 
    fstdfield read Z0TWFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0TW"
+   fstdfield read Z0RDFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0RD"
+   fstdfield read Z0RFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0RF"
+
    vexpr $Grid ifelse($Grid==0, Z0TWFIELD, $Grid) ;# to overwrite only where there is 2.5D data
    vexpr $Grid ifelse(BLDFFIELD>0.9,max(Z0RFFIELD,$Grid),$Grid)
    vexpr $Grid ifelse(PAVFFIELD>0.9,max(Z0RDFIELD,$Grid),$Grid)
@@ -2355,6 +2362,41 @@ proc UrbanX::NormalizeVFvsPAVFBLDF { } {
    fstdfield free PAVFFIELD BLDFFIELD NATFFIELD GPXVF SumVF
 }
 
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::DominantVege>
+# Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : generate VG field for UrbanX
+#
+# Parameters : 
+#
+# Return:
+#
+# Remarks :
+#   BLDF and PAVF are fixed, only VF values are rescale to fit 
+#
+#----------------------------------------------------------------------------
+proc UrbanX::DominantVege { Grid } {
+
+# generate VF21 temporary for computation of VG
+   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
+   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
+
+   vexpr VF21 "BLDFFIELD + PAVFFIELD"
+   fstdfield define VF21 -NOMVAR VF -IP1 [expr 1200-21]
+   fstdfield write VF21 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield free VF21
+
+   GeoPhysX::DominantVege $Grid ;# Adding DominantVG "VG IP1=0"
+
+   #  VF21 output from UrbanX must be cleared as 0.0
+   fstdfield copy VF21FIELD $Grid
+   GenX::GridClear VF21FIELD 0.0
+   fstdfield define VF21FIELD -NOMVAR VF -IP1 [expr 1200-21]
+   fstdfield write VF21FIELD GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   fstdfield free VF21FIELD BLDFFIELD PAVFFIELD
+}
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::DeleteTempFiles>
@@ -2527,18 +2569,13 @@ proc UrbanX::Process { Coverage Grid } {
    #----- Computing TEB parameters on the FSTD target grid
    if { $GenX::Param(GridFile)!="" } {
       UrbanX::TEB2FSTD $Grid
-      GeoPhysX::DominantVege $Grid ;# Adding DominantVG "VG IP1=0"
-      #  VF21 was filled with PAVF and BLDF,  clear it after VG is done
-      fstdfield copy VF21FIELD $Grid
-      GenX::GridClear VF21FIELD 0.0
-      fstdfield define VF21FIELD -NOMVAR VF -IP1 [expr 1200-21]
-      fstdfield write VF21FIELD GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-      fstdfield free VF21FIELD
 
       if { $Param(BuildingsShapefile)!="" } {
          #----- Computes TEB geometric parameters from 3D buildings
          UrbanX::3DBld2TEBGeoParams $Grid
       }
+
+      UrbanX::DominantVege $Grid
       #----- Deleting all UrbanX temporary files
       UrbanX::DeleteTempFiles
    } else {
