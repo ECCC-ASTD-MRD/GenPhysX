@@ -740,6 +740,12 @@ proc GenX::ParseCommandLine { } {
       }
    }
 
+   #----- If no grid is specified
+   if { ![file readable $Param(GridFile)] } {
+      GenX::Log ERROR "No valid gridfile specified"
+      exit 1
+   }
+
    #----- Convert log level string to number if needed
    if { ![string is digit $Log(Level)] } {
       if { [catch { set Log(Level) $Log($Log(Level)) }] } {
