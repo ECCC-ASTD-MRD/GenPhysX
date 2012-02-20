@@ -82,9 +82,6 @@ GenX::ParseCommandLine
 fstdfile open GPXOUTFILE write $GenX::Param(OutFile)$GenX::Param(Process).fst
 fstdfile open GPXAUXFILE write $GenX::Param(OutFile)$GenX::Param(Process)_aux.fst
 
-#----- Try to get the namelist if provided
-GenX::GetNML $GenX::Param(NameFile)
-
 proc ProcessCheck { Channel } {
    global Param
 

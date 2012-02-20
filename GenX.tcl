@@ -87,7 +87,6 @@ namespace eval GenX { } {
    set Param(Process)   ""                    ;#Current processing id
    set Param(OutFile)   genphysx              ;#Output file prefix
    set Param(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
-   set Param(NameFile)  ""                    ;#Namelist to use
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
@@ -101,7 +100,7 @@ namespace eval GenX { } {
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
    set Param(Subs)      { STD }
-   set Param(Targets)   { GEMMESO }             ;#Model cible
+   set Param(Targets)   { GEMMESO GEM4.4 }   ;#Model cible
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     hawa                  ;#Host onto which to submit the job
@@ -148,6 +147,7 @@ namespace eval GenX { } {
    set Path(LCC2000V)  $Path(DBase)/LCC2000V
    set Path(JPL)       $Path(DBase)/JPL
    set Path(NHN)       $Path(DBase)/NHN
+   set Path(GLAS)      $Path(DBase)/SimardPinto
 
    set Path(StatCan)   /data/aqli04/afsulub/StatCan2006
 
@@ -158,6 +158,13 @@ namespace eval GenX { } {
    set Meta(Header)    ""                     ;#Metadata header
    set Meta(Footer)    ""                     ;#Metadata footer
    set Meta(Command)   ""                     ;#Launch command
+
+   #----- GEM related variables
+
+   set Settings(GRD_TYP_S)    GU
+   set Settings(TOPO_DGFMS_L) True
+   set Settings(TOPO_DGFMX_L) True
+   set Settings(TOPO_FILMX_L) True
 
    #----- Log related variables
 
@@ -183,83 +190,77 @@ namespace eval GenX { } {
 proc GenX::Process { Grid } {
    variable Param
 
-   #----- Check if we only need to process topo
-   if { [fstdfield is $Grid] && [fstdfield define $Grid -IP1]!=1200 } {
-      if { $Param(Topo)!="" } {
-         GeoPhysX::AverageTopo     $Grid
-      }
-   } else {
-      #----- Topography
-      if { $Param(Topo)!="" } {
-         GeoPhysX::AverageTopo     $Grid
-         GeoPhysX::AverageTopoLow  $Grid
-         GeoPhysX::AverageGradient $Grid
-      }
+   #----- Topography
+   if { $Param(Topo)!="" } {
+      GeoPhysX::AverageTopo     $Grid
+      GeoPhysX::AverageTopoLow  $Grid
+      GeoPhysX::AverageGradient $Grid
+   }
 
-      #----- Slope and Aspect
-      if { $Param(Aspect)!="" } {
-         GeoPhysX::AverageAspect $Grid
-      }
+   #----- Slope and Aspect
+   if { $Param(Aspect)!="" } {
+      GeoPhysX::AverageAspect $Grid
+   }
 
-      #----- Land-water mask
-      if { $Param(Mask)!="" } {
-         GeoPhysX::AverageMask $Grid
-      }
+   #----- Land-water mask
+   if { $Param(Mask)!="" } {
+      GeoPhysX::AverageMask $Grid
+   }
 
-      #----- Land-water mask
-      if { $Param(GeoMask)!="" } {
-         GeoPhysX::AverageGeoMask $Grid
-      }
+   #----- Land-water mask
+   if { $Param(GeoMask)!="" } {
+      GeoPhysX::AverageGeoMask $Grid
+   }
 
-      #----- Vegetation type
-      if { $Param(Vege)!="" } {
-         GeoPhysX::AverageVege $Grid
-      }
+   #----- Vegetation type
+   if { $Param(Vege)!="" } {
+      GeoPhysX::AverageVege $Grid
+   }
 
-      #----- Soil type
-      if { $Param(Soil)!="" } {
-         GeoPhysX::AverageSoil $Grid
-      }
+   #----- Soil type
+   if { $Param(Soil)!="" } {
+      GeoPhysX::AverageSoil $Grid
+   }
 
-      #----- Consistency checks
-      switch $Param(Check) {
-         "STD" { GeoPhysX::CheckConsistencyStandard }
-      }
+   #----- Consistency checks
+   switch $Param(Check) {
+      "STD" { GeoPhysX::CheckConsistencyStandard }
+   }
 
-      #----- Sub grid calculations
-      if { $Param(Sub)!="" } {
-         GeoPhysX::SubCorrectionFactor
-         GeoPhysX::SubTopoFilter
-         GeoPhysX::SubLaunchingHeight
-         GeoPhysX::SubY789
-         GeoPhysX::SubRoughnessLength
-      }
+   #----- Sub grid calculations
+   if { $Param(Sub)!="" } {
+      GeoPhysX::SubCorrectionFactor
+      GeoPhysX::SubTopoFilter
+      GeoPhysX::SubLaunchingHeight
+      GeoPhysX::SubY789
+      GeoPhysX::SubRoughnessLength
+   }
 
-      #----- Biogenic emissions calculations
-      if { $Param(Biogenic)!="" } {
-         BioGenX::CalcEmissions  $Grid
-         BioGenX::TransportableFractions $Grid
-      }
+   #----- Biogenic emissions calculations
+   if { $Param(Biogenic)!="" } {
+      BioGenX::CalcEmissions  $Grid
+      BioGenX::TransportableFractions $Grid
+   }
 
-      #-----Hydrologc parameters
-      if { $Param(Hydro)!="" } {
-         HydroX::DrainDensity $Grid
-      }
+   #-----Hydrologic parameters
+   if { $Param(Hydro)!="" } {
+      HydroX::DrainDensity $Grid
+   }
 
-      #----- Urban parameters
-      if { $Param(Urban)!="" } {
-         UrbanX::Process $Param(Urban) $Grid
-         #UrbanPhysX::Cover $Grid
-      }
+   #----- Urban parameters
+   if { $Param(Urban)!="" } {
+      UrbanX::Process $Param(Urban) $Grid
+      #UrbanPhysX::Cover $Grid
+   }
 
-      if { $Param(SMOKE)!="" } {
-         IndustrX::Process $Param(SMOKE)
-      }
+   #----- SMOKE parameters
+   if { $Param(SMOKE)!="" } {
+      IndustrX::Process $Param(SMOKE)
+   }
 
-      #----- Diagnostics of output fields
-      if { $Param(Diag) } {
-         GeoPhysX::Diag
-      }
+   #----- Diagnostics of output fields
+   if { $Param(Diag) } {
+      GeoPhysX::Diag
    }
 }
 
@@ -303,13 +304,10 @@ proc GenX::Submit { } {
       puts $f "scp $host:[file normalize $Param(GridFile)] ."
       append rargv " -gridfile [file tail $Param(GridFile)]"
    }
-   if { $Param(NameFile)!="" } {
-      puts $f "scp $host:[file normalize $Param(NameFile)] ."
-      append rargv " -nml [file tail $Param(NameFile)]"
-   }
+
    if { $Param(Script)!="" } {
       puts $f "scp $host:[file normalize $Param(Script)] ."
-      append rargv " -script [file tail $Param(Script)]"
+      append rargv " -param [file tail $Param(Script)]"
    }
    if { [file exists $Param(OutFile).fst] } {
       puts $f "scp $host:[file normalize ${Param(OutFile)}.fst] ."
@@ -459,7 +457,7 @@ proc GenX::MetaData { Grid } {
 
    #----- Append script if any
    if { $Param(Script)!="" } {
-      append meta "Script used    : $Param(Script)\n"
+      append meta "User param used: $Param(Script)\n"
       set f [open $Param(Script) r]
       while { ![eof $f] } {
          append meta "   [gets $f]\n"
@@ -472,11 +470,6 @@ proc GenX::MetaData { Grid } {
 
    #----- Append processing used
    append meta "Processing used:\n   [join $Meta(Procs) "\n   "]\n"
-
-   #----- Append NML file if any
-   if { [file exists $Param(NameFile)] } {
-      append meta "\nGEM namelist   : { \n[exec cat $Param(NameFile)]\n }"
-   }
 
    #----- Append databases paths
    if { [llength $Meta(Databases)] } {
@@ -607,11 +600,10 @@ proc GenX::CommandLine { } {
       \[-verbose\]  [format "%-30s : Trace level (0 ERROR, 1 WARNING, 2 INFO, 3 DEBUG)" ($Log(Level))]
 
    Input parameters:
-      \[-nml\]      [format "%-30s : GEM namelist definition file" ($Param(NameFile))]
       \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Param(GridFile))]
       \[-result\]   [format "%-30s : Result filename" ($Param(OutFile))]
       \[-target\]   [format "%-30s : Set necessary flags for target model {$Param(Targets)}" ($Param(Target))]
-      \[-script\]   [format "%-30s : User definition script to include" ""]
+      \[-param\]    [format "%-30s : User parameter definition to include" ($Param(Script))]
 
    Processing parameters:
       Specify databases in order of processing joined by + ex: STRM+USGS
@@ -717,7 +709,6 @@ proc GenX::ParseCommandLine { } {
          "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(OutFile)] }
          "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Target) $GenX::Param(Targets)]; GenX::ParseTarget; incr flags }
          "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(GridFile)] }
-         "nml"       { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(NameFile)] }
          "dbase"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(DBase)] }
          "batch"     { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Batch(On)] }
          "mach"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Host)] }
@@ -742,7 +733,7 @@ proc GenX::ParseCommandLine { } {
          "celldim"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Cell)] }
          "compress"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Compress)] }
          "nbits"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(NBits)] }
-         "script"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Script)] }
+         "param"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Script)] }
          "process"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Process)] }
          "help"      { GenX::CommandLine ; exit 0 }
          default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
@@ -842,6 +833,7 @@ proc GenX::ParseCommandLine { } {
 #----------------------------------------------------------------------------
 proc GenX::ParseTarget { } {
    variable Param
+   variable Settings
 
    switch $Param(Target) {
       "GEMMESO" { set Param(Topo)     "USGS"
@@ -852,6 +844,26 @@ proc GenX::ParseTarget { } {
                   set Param(Sub)      "STD"
                   set Param(Z0Filter) True
                   set Param(Compress) False
+
+                  set Settings(GRD_TYP_S)    GU
+                  set Settings(TOPO_DGFMS_L) True
+                  set Settings(TOPO_DGFMX_L) True
+                  set Settings(TOPO_FILMX_L) True
+                }
+      "GEM4.4"  { set Param(Topo)     "GTOPO30"
+                  set Param(Vege)     "GLC2000"
+                  set Param(Mask)     "GLC2000"
+                  set Param(Soil)     "JPL"
+                  set Param(Check)    "STD"
+                  set Param(Sub)      "STD"
+                  set Param(Z0Filter) True
+                  set Param(Compress) False
+                  set Param(Cell)     2
+
+                  set Settings(GRD_TYP_S)    GU
+                  set Settings(TOPO_DGFMS_L) True
+                  set Settings(TOPO_DGFMX_L) True
+                  set Settings(TOPO_FILMX_L) True
                 }
    }
 }
@@ -1076,6 +1088,7 @@ proc GenX::GridGet { File } {
    if { $Param(Process)=="" } {
 
       set tip1 1200
+
       #----- Read grid descriptors from source file and write grid field in aux file
       if { [llength [set tics [fstdfield find GPXGRIDFILE -1 "" -1 -1 -1 "" ">>"]]] } {
          foreach tic $tics {

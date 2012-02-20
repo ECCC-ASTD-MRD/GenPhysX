@@ -967,6 +967,9 @@ proc GeoPhysX::AverageVege { Grid } {
    fstdfield write GPXVF GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    fstdfield free GPXVF
+
+   #----- Vegetation canopy height
+   GeoPhysX::AverageGLAS $Grid
 }
 
 #----------------------------------------------------------------------------
@@ -1309,6 +1312,61 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
       vector free FROMGLOB TORPN
    }
    gdalfile close GLOBFILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageGLAS>
+# Creation : Janvier 2009 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the 20 something vegetation types through averaging.
+#            using GlobCover Database
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageGLAS { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs AverageGLAS
+   GenX::Log INFO "Averaging vegetation canopy height using GLAS database"
+
+   #----- Open the file
+   gdalfile open GLASFILE read $GenX::Path(GLAS)/Simard_Pinto_3DGlobalVeg_JGR.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLASFILE]]]] } {
+      GenX::Log WARNING "Specified grid does not intersect with GLAS database, vegetation will not be calculated"
+   } else {
+      GenX::Log INFO "Grid intersection with GLAS database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            gdalband read GLASTILE { { GLASFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats GLASTILE -nodata 255 -celldim $GenX::Param(Cell)
+
+            fstdfield gridinterp $Grid GLASTILE AVERAGE False
+         }
+      }
+
+      gdalband free GLASTILE
+   }
+   gdalfile close GLASFILE
+
+   #----- Save output
+   fstdfield gridinterp $Grid - NOP True
+   fstdfield define $Grid -NOMVAR VCH -IP1 0
+   fstdfield write $Grid GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 }
 
 #----------------------------------------------------------------------------
