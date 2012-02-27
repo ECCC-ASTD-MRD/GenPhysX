@@ -451,13 +451,13 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (function = $func)"
-#                  ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+                  ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE function NOT IN ([join $funcs ,])"
-#               ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+               ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 33"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 33
             }
@@ -725,9 +725,9 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                   # exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
-   #               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
+                  ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
-   #               GenX::Log INFO "Buffering general road segments to 12m"
+                  GenX::Log INFO "Buffering general road segments to 12m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
 
                   # pavstatus = 2: unpaved: routes non pavées n'étant pas des tunnels ou des snowsheds
@@ -738,16 +738,16 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                   # roadclass in (1,2): freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
-   #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+                  ogrlayer stats FEATURES -buffer 0.0000989921 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
-   #               GenX::Log INFO "Buffering highway road segments to 22m"
+                  GenX::Log INFO "Buffering highway road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
 
                   # structype in (1,2,3,4) : bridge (tous les types de ponts)
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE structype IN (1,2,3,4)"
-   #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+                  ogrlayer stats FEATURES -buffer 0.0000989921 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
-   #               GenX::Log INFO "Buffering bridge road segments to 22m"
+                  GenX::Log INFO "Buffering bridge road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 1
                }
             }
@@ -756,7 +756,6 @@ proc UrbanX::Sandwich { indexCouverture } {
                if { $indexCouverture=="OTTAWA"} {
                   GenX::Log DEBUG "Ignoring the QC_TR_1760009_1 layer for Ottawa to avoid duplicated roads with TR_1760009_1"
                } else {
-# VALIDER LES NOM D'ATTRIBUTS DANS _QC_
                   # Thus for MONTREAL, QUEBEC and QC (IndustrX)
                   GenX::Log DEBUG "Rasterizing QC_TR_1760009_1 for $indexCouverture"
                   # entity : Road segment [Geobase], line
@@ -764,9 +763,9 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                   # exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
-   #               ogrlayer stats LAYER$j -buffer 0.0000539957 8 ;# 6m x 2
+                  ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
-   #               GenX::Log INFO "Buffering general road segments to 12m"
+                  GenX::Log INFO "Buffering general road segments to 12m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
 
                   # pavstatus = 2: unpaved : routes non pavées n'étant pas des tunnels ou des snowsheds
@@ -777,16 +776,16 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                   # roadclass in (1,2): freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
-   #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+                  ogrlayer stats FEATURES -buffer 0.0000989921 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
-   #               GenX::Log INFO "Buffering highway road segments to 22m"
+                  GenX::Log INFO "Buffering highway road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
 
                   # structype in (1,2,3,4) : bridge (tous les types de ponts)
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE structype IN (1,2,3,4)"
-   #               ogrlayer stats LAYER$j -buffer 0.0000989921 8 ;# 11m x 2
+                  ogrlayer stats FEATURES -buffer 0.0000989921 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
-   #               GenX::Log INFO "Buffering bridge road segments to 22m"
+                  GenX::Log INFO "Buffering bridge road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 1
                }
             }
@@ -858,15 +857,14 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
             set priority 666 ;# VALUE TO UPDATE
             ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM '$filename' WHERE function NOT IN (3,4,14,36) "
 # Bug in spatial buffers
-#            ogrlayer stats LAYER$i -buffer 0.000224982 8
+            ogrlayer stats LAYER$i -buffer 0.000224982 8
             }
             BS_2010009_2 {
             GenX::Log DEBUG "Buffering 2D buildings"
             set priority 667 ;# VALUE TO UPDATE
-# need updating the attribute values in this sqlselect
             ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM '$filename' WHERE function NOT IN (3,4,14,36) "
 # Bug in spatial buffers
-#            ogrlayer stats LAYER$i -buffer 0.00089993 8
+            ogrlayer stats LAYER$i -buffer 0.00089993 8
             }
          }
          GenX::Log DEBUG "Buffering [ogrlayer define LAYER$i -nb] features from $filename as LAYER$i with buffer #priority $priority"
@@ -1238,7 +1236,7 @@ proc UrbanX::Priorities2TEB { } {
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
-   # gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
    gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V-LUT.tif]
    # gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
 
@@ -1252,7 +1250,7 @@ proc UrbanX::Priorities2TEB { } {
    vexpr RTEB ifelse(RPOPDENSCUT!=0,RPOPDENSCUT,RTEB)
    #----- Next rasters are not generated at the moment
    # vexpr RTEB ifelse(RHAUTEURCLASS!=0,RHAUTEURCLASS,RTEB)
-   # vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
+   vexpr RTEB ifelse(RCHAMPS!=0,RCHAMPS,RTEB)
    # Rasters must now be closed otherwise we blow up memory for large cities
    gdalfile close FSANDWICH FPOPDENSCUT FCHAMPS FHAUTEURCLASS
    gdalband free RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS
@@ -1364,10 +1362,6 @@ proc UrbanX::TEB2FSTD { Grid } {
    gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
    gdalfile close FTEB
 
-   #----- Normally, this shouldn't be needed, but since there are many holes in OutFile_TEB.tif at the moment
-   GenX::Log INFO "Overwriting areas without any TEB class to Building vicinity (class 510) - this is a temporary fix for the spatial buffers bug"
-   vexpr RTEB ifelse(RTEB==0,510,RTEB)
-
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
    foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end]  {
@@ -1396,13 +1390,13 @@ proc UrbanX::TEB2FSTD { Grid } {
          set nomvar $tebparam
       }
 
-# rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
+      # rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
       if { $nomvar == "VEGF"} {
          set nomvar "NATF"
       }
-# initialize Grid with 0.0
+      # initialize Grid with 0.0
       GenX::GridClear $Grid 0.0
-# dont waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
+      # dont waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
       if { $tebparam != "VF21" } {
          GenX::Log INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over target grid"
          fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
@@ -1415,7 +1409,7 @@ proc UrbanX::TEB2FSTD { Grid } {
       }
 
       if { $nomvar == "BLDH"} {
-        # Building height variance computation
+         # Building height variance computation
          set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
          if { $memoryrequired > 0 } {
             # Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
@@ -1453,10 +1447,10 @@ proc UrbanX::TEB2FSTD { Grid } {
    vector free CSVTEBPARAMS
    gdalband free RTEB
 
-# Balancing BLDF versus PAVF values and redistribute the other parameters accordingly
+   # Balancing BLDF versus PAVF values and redistribute the other parameters accordingly
    UrbanX::Balance_BLDFvsPAVF
 
-# Need to re-normalize VF due to changes made to PAVF and BLDF
+   # Need to re-normalize VF due to changes made to PAVF and BLDF
    UrbanX::NormalizeVFvsPAVFBLDF
 
    fstdfield read Z0RDFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0RD"
@@ -1473,9 +1467,8 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield define $Grid -NOMVAR SUMF -IP1 0
    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-#   # WALL-O-HOR formulae provided by Sylvie Leroyer
-
-# bldw ---> mean width of building (BLDWFIELD)  --> add colomn 
+   # WALL-O-HOR formulae provided by Sylvie Leroyer
+   # bldw ---> mean width of building (BLDWFIELD)  --> add column 
 
    # Wall-O-Hor calculation
    GenX::Log INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
@@ -1717,10 +1710,10 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
    fstdfield free NATFFIELD PAVFFIELD BLDFFIELD ;# Freeing because they don't reflect what's in the grid anymore
 
-# Balancing BLDF versus PAVF values and redistribute the other parameters accordingly
+   # Balancing BLDF versus PAVF values and redistribute the other parameters accordingly
    UrbanX::Balance_BLDFvsPAVF
 
-# Need to re-normalize VF due to changes made to PAVF and BLDF
+   # Need to re-normalize VF due to changes made to PAVF and BLDF
    UrbanX::NormalizeVFvsPAVFBLDF
 
    #----- Updating SUMF
@@ -2378,7 +2371,7 @@ proc UrbanX::NormalizeVFvsPAVFBLDF { } {
 #----------------------------------------------------------------------------
 proc UrbanX::DominantVege { Grid } {
 
-# generate VF21 temporary for computation of VG
+   # generate VF21 temporary for computation of VG
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
 
@@ -2547,8 +2540,7 @@ proc UrbanX::Process { Coverage Grid } {
    }
 
    #----- Creates the fields and building vicinity output using spatial buffers
-## BUG SPATIAL BUFFERS MAKE IT CRASH
-#   UrbanX::ChampsBuffers $Coverage
+   UrbanX::ChampsBuffers $Coverage
 
    #----- StatCan Census data processing
    UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
