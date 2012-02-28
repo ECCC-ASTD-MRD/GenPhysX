@@ -47,6 +47,11 @@ namespace eval UrbanX { } {
    set Param(Priorities) [UrbanX-ClassesLUT::SetParamPriorities]
    set Param(TEBClasses) [UrbanX-ClassesLUT::SetParamTEBClasses]
 
+   # 1 deg of latitude in meters: 0.000008993216059187306
+   # 1 deg of longitude in meters varies a lot, up to a factor 3 in Canada - the dist proc could be used to evaluate a value considering the longitude too
+   # Next line is overwritten in the main proc
+   # set Param(Deg2M) 0.000008993216059187306
+
    # CanVec layers requiring postprocessing. No specific sorting of this list is required
    set Param(LayersPostPro)    { BS_1370009_2 BS_2010009_0 BS_2010009_2 BS_2060009_0 BS_2240009_1 BS_2310009_1 EN_1180009_1 HD_1450009_0 HD_1450009_1 HD_1450009_2 HD_1460009_0 HD_1460009_1 HD_1460009_2 HD_1470009_1 HD_1480009_2 IC_2600009_0 TR_1020009_1 TR_1190009_0 TR_1190009_2 TR_1760009_1 QC_TR_1760009_1 }
 
@@ -95,9 +100,8 @@ namespace eval UrbanX { } {
       { 0  0  0  0  0 500   0  0 501  0 502 503 504 505 506 507 508 509 510 511 512 513 514 515 516 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 }
       { 0  0  0  0  0   0 702  0   0  0 724 724 724 722 726 711 711 722 723 723 723 723 713 722 714 722 722 714 715 715 715 725 704 704 704 704 707 707 707 707 725 725 725 725 } }
 
-#
-# Lookup Table for redistribution of PAVF and BLDF into other TEB parameters
-#
+
+   # Lookup Table for redistribution of PAVF and BLDF into other TEB parameters
    set  Param(BLDFvsLUT)  { 
               {BLDH 0 7.0}
               {BLDW 0 14.0}
@@ -451,13 +455,13 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (function = $func)"
-                  ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+                  ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*6] 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE function NOT IN ([join $funcs ,])"
-               ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
+               ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*6] 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
                GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 33"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 33
             }
@@ -725,7 +729,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                   # exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
-                  ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2
+                  ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*6] 8 ;# 6m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
                   GenX::Log INFO "Buffering general road segments to 12m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
@@ -738,14 +742,14 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                   # roadclass in (1,2): freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
-                  ogrlayer stats FEATURES -buffer 0.0000989921 8 ;# 11m x 2
+                  ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*11] 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
                   GenX::Log INFO "Buffering highway road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
 
                   # structype in (1,2,3,4) : bridge (tous les types de ponts)
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE structype IN (1,2,3,4)"
-                  ogrlayer stats FEATURES -buffer 0.0000989921 8 ;# 11m x 2
+                  ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*11] 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
                   GenX::Log INFO "Buffering bridge road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 1
@@ -763,7 +767,7 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                   # exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
-                  ogrlayer stats FEATURES -buffer 0.0000539957 8 ;# 6m x 2
+                  ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*6] 8 ;# 6m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
                   GenX::Log INFO "Buffering general road segments to 12m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
@@ -776,14 +780,14 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                   # roadclass in (1,2): freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
-                  ogrlayer stats FEATURES -buffer 0.0000989921 8 ;# 11m x 2
+                  ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*11] 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
                   GenX::Log INFO "Buffering highway road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
 
                   # structype in (1,2,3,4) : bridge (tous les types de ponts)
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE structype IN (1,2,3,4)"
-                  ogrlayer stats FEATURES -buffer 0.0000989921 8 ;# 11m x 2
+                  ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*11] 8 ;# 11m x 2
                   GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
                   GenX::Log INFO "Buffering bridge road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 1
@@ -853,18 +857,16 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
          ogrfile open SHAPE read $file
          switch $entity {
             BS_2010009_0 {
-            GenX::Log DEBUG "Buffering ponctual buildings"
-            set priority 666 ;# VALUE TO UPDATE
+            GenX::Log DEBUG "Buffering ponctual buildings (25m buffer)"
+            set priority 666
             ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM '$filename' WHERE function NOT IN (3,4,14,36) "
-# Bug in spatial buffers
-            ogrlayer stats LAYER$i -buffer 0.000224982 8
+            ogrlayer stats LAYER$i -buffer [expr $Param(Deg2M)*25] 8 ;# buffer of 25m
             }
             BS_2010009_2 {
-            GenX::Log DEBUG "Buffering 2D buildings"
-            set priority 667 ;# VALUE TO UPDATE
+            GenX::Log DEBUG "Buffering 2D buildings (100m buffer)"
+            set priority 667
             ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM '$filename' WHERE function NOT IN (3,4,14,36) "
-# Bug in spatial buffers
-            ogrlayer stats LAYER$i -buffer 0.00089993 8
+            ogrlayer stats LAYER$i -buffer [expr $Param(Deg2M)*100] 8 ;# buffer of 100m
             }
          }
          GenX::Log DEBUG "Buffering [ogrlayer define LAYER$i -nb] features from $filename as LAYER$i with buffer #priority $priority"
@@ -2426,6 +2428,7 @@ proc UrbanX::DeleteTempFiles { } {
    file delete -force $GenX::Param(OutFile)_TEB.tif
 }
 
+
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::Utilitaires>
 # Creation : Octobre 2010 - Lucie Boucher - CMC/AQMAS
@@ -2487,8 +2490,30 @@ proc UrbanX::Utilitaires { } {
 #    }
 #    puts "Il y a [llength $sort_unique_filescanada] shapefiles trouvés."
 #    return
+}
+
+proc deg2rad deg {expr {$deg*atan(1)*8/360}}
+
+proc dist {lat1 lat2 lon1 lon2} {
+ set R 6371
+ set dLat [deg2rad [expr {($lat2 - $lat1)}]]
+ set dLon [deg2rad [expr {($lon2 - $lon1)}]]
+ set sdlat2 [expr {sin($dLat/2)}]
+ set sdlon2 [expr {sin($dLon/2)}]
+ set a [expr {$sdlat2*$sdlat2 + cos([deg2rad $lat1])*cos([deg2rad $lat2])*$sdlon2*$sdlon2}]
+ set d [expr {2*$R*asin(sqrt($a))}]
+ return $d
+
+#set diagonale [expr ([dist $Param(Lat0) $Param(Lat1) $Param(Lon0) $Param(Lon1)]*1000)] ;# diagonale en metres
+#set Param(Deg2M)  [expr (sqrt(($Param(Lat1)-$Param(Lat0))*($Param(Lat1)-$Param(Lat0))+($Param(Lon1)-$Param(Lon0))*($Param(Lon1)-$Param(Lon0))))]
+ 
+  #set Param(Deg2M) [expr [expr ($Param(Lon1)-$Param(Lon0))]/$largeur] ;# deg par metres
+  #set Param(Deg2M) [expr (1/$largeur)] ;# deg par metres
+#puts "Param(Deg2M) = $Param(Deg2M)"
+#break
 
 }
+
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::Process>
@@ -2510,6 +2535,7 @@ proc UrbanX::Process { Coverage Grid } {
    variable Param
    variable Meta
 
+
    GenX::Log INFO "Beginning of UrbanX"
    GenX::Procs CANVEC StatCan
 
@@ -2522,6 +2548,9 @@ proc UrbanX::Process { Coverage Grid } {
    GenX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Coverage
    set Param(Width) $GenX::Param(Width)
    set Param(Height) $GenX::Param(Height)
+   # Set Param(deg2M) degree equivalence in meters based on latitude and longitude for spatial buffers - spatial buffers will still be ovals, but at least consider latitude
+   # This improves spatial buffers width accuracy by 15% over Montreal and certainly helps everywhere else
+   set Param(Deg2M) [expr (sqrt(($Param(Lat1)-$Param(Lat0))*($Param(Lat1)-$Param(Lat0))+($Param(Lon1)-$Param(Lon0))*($Param(Lon1)-$Param(Lon0))))/([dist $Param(Lat0) $Param(Lat1) $Param(Lon0) $Param(Lon1)]*1000)]
 
    #----- Identify CanVec files to process
    GenX::Log INFO "Locating CanVec files, extent considered: lower-left = $Param(Lat0), $Param(Lon0) top-right = $Param(Lat1), $Param(Lon1)"
