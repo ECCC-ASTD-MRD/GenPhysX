@@ -43,9 +43,11 @@ namespace eval UrbanX { } {
    #----- Directory where to find processing procs
    source $GENPHYSX_HOME/UrbanX-ClassesLUT.tcl
 
-   set Param(Entities)   [UrbanX-ClassesLUT::SetParamEntities]
-   set Param(Priorities) [UrbanX-ClassesLUT::SetParamPriorities]
-   set Param(TEBClasses) [UrbanX-ClassesLUT::SetParamTEBClasses]
+   set Param(Entities)   	[UrbanX-ClassesLUT::SetParamEntities]
+   set Param(Priorities) 	[UrbanX-ClassesLUT::SetParamPriorities]
+   set Param(TEBClasses)	[UrbanX-ClassesLUT::SetParamTEBClasses]
+   set Param(TEBClassesOrdered)	[UrbanX-ClassesLUT::SetParamTEBClassesOrdered]
+   set Param(CULUCClasses)	[UrbanX-ClassesLUT::SetParamCULUCClasses]
 
    # 1 deg of latitude in meters: 0.000008993216059187306
    # 1 deg of longitude in meters varies a lot, up to a factor 3 in Canada - the dist proc could be used to evaluate a value considering the longitude too
@@ -1234,7 +1236,7 @@ proc UrbanX::Priorities2TEB { } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Aggregating rasters into TEB classes"
+   GenX::Log INFO "Aggregating rasters into CULUC classes and applying colormap"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
@@ -1258,6 +1260,18 @@ proc UrbanX::Priorities2TEB { } {
    gdalband free RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS
 
    vexpr RTEB ifelse((RLCC2000V!=0 && (RTEB==0 || RTEB==810 || RTEB==820 || RTEB==840)),RLCC2000V,RTEB)
+
+   vector create LUT
+   vector dim LUT { FROM TO }
+   vector set LUT.FROM $Param(TEBClassesOrdered)
+   vector set LUT.TO $Param(CULUCClasses)
+   vexpr RTEB lut(RTEB,LUT.FROM,LUT.TO)
+   vector free LUT
+
+   # Applying TIF colormap to the CULUC classes
+#  gdalband define RTEB -indexed True
+#  colormap read CULUCCOLORMAP $GENPHYSX_HOME/doc/CULUC-colormap.rgba
+#  gdalband configure RTEB -colormap CULUCCOLORMAP
 
    file delete -force $GenX::Param(OutFile)_TEB.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB.tif GeoTiff
@@ -1368,7 +1382,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end]  {
       GenX::Log DEBUG "Copying the $tebparam values to the 5m raster with LUT"
-      vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.TEB_Class,CSVTEBPARAMS.$tebparam)
+      vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
 
       gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
       GenX::GridClear $Grid 0.0
@@ -2425,7 +2439,7 @@ proc UrbanX::DeleteTempFiles { } {
    file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
    file delete -force $GenX::Param(OutFile)_Building-fraction.tif
    file delete -force $GenX::Param(OutFile)_Building-Z0Town.tif
-   file delete -force $GenX::Param(OutFile)_TEB.tif
+   # file delete -force $GenX::Param(OutFile)_TEB.tif    Not deleting this anymore, we will use it if it already exists
 }
 
 
