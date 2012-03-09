@@ -1,0 +1,60 @@
+0 100 100 100 100 100 LINEAR
+001 000 000 255 255   	# Water - Blue   # Index values source: TEB-Params_LUT.xls - color names taken from http://www.tayloredmktg.com/rgb/
+002 224 255 255 255   	# Snow+Ice - Light cyan
+003 085 107 047 255   	# Wet soil - Dark olive green
+004 124 252 000 255   	# Grass - Light green
+005 034 139 034 255   	# Wooded area - Forest green
+006 240 230 140 255   	# Sand - Khaki
+007 238 232 170 255 	# Mine area (sand) - Pale Goldenrod
+010 224 255 255 255	# Nutural cover: snow/ice - light cyan
+011 000 100 000 255	# Nutural cover: coniferous - dark green
+012 050 205 050 255	# Nutural cover: broadleaf - Lime green
+013 204 214 102 255	# Nutural cover: shrub - manual green
+014 156 255 006 255	# Nutural cover: herbs - manual light green
+015 124 252 000 255	# Nutural cover: grassland - manual light green
+016 200 255 128 255	# Nutural cover: crops  - manual light green
+017 230 255 128 255	# Nutural cover: bryiods - manual light green
+018 107 142 035 255	# Nutural cover: wetland - olive drab
+019 050 070 000 255	# Nutural cover: sparsely vegetated bedrock - manual dark green
+020 034 139 034 255	# Nutural cover: trees - Forest green
+021 204 214 102 255	# Nutural cover: Shrubland - manual green
+030 105 105 105 255	# Building vicinity - Dim gray
+035 200 255 128 255	# Mixed covers - manual light green
+037 139 069 019 255	# Ruins - Saddle brown
+050 204 000 000 255	# Runway and highway - manual dark red
+051 255 000 000 255	# Road paved - Red
+052 255 128 128 255	# Unpaved road & trail - manual light red
+055 000 000 000 255	# Railway - Black
+056 061 061 061 255 	# Bridge on road railyway segment - manual dark grey
+058 074 074 074 255	# Transformer station - manual dark grey
+060 123 104 238 255	# Industrial area - Medium slate blue (purple)
+064 072 061 139 255	# Towers - # Dark slate blue
+065 049 079 079 255	# Pipelines - Dark slate gray
+066 178 034 034 255	# Wharfs - Firebrick
+067 205 092 092 255	# Lumber yar and fence (?) - Indian red
+068 106 090 205 255	# Tank - Slate blue (purple)
+069 240 128 128 255	# Amusement park - light coral
+100 255 165 000 255 	# Residential area absent from Census data - Orange
+101 255 255 153 255	# Residential area, 1XY where XY is the population density/10000 - manual pale yellow
+103 255 255 000 255	# yellow
+105 255 201 102 255	# manual light orange
+108 255 193 077 255 	# manual light orange
+111 255 184 051 255	# manual light orange
+115 255 175 026 255	# manual orange
+120 255 166 000 255	# manual orange
+125 245 157 000 255	# manual orange
+137 230 149 000 255 	# manual orange
+150 230 115 000 255	# manual dark orange
+199 230 115 000 255	# manual dark orange
+200 000 206 209 255	# Unknown or other buildings - Dark turquoise
+201 070 130 180 255	# Industrial buildings - Steel blue
+202 064 224 208 255 	# Hospital buildings - turquoise
+203 175 238 238 255 	# Opened 24/7 buildings - Pale turquoise
+204 064 224 208 255 	# Governmental buildings - turquoise
+205 064 224 208 255 	# Large community buildings - turquoise 
+206 072 209 204 255 	# Small buildings - medium turquoise
+207 095 158 160 255	# Stadium - cadet blue
+208 095 158 160 255	# Fort - cadet blue
+209 072 209 204 255	# Silo - medium turquoise
+210 173 216 230 255	# Gas and oil facilities - light blue
+# Source of index values: TEB-Params_LUT.xls - Color names taken from http://www.tayloredmktg.com/rgb/ and manual colors from http://www.colorschemer.com/online.html
