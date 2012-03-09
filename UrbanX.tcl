@@ -1233,10 +1233,11 @@ proc UrbanX::LCC2000V { } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Priorities2TEB { } {
+   global GENPHYSX_HOME
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Aggregating rasters into CULUC classes and applying colormap"
+   GenX::Log INFO "Aggregating rasters into CULUC classes"
 
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
    gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
@@ -1265,19 +1266,23 @@ proc UrbanX::Priorities2TEB { } {
    vector dim LUT { FROM TO }
    vector set LUT.FROM $Param(TEBClassesOrdered)
    vector set LUT.TO $Param(CULUCClasses)
-   vexpr RTEB lut(RTEB,LUT.FROM,LUT.TO)
+   vexpr (UByte)RTEB lut(RTEB,LUT.FROM,LUT.TO)
    vector free LUT
 
-   # Applying TIF colormap to the CULUC classes
-#  gdalband define RTEB -indexed True
-#  colormap read CULUCCOLORMAP $GENPHYSX_HOME/doc/CULUC-colormap.rgba
-#  gdalband configure RTEB -colormap CULUCCOLORMAP
+   GenX::Log INFO "Applying TIFF colormap to the CULUC classes"
+
+   colormap create CULUCCOLORMAP
+   colormap read CULUCCOLORMAP $GENPHYSX_HOME/doc/CULUC-colormap.rgba
+
+   gdalband define RTEB -indexed True
+   gdalband configure RTEB -colormap CULUCCOLORMAP
 
    file delete -force $GenX::Param(OutFile)_TEB.tif
    gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB.tif GeoTiff
-   gdalband write RTEB FILEOUT
+   gdalband write RTEB FILEOUT { COMPRESS=LZW }
    GenX::Log INFO "The file $GenX::Param(OutFile)_TEB.tif has been generated"
 
+   colormap free CULUCCOLORMAP
    gdalfile close FILEOUT FLCC2000V
    gdalband free RTEB RLCC2000V
 }
@@ -2529,6 +2534,31 @@ proc dist {lat1 lat2 lon1 lon2} {
 }
 
 
+proc UrbanX::TRASH { $indexCouverture } {
+   global GENPHYSX_HOME
+   variable Param
+   GenX::Log INFO "Testing colormap"
+
+   # Applying TIF colormap to the CULUC classes
+   colormap create CULUCCOLORMAP
+   colormap read CULUCCOLORMAP $GENPHYSX_HOME/doc/CULUC-colormap.rgba
+
+   gdalband read RTEB [gdalfile open FSANDWICH read $GenX::Param(OutFile)_TEB.tif]
+   gdalband define RTEB -indexed True
+   gdalband configure RTEB -colormap CULUCCOLORMAP
+
+   file delete -force $GenX::Param(OutFile)_TEB-wcolors.tif
+   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB-wcolors.tif GeoTiff
+   gdalband write RTEB FILEOUT { COMPRESS=LZW }
+#   gdalband write RTEB FILEOUT { COMPRESS PACKBITS }
+   gdalfile close FILEOUT
+   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-wcolors.tif has been generated"
+
+   gdalband free RTEB
+   colormap free CULUCCOLORMAP
+}
+
+
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::Process>
 # Creation : Circa 2005 - Alexandre Leroux - CMC/CMOE
@@ -2570,6 +2600,10 @@ proc UrbanX::Process { Coverage Grid } {
    GenX::Log INFO "Locating CanVec files, extent considered: lower-left = $Param(Lat0), $Param(Lon0) top-right = $Param(Lat1), $Param(Lon1)"
 
    set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
+
+# TWO NEXT LINES ARE FOR TESTING COLORMAPS,,, TO REMOVE SOON
+#UrbanX::TRASH $Coverage
+#break
 
    #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
    UrbanX::Sandwich $Coverage
