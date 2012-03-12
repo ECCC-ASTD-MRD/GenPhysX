@@ -4,7 +4,7 @@
 # 2121 Trans-Canadienne
 # Dorval, Quebec
 #
-# Project    : Geophysical field generator.
+# Project    : Urban geophysical field generator
 # File       : UrbanX.tcl
 # Creation   : Janvier 2006- Alexandre Leroux / J.P. Gauthier - CMC/CMOE
 # Revision   : $Id$
@@ -13,7 +13,7 @@
 #              et bâtiments 3D pour alimenter le modèle TEB
 #
 # Remarks  :
-#   Aucune.
+#		Full documentation found on https://wiki.cmc.ec.gc.ca/wiki/UrbanX and subpages
 #
 # Functions :
 #
@@ -25,7 +25,8 @@ namespace eval UrbanX { } {
    variable Const
    variable Meta
 
-   set Param(Version)           0.9     ;# UrbanX version number
+   set Param(Version)       	 0.95   ;# UrbanX version number
+   set Param(CULUCVersion)       0.9    ;# CULUC version number
    set Param(Resolution)         5      ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
    set Param(Mode)               FAST   ;# Rasterization mode: INCLUDED or FAST - fast is... much much faster!
    set Param(HeightGain)         0      ;# Default value if proc HeightGain is not ran
@@ -812,12 +813,12 @@ proc UrbanX::Sandwich { indexCouverture } {
       ogrfile close SHAPE
    }
 
-   file delete -force $GenX::Param(OutFile)_sandwich.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif GeoTiff
    gdalband write RSANDWICH FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich.tif has been generated"
-
    gdalfile close FILEOUT
+   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif has been generated"
+
    gdalband free RSANDWICH
 }
 
@@ -844,7 +845,7 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
    GenX::Procs
    GenX::Log INFO "Buffer zone processing for grass and fields identification"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
 
    gdalband create RBUFFER $Param(Width) $Param(Height) 1 Byte
    eval gdalband define RBUFFER -georef UTMREF$indexCouverture
@@ -885,8 +886,8 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
    vexpr RBUFFERCUT ifelse(((RSANDWICH==0) && (RBUFFER==0)),820,RBUFFERCUT)
    vexpr RBUFFERCUT ifelse(((RSANDWICH==0) && (RBUFFER!=0)),510,RBUFFERCUT)
 
-   file delete -force $GenX::Param(OutFile)_champs-only+building-vicinity.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_champs-only+building-vicinity.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif GeoTiff
    gdalband write RBUFFERCUT FILEOUT
 
    gdalfile close FILEOUT FSANDWICH
@@ -918,7 +919,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    GenX::Log INFO "Reclassifying residential builtup areas using population density"
 
    GenX::Log DEBUG "Reading Sandwich file"
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
 
    GenX::Log DEBUG "Open and read the Canada-wide dissemination area polygons file"
    if {$GenX::Param(SMOKE)!="" } {
@@ -1011,14 +1012,14 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    eval gdalband define RPOPDENS -georef UTMREF$indexCouverture
    gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) CSDUID
 
-   file delete -force $GenX::Param(OutFile)_popdens.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens.tif GeoTiff
    gdalband write RPOPDENS FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens.tif has been generated"
-
    gdalfile close FILEOUT
-   ogrlayer free VPOPDENS
+   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens.tif has been generated"
    ogrfile close SHAPE
+
+   ogrlayer free VPOPDENS
    gdalband free RDA
 
    GenX::Log DEBUG "Cookie cutting population density and setting SMOKE/TEB values"
@@ -1041,12 +1042,12 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    }
 
    GenX::Log DEBUG "Generating output file, result of the cookie cutting"
-   file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
    gdalband write RPOPDENSCUT FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_popdens-builtup.tif has been generated"
-
    gdalfile close FSANDWICH FILEOUT
+   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif has been generated"
+
    gdalband free RPOPDENS RRESIDENTIAL RPOPDENSCUT
 }
 
@@ -1069,7 +1070,7 @@ proc UrbanX::HeightGain { indexCouverture } {
    GenX::Procs
    GenX::Log INFO "Evaluating height gain"
 
-   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif]
    gdalband create RHAUTEURPROJ $Param(Width) $Param(Height) 1 Float32
    gdalband define RHAUTEURPROJ -georef UTMREF$indexCouverture
    gdalband stats RHAUTEURPROJ -nodata -9999
@@ -1098,12 +1099,12 @@ proc UrbanX::HeightGain { indexCouverture } {
       GenX::Log WARNING "Strange value for Param(HeightGain): $Param(HeightGain)"
    }
 
-   file delete -force $GenX::Param(OutFile)_hauteur-classes.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_hauteur-classes.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif GeoTiff
    gdalband write RHEIGHTCHAMPS FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_hauteur-classes.tif has been generated"
-
    gdalfile close FILEOUT FCHAMPS
+   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif has been generated"
+
    gdalband free RCHAMPS RHEIGHTCHAMPS RHAUTEURPROJ
 }
 
@@ -1127,7 +1128,7 @@ proc UrbanX::BuildingHeight { indexCouverture } {
    GenX::Procs
    GenX::Log INFO "Cookie cutting building heights and adding gain"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
    gdalband read RHAUTEURWMASK [gdalfile open FHAUTEUR read $Param(HeightMaskFile)]
 
    gdalband create RHAUTEURWMASKPROJ $Param(Width) $Param(Height) 1 Float32
@@ -1153,11 +1154,11 @@ proc UrbanX::BuildingHeight { indexCouverture } {
    gdalband free RHAUTEURWMASKPROJ
    vector free LUT
 
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_hauteur-classes.tif GeoTiff
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif GeoTiff
    gdalband write RHAUTEURCLASS FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_hauteur-classes.tif has been generated"
-
    gdalfile close FILEOUT FSANDWICH
+   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif has been generated"
+
    gdalband free RHAUTEURCLASS RSANDWICH
 }
 
@@ -1181,7 +1182,7 @@ proc UrbanX::LCC2000V { } {
    GenX::Procs
    GenX::Log INFO "Integrating LCC2000-V data for vegetated areas"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
    gdalband copy RLCC2000V RSANDWICH
    vexpr RLCC2000V RLCC2000V << 0
 
@@ -1211,11 +1212,12 @@ proc UrbanX::LCC2000V { } {
    vexpr RLCC2000VSMOKE lut(RLCC2000V,LUT.FROM,LUT.TO)
    vector free LUT.FROM LUT.TO
 
-   file delete -force $GenX::Param(OutFile)_LCC2000V-LUT.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_LCC2000V-LUT.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif GeoTiff
    gdalband write RLCC2000VSMOKE FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_LCC2000V-LUT.tif has been generated"
    gdalfile close FLCC2000V FILEOUT FSANDWICH
+   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif has been generated"
+
    gdalband free RLCC2000V RLCC2000VSMOKE RSANDWICH
 }
 
@@ -1239,11 +1241,11 @@ proc UrbanX::Priorities2TEB { } {
    GenX::Procs
    GenX::Log INFO "Aggregating rasters into CULUC classes"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
-   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(OutFile)_popdens-builtup.tif]
-   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(OutFile)_champs-only+building-vicinity.tif]
-   gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(OutFile)_LCC2000V-LUT.tif]
-   # gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(OutFile)_hauteur-classes.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif]
+   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+   gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif]
+   # gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif]
 
    vector create LUT
    vector dim LUT { FROM TO }
@@ -1277,13 +1279,13 @@ proc UrbanX::Priorities2TEB { } {
    gdalband define RTEB -indexed True
    gdalband configure RTEB -colormap CULUCCOLORMAP
 
-   file delete -force $GenX::Param(OutFile)_TEB.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif GeoTiff
    gdalband write RTEB FILEOUT { COMPRESS=LZW }
-   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB.tif has been generated"
+   gdalfile close FILEOUT FLCC2000V
+   GenX::Log INFO "The file $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif has been generated"
 
    colormap free CULUCCOLORMAP
-   gdalfile close FILEOUT FLCC2000V
    gdalband free RTEB RLCC2000V
 }
 
@@ -1307,7 +1309,7 @@ proc UrbanX::VegeMask { } {
    GenX::Procs
    GenX::Log INFO "Generating vegetation mask"
 
-   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
+   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif]
 
    vexpr RTEBWMASK ifelse(RTEB>800,100,0)
 
@@ -1380,7 +1382,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    }
    close $csvfile
 
-   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif]
+   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif]
    gdalfile close FTEB
 
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
@@ -1445,7 +1447,7 @@ proc UrbanX::TEB2FSTD { Grid } {
             fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
             fstdfield free BLDHFIELD
 
-            gdalband read RTEB [gdalfile open FTEB read $GenX::Param(OutFile)_TEB.tif] ;# reopening since closed for memory purposes
+            gdalband read RTEB [gdalfile open FTEB read $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif] ;# reopening since closed for memory purposes
             gdalfile close FTEB
          }
 
@@ -1572,12 +1574,12 @@ proc UrbanX::BuildingHeights2Raster { indexCouverture } {
    ogrlayer free LAYER
    ogrfile close SHAPE
 
-   file delete -force $GenX::Param(OutFile)_Building-heights.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_Building-heights.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif GeoTiff
    gdalband write RHAUTEURBLD FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_Building-heights.tif has been generated"
-
    gdalfile close FILEOUT
+   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif has been generated"
+
    gdalband free RHAUTEURBLD
 }
 
@@ -1600,17 +1602,17 @@ proc UrbanX::3DBuildings2Sandwich { Coverage } {
    GenX::Procs
    GenX::Log INFO "Overwriting $Coverage CanVec sandwich by adding vector 3D buildings"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(OutFile)_sandwich.tif]
-   gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $GenX::Param(OutFile)_Building-heights.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif]
 
    GenX::Log INFO "Adding new-only buildings to priority 104 (unknown or other 2D buildings)"
    #----- On ignore les priorités <= 106 puisqu'elles sont soit des bâtiments existants soit au-dessus des bâtiments
    vexpr RSANDWICH ifelse(((RHAUTEURBLD>0) && (RSANDWICH>=106)),104,RSANDWICH)
 
-   file delete -force $GenX::Param(OutFile)_sandwich.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_sandwich.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif GeoTiff
    gdalband write RSANDWICH FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_sandwich.tif was overwritten"
+   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif was overwritten"
 
    gdalfile close FSANDWICH FHAUTEURBLD FILEOUT
    gdalband free RSANDWICH RHAUTEURBLD
@@ -1637,7 +1639,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    GenX::Log INFO "Computing TEB geometric parameters using the 2.5D buildings"
 
    # Building heights average
-   gdalband read RHAUTEURBLD [gdalfile open RHAUTEURBLDFILE read $GenX::Param(OutFile)_Building-heights.tif]
+   gdalband read RHAUTEURBLD [gdalfile open RHAUTEURBLDFILE read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif]
    gdalband stats RHAUTEURBLD -nodata 0 ;# to average buildings without empty spaces
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
@@ -2435,20 +2437,16 @@ proc UrbanX::DominantVege { Grid } {
 proc UrbanX::DeleteTempFiles { } {
    GenX::Log INFO "Deleting all temporary files"
 
-   file delete -force $GenX::Param(OutFile)_LCC2000V-LUT.tif
-   file delete -force $GenX::Param(OutFile)_EOSDSMOKE.tif
-   file delete -force $GenX::Param(OutFile)_EOSDVegetation.tif
-   file delete -force $GenX::Param(OutFile)_hauteur-classes.tif
-   file delete -force $GenX::Param(OutFile)_popdens-builtup.tif
-   file delete -force $GenX::Param(OutFile)_popdens.tif
-   file delete -force $GenX::Param(OutFile)_champs-only+building-vicinity.tif
-   file delete -force $GenX::Param(OutFile)_sandwich.tif
-   file delete -force $GenX::Param(OutFile)_Building-heights.tif
-   file delete -force $GenX::Param(OutFile)_Building-heights-average.tif
-   file delete -force $GenX::Param(OutFile)_Building-WallOHor.tif
-   file delete -force $GenX::Param(OutFile)_Building-fraction.tif
-   file delete -force $GenX::Param(OutFile)_Building-Z0Town.tif
-   # file delete -force $GenX::Param(OutFile)_TEB.tif    Not deleting this anymore, we will use it if it already exists
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens.tif
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif
+   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif
+   # file delete -force $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif    Not deleting this anymore, we will use it if it already exists
+# WE SHOULD REMOVE THE TMPDIR ITSELF ONCE THE CULUC FILES ARE FOUND ELSEWHERE
+#   file rmdir $GenX::Param(TMPDIR)
 }
 
 
@@ -2547,7 +2545,7 @@ proc UrbanX::TRASH { $indexCouverture } {
    colormap create CULUCCOLORMAP
    colormap read CULUCCOLORMAP $GENPHYSX_HOME/doc/CULUC-colormap.rgba
 
-   gdalband read RTEB [gdalfile open FSANDWICH read $GenX::Param(OutFile)_TEB.tif]
+   gdalband read RTEB [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif]
    gdalband define RTEB -indexed True
    gdalband configure RTEB -colormap CULUCCOLORMAP
 
@@ -2583,7 +2581,6 @@ proc UrbanX::Process { Coverage Grid } {
    variable Param
    variable Meta
 
-
    GenX::Log INFO "Beginning of UrbanX"
    GenX::Procs CANVEC StatCan
 
@@ -2603,51 +2600,65 @@ proc UrbanX::Process { Coverage Grid } {
    #----- Identify CanVec files to process
    GenX::Log INFO "Locating CanVec files, extent considered: lower-left = $Param(Lat0), $Param(Lon0) top-right = $Param(Lat1), $Param(Lon1)"
 
+   # List of all CanVec layers files (with full paths) to be processed:
    set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
 
 # TWO NEXT LINES ARE FOR TESTING COLORMAPS,,, TO REMOVE SOON
 #UrbanX::TRASH $Coverage
 #break
 
-   #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-   UrbanX::Sandwich $Coverage
+   # Creating the tmp directory for temporary files - required if more than GenX::Param(GridFile) contains more than one grid
+   file mkdir $GenX::Param(TMPDIR)
 
-   #----- Vector building height processing - done only if data exists over the city
-   if { $Param(BuildingsShapefile)!="" } {
-      UrbanX::BuildingHeights2Raster $Coverage  ;# Rasterizes building heights
-      # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
-      ## move?? next proc after TEB2FSTD and update from priority to TEB class
-      UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
-   }
+   # Don't generate the CULUC classification if it already exists
+   if { ![file exists $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif] } {
+      GenX::Log INFO "The file $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif has not been found and will be created"
 
-   #----- Creates the fields and building vicinity output using spatial buffers
-   UrbanX::ChampsBuffers $Coverage
+      #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
+      UrbanX::Sandwich $Coverage
 
-   #----- StatCan Census data processing
-   UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
-
-   #----- Calculates building heights from SRTM-DEM minus CDED - UNUSED
-   #UrbanX::HeightGain $Coverage
-   #UrbanX::BuildingHeight $Coverage
-
-   #------ Update vegetation using the LCC2000-V dataset
-   UrbanX::LCC2000V
-
-   #----- Applies LUT to all processing results to generate TEB classes
-   UrbanX::Priorities2TEB
-
-   #----- Optional vegetation mask to smooth the edges - NOT REQUIRED ANYMORE?
-   #UrbanX::VegeMask
-
-   #----- Computing TEB parameters on the FSTD target grid
-   if { $GenX::Param(GridFile)!="" } {
-      UrbanX::TEB2FSTD $Grid
-
+      #----- Vector building height processing - done only if data exists over the city
       if { $Param(BuildingsShapefile)!="" } {
-         #----- Computes TEB geometric parameters from 3D buildings
-         UrbanX::3DBld2TEBGeoParams $Grid
+	  UrbanX::BuildingHeights2Raster $Coverage  ;# Rasterizes building heights
+	  # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
+	  ## move?? next proc after TEB2FSTD and update from priority to TEB class
+	  UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
       }
 
+      #----- Creates the fields and building vicinity output using spatial buffers
+      UrbanX::ChampsBuffers $Coverage
+
+      #----- StatCan Census data processing
+      UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
+
+      #----- Calculates building heights from SRTM-DEM minus CDED - UNUSED
+      #UrbanX::HeightGain $Coverage
+      #UrbanX::BuildingHeight $Coverage
+
+      #------ Update vegetation using the LCC2000-V dataset
+      UrbanX::LCC2000V
+
+      #----- Applies LUT to all processing results to generate TEB classes
+      UrbanX::Priorities2TEB
+
+      #----- Optional vegetation mask to smooth the edges - NOT REQUIRED ANYMORE?
+      #UrbanX::VegeMask
+   } else {
+      GenX::Log INFO "An existing $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif file has been found and will be used"
+   }
+
+   #----- Computing TEB parameters on the FSTD target grid
+   # This test is now useless, since a gridfile *is* required to run GenPhysX
+   if { $GenX::Param(GridFile)!="" } {
+      UrbanX::TEB2FSTD $Grid
+      if { $Param(BuildingsShapefile)!="" } {
+	 # if $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif doesn't exists than create it (ie, if the $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif file existed)
+	 if { ![file exists $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif] } {
+	    UrbanX::BuildingHeights2Raster $Coverage
+	 }
+	 #----- Computes TEB geometric parameters from 3D buildings
+         UrbanX::3DBld2TEBGeoParams $Grid
+      }
       UrbanX::DominantVege $Grid
       #----- Deleting all UrbanX temporary files
       UrbanX::DeleteTempFiles
