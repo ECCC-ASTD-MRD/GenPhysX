@@ -190,6 +190,8 @@ namespace eval GenX { } {
 proc GenX::Process { Grid } {
    variable Param
 
+   set Param(TMPDIR) $Param(OutFile)_tmp$Param(Process)
+
    #----- Topography
    if { $Param(Topo)!="" } {
       GeoPhysX::AverageTopo     $Grid
@@ -324,7 +326,7 @@ proc GenX::Submit { } {
    set gargv [lreplace $gargv $idx $idx]
 
    puts $f "\n[file normalize [info script]] $gargv \\\n   $rargv\n"
-   puts $f "scp [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r $rdir"
+   puts $f "scp -r [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r $rdir"
 
    if { $Batch(Mail)!="" } {
       puts $f "echo $Param(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
