@@ -1541,7 +1541,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::BuildingHeights2Raster { } {
+proc UrbanX::BuildingHeights2Raster { indexCouverture } {
    variable Param
 
    GenX::Procs
@@ -1550,15 +1550,19 @@ proc UrbanX::BuildingHeights2Raster { } {
    set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
    eval ogrlayer read LAYER $shp_layer
 
-   set extent [ogrlayer stats LAYER -extent] ;# in UTM
-   set rwidth [expr int(ceil(([lindex $extent 2]-[lindex $extent 0])))/$Param(Resolution)]
-   set rheight [expr int(ceil(([lindex $extent 3]-[lindex $extent 1])))/$Param(Resolution)]
+   # The next commented lines creates a RHAUTEURBLD that is of the extent of the shapefile, which creates a problem with a vexpr in UrbanX::3DBuildings2Sandwich
+   #set extent [ogrlayer stats LAYER -extent] ;# in UTM
+   #set rwidth [expr int(ceil(([lindex $extent 2]-[lindex $extent 0])))/$Param(Resolution)]
+   #set rheight [expr int(ceil(([lindex $extent 3]-[lindex $extent 1])))/$Param(Resolution)]
 
-   georef copy UTMREFCROPPED [ogrlayer define LAYER -georef] ;# Retrieving georef from the shapefile
-   georef define UTMREFCROPPED -transform [list [lindex $extent 0] $Param(Resolution) 0.0 [lindex $extent 1] 0.0 $Param(Resolution)]
+   #georef copy UTMREFCROPPED [ogrlayer define LAYER -georef] ;# Retrieving georef from the shapefile
+   #georef define UTMREFCROPPED -transform [list [lindex $extent 0] $Param(Resolution) 0.0 [lindex $extent 1] 0.0 $Param(Resolution)]
 
-   gdalband create RHAUTEURBLD $rwidth $rheight 1 Float32
-   gdalband define RHAUTEURBLD -georef UTMREFCROPPED
+   #gdalband create RHAUTEURBLD $rwidth $rheight 1 Float32
+   #gdalband define RHAUTEURBLD -georef UTMREFCROPPED
+
+   gdalband create RHAUTEURBLD $Param(Width) $Param(Height) 1 Float32
+   gdalband define RHAUTEURBLD -georef UTMREF$indexCouverture
 
    gdalband gridinterp RHAUTEURBLD LAYER $Param(Mode) $Param(BuildingsHgtField)
 
@@ -1590,7 +1594,7 @@ proc UrbanX::BuildingHeights2Raster { } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::3DBuildings2Sandwich { } {
+proc UrbanX::3DBuildings2Sandwich { Coverage } {
    variable Param
 
    GenX::Procs
@@ -2610,10 +2614,10 @@ proc UrbanX::Process { Coverage Grid } {
 
    #----- Vector building height processing - done only if data exists over the city
    if { $Param(BuildingsShapefile)!="" } {
-      UrbanX::BuildingHeights2Raster   ;# Rasterizes building heights
+      UrbanX::BuildingHeights2Raster $Coverage  ;# Rasterizes building heights
       # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
       ## move?? next proc after TEB2FSTD and update from priority to TEB class
-      #UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
+      UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
    }
 
    #----- Creates the fields and building vicinity output using spatial buffers
