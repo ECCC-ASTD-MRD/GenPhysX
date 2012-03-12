@@ -303,19 +303,19 @@ proc GenX::Submit { } {
    puts $f "cd $rdir"
 
    if { $Param(GridFile)!="" } {
-      puts $f "scp $host:[file normalize $Param(GridFile)] ."
+      puts $f "srcp $host:[file normalize $Param(GridFile)] ."
       append rargv " -gridfile [file tail $Param(GridFile)]"
    }
 
    if { $Param(Script)!="" } {
-      puts $f "scp $host:[file normalize $Param(Script)] ."
+      puts $f "srcp $host:[file normalize $Param(Script)] ."
       append rargv " -param [file tail $Param(Script)]"
    }
    if { [file exists $Param(OutFile).fst] } {
-      puts $f "scp $host:[file normalize ${Param(OutFile)}.fst] ."
+      puts $f "srcp $host:[file normalize ${Param(OutFile)}.fst] ."
    }
    if { [file exists ${Param(OutFile)}_aux.fst] } {
-      puts $f "scp $host:[file normalize ${Param(OutFile)}_aux.fst] ."
+      puts $f "srcp $host:[file normalize ${Param(OutFile)}_aux.fst] ."
    }
 
    set ldir [file dirname [file normalize $Param(OutFile)]]
@@ -326,7 +326,7 @@ proc GenX::Submit { } {
    set gargv [lreplace $gargv $idx $idx]
 
    puts $f "\n[file normalize [info script]] $gargv \\\n   $rargv\n"
-   puts $f "scp -r [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r $rdir"
+   puts $f "srcp -r [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r $rdir"
 
    if { $Batch(Mail)!="" } {
       puts $f "echo $Param(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
