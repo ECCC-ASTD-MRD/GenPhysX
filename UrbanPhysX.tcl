@@ -141,7 +141,7 @@ proc UrbanPhysX::Cover { Grid } {
    variable Const
 
    GenX::Procs
-   GenX::Log INFO "Applying urban characteristics to VF"
+   Log::Print INFO "Applying urban characteristics to VF"
 
    fstdfield copy GPXSUM $Grid
    fstdfield copy GPXZ0 $Grid
@@ -184,7 +184,7 @@ proc UrbanPhysX::Cover { Grid } {
    set max [vexpr T smax(GPXSUM)]
 
    if { $max>1.006 || $min<0.9999 } {
-      GenX::Log WARNING "Total coverage fration exceeds valid range \[0.999,1.006\] : $min, $max"
+      Log::Print WARNING "Total coverage fration exceeds valid range \[0.999,1.006\] : $min, $max"
    }
 
    #----- Save urban adjusted vege
@@ -193,7 +193,7 @@ proc UrbanPhysX::Cover { Grid } {
    #----- Parse each urban characteristic
    foreach type $Param(Types) var $Param(Vars) ip1 $Param(IP1s) {
 
-      GenX::Log DEBUG "   Processing $type ($var $ip1)" False
+      Log::Print DEBUG "   Processing $type ($var $ip1)"
 
       GenX::GridClear { GPXAGG GPXSUM } 0.0
 

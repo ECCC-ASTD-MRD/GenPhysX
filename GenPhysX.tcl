@@ -75,6 +75,8 @@ source $GENPHYSX_HOME/UrbanPhysX.tcl
 source $GENPHYSX_HOME/UrbanX.tcl
 source $GENPHYSX_HOME/IndustrX.tcl
 
+Log::Start GenPhysX $GenX::Param(Version)
+
 #----- Parse the arguments
 GenX::ParseCommandLine
 
@@ -106,7 +108,7 @@ if { [llength $grids]>1 } {
    set Param(Done)    False
 
    foreach grid $grids {
-      GenX::Log INFO "Launching processing for grid #$Param(Process)"
+      Log::Print INFO "Launching processing for grid #$Param(Process)"
 
       file copy -force $GenX::Param(OutFile).fst $GenX::Param(OutFile)$Param(Process).fst
       file copy -force $GenX::Param(OutFile)_aux.fst $GenX::Param(OutFile)$Param(Process)_aux.fst
@@ -121,18 +123,18 @@ if { [llength $grids]>1 } {
    vwait Param(Done)
 
    #----- Merge results
-   GenX::Log INFO "Merging results"
+   Log::Print INFO "Merging results"
    set Param(Process) 0
    foreach grid [lreverse $grids] {
       set err [catch { exec editfst+ -i 0 -e -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst 2>@1 } msg]
       if { $err } {
-         GenX::Log ERROR "Problems while merging results from grid #$Param(Process):\n\n\t:$msg"
+         Log::Print ERROR "Problems while merging results from grid #$Param(Process):\n\n\t:$msg"
       } else {
          file delete $GenX::Param(OutFile)$Param(Process).fst
       }
       set err [catch { exec editfst+ -i 0 -e -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst 2>@1 } msg]
       if { $err } {
-         GenX::Log ERROR "Problems while merging auxiliary results from grid #$Param(Process):\n\n\t:$msg"
+         Log::Print ERROR "Problems while merging auxiliary results from grid #$Param(Process):\n\n\t:$msg"
       } else {
          file delete $GenX::Param(OutFile)$Param(Process)_aux.fst
       }
@@ -142,9 +144,6 @@ if { [llength $grids]>1 } {
    GenX::Process $grids
    GenX::MetaData $grids
 }
-
-#----- Tadaaaa ...
-GenX::Log INFO "Done processing (Execution time: [expr [clock seconds]-$GenX::Param(Secs)]s)"
 
 fstdfile close GPXOUTFILE
 fstdfile close GPXAUXFILE
@@ -160,9 +159,10 @@ if { ! $GenX::Batch(On) } {
       close $f
       exec chmod 755 $mailfile
       if { [catch {exec $mailfile} msg] } {
-         GenX::Log ERROR "Problem sending email #$Param(Process):\n\n\t:$msg"
+         Log::Print ERROR "Problem sending email #$Param(Process):\n\n\t:$msg"
       }
       exec rm $mailfile
    }
 }
 
+Log::End 0

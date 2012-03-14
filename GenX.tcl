@@ -16,10 +16,8 @@
 # Functions :
 #
 #   GenX::Procs              { args }
-#   GenX::Log                { Type Message { Head True } }
 #   GenX::Submit             { }
 #   GenX::MetaData           { Grid }
-#   GenX::ParseArgs          { Argv Argc No Multi Cmd }
 #   GenX::ParseCommandLine   { }
 #   GenX::ParseTarget        { } {
 #   GenX::Continue           { }
@@ -47,6 +45,7 @@
 package require TclData
 package require TclSystem
 package require MetData
+package require Logger
 
 namespace eval GenX { } {
    global env
@@ -55,7 +54,6 @@ namespace eval GenX { } {
    variable Param
    variable Meta
    variable Batch
-   variable Log
 
    set Param(Version)   1.2                   ;#Application version
    set Param(Secs)      [clock seconds]       ;#To calculate execution time
@@ -166,10 +164,6 @@ namespace eval GenX { } {
    set Settings(TOPO_DGFMX_L) True
    set Settings(TOPO_FILMX_L) True
 
-   #----- Log related variables
-
-   array set Log { Level INFO MUST -1 ERROR 0 WARNING 1 INFO 2 DEBUG 3 };
-
    gdalfile error QUIET
 }
 
@@ -191,6 +185,7 @@ proc GenX::Process { Grid } {
    variable Param
 
    set Param(TMPDIR) $Param(OutFile)_tmp$Param(Process)
+   set Log::Param(Process) $Param(Process)
 
    #----- Topography
    if { $Param(Topo)!="" } {
@@ -335,20 +330,21 @@ proc GenX::Submit { } {
 
    #----- Launch job script
    if { ![file exists $Batch(Submit)] } {
-      puts stderr "Could not find job submission program $Batch(Submit)"
-      exit 1
+      Log::Print ERROR "Could not find job submission program $Batch(Submit)"
+      Log::End 1
    } else {
-      puts stdout "Using $Batch(Submit) to launch job ... "
+      Log::Print INFO "Using $Batch(Submit) to launch job ... "
       set err [catch { exec $Batch(Submit) $job -threads 4 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) 2>@1 } msg]
       if { $err } {
-         puts stdout "Could not launch job ($job) on $Batch(Host)\n\n\t$msg"
+         Log::Print ERROR "Could not launch job ($job) on $Batch(Host)\n\n\t$msg"
+         Log::End 1
       } else {
-         puts stdout "Job ($job) launched on $Batch(Host) ... "
+         Log::Print INFO "Job ($job) launched on $Batch(Host) ... "
       }
    }
 
 #   file delete -force $job
-   exit 0
+   Log::End 0
 }
 
 #----------------------------------------------------------------------------
@@ -372,49 +368,6 @@ proc GenX::Procs { args } {
    set proc [info level [expr [info level] -1]]
    if { [lsearch -exact $Meta(Procs) $proc]==-1 } {
       lappend Meta(Procs) $proc
-   }
-}
-
-#----------------------------------------------------------------------------
-# Name     : <GenX::Log>
-# Creation : Novembre 2007 - J.P. Gauthier - CMC/CMOE
-#
-# Goal     : Display verbose messages.
-#
-# Parameters :
-#  <Type>    : Type de message (-,ERROR,WARNING,INFO,DEBUG,...)
-#  <Message> : Message to display
-#  <Head>    : Afficher l'info du stack
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GenX::Log { Type { Message "" } { Head True } } {
-   variable Log
-   variable Param
-
-   set head " "
-   set proc ""
-
-   if { $Type=="-" } {
-      puts "----------------------------------------------------------------------------------------------------"
-      return
-   }
-
-   if { $Log($Type)<=$Log(Level) } {
-      if { $Head && [info level]>1} {
-         set head " [lindex [info level [expr [info level]-1]] 0]: "
-      }
-      if { $Param(Process)!="" } {
-         set proc "($Param(Process)) "
-      }
-      if { $Type=="ERROR" } {
-         puts stderr "($Type)$proc$head$Message"
-      } else {
-         puts "($Type)$proc$head$Message"
-      }
    }
 }
 
@@ -498,7 +451,7 @@ proc GenX::MetaData { Grid } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GenX::ParseArgs>
+# Name     : <Args::Parse>
 # Creation : Decembre 2000 - J.P. Gauthier - CMC/CMOE
 #
 # Goal     : Parcourir les listes d'arguments et lancer les commandes associees
@@ -518,7 +471,7 @@ proc GenX::MetaData { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
+proc Args::Parse { Argv Argc No Multi Var { Values {} } } {
 
    upvar #0 $Var var
 
@@ -548,8 +501,8 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
          if { [llength $Values] } {
             foreach v $vs {
                if { [lsearch -exact $Values $v]==-1 } {
-                  GenX::Log ERROR "Invalid value ($v) for parameter [lindex $Argv [expr $No-1]], must be one of { $Values }"
-                  exit 1;
+                  Log::Print ERROR "Invalid value ($v) for parameter [lindex $Argv [expr $No-1]], must be one of { $Values }"
+                  Log::End 1
                }
             }
          }
@@ -563,8 +516,8 @@ proc GenX::ParseArgs { Argv Argc No Multi Var { Values {} } } {
 
       #----- Verifier le nombre de valeur
       if { $Multi && ![llength $var] }  {
-         GenX::Log ERROR "No value specified for parameter [lindex $Argv [expr $No-1]]"
-         exit 1;
+         Log::Print ERROR "No value specified for parameter [lindex $Argv [expr $No-1]]"
+         Log::End 1;
       }
 
       if { [string index [lindex $Argv $No] 0]=="-" } {
@@ -599,7 +552,7 @@ proc GenX::CommandLine { } {
    Information parameters:
       \[-help\]     [format "%-30s : This information" ""]
       \[-version\]  [format "%-30s : GenPhysX version" ""]
-      \[-verbose\]  [format "%-30s : Trace level (0 ERROR, 1 WARNING, 2 INFO, 3 DEBUG)" ($Log(Level))]
+      \[-verbose\]  [format "%-30s : Trace level (0 ERROR, 1 WARNING, 2 INFO, 3 DEBUG)" ($Log::Param(Level))]
 
    Input parameters:
       \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Param(GridFile))]
@@ -664,7 +617,7 @@ proc GenX::Continue { } {
    if  { ![info exists env(GENPHYSX_BATCH)] && $Param(Process)=="" } {
       puts stdout "Continue anyway (y or n) ? "
       if { [string toupper [string index [gets stdin] 0]]!="Y" } {
-         exit 1
+         Log::End 1
       }
    }
 }
@@ -693,74 +646,66 @@ proc GenX::ParseCommandLine { } {
 
    #----- Check if architecture is valid
    if { [system info -os]!="Linux" } {
-      GenX::Log ERROR "GenPhysX only runs on Linux"
-      exit 1
+      Log::Print ERROR "GenPhysX only runs on Linux"
+      Log::End 1
    }
 
    if { !$gargc } {
       GenX::CommandLine
-      exit 1
+      Log::end 1
    }
 
    #----- Parse arguments
    set flags 0
    for { set i 0 } { $i < $gargc } { incr i } {
       switch -exact [string trimleft [lindex $gargv $i] "-"] {
-         "version"   { puts "$Param(Version)"; exit 0 }
-         "verbose"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Log(Level)] }
-         "result"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(OutFile)] }
-         "target"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Target) $GenX::Param(Targets)]; GenX::ParseTarget; incr flags }
-         "gridfile"  { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(GridFile)] }
-         "dbase"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Path(DBase)] }
-         "batch"     { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Batch(On)] }
-         "mach"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Host)] }
-         "t"         { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Time)] }
-         "cm"        { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mem)] }
-         "mail"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Batch(Mail)] }
-         "topo"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Topo) $GenX::Param(Topos)]; incr flags }
-         "mask"      { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Mask) $GenX::Param(Masks)]; incr flags }
-         "geomask"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
-         "vege"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
-         "soil"      { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
-         "subgrid"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Sub)]; incr flags }
-         "aspect"    { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Aspect)]; incr flags }
-         "biogenic"  { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
-         "hydro"     { set i [GenX::ParseArgs $gargv $gargc $i 2 GenX::Param(Hydro) $GenX::Param(Hydros)]; incr flags }
-         "urban"     { set i [GenX::ParseArgs $gargv $gargc $i 3 GenX::Param(Urban) $GenX::Param(Urbans)]; incr flags }
-         "smoke"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(SMOKE) $GenX::Param(SMOKES)]; incr flags }
-         "rindex"    { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(SMOKEIndex)] }
-         "check"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Check)]; incr flags }
-         "diag"      { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Diag)] }
-         "z0filter"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Z0Filter)]; incr flags }
-         "celldim"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Cell)] }
-         "compress"  { set i [GenX::ParseArgs $gargv $gargc $i 0 GenX::Param(Compress)] }
-         "nbits"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(NBits)] }
-         "param"     { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Script)] }
-         "process"   { set i [GenX::ParseArgs $gargv $gargc $i 1 GenX::Param(Process)] }
-         "help"      { GenX::CommandLine ; exit 0 }
-         default     { GenX::Log ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; exit 1 }
+         "version"   { puts "$Param(Version)"; Log::End 0 }
+         "verbose"   { set i [Args::Parse $gargv $gargc $i 1 Log::Param(Level)] }
+         "result"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(OutFile)] }
+         "target"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Target) $GenX::Param(Targets)]; GenX::ParseTarget; incr flags }
+         "gridfile"  { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(GridFile)] }
+         "dbase"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Path(DBase)] }
+         "batch"     { set i [Args::Parse $gargv $gargc $i 0 GenX::Batch(On)] }
+         "mach"      { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Host)] }
+         "t"         { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Time)] }
+         "cm"        { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Mem)] }
+         "mail"      { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Mail)] }
+         "topo"      { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Topo) $GenX::Param(Topos)]; incr flags }
+         "mask"      { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Mask) $GenX::Param(Masks)]; incr flags }
+         "geomask"   { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
+         "vege"      { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
+         "soil"      { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
+         "subgrid"   { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Sub)]; incr flags }
+         "aspect"    { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Aspect)]; incr flags }
+         "biogenic"  { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
+         "hydro"     { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Hydro) $GenX::Param(Hydros)]; incr flags }
+         "urban"     { set i [Args::Parse $gargv $gargc $i 3 GenX::Param(Urban) $GenX::Param(Urbans)]; incr flags }
+         "smoke"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(SMOKE) $GenX::Param(SMOKES)]; incr flags }
+         "rindex"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(SMOKEIndex)] }
+         "check"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Check)]; incr flags }
+         "diag"      { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(Diag)] }
+         "z0filter"  { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(Z0Filter)]; incr flags }
+         "celldim"   { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Cell)] }
+         "compress"  { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(Compress)] }
+         "nbits"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(NBits)] }
+         "param"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Script)] }
+         "process"   { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Process)] }
+         "help"      { GenX::CommandLine ; Log:::End 0 }
+         default     { Log::Print ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; Log::End 1 }
       }
    }
 
    #----- If no grid is specified
    if { ![file readable $Param(GridFile)] } {
-      GenX::Log ERROR "No valid gridfile specified"
-      exit 1
-   }
-
-   #----- Convert log level string to number if needed
-   if { ![string is digit $Log(Level)] } {
-      if { [catch { set Log(Level) $Log($Log(Level)) }] } {
-         GenX::Log ERROR "Invalid log level $Log(Level)"
-         exit 1
-      }
+      Log::Print ERROR "No valid gridfile specified"
+      Log::End 1
    }
 
    #----- If no processing is specified, we use the default target
    if { !$flags } {
       set Param(Target) [lindex $GenX::Param(Targets) 0]
       GenX::ParseTarget
-      GenX::Log WARNING "No data processing were specified, will use default target $Param(Target)"
+      Log::Print WARNING "No data processing were specified, will use default target $Param(Target)"
       GenX::Continue
    }
 
@@ -772,36 +717,36 @@ proc GenX::ParseCommandLine { } {
    #----- Check dependencies
    if { $Param(Vege)!="" } {
       if { $Param(Mask)=="" } {
-         GenX::Log ERROR "To generate vegetation type fields you need to generate the mask"
+         Log::Print ERROR "To generate vegetation type fields you need to generate the mask"
          GenX::Continue
       }
    }
 
    if { $Param(Sub)!="" } {
       if { $Param(Mask)=="" } {
-         GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the mask"
+         Log::Print ERROR "To generate sub-grid post-processed fields you need to generate the mask"
          GenX::Continue
       }
       if { $Param(Topo)=="" } {
-         GenX::Log ERROR "To generate sub-grid post-processed fields you need to generate the topography"
+         Log::Print ERROR "To generate sub-grid post-processed fields you need to generate the topography"
          GenX::Continue
       }
    }
 
    if { $Param(Biogenic)!="" } {
       if { $Param(Vege)=="" } {
-            GenX::Log ERROR "To generate biogenic emissions fields you need to generate the vegetation type fields (-vege option)"
+            Log::Print ERROR "To generate biogenic emissions fields you need to generate the vegetation type fields (-vege option)"
             GenX::Continue
       }
       if { $Param(Check)=="" } {
-            GenX::Log ERROR "To generate biogenic emissions fields you must use the -check option."
+            Log::Print ERROR "To generate biogenic emissions fields you must use the -check option."
             GenX::Continue
       }
    }
 
    if { $Param(Hydro)!="" } {
       if { $Param(Mask)=="" } {
-         GenX::Log ERROR "To generate hydrographic type fields you need to generate the mask"
+         Log::Print ERROR "To generate hydrographic type fields you need to generate the mask"
          GenX::Continue
       }
    }
@@ -817,8 +762,8 @@ proc GenX::ParseCommandLine { } {
    } else {
       #----- Check for database accessibility
       if { ![file readable $Path(DBase)] } {
-         GenX::Log ERROR "Invalid database directory ($Path(DBase))"
-         exit 1
+         Log::Print ERROR "Invalid database directory ($Path(DBase))"
+         Log::End 1
       }
       cd [file dirname [file normalize $Param(OutFile)]]
    }
@@ -898,7 +843,7 @@ proc GenX::GetNML { File } {
    }
 
    if { ![file exists $File] } {
-      GenX::Log WARNING "Could not read the namelist"
+      Log::Print WARNING "Could not read the namelist"
       return
    }
 
@@ -932,13 +877,10 @@ proc GenX::GetNML { File } {
       }
    }
 
-   if { $GenX::Log(Level)>=3 } {
-      GenX::Log DEBUG "Read the following settings:"
-      parray GenX::Settings
-
-      GenX::Log DEBUG "Using following constants:"
-      parray GeoPhysX::Const
-      parray BioGenX::Const
+   if { Log::Param(Level)=="DEBUG" || Log::Param(Level)=="EXTRA" } {
+      Log::Print DEBUG "Read the following settings:" True GenX::Settings
+      Log::Print DEBUG "Using GeoPhysX constants:"    True GeoPhysX::Const
+      Log::Print DEBUG "Using BioGenX constants:"     True BioGenX::Const
    }
    close $f
 }
@@ -1083,13 +1025,13 @@ proc GenX::GridGet { File } {
    }
 
    if { ![file exists $File] } {
-      GenX::Log ERROR "Grid description file does not exists: $File"
-      exit 1
+      Log::Print ERROR "Grid description file does not exists: $File"
+      Log::End 1
    }
 
    if { [catch { fstdfile open GPXGRIDFILE read $File } ] } {
-      GenX::Log ERROR "Could not open Grid description file: $File"
-      exit 1
+      Log::Print ERROR "Could not open Grid description file: $File"
+      Log::End 1
    }
 
    #----- If the descriptors have'nt been made in grids yet
@@ -1108,7 +1050,7 @@ proc GenX::GridGet { File } {
 
             #----- Check if there are doubles
             if { [llength [fstdfield find GPXAUXFILE -1 "" $ip1 $ip2 $ip3 "" ">>"]]>1 } {
-               GenX::Log WARNING "Found duplicate grid (IP1=$ip1 IP2=$ip2 IP3=$ip3), will not process it"
+               Log::Print WARNING "Found duplicate grid (IP1=$ip1 IP2=$ip2 IP3=$ip3), will not process it"
                continue
             }
 
@@ -1368,8 +1310,8 @@ proc GenX::CDEDFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
    variable Path
 
    if { $Res!=50 && $Res!=250 } {
-      GenX::Log ERROR "Wrong resolution, must be 50 or 250."
-      exit 1
+      Log::Print ERROR "Wrong resolution, must be 50 or 250."
+      Log::End 1
    }
    if { ![ogrlayer is NTSLAYER${Res}K] } {
       set nts_layer [lindex [ogrfile open SHAPE${Res}K read $Path(NTS)/decoupage${Res}k_2.shp] 0]
@@ -1574,7 +1516,7 @@ proc GenX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } { Name "" } } {
 
    georef define $Name -transform [list $longmin $Res 0.000000000000000 $latmin 0.000000000000000 $Res]
 
-   GenX::Log DEBUG "UTM zone is $zone, with central meridian at $meridian and dimension $Param(Width)x$Param(Height)"
+   Log::Print DEBUG "UTM zone is $zone, with central meridian at $meridian and dimension $Param(Width)x$Param(Height)"
 
    return $Name
 }

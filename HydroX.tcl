@@ -55,7 +55,7 @@ proc HydroX::DrainDensity { Grid } {
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
       fstdfield read GPXMG GPXOUTFILE $idx
    } else {
-      GenX::Log WARNING "Could not find mask field MG"
+      Log::Print WARNING "Could not find mask field MG"
    }
 
    set limits [georef limit [fstdfield define $Grid -georef]]
@@ -63,7 +63,7 @@ proc HydroX::DrainDensity { Grid } {
    set lo0 [lindex $limits 1]
    set la1 [lindex $limits 2]
    set lo1 [lindex $limits 3]
-   GenX::Log DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)" False
+   Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
 
    #----- Creer les champs de calculs
    fstdfield copy GPXRIVERSUM $Grid
@@ -76,7 +76,7 @@ proc HydroX::DrainDensity { Grid } {
    set files [GenX::NHNFindFiles $la0 $lo0 $la1 $lo1]
 
    foreach path $files {
-      GenX::Log DEBUG "   Processing NHN path $path ([incr n]/[llength $files])" False
+      Log::Print DEBUG "   Processing NHN path $path ([incr n]/[llength $files])"
 
       #----- Lire la donnee des rivieres
       foreach file [glob ${path}_?_?_HD_COURSDEAU_1.shp] {

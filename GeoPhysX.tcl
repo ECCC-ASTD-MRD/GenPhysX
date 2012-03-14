@@ -212,16 +212,16 @@ proc GeoPhysX::AverageTopo { Grid } {
 proc GeoPhysX::AverageTopoUSGS { Grid } {
 
    GenX::Procs TopoUSGS
-   GenX::Log INFO "Averaging topography using USGS database"
+   Log::Print INFO "Averaging topography using USGS database"
 
    #----- Loop over files
    foreach file [glob $GenX::Path(TopoUSGS)/*] {
-      GenX::Log DEBUG "   Processing USGS file : $file" False
+      Log::Print DEBUG "   Processing USGS file : $file"
       fstdfile open GPXTOPOFILE read $file
 
       #----- Loop over fields (tiles)
       foreach field [fstdfield find GPXTOPOFILE -1 "" -1 -1 -1 "" "ME"] {
-         GenX::Log DEBUG "      Processing field : $field" False
+         Log::Print DEBUG "      Processing field : $field"
          fstdfield read USGSTILE GPXTOPOFILE $field
          fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Param(Cell)
 
@@ -254,11 +254,11 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
 proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
 
    GenX::Procs GTOPO30
-   GenX::Log INFO "Averaging topography using GTOPO30 database"
+   Log::Print INFO "Averaging topography using GTOPO30 database"
 
    #----- Loop over files
    foreach file [glob $GenX::Path(GTOPO30)/*.DEM] {
-      GenX::Log DEBUG "   Processing GTOPO30 file : $file" False
+      Log::Print DEBUG "   Processing GTOPO30 file : $file"
       set bands [gdalfile open GTOPO30FILE read $file]
       if { [llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GTOPO30FILE]]]] } {
          gdalband read GTOPO30TILE $bands
@@ -297,7 +297,7 @@ proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
    variable Param
 
    GenX::Procs ASTERGDEM
-   GenX::Log INFO "Averaging topography using ATSERGDEM database"
+   Log::Print INFO "Averaging topography using ATSERGDEM database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set la0 [lindex $limits 0]
@@ -306,7 +306,7 @@ proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
    set lo1 [lindex $limits 3]
 
    foreach file [GenX::ASTERGDEMFindFiles $la0 $lo0 $la1 $lo1] {
-      GenX::Log DEBUG "   Processing ATSERGDEM file $file" False
+      Log::Print DEBUG "   Processing ATSERGDEM file $file"
       gdalband read ATSERGDEMTILE [gdalfile open ATSERGDEMFILE read $file]
       gdalband stats ATSERGDEMTILE -nodata -9999 -celldim $GenX::Param(Cell)
 
@@ -347,7 +347,7 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
    variable Param
 
    GenX::Procs SRTM
-   GenX::Log INFO "Averaging topography using SRTM database"
+   Log::Print INFO "Averaging topography using SRTM database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set la0 [lindex $limits 0]
@@ -356,7 +356,7 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
    set lo1 [lindex $limits 3]
 
    foreach file [GenX::SRTMFindFiles $la0 $lo0 $la1 $lo1] {
-      GenX::Log DEBUG "   Processing SRTM file $file" False
+      Log::Print DEBUG "   Processing SRTM file $file"
       gdalband read SRTMTILE [gdalfile open SRTMFILE read $file]
 
       gdalband stats SRTMTILE -celldim $GenX::Param(Cell)
@@ -399,17 +399,17 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
    variable Param
 
    GenX::Procs CDED
-   GenX::Log INFO "Averaging topography using CDED(1:${Res}000) database"
+   Log::Print INFO "Averaging topography using CDED(1:${Res}000) database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set la0 [lindex $limits 0]
    set lo0 [lindex $limits 1]
    set la1 [lindex $limits 2]
    set lo1 [lindex $limits 3]
-   GenX::Log DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)" False
+   Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
 
    foreach file [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $Res] {
-      GenX::Log DEBUG "   Processing CDED file $file" False
+      Log::Print DEBUG "   Processing CDED file $file"
       gdalband read CDEDTILE [gdalfile open CDEDFILE read $file]
       gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim $GenX::Param(Cell)
 
@@ -461,7 +461,7 @@ proc GeoPhysX::AverageAspect { Grid } {
    variable Param
 
    GenX::Procs SRTM CDED
-   GenX::Log INFO "Computing slope and aspect"
+   Log::Print INFO "Computing slope and aspect"
 
    set SRTM [expr [lsearch -exact $GenX::Param(Aspect) SRTM]!=-1]
    set CDED 0
@@ -502,7 +502,7 @@ proc GeoPhysX::AverageAspect { Grid } {
    }
 
    set dpix [expr $GenX::Param(TileSize)*$res]
-   GenX::Log DEBUG "   Processing limits  $lat0,$lon0 to $lat1,$lon1 at resolution $res" False
+   Log::Print DEBUG "   Processing limits  $lat0,$lon0 to $lat1,$lon1 at resolution $res"
 
    #----- Create latlon referential since original data is in latlon
    georef create LLREF
@@ -527,13 +527,13 @@ proc GeoPhysX::AverageAspect { Grid } {
          set data False
          gdalband clear DEMTILE
          gdalband define DEMTILE -transform [list $lo0 $res 0.0 $la1 0.0 -$res]
-         GenX::Log DEBUG "   Processing area from $la0,$lo0 to $la1,$lo1" False
+         Log::Print DEBUG "   Processing area from $la0,$lo0 to $la1,$lo1"
 
          #----- Process STRM first, if asked for
          if { $SRTM && [llength [set srtmfiles [GenX::SRTMFindFiles $la0 $lo0 $la1 $lo1]]] } {
             foreach file $srtmfiles {
                GenX::CacheGet $file -32768
-               GenX::Log DEBUG "      Processing SRTM DEM file $file" False
+               Log::Print DEBUG "      Processing SRTM DEM file $file"
                gdalband gridinterp DEMTILE $file
             }
             set data True
@@ -543,7 +543,7 @@ proc GeoPhysX::AverageAspect { Grid } {
          if { $CDED && [llength [set dnecfiles [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $CDED]]] } {
             foreach file $dnecfiles {
                GenX::CacheGet $file [expr $CDED==50?-32767:0]
-               GenX::Log DEBUG "      Processing CDED DEM file $file" False
+               Log::Print DEBUG "      Processing CDED DEM file $file"
 #               set ll [gdalband stats $file -gridpoint 0.0 0.0]
 #               puts stderr "ll= $ll"
 #               puts stderr "xy= [set xy [gdalband stats DEMTILE -coordpoint [lindex $ll 0] [lindex $ll 1] True]]"
@@ -555,7 +555,7 @@ proc GeoPhysX::AverageAspect { Grid } {
 
          #----- If the tile has data, process on destination grid
          if { $data } {
-            GenX::Log DEBUG "   Computing slope and aspect per quadrant" False
+            Log::Print DEBUG "   Computing slope and aspect per quadrant"
             GeoPhysX::AverageAspectTile $Grid DEMTILE
          }
       }
@@ -659,19 +659,19 @@ proc GeoPhysX::AverageMask { Grid } {
 proc GeoPhysX::AverageMaskUSGS { Grid } {
 
    GenX::Procs MaskUSGS
-   GenX::Log INFO "Averaging mask using USGS database"
+   Log::Print INFO "Averaging mask using USGS database"
 
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0
 
    #----- Loop over files
    foreach file [glob $GenX::Path(MaskUSGS)/*] {
-      GenX::Log DEBUG "   Processing file : $file" False
+      Log::Print DEBUG "   Processing file : $file"
       fstdfile open GPXMASKFILE read $file
 
       #----- Loop over fields (tiles)
       foreach field [fstdfield find GPXMASKFILE -1 "" -1 -1 -1 "" "MG"] {
-         GenX::Log DEBUG "      Processing field : $field" False
+         Log::Print DEBUG "      Processing field : $field"
          fstdfield read MASKTILE GPXMASKFILE $field
          fstdfield stats MASKTILE -nodata -99.0 -celldim $GenX::Param(Cell)
 
@@ -706,7 +706,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
 proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
 
    GenX::Procs GlobCover
-   GenX::Log INFO "Averaging mask using GLOBCOVER database"
+   Log::Print INFO "Averaging mask using GLOBCOVER database"
 
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0
@@ -716,9 +716,9 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
    gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_L4_200901_200912_V2.3.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLOBFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with GLOBCOVER database, mask will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with GLOBCOVER database, mask will not be calculated"
    } else {
-      GenX::Log INFO "Grid intersection with GLOBCOVER database is { $limits }"
+      Log::Print INFO "Grid intersection with GLOBCOVER database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -727,7 +727,7 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Param(Cell)
 
@@ -764,7 +764,7 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
 proc GeoPhysX::AverageMaskGLC2000 { Grid } {
 
    GenX::Procs GLC2000
-   GenX::Log INFO "Averaging mask using GLC2000 database"
+   Log::Print INFO "Averaging mask using GLC2000 database"
 
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0
@@ -773,9 +773,9 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
    gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1-glcc_bats.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLCFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with GLC2000 database, mask will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with GLC2000 database, mask will not be calculated"
    } else {
-      GenX::Log INFO "Grid intersection with GLOBCOVER database is { $limits }"
+      Log::Print INFO "Grid intersection with GLOBCOVER database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -784,7 +784,7 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read GLCTILE { { GLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLCTILE -nodata 255 -celldim $GenX::Param(Cell)
 
@@ -822,7 +822,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    variable Param
 
    GenX::Procs CANVEC
-   GenX::Log INFO "Averaging mask using CANVEC database"
+   Log::Print INFO "Averaging mask using CANVEC database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set lat0 [lindex $limits 0]
@@ -835,7 +835,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 
    #----- Loop over files
    foreach file [GenX::CANVECFindFiles $lat0 $lon0 $lat1 $lon1 { HD_1480009_2 } ] {
-      GenX::Log DEBUG "   Processing file $file" False
+      Log::Print DEBUG "   Processing file $file"
       ogrfile open CANVECFILE read $file
       ogrlayer read CANVECTILE CANVECFILE 0
       fstdfield gridinterp GPXMASK CANVECTILE ALIASED 1.0
@@ -907,7 +907,7 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Averaging geopolitical mask using CANADA database"
+   Log::Print INFO "Averaging geopolitical mask using CANADA database"
 
    fstdfield copy GPXMASK $Grid
    GenX::GridClear GPXMASK 0.0
@@ -990,16 +990,16 @@ proc GeoPhysX::AverageVegeUSGS { Grid } {
    variable Param
 
    GenX::Procs VegeUSGS
-   GenX::Log INFO "Averaging vegetation type using USGS database"
+   Log::Print INFO "Averaging vegetation type using USGS database"
 
    #----- Loop over files
    foreach file [glob $GenX::Path(VegeUSGS)/*] {
-      GenX::Log DEBUG "   Processing file : $file" False
+      Log::Print DEBUG "   Processing file : $file"
       fstdfile open GPXVEGEFILE read $file
 
       #----- Loop over fields (tiles)
       foreach field [fstdfield find GPXVEGEFILE -1 "" -1 -1 -1 "" "VG"] {
-         GenX::Log DEBUG "      Processing field : $field" False
+         Log::Print DEBUG "      Processing field : $field"
          fstdfield read VEGETILE GPXVEGEFILE $field
          fstdfield stats VEGETILE -nodata -99.0 -celldim $GenX::Param(Cell)
 
@@ -1031,7 +1031,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
    variable Const
 
    GenX::Procs EOSD
-   GenX::Log INFO "Averaging vegetation type using EOSD database"
+   Log::Print INFO "Averaging vegetation type using EOSD database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set lat0 [lindex $limits 0]
@@ -1043,12 +1043,12 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
    #----- Loop over files
    if { [set nb [llength [set files [GenX::EOSDFindFiles $lat0 $lon0 $lat1 $lon1]]]] } {
 
-      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(EOSD2RPN) 0]\n   To  :[lindex $Const(EOSD2RPN) 1]"
+      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(EOSD2RPN) 0]\n   To  :[lindex $Const(EOSD2RPN) 1]"
       vector create FROMEOSD [lindex $Const(EOSD2RPN) 0]
       vector create TORPN    [lindex $Const(EOSD2RPN) 1]
 
       foreach file $files {
-         GenX::Log DEBUG "   Processing file ([incr n]/$nb) $file" False
+         Log::Print DEBUG "   Processing file ([incr n]/$nb) $file"
          gdalband read EOSDTILE [gdalfile open EOSDFILE read $file]
          gdalband stats EOSDTILE -nodata -99 -celldim $GenX::Param(Cell)
 
@@ -1058,7 +1058,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
 
          #----- Burn NTS limits and mask EOSD
          set nts [string range [file tail $file] 0 3]
-         GenX::Log DEBUG "      Applying NTS($nts) Limit mask" False
+         Log::Print DEBUG "      Applying NTS($nts) Limit mask"
          ogrlayer define NTSLAYER250K -featureselect [list [list IDENTIFIAN == $nts]]
          gdalband gridinterp EOSDMASK NTSLAYER250K FAST 1
          vexpr EOSDTILE ifelse(EOSDMASK,EOSDTILE,0)
@@ -1085,7 +1085,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
       vector free FROMEOSD TORPN
       ogrlayer define NTSLAYER250K -featureselect {}
    } else {
-      GenX::Log WARNING "The grid is not within EOSD limits"
+      Log::Print WARNING "The grid is not within EOSD limits"
    }
 }
 
@@ -1109,7 +1109,7 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
    variable Const
 
    GenX::Procs LCC2000V
-   GenX::Log INFO "Averaging vegetation type using LCC2000V database"
+   Log::Print INFO "Averaging vegetation type using LCC2000V database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set lat0 [lindex $limits 0]
@@ -1135,16 +1135,16 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
    #----- Loop over files
    if { [set nb [llength [set files [GenX::LCC2000VFindFiles $lat0 $lon0 $lat1 $lon1]]]] } {
 
-      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(LCC2000V2RPN) 0]\n   To  :[lindex $Const(LCC2000V2RPN) 1]"
+      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(LCC2000V2RPN) 0]\n   To  :[lindex $Const(LCC2000V2RPN) 1]"
       foreach file $files {
-         GenX::Log DEBUG "   Processing file ([incr n]/$nb) $file" False
+         Log::Print DEBUG "   Processing file ([incr n]/$nb) $file"
          ogrfile open LCC2000VFILE read $file
          eval ogrlayer read LCC2000VTILE LCC2000VFILE 0
 
          #----- Loop on vege types and corresponding RPN classes
          foreach vg [lindex $Const(LCC2000V2RPN) 0] rpns [lindex $Const(LCC2000V2RPN) 1] {
             if { $rpns!=-99 && [set nbf [llength [ogrlayer define LCC2000VTILE -featureselect [list [list COVTYPE == $vg]]]]] } {
-               GenX::Log DEBUG "      Averaging $nbf features ($vg -> $rpns)" False
+               Log::Print DEBUG "      Averaging $nbf features ($vg -> $rpns)"
 
                #----- Rasterize using alias mode
                fstdfield clear GPXVG
@@ -1179,7 +1179,7 @@ proc GeoPhysX::AverageVegeLCC2000V { Grid } {
          fstdfield stats $Grid -mask GPXVSK
       }
    } else {
-      GenX::Log WARNING "The grid is not within LCC2000V limits"
+      Log::Print WARNING "The grid is not within LCC2000V limits"
    }
    fstdfield free GPXVG
 }
@@ -1204,19 +1204,19 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
    variable Const
 
    GenX::Procs CORINE
-   GenX::Log INFO "Averaging vegetation type using CORINE database"
+   Log::Print INFO "Averaging vegetation type using CORINE database"
 
    #----- Open the file
    gdalfile open CORINEFILE read $GenX::Path(CORINE)/lceugr100_00_pct.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CORINEFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with CORINE database, vegetation will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with CORINE database, vegetation will not be calculated"
    } else {
-      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(CORINE2RPN) 0]\n   To  :[lindex $Const(CORINE2RPN) 1]"
+      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(CORINE2RPN) 0]\n   To  :[lindex $Const(CORINE2RPN) 1]"
       vector create FROMCORINE [lindex $Const(CORINE2RPN) 0]
       vector create TORPN      [lindex $Const(CORINE2RPN) 1]
 
-      GenX::Log INFO "Grid intersection with CORINE database is { $limits }"
+      Log::Print INFO "Grid intersection with CORINE database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -1225,7 +1225,7 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read CORINETILE { { CORINEFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats CORINETILE -nodata 255 -celldim $GenX::Param(Cell)
 
@@ -1269,19 +1269,19 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
    variable Const
 
    GenX::Procs GlobCover
-   GenX::Log INFO "Averaging vegetation type using GlobCover database"
+   Log::Print INFO "Averaging vegetation type using GlobCover database"
 
    #----- Open the file
    gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_L4_200901_200912_V2.3.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLOBFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with GLOBCOVER database, vegetation will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with GLOBCOVER database, vegetation will not be calculated"
    } else {
-      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(GLOBCOVER2RPN) 0]\n   To  :[lindex $Const(GLOBCOVER2RPN) 1]"
+      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(GLOBCOVER2RPN) 0]\n   To  :[lindex $Const(GLOBCOVER2RPN) 1]"
       vector create FROMGLOB [lindex $Const(GLOBCOVER2RPN) 0]
       vector create TORPN    [lindex $Const(GLOBCOVER2RPN) 1]
 
-      GenX::Log INFO "Grid intersection with GLOBCOVER database is { $limits }"
+      Log::Print INFO "Grid intersection with GLOBCOVER database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -1290,7 +1290,7 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read GLOBTILE { { GLOBFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLOBTILE -nodata 255 -celldim $GenX::Param(Cell)
 
@@ -1334,15 +1334,15 @@ proc GeoPhysX::AverageGLAS { Grid } {
    variable Const
 
    GenX::Procs AverageGLAS
-   GenX::Log INFO "Averaging vegetation canopy height using GLAS database"
+   Log::Print INFO "Averaging vegetation canopy height using GLAS database"
 
    #----- Open the file
    gdalfile open GLASFILE read $GenX::Path(GLAS)/Simard_Pinto_3DGlobalVeg_JGR.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLASFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with GLAS database, vegetation will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with GLAS database, vegetation will not be calculated"
    } else {
-      GenX::Log INFO "Grid intersection with GLAS database is { $limits }"
+      Log::Print INFO "Grid intersection with GLAS database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -1351,7 +1351,7 @@ proc GeoPhysX::AverageGLAS { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read GLASTILE { { GLASFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLASTILE -nodata 255 -celldim $GenX::Param(Cell)
 
@@ -1389,19 +1389,19 @@ proc GeoPhysX::AverageVegeGLC2000 { Grid } {
    variable Const
 
    GenX::Procs GLC2000
-   GenX::Log INFO "Averaging vegetation type using GLC2000 database"
+   Log::Print INFO "Averaging vegetation type using GLC2000 database"
 
    #----- Open the file
    gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1-glcc_bats.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLCFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with GLC2000 database, vegetation will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with GLC2000 database, vegetation will not be calculated"
    } else {
-      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(GLC20002RPN) 0]\n   To  :[lindex $Const(GLC20002RPN) 1]"
+      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(GLC20002RPN) 0]\n   To  :[lindex $Const(GLC20002RPN) 1]"
       vector create FROMGLC  [lindex $Const(GLC20002RPN) 0]
       vector create TORPN    [lindex $Const(GLC20002RPN) 1]
 
-      GenX::Log INFO "Grid intersection with GLC2000 database is { $limits }"
+      Log::Print INFO "Grid intersection with GLC2000 database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -1410,7 +1410,7 @@ proc GeoPhysX::AverageVegeGLC2000 { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read GLCTILE { { GLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GLCTILE -nodata 255 -celldim $GenX::Param(Cell)
 
@@ -1454,19 +1454,19 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
    variable Const
 
    GenX::Procs CCRS
-   GenX::Log INFO "Averaging vegetation type using CCRS database"
+   Log::Print INFO "Averaging vegetation type using CCRS database"
 
    #----- Open the file
    gdalfile open CCRSFILE read $GenX::Path(CCRS)/LCC2005_V1_3.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCRSFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with CCRS database, vegetation will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with CCRS database, vegetation will not be calculated"
    } else {
-      GenX::Log INFO "Using correspondance table\n   From:[lindex $Const(CCRS2RPN) 0]\n   To  :[lindex $Const(CCRS2RPN) 1]"
+      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(CCRS2RPN) 0]\n   To  :[lindex $Const(CCRS2RPN) 1]"
       vector create FROMCCRS [lindex $Const(CCRS2RPN) 0]
       vector create TORPN    [lindex $Const(CCRS2RPN) 1]
 
-      GenX::Log INFO "Grid intersection with CCRS database is { $limits }"
+      Log::Print INFO "Grid intersection with CCRS database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -1475,7 +1475,7 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read CCRSTILE { { CCRSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats CCRSTILE -nodata 255 -celldim $GenX::Param(Cell)
 
@@ -1551,22 +1551,22 @@ proc GeoPhysX::AverageSand { Grid } {
 
    #----- Boucle sur les types
    foreach type $Param(SandTypes) {
-      GenX::Log INFO "Averaging sand ($type)"
+      Log::Print INFO "Averaging sand ($type)"
       GenX::GridClear GPXJ1 0.0
       fstdfield stats GPXJ1 -mask ""
 
       #----- Loop over datasets
       foreach db $GenX::Param(Soil) {
-         GenX::Log DEBUG "   Processing database $db" False
+         Log::Print DEBUG "   Processing database $db"
 
          foreach file [glob $GenX::Path(Sand$db)/*] {
             GenX::Procs Sand$db
-            GenX::Log DEBUG "      Processing file : $file" False
+            Log::Print DEBUG "      Processing file : $file"
             fstdfile open GPXSANDFILE read $file
 
             #----- Loop over fields (tiles)
             foreach field [fstdfield find GPXSANDFILE -1 "" -1 -1 $type "" "SB"] {
-               GenX::Log DEBUG "         Processing field : $field" False
+               Log::Print DEBUG "         Processing field : $field"
                fstdfield read SANDTILE GPXSANDFILE $field
                vexpr SANDTILE max(SANDTILE,0.0)
                fstdfield stats SANDTILE -nodata 0.0 -celldim $GenX::Param(Cell)
@@ -1617,9 +1617,9 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
    gdalfile open JPLFILE read $GenX::Path(JPL)/sand_M03.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef JPLFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with JPL database, mask will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with JPL database, mask will not be calculated"
    } else {
-      GenX::Log INFO "Grid intersection with JPL database is { $limits }"
+      Log::Print INFO "Grid intersection with JPL database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -1628,7 +1628,7 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read JPLTILE { { JPLFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats JPLTILE -nodata -999900 -celldim $GenX::Param(Cell)
             vexpr JPLTILE JPLTILE*100.0
@@ -1651,9 +1651,9 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
    gdalfile open JPLFILE read $GenX::Path(JPL)/clay_M03.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef JPLFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with JPL database, mask will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with JPL database, mask will not be calculated"
    } else {
-      GenX::Log INFO "Grid intersection with JPL database is { $limits }"
+      Log::Print INFO "Grid intersection with JPL database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -1662,7 +1662,7 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read JPLTILE { { JPLFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats JPLTILE -nodata -999900 -celldim $GenX::Param(Cell)
             vexpr JPLTILE JPLTILE*100.0
@@ -1716,7 +1716,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
    gdalfile open HWSDFILE read $GenX::Path(HWSD)/hwsd.bil
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef HWSDFILE]]]] } {
-      GenX::Log WARNING "Specified grid does not intersect with HWSD database, vegetation will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with HWSD database, vegetation will not be calculated"
    } else {
 
       #----- Create lookup table (LUT) for the various types
@@ -1726,7 +1726,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
       #----- Set max memory right now, it'll speed up the allocation
       vector mem HWSDTABLE 20000
 
-      GenX::Log INFO "Reading HWSD correspondance table"
+      Log::Print INFO "Reading HWSD correspondance table"
       set f [open $GenX::Path(HWSD)/hwsd.csv]
 
       gets $f line
@@ -1740,7 +1740,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
       }
       close $f
 
-      GenX::Log INFO "Building HWSD lookup table"
+      Log::Print INFO "Building HWSD lookup table"
       lappend params(0) { 0 0 0 0 0 0 0 0 0 0 0 0 }
       foreach name [lsort -integer -increasing [array names params]] {
 
@@ -1765,7 +1765,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
          vector append HWSDTABLE [list $name $tgrav $tsand $tclay $tref $toc $sgrav $ssand $sclay $sref $soc]
       }
 
-      GenX::Log INFO "Grid intersection with HWSD database is { $limits }"
+      Log::Print INFO "Grid intersection with HWSD database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -1774,7 +1774,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
       #----- Loop over the data by tiles since it's too big to fit in memory
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            GenX::Log DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]" False
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read HWSDTILE { { HWSDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             foreach type $types field $fields {
 
@@ -1783,7 +1783,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
                gdalband stats $type -nodata 0 -celldim $GenX::Param(Cell)
 
                #----- If the tile contains soil of this type then average it
-               GenX::Log DEBUG "      Processing $type (max: [lindex [lindex [gdalband stats $type -max] 0] 0])" False
+               Log::Print DEBUG "      Processing $type (max: [lindex [lindex [gdalband stats $type -max] 0] 0])"
                if { [lindex [lindex [gdalband stats $type -max] 0] 0]>0.0 } {
                   fstdfield gridinterp $field $type AVERAGE False
                }
@@ -1853,23 +1853,23 @@ proc GeoPhysX::AverageClay { Grid } {
 
    #----- Loop over types
    foreach type $Param(ClayTypes) {
-      GenX::Log INFO "Averaging clay ($type)"
+      Log::Print INFO "Averaging clay ($type)"
       GenX::GridClear GPXJ2 0.0
       fstdfield stats GPXJ2 -mask ""
 
       #----- Loop over datasets
       foreach db $GenX::Param(Soil) {
-         GenX::Log DEBUG "   Processing database $db" False
+         Log::Print DEBUG "   Processing database $db"
 
          #----- Loop over files
          foreach file [glob $GenX::Path(Clay$db)/*] {
             GenX::Procs Clay$db
-            GenX::Log DEBUG "      Processing file : $file" False
+            Log::Print DEBUG "      Processing file : $file"
             fstdfile open GPXCLAYFILE read $file
 
             #----- Loop over fields (tiles)
             foreach field [fstdfield find GPXCLAYFILE -1 "" -1 -1 $type "" "AG"] {
-               GenX::Log DEBUG "         Processing field : $field" False
+               Log::Print DEBUG "         Processing field : $field"
                fstdfield read CLAYTILE GPXCLAYFILE $field
                vexpr CLAYTILE max(CLAYTILE,0.0)
                fstdfield stats CLAYTILE -nodata 0.0 -celldim $GenX::Param(Cell)
@@ -1909,7 +1909,7 @@ proc GeoPhysX::AverageClay { Grid } {
 proc GeoPhysX::AverageTopoLow { Grid } {
 
    GenX::Procs TopoLow
-   GenX::Log INFO "Averaging low resolution topography"
+   Log::Print INFO "Averaging low resolution topography"
 
    fstdfield copy GPXLRMS $Grid
    fstdfield copy GPXLOW  $Grid
@@ -1917,12 +1917,12 @@ proc GeoPhysX::AverageTopoLow { Grid } {
 
    #----- Loop over files
    foreach file [glob $GenX::Path(TopoLow)/*] {
-      GenX::Log DEBUG "   Processing file : $file" False
+      Log::Print DEBUG "   Processing file : $file"
       fstdfile open GPXLOWFILE read $file
 
       #----- Loop over fields (tiles)
       foreach field [fstdfield find GPXLOWFILE -1 "" -1 -1 -1 "" "ME"] {
-         GenX::Log DEBUG "      Processing field : $field" False
+         Log::Print DEBUG "      Processing field : $field"
          fstdfield read LOWTILE GPXLOWFILE $field
          fstdfield stats LOWTILE -nodata 0.0 -celldim $GenX::Param(Cell)
 
@@ -1966,7 +1966,7 @@ proc GeoPhysX::AverageTopoLow { Grid } {
 proc GeoPhysX::AverageGradient { Grid } {
 
    GenX::Procs Grad
-   GenX::Log INFO "Averaging gradient correlation"
+   Log::Print INFO "Averaging gradient correlation"
 
    fstdfield copy GPXGXX $Grid
    fstdfield copy GPXGYY $Grid
@@ -1976,15 +1976,15 @@ proc GeoPhysX::AverageGradient { Grid } {
 
    #----- compute Gxx, Gyy, Gxy
    foreach file [glob $GenX::Path(Grad)/*] {
-      GenX::Log DEBUG "   Processing file: $file " False
+      Log::Print DEBUG "   Processing file: $file "
       fstdfile open GPXGXYFILE read $file
       foreach field_gx [fstdfield find GPXGXYFILE -1 "" -1 -1 -1 "" "GX"] \
               field_gy [fstdfield find GPXGXYFILE -1 "" -1 -1 -1 "" "GY"] {
-          GenX::Log DEBUG "      Processing field : $field_gx" False
+          Log::Print DEBUG "      Processing field : $field_gx"
           fstdfield read GXYTILE1 GPXGXYFILE $field_gx
           fstdfield stats GXYTILE1 -nodata 0 -celldim $GenX::Param(Cell)
 
-          GenX::Log DEBUG "      Processing field : $field_gy" False
+          Log::Print DEBUG "      Processing field : $field_gy"
           fstdfield read GXYTILE2 GPXGXYFILE $field_gy
           fstdfield stats GXYTILE2 -nodata 0 -celldim $GenX::Param(Cell)
 
@@ -2125,7 +2125,7 @@ proc GeoPhysX::SubCorrectionFactor { } {
    fstdfield read GPXMRES GPXAUXFILE -1 "" -1 -1 -1 "" "MRES"
 
    #----- For low-res and hi-res
-   GenX::Log INFO "Computing low and high res fields"
+   Log::Print INFO "Computing low and high res fields"
 
    vexpr GPXDX ddx(GPXMG)
    vexpr GPXDY ddy(GPXMG)
@@ -2139,7 +2139,7 @@ proc GeoPhysX::SubCorrectionFactor { } {
    fstdfield write GPXFHR GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    #----- For low-res and hi-res (over land only)
-   GenX::Log INFO "Computing low and high res fields over land only"
+   Log::Print INFO "Computing low and high res fields over land only"
 
    vexpr GPXDX GPXDX*sqrt(GPXMG)
    vexpr GPXDY GPXDY*sqrt(GPXMG)
@@ -2173,7 +2173,7 @@ proc GeoPhysX::SubTopoFilter { } {
    GenX::Procs
    fstdfield read GPXMF GPXOUTFILE -1 "" 1200 -1 -1 "" "ME"
 
-   GenX::Log INFO "Filtering ME"
+   Log::Print INFO "Filtering ME"
 
    fstdgrid zfilter GPXMF GenX::Settings
    fstdfield define GPXMF -NOMVAR MF -IP1 0 -IP2 0
@@ -2208,7 +2208,7 @@ proc GeoPhysX::SubLaunchingHeight { } {
    vexpr GPXMEL  GPXMEL *GPXFLR
    vexpr GPXLRMS GPXLRMS*GPXFLR
 
-   GenX::Log INFO "Computing launching height LH"
+   Log::Print INFO "Computing launching height LH"
    vexpr GPXLH 2.0*GPXMG*((GPXLRMS^2 - GPXMEL^2)^0.5)
    vexpr GPXLH ifelse(GPXLH>=$Const(lhmin),GPXLH,0.0)
    fstdfield define GPXLH -NOMVAR LH -IP1 0 -IP2 0
@@ -2251,19 +2251,19 @@ proc GeoPhysX::SubY789 { } {
    vexpr GPXCOSA cos(GPXALP)
    vexpr GPXSINA sin(GPXALP)
 
-   GenX::Log INFO "Computing Y7"
+   Log::Print INFO "Computing Y7"
    vexpr GPXY789 GPXMG*(GPXGXX*(GPXCOSA^2) + GPXGYY*(GPXSINA^2) - 2.0*GPXGXY*GPXSINA*GPXCOSA)
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
    fstdfield define GPXY789 -NOMVAR Y7 -IP1 0 -IP2 0
    fstdfield write GPXY789 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   GenX::Log INFO "Computing Y8"
+   Log::Print INFO "Computing Y8"
    vexpr GPXY789 GPXMG*(GPXGXX*(GPXSINA^2) + GPXGYY*(GPXCOSA^2) + 2.0*GPXGXY*GPXSINA*GPXCOSA)
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
    fstdfield define GPXY789 -NOMVAR Y8 -IP1 0 -IP2 0
    fstdfield write GPXY789 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   GenX::Log INFO "Computing Y9"
+   Log::Print INFO "Computing Y9"
    vexpr GPXY789 GPXMG*((GPXGXX-GPXGYY)*GPXSINA*GPXCOSA + GPXGXY*(GPXCOSA^2-GPXSINA^2))
    vexpr GPXY789 ifelse(GPXLH>$Const(lhmin),GPXY789,0.0)
    fstdfield define GPXY789 -NOMVAR Y9 -IP1 0 -IP2 0
@@ -2297,13 +2297,14 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield read GPXLRMS GPXAUXFILE -1 "" -1 -1 -1 "" "LRMS"
    fstdfield read GPXFHR  GPXAUXFILE -1 "" -1 -1 -1 "" "FHR"
    fstdfield read GPXFLR  GPXAUXFILE -1 "" -1 -1 -1 "" "FLR"
+   fstdfield read GPXVCH  GPXAUXFILE -1 "" -1 -1 -1 "" "VCH"
 
    vexpr GPXME   GPXME  *GPXFHR
    vexpr GPXMRMS GPXMRMS*GPXFHR
    vexpr GPXMEL  GPXMEL *GPXFLR
    vexpr GPXLRMS GPXLRMS*GPXFLR
 
-   GenX::Log INFO "Computing subgrid-scale variance"
+   Log::Print INFO "Computing subgrid-scale variance"
    vexpr GPXSSS (GPXMRMS^2 - GPXME^2)-(GPXLRMS^2 - GPXMEL^2)
    vexpr GPXSSS ifelse(GPXSSS>0.0,GPXSSS^0.5,0.0)
    vexpr GPXSSS ifelse(GPXMG>$Const(mgmin),GPXSSS,0.0)
@@ -2322,7 +2323,7 @@ proc GeoPhysX::SubRoughnessLength { } {
 
    vexpr GPXSLP (GPXHCOEF*GPXHCOEF*GPXSSS/$Const(lres))
 
-   GenX::Log INFO "Computing Z0_topo"
+   Log::Print INFO "Computing Z0_topo"
    vexpr GPXZTP ifelse(GPXSLP>$Const(slpmin) || GPXZREF>$Const(zrefmin),1.0+GPXZREF*exp(-$Const(karman)/sqrt(0.5*$Const(drgcoef)*GPXSLP)),0.0)
    vexpr GPXZTP ifelse(GPXSSS<=$Const(sssmin),0.1*GPXSSS,GPXZTP)
    fstdfield define GPXZTP -NOMVAR ZTOP -IP1 0 -IP2 0
@@ -2333,6 +2334,8 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield copy GPXZ0V2 GPXZ0V1
    GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
 
+#   vexpr GPXZ0V1 VCH*0.1
+
    foreach element $Param(VegeTypes) zzov $Param(VegeZ0vTypes) {
       set ip1 [expr 1200-$element]
       fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
@@ -2342,6 +2345,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
    fstdfield define GPXZ0V1 -NOMVAR ZVG1 -IP1 0 -IP2 0
    fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
 
    GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
    foreach element [lrange $Param(VegeTypes) 3 end] zzov [lrange $Param(VegeZ0vTypes) 3 end] {
@@ -2419,7 +2423,7 @@ proc GeoPhysX::SubRoughnessLength { } {
 
    #------ Filter roughness length
    if { $GenX::Param(Z0Filter) } {
-      GenX::Log INFO "Filtering Z0"
+      Log::Print INFO "Filtering Z0"
       fstdgrid zfilter GPXZ0 GenX::Settings
    }
    vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
@@ -2431,7 +2435,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S GPXZ0W GPXZPW \
-       GPXZ0V2 GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF
+       GPXZ0V2 GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF GPXVCH
 }
 
 #----------------------------------------------------------------------------
@@ -2451,27 +2455,27 @@ proc GeoPhysX::CheckConsistencyStandard { } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Applying consistency checks"
+   Log::Print INFO "Applying consistency checks"
 
    #----- Read mask
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
       fstdfield read GPXMG GPXOUTFILE $idx
    } else {
-      GenX::Log WARNING "Could not find mask field MG"
+      Log::Print WARNING "Could not find mask field MG"
    }
 
    #----- Read ice coverage VF(2)
    if { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1198 -1 -1 "" "VF"]]] } {
       fstdfield read GPXVF2 GPXAUXFILE $idx
    } else {
-      GenX::Log WARNING "Could not find ice field VF(2)"
+      Log::Print WARNING "Could not find ice field VF(2)"
    }
 
    #----- Read water coverage VF(3)
    if { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1197 -1 -1 "" "VF"]]] } {
       fstdfield read GPXVF3 GPXAUXFILE $idx
    } else {
-      GenX::Log WARNING "Could not find water field VF(3)"
+      Log::Print WARNING "Could not find water field VF(3)"
    }
 
    #----- Check consistency for VF
@@ -2484,13 +2488,13 @@ proc GeoPhysX::CheckConsistencyStandard { } {
                vexpr GPXVF ifelse(GPXMG==0.0 && GPXVF3==0.0,0.0,GPXVF)
             }
          } else {
-            GenX::Log WARNING "Could not find VF(3) and/or MG field(s), will not do the consistency check on VF($type)"
+            Log::Print WARNING "Could not find VF(3) and/or MG field(s), will not do the consistency check on VF($type)"
             break
          }
          fstdfield define GPXVF -NOMVAR VF -IP1 [expr 1200-$type]
          fstdfield write GPXVF GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
       } else {
-         GenX::Log WARNING "Could not find VF($type) field while checking VF"
+         Log::Print WARNING "Could not find VF($type) field while checking VF"
          break
       }
    }
@@ -2503,7 +2507,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
       #----- Calculate Dominant type and save
       GeoPhysX::DominantVege GPXVF2
    } else {
-      GenX::Log WARNING "Could not find VF(2), will not write GA field and calculate dominant vegetation"
+      Log::Print WARNING "Could not find VF(2), will not write GA field and calculate dominant vegetation"
    }
 
    #----- Check consistency for J1 and J2
@@ -2512,18 +2516,18 @@ proc GeoPhysX::CheckConsistencyStandard { } {
          if { [fstdfield is GPXVF2] } {
             vexpr GPXJ1 ifelse(GPXVF2==1.0,43.0,GPXJ1)
          } else {
-            GenX::Log WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J1"
+            Log::Print WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J1"
             break
          }
          if { [fstdfield is GPXMG] } {
             vexpr GPXJ1 ifelse(GPXMG<0.001,0.0,ifelse(GPXJ1==0.0,43.0,GPXJ1))
          } else {
-            GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J1"
+            Log::Print WARNING "Could not find MG field, will not do the consistency check between MG and J1"
          }
          fstdfield define GPXJ1 -NOMVAR J1 -IP1 [expr 1200-$type]
          fstdfield write GPXJ1 GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
       } else {
-         GenX::Log WARNING "Could not find J1($type) field, will not do the consistency check on J1($type)"
+         Log::Print WARNING "Could not find J1($type) field, will not do the consistency check on J1($type)"
       }
    }
 
@@ -2532,19 +2536,19 @@ proc GeoPhysX::CheckConsistencyStandard { } {
          if { [fstdfield is GPXVF2] } {
             vexpr GPXJ2 ifelse(GPXVF2==1.0,19.0,GPXJ2)
          } else {
-            GenX::Log WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J2"
+            Log::Print WARNING "Could not find VF(2) field, will not do the consistency check between VF(2) and J2"
             break
          }
          if { [fstdfield is GPXMG] } {
             vexpr GPXJ2 ifelse(GPXMG<0.001,0.0,ifelse(GPXJ2==0.0,19.0,GPXJ2))
          } else {
-            GenX::Log WARNING "Could not find MG field, will not do the consistency check between MG and J2"
+            Log::Print WARNING "Could not find MG field, will not do the consistency check between MG and J2"
             break
          }
          fstdfield define GPXJ2 -NOMVAR J2 -IP1 [expr 1200-$type]
          fstdfield write GPXJ2 GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
       } else {
-         GenX::Log WARNING "Could not find J2($type) field, will not do the consistency check on J2($type)"
+         Log::Print WARNING "Could not find J2($type) field, will not do the consistency check on J2($type)"
       }
    }
    fstdfield free GPXJ1 GPXJ2 GPXMG GPXVF GPXVF2 GPXVF3 GPXGA
@@ -2578,7 +2582,7 @@ proc GeoPhysX::Compute_GA  { GPXGA VF2 } {
       if { ![catch { fstdfield read GPXVF GPXOUTFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
          vexpr SUMVF4_26  SUMVF4_26+GPXVF
       } else {
-         GenX::Log WARNING "Could not find VF($type) field while processing VG"
+         Log::Print WARNING "Could not find VF($type) field while processing VG"
       }
    }
 
@@ -2605,7 +2609,7 @@ proc GeoPhysX::DominantVege { Grid } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Calculating dominant vegetation"
+   Log::Print INFO "Calculating dominant vegetation"
 
    fstdfield copy GPXVG $Grid
    fstdfield copy GPXTP $Grid
@@ -2617,7 +2621,7 @@ proc GeoPhysX::DominantVege { Grid } {
          vexpr GPXVG ifelse(GPXTP>=GPXVF,GPXVG,$type)
          vexpr GPXTP ifelse(GPXTP>=GPXVF,GPXTP,GPXVF)
       } else {
-         GenX::Log WARNING "Could not find VF($type) field while processing VG"
+         Log::Print WARNING "Could not find VF($type) field while processing VG"
       }
    }
    fstdfield define GPXVG -NOMVAR VG -IP1 0 -IP2 0
@@ -2643,5 +2647,5 @@ proc GeoPhysX::Diag { } {
 
    GenX::Procs
 
-   GenX::Log INFO "(TODO)" 0
+   Log::Print INFO "(TODO)" 0
 }

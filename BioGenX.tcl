@@ -79,12 +79,12 @@ proc BioGenX::LULC_15Classes { Grid } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Generating 15 category land-use classification"
+   Log::Print INFO "Generating 15 category land-use classification"
 
    #----- Recuperation du champ VF
    if { [catch { fstdfield read BGXVF GPXOUTFILE -1 "" -1 -1 -1 "" "VF" } ] } {
-      GenX::Log ERROR "Calculating 15 category LULC requires use of -vege option"
-      exit 1
+      Log::Print ERROR "Calculating 15 category LULC requires use of -vege option"
+      Log::End 1
    }
    fstdfield readcube BGXVF
 
@@ -161,7 +161,7 @@ proc BioGenX::TrFractions_15Classes { Grid } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Generating 15-category transportable fractions"
+   Log::Print INFO "Generating 15-category transportable fractions"
 
    #----- Initialisation des champs
    GenX::GridClear $Grid 0.0
@@ -169,8 +169,8 @@ proc BioGenX::TrFractions_15Classes { Grid } {
 
    #----- Recuperation du champ LULC
    if { [catch { fstdfield read BGXLU GPXAUXFILE -1 "" -1 -1 -1 "" "LU15" } ] } {
-      GenX::Log ERROR "Calculating 15-category Transport fraction requires call to BioGenX::LULC_15Classes"
-      exit 1
+      Log::Print ERROR "Calculating 15-category Transport fraction requires call to BioGenX::LULC_15Classes"
+      Log::End 1
    }
    fstdfield readcube BGXLU
 
@@ -202,7 +202,7 @@ proc BioGenX::TrFractions_26Classes { Grid } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Generating 26-category transportable fractions"
+   Log::Print INFO "Generating 26-category transportable fractions"
 
    #----- Initialisation des champs
    GenX::GridClear $Grid 0.0
@@ -210,8 +210,8 @@ proc BioGenX::TrFractions_26Classes { Grid } {
 
    #----- Recuperation du champ VF
    if { [catch { fstdfield read BGXVF GPXOUTFILE -1 "" -1 -1 -1 "" "VF" } ] } {
-      GenX::Log ERROR "Calculating 26-category Transport fraction requires use of -vege and -check options."
-      exit 1
+      Log::Print ERROR "Calculating 26-category Transport fraction requires use of -vege and -check options."
+      Log::End 1
    }
    fstdfield readcube BGXVF
 
@@ -244,7 +244,7 @@ proc BioGenX::LocateGrid { Grid } {
    variable Param
    variable Const
 
-   GenX::Log DEBUG "Identifying which datasets to use for biogenic emissions"
+   Log::Print DEBUG "Identifying which datasets to use for biogenic emissions"
 
    #----- BELD3
    set BioGenX::Param(datasets) {}
@@ -258,8 +258,8 @@ proc BioGenX::LocateGrid { Grid } {
    set intersect      [georef intersect [fstdfield define $Grid -georef] [gdalband define PC_VEG -georef]]
    set intersectswith [ llength $intersect ]
 
-   GenX::Log DEBUG "is fully within BELD3? (Yes if > 0): $iswithin"
-   GenX::Log DEBUG "intersects with BELD3? (Yes if > 0): $intersectswith"
+   Log::Print DEBUG "   is fully within BELD3? (Yes if > 0): $iswithin"
+   Log::Print DEBUG "   intersects with BELD3? (Yes if > 0): $intersectswith"
 
    if { $iswithin || $intersectswith } {
       lappend BioGenX::Param(datasets) "BELD3"
@@ -268,20 +268,20 @@ proc BioGenX::LocateGrid { Grid } {
       set BioGenX::Param(X1) [ lindex $intersect 2 ]
       set BioGenX::Param(Y1) [ lindex $intersect 3 ]
    } else {
-      GenX::Log DEBUG "BELD3 :Grille cible hors de la grille BELD3."
+      Log::Print DEBUG "   BELD3 :Grille cible hors de la grille BELD3."
       set BioGenX::Param(DoNotUseBELD3) True
    }
 
    if { ( !$iswithin && $intersectswith ) || !$iswithin } {
       lappend BioGenX::Param(datasets) "VF"
-      GenX::Log DEBUG "Grille cible hors (en tout ou en partie) de la zone BELD3."
+      Log::Print DEBUG "   Grille cible hors (en tout ou en partie) de la zone BELD3."
    }
 
    #----- Liberation de l'espace memoire utilise
    gdalband free PC_VEG
    gdalfile close BELD3($file)
 
-   GenX::Log DEBUG "$BioGenX::Param(datasets) dataset(s) required to cover this grid. "
+   Log::Print DEBUG "   $BioGenX::Param(datasets) dataset(s) required to cover this grid. "
 
    return $BioGenX::Param(datasets)
 }
@@ -312,14 +312,12 @@ proc BioGenX::ReadEmissfacFile { EmissfacFile } {
    upvar 1 ef3 ef3_l
    upvar 1 ef4 ef4_l
 
-   GenX::Log DEBUG "Emission factor file: $EmissfacFile" False
+   Log::Print DEBUG "Emission factor file: $EmissfacFile" False
    catch { append GenX::Meta(Header) "EF file used: $EmissfacFile\n" }
 
    if { ![file exists $EmissfacFile] } {
-      GenX::Log ERROR "Could not find the emission factors file"
-      GenX::Log ERROR "Ef File : \[$EmissfacFile\]"
-      GenX::Log ERROR "Stopping"
-      exit 1
+      Log::Print ERROR "Could not find the emission factors file\n\tEf File : \[$EmissfacFile\]"
+      Log::End 1
    }
 
    set filetxt [open $EmissfacFile r ]
@@ -339,7 +337,7 @@ proc BioGenX::ReadEmissfacFile { EmissfacFile } {
          set ef3_l($vegid)        [ lindex $line 8 ]
          set ef4_l($vegid)        [ lindex $line 9 ]
       } elseif { $isId } {
-         GenX::Log DEBUG "EF file Id  : [lrange $line 2 end-1 ]" False
+         Log::Print DEBUG "   EF file Id  : [lrange $line 2 end-1 ]"
          catch { append GenX::Meta(Header) "EF file Id  : [lrange $line 2 end-1 ]\n" }
       }
    }
@@ -362,7 +360,7 @@ proc BioGenX::ReadEmissfacFile { EmissfacFile } {
 proc BioGenX::StateField { Grid } {
 
    GenX::Procs
-   GenX::Log INFO "Generating dummy state field"
+   Log::Print INFO "Generating dummy state field"
 
    GenX::GridClear $Grid -1.0
    fstdfield copy BGXST $Grid
@@ -389,7 +387,7 @@ proc BioGenX::CalcEmissions { Grid  } {
    variable Const
 
    GenX::Procs
-   GenX::Log DEBUG "Calculate biogenic emissions"
+   Log::Print DEBUG "Calculate biogenic emissions"
 
    #----- Initialisation des champs
    GenX::GridClear $Grid 0.0
@@ -442,7 +440,7 @@ proc BioGenX::CalcEmissionsVF { Grid } {
    variable Const
 
    GenX::Procs
-   GenX::Log INFO "Calculating biogenic emissions using VF fields."
+   Log::Print INFO "Calculating biogenic emissions using VF fields."
 
    #----- Ouverture et lecture de chacune des colonnes du
    #----- fichier texte des taux d'emissions dus a la vegetation
@@ -450,8 +448,8 @@ proc BioGenX::CalcEmissionsVF { Grid } {
 
    #----- Recuperation du champ VF
    if { [catch { fstdfield read BGXVF GPXOUTFILE -1 "" -1 -1 -1 "" "VF" } ] } {
-      GenX::Log ERROR "Calculating emissions from USGS DB requires use of -vege option"
-      exit 1
+      Log::Print ERROR "Calculating emissions from USGS DB requires use of -vege option"
+      Log::End 1
    }
    fstdfield readcube BGXVF
 
@@ -518,12 +516,12 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
    variable Const
 
    GenX::Procs BELD3
-   GenX::Log INFO "Calculating biogenic emissions using BELD3 database ($Param(Interp))."
+   Log::Print INFO "Calculating biogenic emissions using BELD3 database ($Param(Interp))."
 
    #----- Verification de la necessite d'utiliser BELD3
    BioGenX::LocateGrid $Grid
    if {$BioGenX::Param(DoNotUseBELD3)} {
-      GenX::Log WARNING "Specified grid does not intersect with BELD3 dataset. Skipping."
+      Log::Print WARNING "Specified grid does not intersect with BELD3 dataset. Skipping."
       return
    }
 
@@ -557,7 +555,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
       #----- Lecture d'une bande de la base de donnees
       #----- Ne lit que le sous-ensemble de points necessaires au traitement
       set i_out [format "%3i" $i]
-      GenX::Log DEBUG "Reading layer $i_out of $nfiles: code [format "%3i" $k] -- $vegtyp($k)" False
+      Log::Print DEBUG "   Reading layer $i_out of $nfiles: code [format "%3i" $k] -- $vegtyp($k)" False
       gdalfile open BELD3($file) read $file
       eval "gdalband read PC_VEG {{BELD3($file) 1}} $BioGenX::Param(X0) $BioGenX::Param(Y0) $BioGenX::Param(X1) $BioGenX::Param(Y1)"
       gdalband stats PC_VEG -celldim $GenX::Param(Cell)
