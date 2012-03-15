@@ -148,20 +148,11 @@ if { [llength $grids]>1 } {
 fstdfile close GPXOUTFILE
 fstdfile close GPXAUXFILE
 
-#
-# send an email at end of processing when this is not a batch job (UrbanX job)
-#
-if { ! $GenX::Batch(On) } {
-   if { $GenX::Batch(Mail)!="" } {
-      set  mailfile  "$env(TMPDIR)/GenPhysX-[pid].ksh"
-      set f [open $mailfile w]
-      puts $f "echo $GenX::Param(OutFile) | mail -s \"GenPhysX job done\" $GenX::Batch(Mail)"
-      close $f
-      exec chmod 755 $mailfile
-      if { [catch {exec $mailfile} msg] } {
-         Log::Print ERROR "Problem sending email #$Param(Process):\n\n\t:$msg"
-      }
-      exec rm $mailfile
+#----- Send an email at end of processing when this is not a batch job, in master process
+if { !$GenX::Batch(On) && $GenX::Param(Process)=="" && $GenX::Batch(Mail)!="" } {
+   set err [catch { exec echo $GenX::Param(OutFile) | mail -s "GenPhysX job done" $GenX::Batch(Mail) } msg]
+   if { $err } {
+      Log::Print ERROR "Problem sending email:\n\n\t:$msg"
    }
 }
 
