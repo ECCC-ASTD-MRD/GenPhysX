@@ -24,6 +24,7 @@ namespace eval UrbanX { } {
    variable Param
    variable Const
    variable Meta
+   variable Path
 
    set Param(Version)       	 0.95   ;# UrbanX version number
    set Param(CULUCVersion)       0.9    ;# CULUC version number
@@ -36,6 +37,7 @@ namespace eval UrbanX { } {
    set Param(Lat1)               0.0    ;# Top right latitude, set based on CITYNAME or GRIDFILE
    set Param(Lon0)               0.0    ;# Lower left longitude, set based on CITYNAME or GRIDFILE
    set Param(Lat0)               0.0    ;# Lower Left latitude, set based on CITYNAME or GRIDFILE
+   set Param(Files)   		 ""	;# List of CanVec files to process, with full path to the files
    set Param(HeightFile)         ""     ;# Set by CITYNAME
    set Param(HeightMaskFile)     ""     ;# Set by CITYNAME
    set Param(BuildingsShapefile) ""     ;# 2.5D buildings shapefile for CITYNAME
@@ -65,13 +67,13 @@ namespace eval UrbanX { } {
    # Validation of LUT lengths
    if {$GenX::Param(SMOKE)!="" } {
       if { !(([llength $Param(Priorities)] == [llength $Param(SMOKEClasses)]) && ([llength $Param(Priorities)] == [llength $Param(TEBClasses)])) } {
-         GenX::Log ERROR "ERROR: Param(Priorities) = [llength $Param(Priorities)], Param(TEBClasses) = [llength $Param(TEBClasses)], Param(SMOKEClasses) = [llength $Param(SMOKEClasses)]"
-         exit 1;
+         Log::Print ERROR "ERROR: Param(Priorities) = [llength $Param(Priorities)], Param(TEBClasses) = [llength $Param(TEBClasses)], Param(SMOKEClasses) = [llength $Param(SMOKEClasses)]"
+         Log::End 1;
       }
    } else {
       if { !(([llength $Param(Priorities)] == [llength $Param(Entities)]) && ([llength $Param(Priorities)] == [llength $Param(TEBClasses)])) } {
-         GenX::Log ERROR "ERROR: Param(Priorities) = [llength $Param(Priorities)], Param(TEBClasses) = [llength $Param(TEBClasses)], Param(Entities) = [llength $Param(Entities)]"
-         exit 1;
+         Log::Print ERROR "ERROR: Param(Priorities) = [llength $Param(Priorities)], Param(TEBClasses) = [llength $Param(TEBClasses)], Param(Entities) = [llength $Param(Entities)]"
+         Log::End 1;
       }
    }
 
@@ -173,10 +175,11 @@ proc UrbanX::AreaDefine { Coverage Grid } {
 
    #----- If no OutFile specified for -urban, then use the city name. Only OutFile_aux.fst and OutFile.fst aren't overwritten.
    if { $GenX::Param(OutFile)=="genphysx" } {
-      GenX::Log INFO "No \"-result\" option defined, using $Coverage for the output file filename"
+      Log::Print INFO "No \"-result\" option defined, using $Coverage for the output file filename"
       set GenX::Param(OutFile) $Coverage
    }
 
+# CAREFUL: APPARENTLY, WE DON'T NEED THOSE LAT LONG ANYMORE SINCE THEY COME FROM NTS SHEETS... I NEED TO VALIDATE THIS AND DELETE BELOW
    switch $Coverage {
       "TEST" {
          #----- For testing purposes, small region near carrière Miron (overwritten if -gridfile is specified)
@@ -362,10 +365,10 @@ proc UrbanX::AreaDefine { Coverage Grid } {
       }
       default {
          if { ![fstdfield is $Grid] } {
-            GenX::Log ERROR "No grid definition provided, will not process urban parameters"
+            Log::Print ERROR "No grid definition provided, will not process urban parameters"
             return False
          }
-         GenX::Log INFO "Using spatial extent of the $GenX::Param(GridFile) file"
+         Log::Print INFO "Using spatial extent of the $GenX::Param(GridFile) file"
          set limits [georef limit [fstdfield define $Grid -georef]]
          set Param(Lat0) [lindex $limits 0]
          set Param(Lon0) [lindex $limits 1]
@@ -374,7 +377,7 @@ proc UrbanX::AreaDefine { Coverage Grid } {
       }
    }
 #   if { $GenX::Param(GridFile)!="" && $Coverage!="True" } {
-#      GenX::Log INFO "Using spatial extent of the $GenX::Param(GridFile) file"
+#      Log::Print INFO "Using spatial extent of the $GenX::Param(GridFile) file"
 #      set limits [georef limit [fstdfield define $Grid -georef]]
 #      set Param(Lat0) [lindex $limits 0]
 #      set Param(Lon0) [lindex $limits 1]
@@ -395,7 +398,6 @@ proc UrbanX::AreaDefine { Coverage Grid } {
 #            procedure or with some post-processing
 #
 # Parameters :
-#      <indexCouverture>      : index à appliquer à la référence UTMREF
 #
 # Return: output genphysx_sandwich.tif
 #
@@ -407,10 +409,10 @@ proc UrbanX::Sandwich { indexCouverture } {
    variable Data
 
    GenX::Procs
-   GenX::Log INFO "Rasterizing, flattening and post-processing CanVec layers over the raster of size $Param(Width)x$Param(Height) at a $Param(Resolution)m spatial resolution"
+   Log::Print INFO "Rasterizing, flattening and post-processing CanVec layers over the raster of size $Param(Width)x$Param(Height) at a $Param(Resolution)m spatial resolution"
 
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
-   gdalband define RSANDWICH -georef UTMREF$indexCouverture
+   gdalband define RSANDWICH -georef UTMREF$Param(NTSSheet)
 
    #----- Rasterization of CanVec layers
    foreach file $Param(Files) {
@@ -428,7 +430,7 @@ proc UrbanX::Sandwich { indexCouverture } {
          set filename [string range [file tail $file] 0 22] ;# required by ogrlayer sqlselect
       }
       set priority [lindex $Param(Priorities) [lsearch -exact $Param(Entities) $entity]]
-      GenX::Log DEBUG "Processing entity: $entity, priority: $priority, filename: $filename, file: $file"
+      Log::Print DEBUG "Processing entity: $entity, priority: $priority, filename: $filename, file: $file"
 
       # Value contains the nth element of the list Param(Priorities), where n is the index of layer in the list Param(Entities)
       ogrfile open SHAPE read $file
@@ -441,14 +443,14 @@ proc UrbanX::Sandwich { indexCouverture } {
             # Residential areas
             # Lors de la procédure sandwich, l'entité prend entièrement les valeurs suivantes : PRI = 218 ; TEB = 210 ; SMO = 1
             # Lors de la procédure PopDens2Builtup, l'entité est découpée selon des seuils de densité de population
-               GenX::Log DEBUG "Post-processing for Residential area, area"
+               Log::Print DEBUG "Post-processing for Residential area, area"
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename'"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity as FEATURES with priority value 218"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity as FEATURES with priority value 218"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 218
             }
             BS_2010009_0 {
                # entity : Building, points
-               GenX::Log DEBUG "Post-processing for buildings, points buffered to 12m"
+               Log::Print DEBUG "Post-processing for buildings, points buffered to 12m"
 
                set types { "arena" "armoury" "city hall" "coast guard station" "community center" "courthouse" "custom post" "electric power station" "fire station" "highway service center" \
                            "hospital" "medical center" "municipal hall" "gas and oil facilities building" "parliament building" "police station" "railway station" "satellite-tracking station" \
@@ -459,17 +461,17 @@ proc UrbanX::Sandwich { indexCouverture } {
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (function = $func)"
                   ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*6] 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE function NOT IN ([join $funcs ,])"
                ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*6] 8 ;# 6m x 2 : effectue un buffer autour du point, d'un rayon de 6 mètres.  Le point occupera donc au minimum 3 pixels X 3 pixels
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 33"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 33"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 33
             }
             BS_2010009_2 {
-               GenX::Log DEBUG "Post-processing for buildings, areas"
+               Log::Print DEBUG "Post-processing for buildings, areas"
                set types { "arena" "armoury" "city hall" "coast guard station" "community center" "courthouse" "custom post" "electric power station" "fire station" "highway service center" \
                            "hospital" "medical center" "municipal hall" "gas and oil facilities building" "parliament building" "police station" "railway station" "satellite-tracking station" \
                            "sportsplex" "industrial building" "religious building" "penal building" "educational building" }
@@ -478,334 +480,334 @@ proc UrbanX::Sandwich { indexCouverture } {
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE FUNCTION = $func"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE function NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 104"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 104"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 104
             }
             BS_2060009_0 {
                #entity : Chimney, points
-               GenX::Log DEBUG "Post-processing for Chimneys, points"
+               Log::Print DEBUG "Post-processing for Chimneys, points"
                set types { "Chimneys - burners" "Chimneys - industrial" "Chimneys - flare stack" }
                set funcs { 1 2 3 }
                set vals  { 5 4 3 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 6"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 6"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 6
             }
             BS_2240009_1 {
                # Entity: Wall/fence, line
-               GenX::Log DEBUG "Post-processing for Wall / fences, lines"
+               Log::Print DEBUG "Post-processing for Wall / fences, lines"
                set types { "Wall / fence - fences" "Wall / fence - fences" }
                set funcs {   1   2 }
                set vals  { 114 113 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
             }
             BS_2310009_1 {
                # Entity: Pipeline (Sewage / liquid waste), line
-               GenX::Log DEBUG "Post-processing for Pipelines (sewage / liquid waste), lines"
+               Log::Print DEBUG "Post-processing for Pipelines (sewage / liquid waste), lines"
                #if relation2ground != 1 (aboveground), exclus; else, valeur générale
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 1)"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (aboveground sewage pipeline entity) as FEATURES with priority value $priority"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (aboveground sewage pipeline entity) as FEATURES with priority value $priority"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $priority
             }
             EN_1180009_1 {
                # Entity: Pipeline, line
-               GenX::Log DEBUG "Post-processing for Pipelines, lines"
+               Log::Print DEBUG "Post-processing for Pipelines, lines"
                #if relation2ground != 1 (aboveground), exclus; else, valeur générale
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 1)"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (aboveground pipeline entity) as FEATURES with priority value $priority"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (aboveground pipeline entity) as FEATURES with priority value $priority"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $priority
             }
             HD_1450009_0 {
                # Entity: Manmade hydrographic entity [Geobase], point
-               GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, points"
+               Log::Print DEBUG "Post-processing for Manmade hydrographic entities, points"
                set types { "dam" "dock" "wharf" "breakwater" "dike/levee" "lock gate" "boat ramp" "fish ladder" "slip" "breakwater in the ocean" }
                set funcs {  1  2  3  4  5  6  7  8  9  104 }
                set vals  { 43 42 41 44 45 37 40 38 39   46 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 47"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 47"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 47
             }
             HD_1450009_1 {
                # Entity: Manmade hydrographic entity [Geobase], line
-               GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, lines"
+               Log::Print DEBUG "Post-processing for Manmade hydrographic entities, lines"
                set types { "dam" "dock" "wharf" "breakwater" "dike/levee" "lock gate" "boat ramp" "fish ladder" "slip" "breakwater in the ocean" }
                set funcs {   1   2   3   4   5   6   7   8   9 104 }
                set vals  { 124 123 122 125 126 118 121 119 120 127 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 128"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 128"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 128
             }
             HD_1450009_2 {
                # Entity: Manmade hydrographic entity [Geobase], area
-               GenX::Log DEBUG "Post-processing for Manmade hydrographic entities, area"
+               Log::Print DEBUG "Post-processing for Manmade hydrographic entities, area"
                set types { "dam" "dock" "wharf" "breakwater" "dike/levee" "lock gate" "boat ramp" "fish ladder" "slip" "breakwater in the ocean" }
                set funcs {   1   2   3   4   5   6   7   8   9 104 }
                set vals  { 154 153 152 155 156 148 151 149 150 157 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 128"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 128"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 158
             }
             HD_1460009_0 {
                # entity: Hydrographic obstacle entity [Geobase], point
-               GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, points"
+               Log::Print DEBUG "Post-processing for Hydrographic obstacle entities, points"
                set types { "fall" "rapids" "reef" "rocks" "disappearing stream" "exposed shipwreck" "ford" "reef in the ocean" "rocks in the ocean" "exposed shipwreck in the ocean" }
                set funcs {  1  2  3  4  5  6  7 103 104 106 }
                set vals  { 56 57 53 52 48 50 49  55  54  51 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 58"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 58"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 58
             }
             HD_1460009_1 {
                # entity: Hydrographic obstacle entity [Geobase], line
-               GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, lines"
+               Log::Print DEBUG "Post-processing for Hydrographic obstacle entities, lines"
                set types { "fall" "rapids" "reef" "rocks" "disappearing stream" "exposed shipwreck" "ford" "reef in the ocean" "rocks in the ocean" "exposed shipwreck in the ocean" }
                set funcs {   1   2   3   4   5   6   7 103 104 106 }
                set vals  { 137 138 134 133 129 131 130 136 135 132 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 58"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 58"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 139
             }
             HD_1460009_2 {
                # entity: Hydrographic obstacle entity [Geobase], area
-               GenX::Log DEBUG "Post-processing for Hydrographic obstacle entities, areas"
+               Log::Print DEBUG "Post-processing for Hydrographic obstacle entities, areas"
                set types { "fall" "rapids" "reef" "rocks" "disappearing stream" "exposed shipwreck" "ford" "reef in the ocean" "rocks in the ocean" "exposed shipwreck in the ocean" }
                set funcs {   1   2   3   4   5   6   7 103 104 106 }
                set vals  { 167 168 164 163 159 161 160 166 165 162 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 169"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 169"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 169
             }
             HD_1470009_1 {
                # Entity: Single line watercourse [Geobase], line
-               GenX::Log DEBUG "Post-processing for Single line watercourse, line"
+               Log::Print DEBUG "Post-processing for Single line watercourse, line"
                set types { "canal" "conduit" "ditch" "watercourse" "tidal river" }
                set funcs {   1   2   3   6   7 }
                set vals  { 142 141 140 144 143 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (definition = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE definition NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 145"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 145"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 145
             }
             HD_1480009_2 {
               # Entity: Waterbody [Geobase], polygon
-               GenX::Log DEBUG "Post-processing for Waterbody, polygon"
+               Log::Print DEBUG "Post-processing for Waterbody, polygon"
                set types { "canal" "ditch" "lake" "reservoir" "watercourse" "tidal river" "liquid waste" "pond" "side channel" "ocean" }
                set funcs {   1   3   4   5   6   7   8   9  10 100 }
                set vals  { 172 171 178 179 175 173 176 177 173 180 }
 
                foreach type $types func $funcs val $vals {
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (definition = $func)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity ($type) as FEATURES with priority value $val"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $val
                }
 
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE definition NOT IN ([join $funcs ,])"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 181"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general) as FEATURES with priority value 181"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 181
             }
             IC_2600009_0 {
                # Entity: Mining area, point
-               GenX::Log DEBUG "Post-processing for Mining area, point"
+               Log::Print DEBUG "Post-processing for Mining area, point"
                # status = 1 : mines opérationnelles
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (status = 1)"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (operational mines) as FEATURES with priority value 65"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (operational mines) as FEATURES with priority value 65"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 65
                # status != 1 : mines non opérationnelles
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (status != 1)"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (non operational mines) as FEATURES with priority value 66"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (non operational mines) as FEATURES with priority value 66"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 66
             }
             TR_1020009_1 {
                # Entity: Railway, line
-               GenX::Log DEBUG "Post-processing for Railway, line"
+               Log::Print DEBUG "Post-processing for Railway, line"
                # support = 3: bridge
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (support = 3)"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge railway) as FEATURES with priority value 2"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge railway) as FEATURES with priority value 2"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 2
                # support != 3 ou 4: not bridge, not tunnel
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE support NOT IN (3,4)"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge railway) as FEATURES with priority value 111"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge railway) as FEATURES with priority value 111"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 111
             }
             TR_1190009_0 {
                # Entity: Runway, point
-               GenX::Log DEBUG "Post-processing for Runway, point"
+               Log::Print DEBUG "Post-processing for Runway, point"
                #type = 1 : airport
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 1 )"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (airport runway) as FEATURES with priority value 62"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (airport runway) as FEATURES with priority value 62"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 62
                # type = 2 ou 3: heliport, hospital heliport
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type IN (2,3)"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (heliport or hospital heliport runway) as FEATURES with priority value 7"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (heliport or hospital heliport runway) as FEATURES with priority value 7"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 7
                # type = 4: water aerodrome
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 4 )"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (water aerodrome runway) as FEATURES with priority value 61"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (water aerodrome runway) as FEATURES with priority value 61"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 61
             }
             TR_1190009_2 {
                # Entity: Runway, area
-               GenX::Log DEBUG "Post-processing for Runway, areas"
+               Log::Print DEBUG "Post-processing for Runway, areas"
                # type = 1: airport
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 1 )"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (airport runway) as FEATURES with priority value 201"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (airport runway) as FEATURES with priority value 201"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 201
                # type = 2 ou 3: heliport, hospital heliport
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE type IN (2,3)"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (heliport or hospital heliport runway) as FEATURES with priority value 80"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (heliport or hospital heliport runway) as FEATURES with priority value 80"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 80
                # type = 4 : water aerodrome
                ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (type = 4 )"
-               GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (water aerodrome runway) as FEATURES with priority value 147"
+               Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (water aerodrome runway) as FEATURES with priority value 147"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 147
             }
             TR_1760009_1 {
                if { $indexCouverture=="MONTREAL" || $indexCouverture=="QUEBEC" || $indexCouverture=="QC"} {
-                  GenX::Log DEBUG "Ignoring the TR_1760009_1 layer for $indexCouverture to avoid duplicated roads with QC_TR_1760009_1"
+                  Log::Print DEBUG "Ignoring the TR_1760009_1 layer for $indexCouverture to avoid duplicated roads with QC_TR_1760009_1"
                } else {
                   # Entity: Road segment [Geobase], line
-                  GenX::Log DEBUG "Post-processing for Road segment, lines"
+                  Log::Print DEBUG "Post-processing for Road segment, lines"
 
                   # exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
                   ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*6] 8 ;# 6m x 2
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
-                  GenX::Log INFO "Buffering general road segments to 12m"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
+                  Log::Print INFO "Buffering general road segments to 12m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
 
                   # pavstatus = 2: unpaved: routes non pavées n'étant pas des tunnels ou des snowsheds
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (unpaved road segments) as FEATURES with priority value 110"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (unpaved road segments) as FEATURES with priority value 110"
                   # pas de buffer sur les routes non pavées
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 110
 
                   # roadclass in (1,2): freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
                   ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*11] 8 ;# 11m x 2
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
-                  GenX::Log INFO "Buffering highway road segments to 22m"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
+                  Log::Print INFO "Buffering highway road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
 
                   # structype in (1,2,3,4) : bridge (tous les types de ponts)
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE structype IN (1,2,3,4)"
                   ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*11] 8 ;# 11m x 2
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
-                  GenX::Log INFO "Buffering bridge road segments to 22m"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
+                  Log::Print INFO "Buffering bridge road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 1
                }
             }
             QC_TR_1760009_1 {
                # This has been added to support CanVec-R7's new QC_TR layers, it may need revision for R8 (May 2011) or R9
                if { $indexCouverture=="OTTAWA"} {
-                  GenX::Log DEBUG "Ignoring the QC_TR_1760009_1 layer for Ottawa to avoid duplicated roads with TR_1760009_1"
+                  Log::Print DEBUG "Ignoring the QC_TR_1760009_1 layer for Ottawa to avoid duplicated roads with TR_1760009_1"
                } else {
                   # Thus for MONTREAL, QUEBEC and QC (IndustrX)
-                  GenX::Log DEBUG "Rasterizing QC_TR_1760009_1 for $indexCouverture"
+                  Log::Print DEBUG "Rasterizing QC_TR_1760009_1 for $indexCouverture"
                   # entity : Road segment [Geobase], line
-                  GenX::Log DEBUG "Post-processing for Road segment, lines"
+                  Log::Print DEBUG "Post-processing for Road segment, lines"
 
                   # exclusions des structype 5 (tunnel) et 6 (snowshed), association de la valeur générale à tout le reste des routes pavées
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus != 2) AND structype NOT IN (5,6)"
                   ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*6] 8 ;# 6m x 2
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
-                  GenX::Log INFO "Buffering general road segments to 12m"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (general road segments) as FEATURES with priority value 109"
+                  Log::Print INFO "Buffering general road segments to 12m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 109
 
                   # pavstatus = 2: unpaved : routes non pavées n'étant pas des tunnels ou des snowsheds
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE (pavstatus = 2) AND structype NOT IN (5,6)"
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (unpaved road segments) as FEATURES with priority value 110"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (unpaved road segments) as FEATURES with priority value 110"
                   # pas de buffer sur les routes non pavées
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 110
 
                   # roadclass in (1,2): freeway, expressway/highway n'étant pas des tunnels ou des snowsheds
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE roadclass in (1,2) AND structype NOT IN (5,6)"
                   ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*11] 8 ;# 11m x 2
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
-                  GenX::Log INFO "Buffering highway road segments to 22m"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (highways road segments) as FEATURES with priority value 108"
+                  Log::Print INFO "Buffering highway road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 108
 
                   # structype in (1,2,3,4) : bridge (tous les types de ponts)
                   ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM '$filename' WHERE structype IN (1,2,3,4)"
                   ogrlayer stats FEATURES -buffer [expr $Param(Deg2M)*11] 8 ;# 11m x 2
-                  GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
-                  GenX::Log INFO "Buffering bridge road segments to 22m"
+                  Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (bridge road segments) as FEATURES with priority value 1"
+                  Log::Print INFO "Buffering bridge road segments to 22m"
                   gdalband gridinterp RSANDWICH FEATURES $Param(Mode) 1
                }
             }
             default {
                # The layer is part of Param(LayersPostPro) but no case has been defined for it
-               GenX::Log WARNING "Post-processing for $file not found. The layer has not been rasterized"
+               Log::Print WARNING "Post-processing for $file not found. The layer has not been rasterized"
             }
          }
       } else {
 
          # Generic rasterization: entities that are not part of Param(LayersPostPro)
          eval ogrlayer read FEATURES SHAPE 0
-         GenX::Log DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from file $file as FEATURES with priority value $priority, general procedure"
+         Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from file $file as FEATURES with priority value $priority, general procedure"
          gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $priority
       }
 
@@ -813,11 +815,11 @@ proc UrbanX::Sandwich { indexCouverture } {
       ogrfile close SHAPE
    }
 
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif GeoTiff
    gdalband write RSANDWICH FILEOUT
    gdalfile close FILEOUT
-   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif has been generated"
+   Log::Print INFO "The file $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif has been generated"
 
    gdalband free RSANDWICH
 }
@@ -843,12 +845,12 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
    variable Data
 
    GenX::Procs
-   GenX::Log INFO "Buffer zone processing for grass and fields identification"
+   Log::Print INFO "Buffer zone processing for grass and fields identification"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif]
 
    gdalband create RBUFFER $Param(Width) $Param(Height) 1 Byte
-   eval gdalband define RBUFFER -georef UTMREF$indexCouverture
+   eval gdalband define RBUFFER -georef UTMREF$Param(NTSSheet)
 
    set i 0
    foreach file $Param(Files) {
@@ -860,19 +862,19 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
          ogrfile open SHAPE read $file
          switch $entity {
             BS_2010009_0 {
-            GenX::Log DEBUG "Buffering ponctual buildings (25m buffer)"
+            Log::Print DEBUG "Buffering ponctual buildings (25m buffer)"
             set priority 666
             ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM '$filename' WHERE function NOT IN (3,4,14,36) "
             ogrlayer stats LAYER$i -buffer [expr $Param(Deg2M)*25] 8 ;# buffer of 25m
             }
             BS_2010009_2 {
-            GenX::Log DEBUG "Buffering 2D buildings (100m buffer)"
+            Log::Print DEBUG "Buffering 2D buildings (100m buffer)"
             set priority 667
             ogrlayer sqlselect LAYER$i SHAPE " SELECT * FROM '$filename' WHERE function NOT IN (3,4,14,36) "
             ogrlayer stats LAYER$i -buffer [expr $Param(Deg2M)*100] 8 ;# buffer of 100m
             }
          }
-         GenX::Log DEBUG "Buffering [ogrlayer define LAYER$i -nb] features from $filename as LAYER$i with buffer #priority $priority"
+         Log::Print DEBUG "Buffering [ogrlayer define LAYER$i -nb] features from $filename as LAYER$i with buffer #priority $priority"
          gdalband gridinterp RBUFFER LAYER$i $Param(Mode) $priority
          ogrlayer free LAYER$i
          ogrfile close SHAPE
@@ -880,14 +882,14 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
       }
    }
 
-   GenX::Log INFO "Cookie cutting grass and fields buffers and setting grass and fields and building vicinity values"
+   Log::Print INFO "Cookie cutting grass and fields buffers and setting grass and fields and building vicinity values"
    gdalband create RBUFFERCUT $Param(Width) $Param(Height) 1 UInt16
-   gdalband define RBUFFERCUT -georef UTMREF$indexCouverture
+   gdalband define RBUFFERCUT -georef UTMREF$Param(NTSSheet)
    vexpr RBUFFERCUT ifelse(((RSANDWICH==0) && (RBUFFER==0)),820,RBUFFERCUT)
    vexpr RBUFFERCUT ifelse(((RSANDWICH==0) && (RBUFFER!=0)),510,RBUFFERCUT)
 
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_champs-only+building-vicinity.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_champs-only+building-vicinity.tif GeoTiff
    gdalband write RBUFFERCUT FILEOUT
 
    gdalfile close FILEOUT FSANDWICH
@@ -916,12 +918,12 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Reclassifying residential builtup areas using population density"
+   Log::Print INFO "Reclassifying residential builtup areas using population density"
 
-   GenX::Log DEBUG "Reading Sandwich file"
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
+   Log::Print DEBUG "Reading Sandwich file"
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif]
 
-   GenX::Log DEBUG "Open and read the Canada-wide dissemination area polygons file"
+   Log::Print DEBUG "Open and read the Canada-wide dissemination area polygons file"
    if {$GenX::Param(SMOKE)!="" } {
       set layer [lindex [ogrfile open SHAPE read $Param(PopFile2006SMOKE)] 0]
    } else {
@@ -930,7 +932,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    eval ogrlayer read VPOPDENS $layer
 
    #----- Selecting only the required StatCan polygons - next is only useful to improve the speed of the layer substraction
-   GenX::Log DEBUG "Select the appropriate dissemination area polygons"
+   Log::Print DEBUG "Select the appropriate dissemination area polygons"
    set da_select [ogrlayer pick VPOPDENS [list $Param(Lat1) $Param(Lon1) $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Lat1) $Param(Lon1)] True]
    ogrlayer define VPOPDENS -featureselect [list [list index # $da_select]]
 
@@ -940,16 +942,16 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    #----- Création d'un fichier de rasterization des polygones de DA
    gdalband create RDA $Param(Width) $Param(Height) 1 Int32
    gdalband clear RDA -1
-   gdalband define RDA -georef UTMREF$indexCouverture
+   gdalband define RDA -georef UTMREF$Param(NTSSheet)
 
-   GenX::Log DEBUG "Rasterize the selected Dissemination Area (DA) polygons"
+   Log::Print DEBUG "Rasterize the selected Dissemination Area (DA) polygons"
    gdalband gridinterp RDA VPOPDENS FAST FEATURE_ID
 
    #----- Comptage des pixels de la residential area pour chaque polygone de DA : increment de la table et buildings generals (ponctuels et surfaciques)
-   GenX::Log DEBUG "Counting pixels for residential areas and general function buildings for each Dissemination Area polygon"
+   Log::Print DEBUG "Counting pixels for residential areas and general function buildings for each Dissemination Area polygon"
    vexpr VPOPDENS.CSDUID tcount(VPOPDENS.CSDUID, ifelse(RSANDWICH==218 || RSANDWICH==104 || RSANDWICH==33,RDA,-1))
 
-   GenX::Log INFO "Calculating population density values and adjustments if required"
+   Log::Print INFO "Calculating population density values and adjustments if required"
    foreach n $da_select {
       #----- Récupération de la valeur de population
       if {$GenX::Param(SMOKE)!="" } {
@@ -999,7 +1001,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
       # fonction générale.
       if { $densite_div > 20} {
          set densite_choisie [expr ($densite_vect * 2.0)]
-         GenX::Log DEBUG "Adjustment of population density for polygon ID $n"
+         Log::Print DEBUG "Adjustment of population density for polygon ID $n"
       } else {
          set densite_choisie $densite_pixels
       }
@@ -1007,46 +1009,46 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    }
    unset da_select
 
-   GenX::Log DEBUG "Conversion of population density in a raster file"
+   Log::Print DEBUG "Conversion of population density in a raster file"
    gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
-   eval gdalband define RPOPDENS -georef UTMREF$indexCouverture
+   eval gdalband define RPOPDENS -georef UTMREF$Param(NTSSheet)
    gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) CSDUID
 
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens.tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens.tif GeoTiff
    gdalband write RPOPDENS FILEOUT
    gdalfile close FILEOUT
-   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens.tif has been generated"
+   Log::Print INFO "The file $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens.tif has been generated"
    ogrfile close SHAPE
 
    ogrlayer free VPOPDENS
    gdalband free RDA
 
-   GenX::Log DEBUG "Cookie cutting population density and setting SMOKE/TEB values"
+   Log::Print DEBUG "Cookie cutting population density and setting SMOKE/TEB values"
    gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
-   gdalband define RPOPDENSCUT -georef UTMREF$indexCouverture
+   gdalband define RPOPDENSCUT -georef UTMREF$Param(NTSSheet)
    vexpr RRESIDENTIAL RSANDWICH==218
    gdalband free RSANDWICH
 
    if { $GenX::Param(SMOKE)!="" } {
       #----- Seuils de densité de population associés à SMOKE (IndustrX)
-      GenX::Log INFO "Applying thresholds for IndustrX"
+      Log::Print INFO "Applying thresholds for IndustrX"
       vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS<100),1,RPOPDENSCUT)
       vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && (RPOPDENS>=100 && RPOPDENS<1000)),2,RPOPDENSCUT)
       vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=1000 && RPOPDENS<4000),3,RPOPDENSCUT)
       vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=4000),4,RPOPDENSCUT)
    } else {
-      GenX::Log INFO "Creating residential area classes based on population density"
+      Log::Print INFO "Creating residential area classes based on population density"
       vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS<100000),round(200+RPOPDENS/1000),RPOPDENSCUT)
       vexpr RPOPDENSCUT ifelse((RRESIDENTIAL && RPOPDENS>=100000),299,RPOPDENSCUT)
    }
 
-   GenX::Log DEBUG "Generating output file, result of the cookie cutting"
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif GeoTiff
+   Log::Print DEBUG "Generating output file, result of the cookie cutting"
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens-builtup.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens-builtup.tif GeoTiff
    gdalband write RPOPDENSCUT FILEOUT
    gdalfile close FSANDWICH FILEOUT
-   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif has been generated"
+   Log::Print INFO "The file $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens-builtup.tif has been generated"
 
    gdalband free RPOPDENS RRESIDENTIAL RPOPDENSCUT
 }
@@ -1068,23 +1070,23 @@ proc UrbanX::HeightGain { indexCouverture } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Evaluating height gain"
+   Log::Print INFO "Evaluating height gain"
 
-   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif]
+   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(TMPDIR)/$Param(NTSSheet)_champs-only+building-vicinity.tif]
    gdalband create RHAUTEURPROJ $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURPROJ -georef UTMREF$indexCouverture
+   gdalband define RHAUTEURPROJ -georef UTMREF$Param(NTSSheet)
    gdalband stats RHAUTEURPROJ -nodata -9999
 
    #----- La vérification pourrait être fait dans un proc avec vérification des 4 points de la source
    gdalband read RHAUTEUR [gdalfile open FHAUTEUR read $Param(HeightFile)]
-   GenX::Log WARNING "Next line crashes for Montreal, probably a real memory fault. The whole 2006 substraction should be re-coded to use GenPhysX and compute the output directly on the final grid"
+   Log::Print WARNING "Next line crashes for Montreal, probably a real memory fault. The whole 2006 substraction should be re-coded to use GenPhysX and compute the output directly on the final grid"
    gdalband gridinterp RHAUTEURPROJ RHAUTEUR
    gdalband free RHAUTEUR
    gdalfile close FHAUTEUR
 
    set min [gdalband stats RHAUTEURPROJ -min]
    if { [lindex $min 0] == -9999 } {
-      GenX::Log WARNING "Heights does not overlap entirely the area, average won't be good, absent values will be set to 0"
+      Log::Print WARNING "Heights does not overlap entirely the area, average won't be good, absent values will be set to 0"
       vexpr RHAUTEURPROJ ifelse(RHAUTEURPROJ==-9999,0,RHAUTEURPROJ)
    }
    vexpr RHEIGHTCHAMPS ifelse(RCHAMPS==820,RHAUTEURPROJ,0)
@@ -1094,16 +1096,16 @@ proc UrbanX::HeightGain { indexCouverture } {
    gdalband stats RHEIGHTCHAMPS -nodata 0
    set Param(HeightGain) [gdalband stats RHEIGHTCHAMPS -avg]
 
-   GenX::Log INFO "Average gain calculated over defined areas = $Param(HeightGain)"
+   Log::Print INFO "Average gain calculated over defined areas = $Param(HeightGain)"
    if {($Param(HeightGain)>=10 || $Param(HeightGain)<=-10) || $Param(HeightGain)==0 } {
-      GenX::Log WARNING "Strange value for Param(HeightGain): $Param(HeightGain)"
+      Log::Print WARNING "Strange value for Param(HeightGain): $Param(HeightGain)"
    }
 
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_hauteur-classes.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_hauteur-classes.tif GeoTiff
    gdalband write RHEIGHTCHAMPS FILEOUT
    gdalfile close FILEOUT FCHAMPS
-   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif has been generated"
+   Log::Print INFO "The file $GenX::Param(TMPDIR)/$Param(NTSSheet)_hauteur-classes.tif has been generated"
 
    gdalband free RCHAMPS RHEIGHTCHAMPS RHAUTEURPROJ
 }
@@ -1126,13 +1128,13 @@ proc UrbanX::BuildingHeight { indexCouverture } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Cookie cutting building heights and adding gain"
+   Log::Print INFO "Cookie cutting building heights and adding gain"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif]
    gdalband read RHAUTEURWMASK [gdalfile open FHAUTEUR read $Param(HeightMaskFile)]
 
    gdalband create RHAUTEURWMASKPROJ $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURWMASKPROJ -georef UTMREF$indexCouverture
+   gdalband define RHAUTEURWMASKPROJ -georef UTMREF$Param(NTSSheet)
 
    gdalband gridinterp RHAUTEURWMASKPROJ RHAUTEURWMASK
    gdalband free RHAUTEURWMASK
@@ -1154,10 +1156,10 @@ proc UrbanX::BuildingHeight { indexCouverture } {
    gdalband free RHAUTEURWMASKPROJ
    vector free LUT
 
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif GeoTiff
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_hauteur-classes.tif GeoTiff
    gdalband write RHAUTEURCLASS FILEOUT
    gdalfile close FILEOUT FSANDWICH
-   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif has been generated"
+   Log::Print INFO "The file $GenX::Param(TMPDIR)/$Param(NTSSheet)_hauteur-classes.tif has been generated"
 
    gdalband free RHAUTEURCLASS RSANDWICH
 }
@@ -1180,22 +1182,22 @@ proc UrbanX::LCC2000V { } {
    variable Const
 
    GenX::Procs
-   GenX::Log INFO "Integrating LCC2000-V data for vegetated areas"
+   Log::Print INFO "Integrating LCC2000-V data for vegetated areas"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif]
    gdalband copy RLCC2000V RSANDWICH
    vexpr RLCC2000V RLCC2000V << 0
 
    set j 0 ;# Increment of LAYERLCC2000V$j required to re-use the object
    foreach file [GenX::LCC2000VFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)] {
-      GenX::Log DEBUG "Processing LCC2000-V file $file"
+      Log::Print DEBUG "Processing LCC2000-V file $file"
       ogrfile open SHAPELCC2000V read $file
       eval ogrlayer read LAYERLCC2000V$j SHAPELCC2000V 0
 
-      GenX::Log DEBUG "Rasterizing the selected LCC2000-V 1:250k NTS sheet"
+      Log::Print DEBUG "Rasterizing the selected LCC2000-V 1:250k NTS sheet"
       set t_gridinterp [clock seconds]
       gdalband gridinterp RLCC2000V LAYERLCC2000V$j $Param(Mode) COVTYPE
-      GenX::Log DEBUG "Time required for LCC2000V rasterization: [expr [clock seconds]-$t_gridinterp] seconds"
+      Log::Print DEBUG "Time required for LCC2000V rasterization: [expr [clock seconds]-$t_gridinterp] seconds"
 
       ogrlayer free LAYERLCC2000V$j
       ogrfile close SHAPELCC2000V
@@ -1203,20 +1205,20 @@ proc UrbanX::LCC2000V { } {
    }
    vector create LUT.FROM [lindex $Const(LCC2000LUT) 0]
    if {$GenX::Param(SMOKE)!="" } {
-      GenX::Log INFO "Associating LCC2000-V values to SMOKE classes"
+      Log::Print INFO "Associating LCC2000-V values to SMOKE classes"
       vector create LUT.TO     [lindex $Const(LCC2000LUT) 1]
    } else {
-      GenX::Log INFO "Associating LCC2000-V values to TEB classes"
+      Log::Print INFO "Associating LCC2000-V values to TEB classes"
       vector create LUT.TO     [lindex $Const(LCC2000LUT) 2]
    }
    vexpr RLCC2000VSMOKE lut(RLCC2000V,LUT.FROM,LUT.TO)
    vector free LUT.FROM LUT.TO
 
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_LCC2000V-LUT.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_LCC2000V-LUT.tif GeoTiff
    gdalband write RLCC2000VSMOKE FILEOUT
    gdalfile close FLCC2000V FILEOUT FSANDWICH
-   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif has been generated"
+   Log::Print INFO "The file $GenX::Param(TMPDIR)/$Param(NTSSheet)_LCC2000V-LUT.tif has been generated"
 
    gdalband free RLCC2000V RLCC2000VSMOKE RSANDWICH
 }
@@ -1239,13 +1241,13 @@ proc UrbanX::Priorities2TEB { } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Aggregating rasters into CULUC classes"
+   Log::Print INFO "Aggregating rasters into CULUC classes"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
-   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif]
-   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif]
-   gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif]
-   # gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif]
+   gdalband read RPOPDENSCUT [gdalfile open FPOPDENSCUT read $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens-builtup.tif]
+   gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(TMPDIR)/$Param(NTSSheet)_champs-only+building-vicinity.tif]
+   gdalband read RLCC2000V [gdalfile open FLCC2000V read $GenX::Param(TMPDIR)/$Param(NTSSheet)_LCC2000V-LUT.tif]
+   # gdalband read RHAUTEURCLASS [gdalfile open FHAUTEURCLASS read $GenX::Param(TMPDIR)/$Param(NTSSheet)_hauteur-classes.tif]
 
    vector create LUT
    vector dim LUT { FROM TO }
@@ -1263,6 +1265,7 @@ proc UrbanX::Priorities2TEB { } {
    gdalband free RSANDWICH RPOPDENSCUT RCHAMPS RHAUTEURCLASS
 
    vexpr RTEB ifelse((RLCC2000V!=0 && (RTEB==0 || RTEB==810 || RTEB==820 || RTEB==840)),RLCC2000V,RTEB)
+   gdalband free RLCC2000V
 
    vector create LUT
    vector dim LUT { FROM TO }
@@ -1271,22 +1274,34 @@ proc UrbanX::Priorities2TEB { } {
    vexpr (UByte)RTEB lut(RTEB,LUT.FROM,LUT.TO)
    vector free LUT
 
-   GenX::Log INFO "Applying TIFF colormap to the CULUC classes"
+   Log::Print DEBUG "Masking area outside of NTS sheet $Param(NTSSheet)"
+   # Using limits to burn NoData 0 values outside of NTS sheet, where data is incomplete
+   eval ogrlayer read NTSMASKLAYER$Param(NTSSheet) [lindex [ogrfile open NTSMASKSHAPE$Param(NTSSheet) read [glob -nocomplain $Param(NTSSheetPath)/*_LI_1210009_2.shp]] 0]
+   gdalband create RNTSMASK $Param(Width) $Param(Height) 1 Byte
+   gdalband define RNTSMASK -georef UTMREF$Param(NTSSheet)
+   gdalband gridinterp RNTSMASK NTSMASKLAYER$Param(NTSSheet) $Param(Mode) 1
+   vexpr (UByte)RTEB ifelse(RNTSMASK==1,RTEB,0)
+   gdalband stats RTEB -nodata 0
+   ogrlayer free NTSMASKLAYER$Param(NTSSheet)
+   ogrfile close NTSMASKSHAPE$Param(NTSSheet)
+   gdalband free RNTSMASK
 
-   colormap create CULUCCOLORMAP
-   colormap read CULUCCOLORMAP $GENPHYSX_HOME/doc/CULUC-colormap.rgba
+   Log::Print INFO "Applying TIFF colormap to the CULUC classes"
+   # The colormap id needs the $Param(NTSSheet) because it makes conflicts even after the colormap free
+   colormap create CULUCCOLORMAP$Param(NTSSheet)
+   colormap read CULUCCOLORMAP$Param(NTSSheet) $GENPHYSX_HOME/doc/CULUC-colormap.rgba
 
    gdalband define RTEB -indexed True
-   gdalband configure RTEB -colormap CULUCCOLORMAP
+   gdalband configure RTEB -colormap CULUCCOLORMAP$Param(NTSSheet)
 
-   file delete -force $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif GeoTiff
    gdalband write RTEB FILEOUT { COMPRESS=LZW }
    gdalfile close FILEOUT FLCC2000V
-   GenX::Log INFO "The file $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif has been generated"
+   Log::Print INFO "The file $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif has been generated"
 
-   colormap free CULUCCOLORMAP
-   gdalband free RTEB RLCC2000V
+   colormap free CULUCCOLORMAP$Param(NTSSheet)
+   gdalband free RTEB
 }
 
 #----------------------------------------------------------------------------
@@ -1307,9 +1322,9 @@ proc UrbanX::VegeMask { } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Generating vegetation mask"
+   Log::Print INFO "Generating vegetation mask"
 
-   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif]
+   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
 
    vexpr RTEBWMASK ifelse(RTEB>800,100,0)
 
@@ -1317,7 +1332,7 @@ proc UrbanX::VegeMask { } {
 
    if { ![file exists $fileRTEBfilter] } {
       if { $Param(VegeFilterSize) > 20 } {
-         GenX::Log INFO "Generating this $Param(VegeFilterType)$Param(VegeFilterSize) vegetation mask may require hours to process"
+         Log::Print INFO "Generating this $Param(VegeFilterType)$Param(VegeFilterSize) vegetation mask may require hours to process"
       }
       vector create FILTER [UrbanX::FilterGen $Param(VegeFilterType) $Param(VegeFilterSize)]
       #----- Le nodata sert à simuler l'application d'un mask au filtre qui suit
@@ -1331,7 +1346,7 @@ proc UrbanX::VegeMask { } {
       gdalband write VEGEMASK FILEOUT
       gdalfile close FILEOUT
    } else {
-      GenX::Log INFO "Using previously computed filtered data $fileRTEBfilter"
+      Log::Print INFO "Using previously computed filtered data $fileRTEBfilter"
       gdalband read VEGEMASK [gdalfile open FVEGEMASK read ./$fileRTEBfilter]
    }
 
@@ -1363,9 +1378,9 @@ proc UrbanX::TEB2FSTD { Grid } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Computing TEB parameters on the target RPN fstd grid: $GenX::Param(GridFile)"
+   Log::Print INFO "Computing TEB parameters on the target RPN fstd grid: $GenX::Param(GridFile)"
 
-   GenX::Log DEBUG "Reading the TEB parameters LUT in csv exported from the TEB-Params_LUT.xls file"
+   Log::Print DEBUG "Reading the TEB parameters LUT in csv exported from the TEB-Params_LUT.xls file"
    set csvfile [open $Param(TEBParamsLUTCSVFile) r]
 
    vector create CSVTEBPARAMS
@@ -1382,93 +1397,98 @@ proc UrbanX::TEB2FSTD { Grid } {
    }
    close $csvfile
 
-   gdalband read RTEB [gdalfile open FTEB read $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif]
-   gdalfile close FTEB
-
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
-   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end]  {
-      GenX::Log DEBUG "Copying the $tebparam values to the 5m raster with LUT"
-      vexpr RTEBPARAM lut(RTEB,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {  
+# pour les fins de tests !
+#   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 1]  
+      foreach Param(NTSSheet) $Param(NTSSheets) {
+         Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT"
+	 gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+	 gdalfile close FCULUC
+	 vexpr RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
 
-      gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
-      GenX::GridClear $Grid 0.0
+	 gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
+	 GenX::GridClear $Grid 0.0
 
-      # For debugging purposes, writing TEB parameter values at 5m in a file
-      #file delete -force $GenX::Param(OutFile)_TEB-$tebparam.tif
-      #gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB-$tebparam.tif GeoTiff
-      #gdalband write RTEBPARAM FILEOUT
-      #gdalfile close FILEOUT
-      #GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved for debugging purposes"
+	 # For debugging purposes, writing TEB parameter values at 5m in a file
+	 #file delete -force $GenX::Param(OutFile)_TEB-$tebparam.tif
+	 #gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB-$tebparam.tif GeoTiff
+	 #gdalband write RTEBPARAM FILEOUT
+	 #gdalfile close FILEOUT
+	 #Log::Print INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved for debugging purposes"
 
-      set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
-      set ip1 [expr int($ip1)] ;# IP1 must be an integer
+	 set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
+	 set ip1 [expr int($ip1)] ;# IP1 must be an integer
 
-      #----- Fixing NOMVAR names from unique values to their RPN value
-      set nomvar_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
-      set nomvar_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
-      if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
-         set nomvar [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
-      } else {
-         set nomvar $tebparam
-      }
+	 #----- Fixing NOMVAR names from unique values to their RPN value
+	 set nomvar_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
+	 set nomvar_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
+	 if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
+	   set nomvar [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
+	 } else {
+	    set nomvar $tebparam
+	 }
 
-      # rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
-      if { $nomvar == "VEGF"} {
-         set nomvar "NATF"
-      }
-      # initialize Grid with 0.0
-      GenX::GridClear $Grid 0.0
-      # dont waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
-      if { $tebparam != "VF21" } {
-         GenX::Log INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over target grid"
-         fstdfield gridinterp $Grid RTEBPARAM AVERAGE True
-      }
-      fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
-      if { $nomvar == "VF"} {
-         fstdfield write $Grid GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
-      } else {
-         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
-      }
+	 # rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
+	 if { $nomvar == "VEGF"} {
+	    set nomvar "NATF"
+	 }
+	 # dont waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
+	 if { $tebparam != "VF21" } {
+	    Log::Print INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over target grid"
+	    fstdfield gridinterp $Grid RTEBPARAM AVERAGE False
+	 }
+# VF21 is computed anyway at the moment?
+	 fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
+	 if { $nomvar == "VF"} {
+	    fstdfield write $Grid GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
+	 } else {
+	    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+	 }
 
-      if { $nomvar == "BLDH"} {
-         # Building height variance computation
-         set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
-         if { $memoryrequired > 0 } {
-            # Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
-            GenX::Log WARNING "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid"
-         } else {
-            GenX::Log INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid (RAM needed: $memoryrequired)"
-            gdalband free RTEB ;# to reduce possibilities of a real memory fault
-            fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
-            GenX::GridClear $Grid 0.0
-            fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD True
-            fstdfield define $Grid -NOMVAR HVAR -IP1 0
-            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-            fstdfield free BLDHFIELD
+	 if { $nomvar == "BLDH"} {
+	    # Building height variance computation
+	    set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
+	    if { $memoryrequired > 0 } {
+		# Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
+		Log::Print WARNING "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid"
+	    } else {
+	       Log::Print INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid (RAM needed: $memoryrequired)"
+	       gdalband free RCULUC ;# to reduce possibilities of a real memory fault
+	       fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+	       GenX::GridClear $Grid 0.0
+	       fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD False
+	       fstdfield define $Grid -NOMVAR HVAR -IP1 0
+	       fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+	       fstdfield free BLDHFIELD
 
-            gdalband read RTEB [gdalfile open FTEB read $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif] ;# reopening since closed for memory purposes
-            gdalfile close FTEB
+	       gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] ;# reopening since closed for memory purposes
+	       gdalfile close FCULUC
+	    }
+
+	    #----- Building height min computation
+	    Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over target grid"
+	    GenX::GridClear $Grid 0.0
+# problème avec le MINIMUM et MAXIMUM sur multi source... pas de true / false
+	    fstdfield gridinterp $Grid RTEBPARAM MINIMUM
+	    fstdfield define $Grid -NOMVAR HMIN -IP1 0
+	    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+	    #----- Building height max computation
+	    Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over target grid"
+	    GenX::GridClear $Grid 0.0
+# problème avec le MINIMUM et MAXIMUM sur multi source... pas de true / false
+	    fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
+	    fstdfield define $Grid -NOMVAR HMAX -IP1 0
+	    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
          }
-
-         #----- Building height min computation
-         GenX::Log INFO "Computing Building Height Minimum HMIN (IP1=0) values over target grid"
-         GenX::GridClear $Grid 0.0
-         fstdfield gridinterp $Grid RTEBPARAM MINIMUM
-         fstdfield define $Grid -NOMVAR HMIN -IP1 0
-         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
-         #----- Building height max computation
-         GenX::Log INFO "Computing Building Height Maximum HMAX (IP1=0) values over target grid"
-         GenX::GridClear $Grid 0.0
-         fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
-         fstdfield define $Grid -NOMVAR HMAX -IP1 0
-         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         gdalband free RTEBPARAM
       }
-      gdalband free RTEBPARAM
+      fstdfield gridinterp $Grid - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
    }
    vector free CSVTEBPARAMS
-   gdalband free RTEB
+   gdalband free RCULUC
 
    # Balancing BLDF versus PAVF values and redistribute the other parameters accordingly
    UrbanX::Balance_BLDFvsPAVF
@@ -1484,7 +1504,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
 
-   GenX::Log INFO "Computing SUMF: sum of NATF, BLDF and PAVF, for validation purposes"
+   Log::Print INFO "Computing SUMF: sum of NATF, BLDF and PAVF, for validation purposes"
    GenX::GridClear $Grid 0.0
    vexpr $Grid NATFFIELD+BLDFFIELD+PAVFFIELD
    fstdfield define $Grid -NOMVAR SUMF -IP1 0
@@ -1494,17 +1514,17 @@ proc UrbanX::TEB2FSTD { Grid } {
    # bldw ---> mean width of building (BLDWFIELD)  --> add column 
 
    # Wall-O-Hor calculation
-   GenX::Log INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
+   Log::Print INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
    GenX::GridClear $Grid 0.0
    # WALL-O-HOR formulae provided by SL in wich the vegetation surface is withdrawn
-   GenX::Log INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
+   Log::Print INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
    vexpr WHORFIELD "ifelse(NATFFIELD==1||BLDWFIELD==0,0,BLDHFIELD*2.0*BLDFFIELD/(BLDWFIELD *(1.0-NATFFIELD)))" ;#ifelse required to avoid division by 0
 
    fstdfield define WHORFIELD -NOMVAR WHOR -IP1 0
    fstdfield write WHORFIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    # Z0_TOWN calculation
-   GenX::Log INFO "Computing geometric TEB parameter Z0_TOWN Z0TW (IP1=0) values with the MacDonald 1998 Model over target grid"
+   Log::Print INFO "Computing geometric TEB parameter Z0_TOWN Z0TW (IP1=0) values with the MacDonald 1998 Model over target grid"
    GenX::GridClear $Grid 0.0
 
    vexpr DISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD-1.0))) ;# Computing Displacement height
@@ -1527,7 +1547,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    fstdfield free BLDHFIELD BLDWFIELD BLDFFIELD NATFFIELD WHORFIELD REZ SURFTILE Z0RDFIELD Z0RFFIELD PAVFFIELD WHOR2FIELD WHOR3FIELD Z0ZH DISPBLDH DISPH
 
-   GenX::Log INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
+   Log::Print INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
 }
 
 #----------------------------------------------------------------------------
@@ -1543,11 +1563,11 @@ proc UrbanX::TEB2FSTD { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::BuildingHeights2Raster { indexCouverture } {
+proc UrbanX::BuildingHeights2Raster { } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Converting 2.5D buildings shapefile to raster"
+   Log::Print INFO "Converting 2.5D buildings shapefile to raster"
 
    set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
    eval ogrlayer read LAYER $shp_layer
@@ -1564,21 +1584,21 @@ proc UrbanX::BuildingHeights2Raster { indexCouverture } {
    #gdalband define RHAUTEURBLD -georef UTMREFCROPPED
 
    gdalband create RHAUTEURBLD $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURBLD -georef UTMREF$indexCouverture
+   gdalband define RHAUTEURBLD -georef UTMREF$Param(NTSSheet)
 
    gdalband gridinterp RHAUTEURBLD LAYER $Param(Mode) $Param(BuildingsHgtField)
 
-   GenX::Log INFO "All buildings shorter than 4.5m set to an height of 4.5m"
+   Log::Print INFO "All buildings shorter than 4.5m set to an height of 4.5m"
    vexpr RHAUTEURBLD ifelse(RHAUTEURBLD<4.5 && RHAUTEURBLD>0,4.5,RHAUTEURBLD)
 
    ogrlayer free LAYER
    ogrfile close SHAPE
 
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif GeoTiff
    gdalband write RHAUTEURBLD FILEOUT
    gdalfile close FILEOUT
-   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif has been generated"
+   Log::Print INFO "The file $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif has been generated"
 
    gdalband free RHAUTEURBLD
 }
@@ -1600,19 +1620,19 @@ proc UrbanX::3DBuildings2Sandwich { Coverage } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Overwriting $Coverage CanVec sandwich by adding vector 3D buildings"
+   Log::Print INFO "Overwriting $Coverage CanVec sandwich by adding vector 3D buildings"
 
-   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif]
-   gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif]
+   gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif]
+   gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif]
 
-   GenX::Log INFO "Adding new-only buildings to priority 104 (unknown or other 2D buildings)"
+   Log::Print INFO "Adding new-only buildings to priority 104 (unknown or other 2D buildings)"
    #----- On ignore les priorités <= 106 puisqu'elles sont soit des bâtiments existants soit au-dessus des bâtiments
    vexpr RSANDWICH ifelse(((RHAUTEURBLD>0) && (RSANDWICH>=106)),104,RSANDWICH)
 
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif GeoTiff
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif
+   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif GeoTiff
    gdalband write RSANDWICH FILEOUT
-   GenX::Log INFO "The file $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif was overwritten"
+   Log::Print INFO "The file $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif was overwritten"
 
    gdalfile close FSANDWICH FHAUTEURBLD FILEOUT
    gdalband free RSANDWICH RHAUTEURBLD
@@ -1636,14 +1656,14 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    variable Param
 
    GenX::Procs
-   GenX::Log INFO "Computing TEB geometric parameters using the 2.5D buildings"
+   Log::Print INFO "Computing TEB geometric parameters using the 2.5D buildings"
 
    # Building heights average
-   gdalband read RHAUTEURBLD [gdalfile open RHAUTEURBLDFILE read $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif]
+   gdalband read RHAUTEURBLD [gdalfile open RHAUTEURBLDFILE read $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif]
    gdalband stats RHAUTEURBLD -nodata 0 ;# to average buildings without empty spaces
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
-   GenX::Log INFO "Overwriting building heights average (BLDH) where there are 2.5D buildings"
+   Log::Print INFO "Overwriting building heights average (BLDH) where there are 2.5D buildings"
    GenX::GridClear $Grid 0.0
    fstdfield gridinterp $Grid RHAUTEURBLD AVERAGE
    fstdfield copy BLDHEXTENT $Grid ;# BLDHEXTENT is needed below
@@ -1656,7 +1676,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Building height min computation
-   GenX::Log INFO "Overwriting Building Height Minimum HMIN (IP1=0) where there are 2.5D buildings"
+   Log::Print INFO "Overwriting Building Height Minimum HMIN (IP1=0) where there are 2.5D buildings"
    GenX::GridClear $Grid 0.0
    fstdfield gridinterp $Grid RHAUTEURBLD MINIMUM
 
@@ -1668,7 +1688,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Building height max computation
-   GenX::Log INFO "Overwriting Building Height Maximum HMAX (IP1=0) where there are 2.5D buildings"
+   Log::Print INFO "Overwriting Building Height Maximum HMAX (IP1=0) where there are 2.5D buildings"
    GenX::GridClear $Grid 0.0
    fstdfield gridinterp $Grid RHAUTEURBLD MAXIMUM
 
@@ -1680,7 +1700,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Building fraction
-   GenX::Log INFO "Overwriting building fraction (BLDF) where there are 2.5D buildings"
+   Log::Print INFO "Overwriting building fraction (BLDF) where there are 2.5D buildings"
    GenX::GridClear $Grid 0.0
 
    vexpr REZ (ddx($Grid)+ddy($Grid))/2  ;# spatial resolution of the target grid in meters
@@ -1699,8 +1719,8 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    #         set starttime [clock seconds]
    #         gdalband gridinterp RBLDFRACTION LAYER CONSERVATIVE FEATURE_AREA
    ##         gdalband gridinterp RBLDFRACTION LAYER NORMALIZE FEATURE_AREA
-   #         GenX::Log DEBUG "Time taken for VECTOR CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
-   ##         GenX::Log DEBUG "Time taken for VECTOR NORMALIZE fraction [expr [clock seconds]-$starttime] seconds"
+   #         Log::Print DEBUG "Time taken for VECTOR CONSERVATIVE fraction [expr [clock seconds]-$starttime] seconds"
+   ##         Log::Print DEBUG "Time taken for VECTOR NORMALIZE fraction [expr [clock seconds]-$starttime] seconds"
    ## normalize puis enlever next line
    #         vexpr RBLDFRACTION RBLDFRACTION/($res*$res) ;# To get a fraction between 0 and 1
    #         ogrlayer free LAYER
@@ -1714,7 +1734,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Updating NATF and PAVF
-   GenX::Log INFO "Updating NATF and PAVF according to new BLDF where there are 2.5D buildings"
+   Log::Print INFO "Updating NATF and PAVF according to new BLDF where there are 2.5D buildings"
 
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
@@ -1744,7 +1764,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    UrbanX::NormalizeVFvsPAVFBLDF
 
    #----- Updating SUMF
-   GenX::Log INFO "Updating SUMF using the new BLDF, NATF and PAVF values"
+   Log::Print INFO "Updating SUMF using the new BLDF, NATF and PAVF values"
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF" ;# Reading the updated values
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF" ;# Reading the updated values
    fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
@@ -1756,7 +1776,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield free PAVFFIELD NATFFIELD
 
    #----- WALL_O_HOR
-   GenX::Log INFO "Overwriting WALL_O_HOR (WHOR) where there are 2.5D buildings"
+   Log::Print INFO "Overwriting WALL_O_HOR (WHOR) where there are 2.5D buildings"
 
    fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF" ;# Reading the updated values
@@ -1782,14 +1802,14 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
    #----- Z0_TOWN
-   GenX::Log INFO "Overwriting Z0_TOWN (Z0TW) where there are 2.5D buildings with the MacDonald 1998 Model"
+   Log::Print INFO "Overwriting Z0_TOWN (Z0TW) where there are 2.5D buildings with the MacDonald 1998 Model"
    fstdfield read WHORFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "WHOR"
 
    #----- Note: the ^ operator can be used in vexpr, but not in expr
    vexpr RDISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD - 1.0)))
    vexpr $Grid ifelse(BLDHFIELD==0,0,BLDHFIELD*((1.0-RDISPH/BLDHFIELD)*exp( -1.0*((0.5*1.0*1.2/0.4^2*((1.0-RDISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5)))))
 
-   #GenX::Log INFO "Computing Z0_TOWN at $res\m with the Raupach 1994 Model"
+   #Log::Print INFO "Computing Z0_TOWN at $res\m with the Raupach 1994 Model"
    #vexpr RDISPLACEMENTHEIGHT RBLDHAVG*(1+(exp(-1.0*(7.5*2.0*RWALLOHOR/2.0)^0.5-1.0)/(7.5*2.0*RWALLOHOR/2.0)^0.5))
    #vexpr RZ0TOWN RBLDHAVG*((1.0-RDISPLACEMENTHEIGHT/RBLDHAVG)*exp((-1.0)*0.4/min((0.003+0.3*RWALLOHOR/2.0)^0.5,0.3)+0.193))
 
@@ -1831,7 +1851,7 @@ proc UrbanX::FilterGen { Type Size } {
    #      Il manque les filtres median, directionel, lp/hp gaussien, Sobel/Roberts, FFT
    if { $Size%2 == 0 } {
       set Size [expr ($Size -1)]
-      GenX::Log WARNING "Filter size must be an odd number, decreasing filter size to $Size"
+      Log::Print WARNING "Filter size must be an odd number, decreasing filter size to $Size"
    }
 
    set kernel { }
@@ -2028,8 +2048,8 @@ proc UrbanX::Balance_BLDFvsPAVF { } {
       }
    }
 
-   GenX::Log INFO "Bogused BLDF=$cnt_bogus_bldf   Found coarser BLDF=$cnt_found_bldf"
-   GenX::Log INFO "Bogused PAVF=$cnt_bogus_pavf   Found coarser PAVF=$cnt_found_pavf"
+   Log::Print INFO "Bogused BLDF=$cnt_bogus_bldf   Found coarser BLDF=$cnt_found_bldf"
+   Log::Print INFO "Bogused PAVF=$cnt_bogus_pavf   Found coarser PAVF=$cnt_found_pavf"
 
    set changed [expr $cnt_bogus_pavf+$cnt_bogus_bldf+$cnt_found_bldf+$cnt_found_pavf]
 
@@ -2044,7 +2064,7 @@ proc UrbanX::Balance_BLDFvsPAVF { } {
    vexpr NATFFIELD  "1 - ($GridPAVF+$GridBLDF)"
    fstdfield define NATFFIELD -NOMVAR NATF -IP1 0
    fstdfield write NATFFIELD $auxfile -$GenX::Param(NBits) True $GenX::Param(Compress)
-   GenX::Log INFO "Rewrote NATF as 1-(BLDF+PAVF)"
+   Log::Print INFO "Rewrote NATF as 1-(BLDF+PAVF)"
 
    UrbanX::Save_LoadedPavBldParams $auxfile
 
@@ -2370,12 +2390,12 @@ proc UrbanX::NormalizeVFvsPAVFBLDF { } {
    vexpr GPXVF  "SumVF - NATFFIELD"
    set min  [lindex [fstdfield stats GPXVF -min] 0]
    set max  [lindex [fstdfield stats GPXVF -max] 0]
-   GenX::Log INFO "Checking difference between NATF and normalized Sum(VF1..26): min=$min max=$max"
+   Log::Print INFO "Checking difference between NATF and normalized Sum(VF1..26): min=$min max=$max"
 
    vexpr SumVF  "SumVF + BLDFFIELD + PAVFFIELD"
    set min  [lindex [fstdfield stats SumVF -min] 0]
    set max  [lindex [fstdfield stats SumVF -max] 0]
-   GenX::Log INFO "Checking Sum(VF1..26) + BLDF + PAVF: min=$min max=$max"
+   Log::Print INFO "Checking Sum(VF1..26) + BLDF + PAVF: min=$min max=$max"
    fstdfield define SumVF -NOMVAR SUMV -IP1 0
    fstdfield write SumVF GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
@@ -2434,17 +2454,19 @@ proc UrbanX::DominantVege { Grid } {
 #
 #----------------------------------------------------------------------------
 
-proc UrbanX::DeleteTempFiles { } {
-   GenX::Log INFO "Deleting all temporary files"
+proc UrbanX::DeleteTempFiles { Ntssheet } {
+   variable Param
+   Log::Print INFO "Deleting all $Ntssheet temporary files"
 
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_LCC2000V-LUT.tif
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_hauteur-classes.tif
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens-builtup.tif
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_popdens.tif
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_champs-only+building-vicinity.tif
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_sandwich.tif
-   file delete -force $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif
-   # file delete -force $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif    Not deleting this anymore, we will use it if it already exists
+   set Param(NTSSheet) $Ntssheet ;# for global find and replaces to work properly
+
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_LCC2000V-LUT.tif
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_hauteur-classes.tif
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens-builtup.tif
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens.tif
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_champs-only+building-vicinity.tif
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif
+   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif
 # WE SHOULD REMOVE THE TMPDIR ITSELF ONCE THE CULUC FILES ARE FOUND ELSEWHERE
 #   file rmdir $GenX::Param(TMPDIR)
 }
@@ -2535,31 +2557,109 @@ proc dist {lat1 lat2 lon1 lon2} {
 
 }
 
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::FindNTSSheets>
+# Creation : March 2012 - Alexandre Leroux - CMC/CMOE
+#
+# Goal     : Find the NTS sheets intersecting an area
+#
+# Parameters :
+#  <Lat0>    : Lower left corner latitude
+#  <Lon0>    : Lower left corner longitude
+#  <Lat1>    : Upper right corner latitude
+#  <Lon1>    : Upper right corner longitude  
+#
+# Return:
+#   <sheets>  : List of NTS sheets intersecting with the area
+#
+# Remarks :   THIS PROC COULD BE MOVED TO GenX
+#
+#----------------------------------------------------------------------------
+proc UrbanX::FindNTSSheets { Lat0 Lon0 Lat1 Lon1 } {
+   variable Path
 
-proc UrbanX::TRASH { $indexCouverture } {
-   global GENPHYSX_HOME
-   variable Param
-   GenX::Log INFO "Testing colormap"
+   if { ![ogrlayer is NTSLAYER50K] } {
+      set nts_layer [lindex [ogrfile open SHAPE50K read $GenX::Path(NTS)/decoupage50k_2.shp] 0]
+      eval ogrlayer read NTSLAYER50K $nts_layer
+   }
 
-   # Applying TIF colormap to the CULUC classes
-   colormap create CULUCCOLORMAP
-   colormap read CULUCCOLORMAP $GENPHYSX_HOME/doc/CULUC-colormap.rgba
+   set sheets ""
+   set ids [ogrlayer pick NTSLAYER50K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True]
 
-   gdalband read RTEB [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif]
-   gdalband define RTEB -indexed True
-   gdalband configure RTEB -colormap CULUCCOLORMAP
-
-   file delete -force $GenX::Param(OutFile)_TEB-wcolors.tif
-   gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB-wcolors.tif GeoTiff
-   gdalband write RTEB FILEOUT { COMPRESS=LZW }
-#   gdalband write RTEB FILEOUT { COMPRESS PACKBITS }
-   gdalfile close FILEOUT
-   GenX::Log INFO "The file $GenX::Param(OutFile)_TEB-wcolors.tif has been generated"
-
-   gdalband free RTEB
-   colormap free CULUCCOLORMAP
+   foreach id $ids {
+      set sheet [ogrlayer define NTSLAYER50K -feature $id IDENTIFIAN]
+      set s250 [string range $sheet 0 2]
+      set sl   [string tolower [string range $sheet 3 3]]
+      set s50  [string range $sheet 4 5]
+      set sheets [concat $sheets $s250$sl$s50]
+   }
+   return $sheets
 }
 
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::UTMZoneDefine>
+# Creation : October 2010 - Alexandre Lerous, Lucie Boucher - CMC/AQMAS
+#
+# Goal     : define the UTM Zone
+#
+# Parameters :
+#   <Lat0>   : Lower left latitude
+#   <Lon0>   : Lower left longitude
+#   <Lat1>   : Top right latitude
+#   <Lon1>   : Top right longitude
+#   <Res>    : Spatial resolution, (Default 5)
+#   <Name>   : Georeference object name
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } { Name "" } } {
+   variable Param
+   # This proc was moved into UrbanX and *is* an exact copy of the one in GenX, but moving it here updates Param(Width) and Param(Height) at the same time
+
+   set zone     [expr int(ceil((180+(($Lon1+$Lon0)/2))/6))]
+   set meridian [expr -((180-($zone*6))+3)]
+
+   if { $Name=="" } {
+      set Name UTMREF
+   }
+
+   eval georef create $Name \
+      \{PROJCS\[\"WGS_1984_UTM_Zone_${zone}N\",\
+         GEOGCS\[\"GCS_WGS_1984\",\
+            DATUM\[\"D_WGS_1984\",\
+               SPHEROID\[\"WGS_1984\",6378137.0,298.257223563\]\],\
+            PRIMEM\[\"Greenwich\",0.0\],\
+            UNIT\[\"Degree\",0.0174532925199433\]\],\
+         PROJECTION\[\"Transverse_Mercator\"\],\
+         PARAMETER\[\"False_Easting\",500000.0\],\
+         PARAMETER\[\"False_Northing\",0.0\],\
+         PARAMETER\[\"Central_Meridian\",$meridian\],\
+         PARAMETER\[\"Scale_Factor\",0.9996\],\
+         PARAMETER\[\"Latitude_Of_Origin\",0.0\],\
+         UNIT\[\"Meter\",1.0\]\]\}
+
+   set xy1 [georef unproject $Name $Lat1 $Lon1]
+   set xy0 [georef unproject $Name $Lat0 $Lon0]
+   set xy2 [georef unproject $Name $Lat0 $Lon1]
+   set xy3 [georef unproject $Name $Lat1 $Lon0]
+
+   set longmin [lindex [lsort -real [list [lindex $xy1 0] [lindex $xy0 0] [lindex $xy2 0] [lindex $xy3 0] ]] 0]
+   set longmax [lindex [lsort -real [list [lindex $xy1 0] [lindex $xy0 0] [lindex $xy2 0] [lindex $xy3 0] ]] end]
+   set latmin [lindex [lsort -real [list [lindex $xy1 1] [lindex $xy0 1] [lindex $xy2 1] [lindex $xy3 1] ]] 0]
+   set latmax [lindex [lsort -real [list [lindex $xy1 1] [lindex $xy0 1] [lindex $xy2 1] [lindex $xy3 1] ]] end]
+
+   set Param(Width)  [expr int(ceil(($longmax - $longmin)/$Res))]
+   set Param(Height) [expr int(ceil(($latmax - $latmin)/$Res))]
+
+   georef define $Name -transform [list $longmin $Res 0.000000000000000 $latmin 0.000000000000000 $Res]
+
+   Log::Print INFO "For $Param(NTSSheet), UTM zone is $zone, with central meridian at $meridian and dimension $Param(Width)x$Param(Height)"
+
+   return $Name
+}
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::Process>
@@ -2579,9 +2679,9 @@ proc UrbanX::TRASH { $indexCouverture } {
 #----------------------------------------------------------------------------
 proc UrbanX::Process { Coverage Grid } {
    variable Param
-   variable Meta
+   variable Meta 	;# do we use this at all?
 
-   GenX::Log INFO "Beginning of UrbanX"
+   Log::Print INFO "Beginning of UrbanX"
    GenX::Procs CANVEC StatCan
 
    #----- Get the lat/lon and files parameters associated with the city or province
@@ -2589,81 +2689,105 @@ proc UrbanX::Process { Coverage Grid } {
       #----- Stop UrbanX if no area or gridfile is given
       return
    }
-   #----- Defines the extents of the zone to be process, the UTM Zone and set the initial UTMREF
-   GenX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Coverage
-   set Param(Width) $GenX::Param(Width)
-   set Param(Height) $GenX::Param(Height)
-   # Set Param(deg2M) degree equivalence in meters based on latitude and longitude for spatial buffers - spatial buffers will still be ovals, but at least consider latitude
-   # This improves spatial buffers width accuracy by 15% over Montreal and certainly helps everywhere else
-   set Param(Deg2M) [expr (sqrt(($Param(Lat1)-$Param(Lat0))*($Param(Lat1)-$Param(Lat0))+($Param(Lon1)-$Param(Lon0))*($Param(Lon1)-$Param(Lon0))))/([dist $Param(Lat0) $Param(Lat1) $Param(Lon0) $Param(Lon1)]*1000)]
 
-   #----- Identify CanVec files to process
-   GenX::Log INFO "Locating CanVec files, extent considered: lower-left = $Param(Lat0), $Param(Lon0) top-right = $Param(Lat1), $Param(Lon1)"
+# rajouter un if input is nts than nts, else find which ones to process
+   set Param(NTSSheets) [UrbanX::FindNTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
+   Log::Print INFO "NTS sheets to process: $Param(NTSSheets)"
 
-   # List of all CanVec layers files (with full paths) to be processed:
-   set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
+   foreach ntssheet $Param(NTSSheets) {
+      set Param(NTSSheet) $ntssheet
 
-# TWO NEXT LINES ARE FOR TESTING COLORMAPS,,, TO REMOVE SOON
-#UrbanX::TRASH $Coverage
-#break
+      # Creating the tmp directory for temporary files - required if more than GenX::Param(GridFile) contains more than one grid
+      file mkdir $GenX::Param(TMPDIR)
 
-   # Creating the tmp directory for temporary files - required if more than GenX::Param(GridFile) contains more than one grid
-   file mkdir $GenX::Param(TMPDIR)
+      # Don't generate the CULUC classification if it already exists
+      if { ![file exists $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
+	  Log::Print INFO "The file $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif has not been found and will be created"
 
-   # Don't generate the CULUC classification if it already exists
-   if { ![file exists $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif] } {
-      GenX::Log INFO "The file $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif has not been found and will be created"
+	  Log::Print INFO "Locating CanVec files to be processed for NTS sheet $Param(NTSSheet)"
+#	  OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]	  
+	  set s250 [string range $Param(NTSSheet) 0 2]
+	  set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
+	  set s50  [string range $Param(NTSSheet) 4 5]
+	  set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
+	  foreach ntslayer $Param(Entities) {
+	      if { [llength [set lst [glob -nocomplain $Param(NTSSheetPath)/*$ntslayer*.shp]]] } {
+		set Param(Files) [concat $Param(Files) $lst]
+	      }
+	  }
 
-      #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-      UrbanX::Sandwich $Coverage
 
-      #----- Vector building height processing - done only if data exists over the city
-      if { $Param(BuildingsShapefile)!="" } {
-	  UrbanX::BuildingHeights2Raster $Coverage  ;# Rasterizes building heights
-	  # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
-	  ## move?? next proc after TEB2FSTD and update from priority to TEB class
-	  UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
+          # Find and use the extent of the NTS sheet being processed
+	  eval ogrlayer read NTSLAYER$ntssheet [lindex [ogrfile open NTSSHAPE$ntssheet read [glob -nocomplain $Param(NTSSheetPath)/*_LI_1210009_2.shp]] 0]
+	  set extent [ogrlayer stats NTSLAYER$ntssheet -extent] ;# in lat long
+	  set Param(Lat0) [lindex $extent 1]
+	  set Param(Lon0) [lindex $extent 0]
+	  set Param(Lat1) [lindex $extent 3]
+	  set Param(Lon1) [lindex $extent 2]
+	  ogrlayer free NTSLAYER$ntssheet
+	  ogrfile close NTSSHAPE$ntssheet
+
+	  # This sets UTMREF and Param(Width) and Param(Height)
+	  UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Param(NTSSheet)
+
+	  # Set Param(deg2M) degree equivalence in meters based on latitude and longitude for spatial buffers - spatial buffers will still be ovals, but at least consider latitude
+	  # This improves spatial buffers width accuracy by 15% over Montreal and certainly helps everywhere else
+	  set Param(Deg2M) [expr (sqrt(($Param(Lat1)-$Param(Lat0))*($Param(Lat1)-$Param(Lat0))+($Param(Lon1)-$Param(Lon0))*($Param(Lon1)-$Param(Lon0))))/([dist $Param(Lat0) $Param(Lat1) $Param(Lon0) $Param(Lon1)]*1000)]
+
+	  #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
+	  UrbanX::Sandwich $Coverage
+
+	  #----- Vector building height processing - done only if data exists over the city
+	  if { $Param(BuildingsShapefile)!="" } {
+	      UrbanX::BuildingHeights2Raster  ;# Rasterizes building heights
+	      # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
+	      ## move?? next proc after TEB2FSTD and update from priority to TEB class
+	      UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
+	  }
+
+	  #----- Creates the fields and building vicinity output using spatial buffers
+	  UrbanX::ChampsBuffers $Coverage
+
+	  #----- StatCan Census data processing
+	  UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
+
+	  #----- Calculates building heights from SRTM-DEM minus CDED - UNUSED
+	  #UrbanX::HeightGain $Coverage
+	  #UrbanX::BuildingHeight $Coverage
+
+	  #------ Update vegetation using the LCC2000-V dataset
+	  UrbanX::LCC2000V
+
+	  #----- Applies LUT to all processing results to generate TEB classes
+	  UrbanX::Priorities2TEB
+
+	  #----- Optional vegetation mask to smooth the edges - NOT REQUIRED ANYMORE?
+	  #UrbanX::VegeMask
+      } else {
+	  Log::Print INFO "An existing $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file has been found and will be used"
       }
-
-      #----- Creates the fields and building vicinity output using spatial buffers
-      UrbanX::ChampsBuffers $Coverage
-
-      #----- StatCan Census data processing
-      UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
-
-      #----- Calculates building heights from SRTM-DEM minus CDED - UNUSED
-      #UrbanX::HeightGain $Coverage
-      #UrbanX::BuildingHeight $Coverage
-
-      #------ Update vegetation using the LCC2000-V dataset
-      UrbanX::LCC2000V
-
-      #----- Applies LUT to all processing results to generate TEB classes
-      UrbanX::Priorities2TEB
-
-      #----- Optional vegetation mask to smooth the edges - NOT REQUIRED ANYMORE?
-      #UrbanX::VegeMask
-   } else {
-      GenX::Log INFO "An existing $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif file has been found and will be used"
    }
 
    #----- Computing TEB parameters on the FSTD target grid
-   # This test is now useless, since a gridfile *is* required to run GenPhysX
    if { $GenX::Param(GridFile)!="" } {
       UrbanX::TEB2FSTD $Grid
       if { $Param(BuildingsShapefile)!="" } {
-	 # if $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif doesn't exists than create it (ie, if the $GenX::Param(TMPDIR)/CULUC_$GenX::Param(OutFile)_$Param(CULUCVersion).tif file existed)
-	 if { ![file exists $GenX::Param(TMPDIR)/$GenX::Param(OutFile)_Building-heights.tif] } {
-	    UrbanX::BuildingHeights2Raster $Coverage
+	 # if $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif doesn't exists than create it (ie, if the $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file existed)
+	 if { ![file exists $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif] } {
+# IMCOMPLETE: BuildingHeight2Raster DOES NOT USE THE RIGHT EXTENT AT THE MOMENT????? --- how to do it for the grid extent????
+	    UrbanX::FindNTSSheetExtent $Param(NTSSheet)
+# MAKE CERTAIN THE RIGHT UTMREF is used!
+	    UrbanX::BuildingHeights2Raster
 	 }
 	 #----- Computes TEB geometric parameters from 3D buildings
-         UrbanX::3DBld2TEBGeoParams $Grid
+# To fix and re-enable - wrong extent ?
+#         UrbanX::3DBld2TEBGeoParams $Grid
       }
       UrbanX::DominantVege $Grid
+   } 
+   foreach ntssheet $Param(NTSSheets) {
       #----- Deleting all UrbanX temporary files
-      UrbanX::DeleteTempFiles
-   } else {
-      GenX::Log INFO "No '-gridfile' specified: won't compute TEB parameters, keeping intermediary GeoTIFF files"
+      UrbanX::DeleteTempFiles $ntssheet  
    }
-   GenX::Log INFO "End of UrbanX"
+   Log::Print INFO "End of UrbanX"
 }
