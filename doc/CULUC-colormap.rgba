@@ -1,5 +1,6 @@
 0 100 100 100 100 100 LINEAR
-001 000 000 255 255   	# Water - Blue   # Index values source: TEB-Params_LUT.xls - color names taken from http://www.tayloredmktg.com/rgb/
+000 000 000 000 000   	# NoData - black
+001 000 000 255 255   	# Water - Blue    # Index values source: TEB-Params_LUT.xls - color names taken from http://www.tayloredmktg.com/rgb/
 002 224 255 255 255   	# Snow+Ice - Light cyan
 003 085 107 047 255   	# Wet soil - Dark olive green
 004 124 252 000 255   	# Grass - Light green
