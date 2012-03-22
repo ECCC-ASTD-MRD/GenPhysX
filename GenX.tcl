@@ -601,7 +601,7 @@ proc GenX::ParseCommandLine { } {
          "aspect"    { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Aspect)]; incr flags }
          "biogenic"  { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
          "hydro"     { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Hydro) $GenX::Param(Hydros)]; incr flags }
-         "urban"     { set i [Args::Parse $gargv $gargc $i 3 GenX::Param(Urban) $GenX::Param(Urbans)]; incr flags }
+         "urban"     { set i [Args::Parse $gargv $gargc $i 3 GenX::Param(Urban) $GenX::Param(Urbans) {???[A-Za-z]??}]; incr flags }
          "smoke"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(SMOKE) $GenX::Param(SMOKES)]; incr flags }
          "rindex"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(SMOKEIndex)] }
          "check"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Check)]; incr flags }
