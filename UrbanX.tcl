@@ -43,6 +43,8 @@ namespace eval UrbanX { } {
    set Param(BuildingsShapefile) ""     ;# 2.5D buildings shapefile for CITYNAME
    set Param(BuildingsHgtField)  ""     ;# Name of the height attribute of the 2.5D buildings shapefile
 
+   set Param(CULUCPath)          "/cnfs/dev/cmdd/afsm/lib/geo/CULUC" ;# Path to the permanent CULUC repository
+
    #----- Directory where to find processing procs
    source $GENPHYSX_HOME/UrbanX-ClassesLUT.tcl
 
@@ -2684,110 +2686,128 @@ proc UrbanX::Process { Coverage Grid } {
    Log::Print INFO "Beginning of UrbanX"
    GenX::Procs CANVEC StatCan
 
-   #----- Get the lat/lon and files parameters associated with the city or province
-   if { ![UrbanX::AreaDefine $Coverage $Grid] } {
-      #----- Stop UrbanX if no area or gridfile is given
-      return
+   # Test is we're in CULUC generation mode, ie testing if it's a single NTS sheet in input
+   if { [string is integer [string range $Coverage 0 0]] } {
+      Log::Print INFO "Generating CULUC classification version $Param(CULUCVersion) for NTS sheet $Coverage"
+      Log::Print WARNING "Only users with write access to /cnfs/dev/cmdd/afsm/lib/geo/ can run create permanent CULUC classifications"
+      set Param(NTSSheets) $Coverage
+   } else {
+      #----- Get the lat/lon and files parameters associated with the city or grid file
+      if { ![UrbanX::AreaDefine $Coverage $Grid] } {
+          #----- Stop UrbanX if no area or gridfile is given
+          return
+      }
+      set Param(NTSSheets) [UrbanX::FindNTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
+      Log::Print INFO "NTS sheets to process: $Param(NTSSheets)"
    }
 
-# rajouter un if input is nts than nts, else find which ones to process
-   set Param(NTSSheets) [UrbanX::FindNTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
-   Log::Print INFO "NTS sheets to process: $Param(NTSSheets)"
-
+   # Generate the CULUC classification for the NTS sheet(s)
    foreach ntssheet $Param(NTSSheets) {
       set Param(NTSSheet) $ntssheet
 
       # Creating the tmp directory for temporary files - required if more than GenX::Param(GridFile) contains more than one grid
       file mkdir $GenX::Param(TMPDIR)
 
+      # Identify path components for NTS sheet
+      set s250 [string range $Param(NTSSheet) 0 2]
+      set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
+      set s50  [string range $Param(NTSSheet) 4 5]
+
       # Don't generate the CULUC classification if it already exists
-      if { ![file exists $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
-	  Log::Print INFO "The file $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif has not been found and will be created"
+      if { ![file exists $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] && ![file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
+         Log::Print INFO "The file $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif has not been found and will be created"
 
-	  Log::Print INFO "Locating CanVec files to be processed for NTS sheet $Param(NTSSheet)"
-#	  OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]	  
-	  set s250 [string range $Param(NTSSheet) 0 2]
-	  set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
-	  set s50  [string range $Param(NTSSheet) 4 5]
-	  set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
-	  foreach ntslayer $Param(Entities) {
-	      if { [llength [set lst [glob -nocomplain $Param(NTSSheetPath)/*$ntslayer*.shp]]] } {
-		set Param(Files) [concat $Param(Files) $lst]
-	      }
-	  }
+	 Log::Print INFO "Locating CanVec files to be processed for NTS sheet $Param(NTSSheet)"
+	 # OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]	  
+	 set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
+	 foreach ntslayer $Param(Entities) {
+	     if { [llength [set lst [glob -nocomplain $Param(NTSSheetPath)/*$ntslayer*.shp]]] } {
+                set Param(Files) [concat $Param(Files) $lst]
+	     }
+	 }
 
+         # Find and use the extent of the NTS sheet being processed
+	 eval ogrlayer read NTSLAYER$ntssheet [lindex [ogrfile open NTSSHAPE$ntssheet read [glob -nocomplain $Param(NTSSheetPath)/*_LI_1210009_2.shp]] 0]
+	 set extent [ogrlayer stats NTSLAYER$ntssheet -extent] ;# in lat long
+	 set Param(Lat0) [lindex $extent 1]
+	 set Param(Lon0) [lindex $extent 0]
+	 set Param(Lat1) [lindex $extent 3]
+	 set Param(Lon1) [lindex $extent 2]
+	 ogrlayer free NTSLAYER$ntssheet
+	 ogrfile close NTSSHAPE$ntssheet
 
-          # Find and use the extent of the NTS sheet being processed
-	  eval ogrlayer read NTSLAYER$ntssheet [lindex [ogrfile open NTSSHAPE$ntssheet read [glob -nocomplain $Param(NTSSheetPath)/*_LI_1210009_2.shp]] 0]
-	  set extent [ogrlayer stats NTSLAYER$ntssheet -extent] ;# in lat long
-	  set Param(Lat0) [lindex $extent 1]
-	  set Param(Lon0) [lindex $extent 0]
-	  set Param(Lat1) [lindex $extent 3]
-	  set Param(Lon1) [lindex $extent 2]
-	  ogrlayer free NTSLAYER$ntssheet
-	  ogrfile close NTSSHAPE$ntssheet
+	 # This sets UTMREF and Param(Width) and Param(Height)
+	 UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Param(NTSSheet)
 
-	  # This sets UTMREF and Param(Width) and Param(Height)
-	  UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Param(NTSSheet)
+	 # Set Param(deg2M) degree equivalence in meters based on latitude and longitude for spatial buffers - spatial buffers will still be ovals, but at least consider latitude
+	 # This improves spatial buffers width accuracy by 15% over Montreal and certainly helps everywhere else
+	 set Param(Deg2M) [expr (sqrt(($Param(Lat1)-$Param(Lat0))*($Param(Lat1)-$Param(Lat0))+($Param(Lon1)-$Param(Lon0))*($Param(Lon1)-$Param(Lon0))))/([dist $Param(Lat0) $Param(Lat1) $Param(Lon0) $Param(Lon1)]*1000)]
 
-	  # Set Param(deg2M) degree equivalence in meters based on latitude and longitude for spatial buffers - spatial buffers will still be ovals, but at least consider latitude
-	  # This improves spatial buffers width accuracy by 15% over Montreal and certainly helps everywhere else
-	  set Param(Deg2M) [expr (sqrt(($Param(Lat1)-$Param(Lat0))*($Param(Lat1)-$Param(Lat0))+($Param(Lon1)-$Param(Lon0))*($Param(Lon1)-$Param(Lon0))))/([dist $Param(Lat0) $Param(Lat1) $Param(Lon0) $Param(Lon1)]*1000)]
+	 #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
+	 UrbanX::Sandwich $Coverage
 
-	  #----- Finds CanVec files, rasterize and flattens all CanVec layers, applies buffer on some elements
-	  UrbanX::Sandwich $Coverage
+	 #----- Vector building height processing - done only if data exists over the city
+	 if { $Param(BuildingsShapefile)!="" } {
+	     UrbanX::BuildingHeights2Raster  ;# Rasterizes building heights
+	     # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
+	     ## move?? next proc after TEB2FSTD and update from priority to TEB class
+	     UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
+	 }
 
-	  #----- Vector building height processing - done only if data exists over the city
-	  if { $Param(BuildingsShapefile)!="" } {
-	      UrbanX::BuildingHeights2Raster  ;# Rasterizes building heights
-	      # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
-	      ## move?? next proc after TEB2FSTD and update from priority to TEB class
-	      UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
-	  }
+	 #----- Creates the fields and building vicinity output using spatial buffers
+	 UrbanX::ChampsBuffers $Coverage
 
-	  #----- Creates the fields and building vicinity output using spatial buffers
-	  UrbanX::ChampsBuffers $Coverage
+	 #----- StatCan Census data processing
+	 UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
 
-	  #----- StatCan Census data processing
-	  UrbanX::PopDens2Builtup $Coverage     ;# Calculates the population density
+	 #----- Calculates building heights from SRTM-DEM minus CDED - UNUSED
+	 #UrbanX::HeightGain $Coverage
+	 #UrbanX::BuildingHeight $Coverage
 
-	  #----- Calculates building heights from SRTM-DEM minus CDED - UNUSED
-	  #UrbanX::HeightGain $Coverage
-	  #UrbanX::BuildingHeight $Coverage
+	 #------ Update vegetation using the LCC2000-V dataset
+	 UrbanX::LCC2000V
 
-	  #------ Update vegetation using the LCC2000-V dataset
-	  UrbanX::LCC2000V
+	 #----- Applies LUT to all processing results to generate TEB classes
+	 UrbanX::Priorities2TEB
 
-	  #----- Applies LUT to all processing results to generate TEB classes
-	  UrbanX::Priorities2TEB
+	 #----- Optional vegetation mask to smooth the edges - NOT REQUIRED ANYMORE?
+	 #UrbanX::VegeMask
 
-	  #----- Optional vegetation mask to smooth the edges - NOT REQUIRED ANYMORE?
-	  #UrbanX::VegeMask
+         # Test is we're in CULUC generation mode, ie testing if it's a single NTS sheet in input
+         if { [string is integer [string range $Coverage 0 0]] } {
+               # Move the CULUC file to its final destination
+               file mkdir $Param(CULUCPath)/$s250/$sl/
+               file copy -force $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif $Param(CULUCPath)/$s250/$sl/
+               Log::Print INFO "Done computing CULUC classification version $Param(CULUCVersion) for NTS sheet $Coverage"
+         }
       } else {
-	  Log::Print INFO "An existing $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file has been found and will be used"
+         Log::Print INFO "An existing $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file has been found and will be used"
       }
    }
 
-   #----- Computing TEB parameters on the FSTD target grid
-   if { $GenX::Param(GridFile)!="" } {
-      UrbanX::TEB2FSTD $Grid
-      if { $Param(BuildingsShapefile)!="" } {
-	 # if $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif doesn't exists than create it (ie, if the $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file existed)
-	 if { ![file exists $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif] } {
-# IMCOMPLETE: BuildingHeight2Raster DOES NOT USE THE RIGHT EXTENT AT THE MOMENT????? --- how to do it for the grid extent????
-	    UrbanX::FindNTSSheetExtent $Param(NTSSheet)
-# MAKE CERTAIN THE RIGHT UTMREF is used!
-	    UrbanX::BuildingHeights2Raster
-	 }
-	 #----- Computes TEB geometric parameters from 3D buildings
-# To fix and re-enable - wrong extent ?
-#         UrbanX::3DBld2TEBGeoParams $Grid
+   # Test is we're in CULUC generation mode, ie testing if it's a single NTS sheet in input
+   if { ![string is integer [string range $Coverage 0 0]] } {
+      #----- Computing TEB parameters on the FSTD target grid
+      if { $GenX::Param(GridFile)!="" } {
+          UrbanX::TEB2FSTD $Grid
+          if { $Param(BuildingsShapefile)!="" } {
+            # if $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif doesn't exists than create it (ie, if the $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file existed)
+            if { ![file exists $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif] } {
+    # IMCOMPLETE: BuildingHeight2Raster DOES NOT USE THE RIGHT EXTENT AT THE MOMENT????? --- how to do it for the grid extent????
+                UrbanX::FindNTSSheetExtent $Param(NTSSheet)
+    # MAKE CERTAIN THE RIGHT UTMREF is used!
+                UrbanX::BuildingHeights2Raster
+            }
+            #----- Computes TEB geometric parameters from 3D buildings
+    # To fix and re-enable - wrong extent ?
+    #         UrbanX::3DBld2TEBGeoParams $Grid
+          }
+          UrbanX::DominantVege $Grid
       }
-      UrbanX::DominantVege $Grid
-   } 
+   }
    foreach ntssheet $Param(NTSSheets) {
-      #----- Deleting all UrbanX temporary files
-      UrbanX::DeleteTempFiles $ntssheet  
+       #----- Deleting all UrbanX temporary files
+       UrbanX::DeleteTempFiles $ntssheet  
    }
    Log::Print INFO "End of UrbanX"
 }
