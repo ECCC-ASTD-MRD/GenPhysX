@@ -1403,7 +1403,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {   
       foreach Param(NTSSheet) $Param(NTSSheets) {
-         Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT"
+         Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
 
          # Identify path components for NTS sheet
          set s250 [string range $Param(NTSSheet) 0 2]
@@ -1461,11 +1461,12 @@ proc UrbanX::TEB2FSTD { Grid } {
 	 if { $nomvar == "BLDH"} {
 	    # Building height variance computation
 	    set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
-	    if { $memoryrequired > 0 } {
+            # -1 means that we don't even try to do it at the moment... will need to test on a 64 bits OS...
+	    if { $memoryrequired > -1 } {
 		# Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
 		Log::Print WARNING "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid"
 	    } else {
-	       Log::Print INFO "Computing Building Height Variance HVAR (IP1=0) values over target grid (RAM needed: $memoryrequired)"
+	       Log::Print INFO "Computing Building Height Variance HVAR (IP1=0) values over $Param(NTSSheet) (RAM needed: $memoryrequired)"
 	       gdalband free RCULUC ;# to reduce possibilities of a real memory fault
 	       fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
 	       GenX::GridClear $Grid 0.0
