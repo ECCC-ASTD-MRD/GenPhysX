@@ -1401,24 +1401,33 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
-   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {  
-# pour les fins de tests !
-#   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 1]  
+   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {   
       foreach Param(NTSSheet) $Param(NTSSheets) {
          Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT"
-	 gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
-	 gdalfile close FCULUC
-	 vexpr RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
 
+         # Identify path components for NTS sheet
+         set s250 [string range $Param(NTSSheet) 0 2]
+         set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
+         set s50  [string range $Param(NTSSheet) 4 5]
+
+         # Finding the CULUC file in temporary or permanent locations
+         if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
+            gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+         } else {
+            gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+         }
+	 gdalfile close FCULUC
+	 vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+         gdalband free RCULUC
 	 gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
 	 GenX::GridClear $Grid 0.0
 
 	 # For debugging purposes, writing TEB parameter values at 5m in a file
-	 #file delete -force $GenX::Param(OutFile)_TEB-$tebparam.tif
-	 #gdalfile open FILEOUT write $GenX::Param(OutFile)_TEB-$tebparam.tif GeoTiff
+	 #file delete -force $Param(NTSSheet)_TEB-$tebparam.tif
+	 #gdalfile open FILEOUT write $Param(NTSSheet)_TEB-$tebparam.tif GeoTiff
 	 #gdalband write RTEBPARAM FILEOUT
 	 #gdalfile close FILEOUT
-	 #Log::Print INFO "The file $GenX::Param(OutFile)_TEB-$tebparam.tif has been saved for debugging purposes"
+	 #Log::Print INFO "The file $Param(NTSSheet)_TEB-$tebparam.tif has been saved for debugging purposes"
 
 	 set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
 	 set ip1 [expr int($ip1)] ;# IP1 must be an integer
@@ -1438,10 +1447,10 @@ proc UrbanX::TEB2FSTD { Grid } {
 	 }
 	 # dont waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
 	 if { $tebparam != "VF21" } {
-	    Log::Print INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over target grid"
+	    Log::Print INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over $Param(NTSSheet)"
 	    fstdfield gridinterp $Grid RTEBPARAM AVERAGE False
 	 }
-# VF21 is computed anyway at the moment?
+
 	 fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
 	 if { $nomvar == "VF"} {
 	    fstdfield write $Grid GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
@@ -1470,7 +1479,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 	    }
 
 	    #----- Building height min computation
-	    Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over target grid"
+	    Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over $Param(NTSSheet)"
 	    GenX::GridClear $Grid 0.0
 # problème avec le MINIMUM et MAXIMUM sur multi source... pas de true / false
 	    fstdfield gridinterp $Grid RTEBPARAM MINIMUM
@@ -1478,7 +1487,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 	    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
 	    #----- Building height max computation
-	    Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over target grid"
+	    Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
 	    GenX::GridClear $Grid 0.0
 # problème avec le MINIMUM et MAXIMUM sur multi source... pas de true / false
 	    fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
@@ -1490,7 +1499,6 @@ proc UrbanX::TEB2FSTD { Grid } {
       fstdfield gridinterp $Grid - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
    }
    vector free CSVTEBPARAMS
-   gdalband free RCULUC
 
    # Balancing BLDF versus PAVF values and redistribute the other parameters accordingly
    UrbanX::Balance_BLDFvsPAVF
@@ -2793,14 +2801,14 @@ proc UrbanX::Process { Coverage Grid } {
           if { $Param(BuildingsShapefile)!="" } {
             # if $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif doesn't exists than create it (ie, if the $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file existed)
             if { ![file exists $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif] } {
-    # IMCOMPLETE: BuildingHeight2Raster DOES NOT USE THE RIGHT EXTENT AT THE MOMENT????? --- how to do it for the grid extent????
+# IMCOMPLETE: BuildingHeight2Raster DOES NOT USE THE RIGHT EXTENT AT THE MOMENT????? --- how to do it for the grid extent????
                 UrbanX::FindNTSSheetExtent $Param(NTSSheet)
-    # MAKE CERTAIN THE RIGHT UTMREF is used!
+# MAKE CERTAIN THE RIGHT UTMREF is used!
                 UrbanX::BuildingHeights2Raster
             }
             #----- Computes TEB geometric parameters from 3D buildings
-    # To fix and re-enable - wrong extent ?
-    #         UrbanX::3DBld2TEBGeoParams $Grid
+# To fix and re-enable - wrong extent ?
+#              UrbanX::3DBld2TEBGeoParams $Grid
           }
           UrbanX::DominantVege $Grid
       }
