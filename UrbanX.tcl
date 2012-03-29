@@ -43,7 +43,7 @@ namespace eval UrbanX { } {
    set Param(BuildingsShapefile) ""     ;# 2.5D buildings shapefile for CITYNAME
    set Param(BuildingsHgtField)  ""     ;# Name of the height attribute of the 2.5D buildings shapefile
 
-   set Param(CULUCPath)          "/cnfs/dev/cmdd/afsm/lib/geo/CULUC" ;# Path to the permanent CULUC repository
+   set Param(CULUCPath)          "/cnfs/dev/cmdd/afsm/lib/geo/CULUC/$Param(CULUCVersion)/" ;# Path to the permanent CULUC repository
 
    #----- Directory where to find processing procs
    source $GENPHYSX_HOME/UrbanX-ClassesLUT.tcl
@@ -386,6 +386,13 @@ proc UrbanX::AreaDefine { Coverage Grid } {
 #      set Param(Lat1) [lindex $limits 2]
 #      set Param(Lon1) [lindex $limits 3]
 #   }
+
+# THIS DOESN'T SEEM TO WORK! IS THAT BECAUSE 0.01 is TOO LITTLE IN THE OGRLAYER PICK?
+   # Adding buffer around grid in case extent of the grid is right on the NTS sheet limit - without it, there will be missing values for the averaging
+   set Param(Lat0) [expr $Param(Lat0) - 0.01]
+   set Param(Lon0) [expr $Param(Lon0) - 0.01]
+   set Param(Lat1) [expr $Param(Lat1) + 0.01]
+   set Param(Lon1) [expr $Param(Lon1) + 0.01]
 
    return True
 }
@@ -1402,8 +1409,9 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
    foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {   
+      # Clearing grid for the new TEB parameter
+      GenX::GridClear $Grid 0.0
       foreach Param(NTSSheet) $Param(NTSSheets) {
-         Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
 
          # Identify path components for NTS sheet
          set s250 [string range $Param(NTSSheet) 0 2]
@@ -1416,11 +1424,14 @@ proc UrbanX::TEB2FSTD { Grid } {
          } else {
             gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
          }
-	 gdalfile close FCULUC
+         gdalfile close FCULUC
+
+         Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
 	 vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+         # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
+         vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
          gdalband free RCULUC
 	 gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
-	 GenX::GridClear $Grid 0.0
 
 	 # For debugging purposes, writing TEB parameter values at 5m in a file
 	 #file delete -force $Param(NTSSheet)_TEB-$tebparam.tif
@@ -1445,18 +1456,15 @@ proc UrbanX::TEB2FSTD { Grid } {
 	 if { $nomvar == "VEGF"} {
 	    set nomvar "NATF"
 	 }
+
+# this is dangerous since we're in an False avering loop - better do them all?
 	 # dont waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
-	 if { $tebparam != "VF21" } {
+#	 if { $tebparam != "VF21" } {
 	    Log::Print INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over $Param(NTSSheet)"
 	    fstdfield gridinterp $Grid RTEBPARAM AVERAGE False
-	 }
+#	 }
 
 	 fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
-	 if { $nomvar == "VF"} {
-	    fstdfield write $Grid GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
-	 } else {
-	    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
-	 }
 
 	 if { $nomvar == "BLDH"} {
 	    # Building height variance computation
@@ -1464,15 +1472,13 @@ proc UrbanX::TEB2FSTD { Grid } {
             # -1 means that we don't even try to do it at the moment... will need to test on a 64 bits OS...
 	    if { $memoryrequired > -1 } {
 		# Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
-		Log::Print WARNING "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid"
+		Log::Print INFO "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid"
 	    } else {
 	       Log::Print INFO "Computing Building Height Variance HVAR (IP1=0) values over $Param(NTSSheet) (RAM needed: $memoryrequired)"
 	       gdalband free RCULUC ;# to reduce possibilities of a real memory fault
 	       fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
-	       GenX::GridClear $Grid 0.0
 	       fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD False
 	       fstdfield define $Grid -NOMVAR HVAR -IP1 0
-	       fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 	       fstdfield free BLDHFIELD
 
 	       gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] ;# reopening since closed for memory purposes
@@ -1481,23 +1487,27 @@ proc UrbanX::TEB2FSTD { Grid } {
 
 	    #----- Building height min computation
 	    Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over $Param(NTSSheet)"
-	    GenX::GridClear $Grid 0.0
-# problème avec le MINIMUM et MAXIMUM sur multi source... pas de true / false
 	    fstdfield gridinterp $Grid RTEBPARAM MINIMUM
 	    fstdfield define $Grid -NOMVAR HMIN -IP1 0
-	    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
 	    #----- Building height max computation
 	    Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
-	    GenX::GridClear $Grid 0.0
-# problème avec le MINIMUM et MAXIMUM sur multi source... pas de true / false
 	    fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
 	    fstdfield define $Grid -NOMVAR HMAX -IP1 0
-	    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
          }
          gdalband free RTEBPARAM
       }
+
+      # Computing the gridinterp with all NTS sheets
       fstdfield gridinterp $Grid - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
+
+      # Writing result to gridfile
+      if { $nomvar == "VF"} {
+         fstdfield write $Grid GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
+      } else {
+         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+      }
+      
    }
    vector free CSVTEBPARAMS
 
@@ -2698,7 +2708,7 @@ proc UrbanX::Process { Coverage Grid } {
    # Test is we're in CULUC generation mode, ie testing if it's a single NTS sheet in input
    if { [string is integer [string range $Coverage 0 0]] } {
       Log::Print INFO "Generating CULUC classification version $Param(CULUCVersion) for NTS sheet $Coverage"
-      Log::Print WARNING "Only users with write access to /cnfs/dev/cmdd/afsm/lib/geo/ can run create permanent CULUC classifications"
+      Log::Print INFO "Only users with write access to /cnfs/dev/cmdd/afsm/lib/geo/ can run create permanent CULUC classifications"
       set Param(NTSSheets) $Coverage
    } else {
       #----- Get the lat/lon and files parameters associated with the city or grid file
@@ -2706,6 +2716,7 @@ proc UrbanX::Process { Coverage Grid } {
           #----- Stop UrbanX if no area or gridfile is given
           return
       }
+#puts "Param(Lat0) Param(Lon0) Param(Lat1) Param(Lon1) = $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)"
       set Param(NTSSheets) [UrbanX::FindNTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
       Log::Print INFO "NTS sheets to process: $Param(NTSSheets)"
    }
@@ -2724,7 +2735,7 @@ proc UrbanX::Process { Coverage Grid } {
 
       # Don't generate the CULUC classification if it already exists
       if { ![file exists $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] && ![file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
-         Log::Print INFO "The file $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif has not been found and will be created"
+         Log::Print INFO "The file CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif has not been found and will be created"
 
 	 Log::Print INFO "Locating CanVec files to be processed for NTS sheet $Param(NTSSheet)"
 	 # OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]	  
@@ -2747,6 +2758,8 @@ proc UrbanX::Process { Coverage Grid } {
 
 	 # This sets UTMREF and Param(Width) and Param(Height)
 	 UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Param(NTSSheet)
+#         UrbanX::UTMZoneDefine $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Resolution) UTMREF$Param(NTSSheet)
+#puts "Param(Lat0) Param(Lon0) Param(Lat1) Param(Lon1) = $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)"
 
 	 # Set Param(deg2M) degree equivalence in meters based on latitude and longitude for spatial buffers - spatial buffers will still be ovals, but at least consider latitude
 	 # This improves spatial buffers width accuracy by 15% over Montreal and certainly helps everywhere else
@@ -2790,7 +2803,7 @@ proc UrbanX::Process { Coverage Grid } {
                Log::Print INFO "Done computing CULUC classification version $Param(CULUCVersion) for NTS sheet $Coverage"
          }
       } else {
-         Log::Print INFO "An existing $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file has been found and will be used"
+         Log::Print INFO "An existing CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file has been found and will be used"
       }
    }
 
@@ -2803,9 +2816,9 @@ proc UrbanX::Process { Coverage Grid } {
             # if $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif doesn't exists than create it (ie, if the $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file existed)
             if { ![file exists $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif] } {
 # IMCOMPLETE: BuildingHeight2Raster DOES NOT USE THE RIGHT EXTENT AT THE MOMENT????? --- how to do it for the grid extent????
-                UrbanX::FindNTSSheetExtent $Param(NTSSheet)
+#                UrbanX::FindNTSSheetExtent $Param(NTSSheet)
 # MAKE CERTAIN THE RIGHT UTMREF is used!
-                UrbanX::BuildingHeights2Raster
+#                UrbanX::BuildingHeights2Raster
             }
             #----- Computes TEB geometric parameters from 3D buildings
 # To fix and re-enable - wrong extent ?
