@@ -1408,7 +1408,7 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
-   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {   
+   foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {
       # Clearing grid for the new TEB parameter
       GenX::GridClear $Grid 0.0
       foreach Param(NTSSheet) $Param(NTSSheets) {
@@ -1457,44 +1457,12 @@ proc UrbanX::TEB2FSTD { Grid } {
 	    set nomvar "NATF"
 	 }
 
-# this is dangerous since we're in an False avering loop - better do them all?
+# this is dangerous since we're in an False averaging loop? - better do them all?
 	 # dont waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
 #	 if { $tebparam != "VF21" } {
 	    Log::Print INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over $Param(NTSSheet)"
 	    fstdfield gridinterp $Grid RTEBPARAM AVERAGE False
 #	 }
-
-	 fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
-
-	 if { $nomvar == "BLDH"} {
-	    # Building height variance computation
-	    set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
-            # -1 means that we don't even try to do it at the moment... will need to test on a 64 bits OS...
-	    if { $memoryrequired > -1 } {
-		# Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
-		Log::Print INFO "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over target grid"
-	    } else {
-	       Log::Print INFO "Computing Building Height Variance HVAR (IP1=0) values over $Param(NTSSheet) (RAM needed: $memoryrequired)"
-	       gdalband free RCULUC ;# to reduce possibilities of a real memory fault
-	       fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
-	       fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD False
-	       fstdfield define $Grid -NOMVAR HVAR -IP1 0
-	       fstdfield free BLDHFIELD
-
-	       gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] ;# reopening since closed for memory purposes
-	       gdalfile close FCULUC
-	    }
-
-	    #----- Building height min computation
-	    Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over $Param(NTSSheet)"
-	    fstdfield gridinterp $Grid RTEBPARAM MINIMUM
-	    fstdfield define $Grid -NOMVAR HMIN -IP1 0
-
-	    #----- Building height max computation
-	    Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
-	    fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
-	    fstdfield define $Grid -NOMVAR HMAX -IP1 0
-         }
          gdalband free RTEBPARAM
       }
 
@@ -1502,12 +1470,121 @@ proc UrbanX::TEB2FSTD { Grid } {
       fstdfield gridinterp $Grid - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
 
       # Writing result to gridfile
+      fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
       if { $nomvar == "VF"} {
          fstdfield write $Grid GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
       } else {
          fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
       }
-      
+
+      # HVAR calculation, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
+      if { $nomvar == "BLDH"} {
+         GenX::GridClear $Grid 0.0
+         foreach Param(NTSSheet) $Param(NTSSheets) {
+            # Building height variance computation
+            set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
+            # -1 means that we don't even try to do it at the moment... will need to test on a 64 bits OS...
+            if { $memoryrequired > -1 } {
+               # Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
+               Log::Print INFO "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over  target grid"
+            } else {
+               # Identify path components for NTS sheet
+               set s250 [string range $Param(NTSSheet) 0 2]
+               set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
+               set s50  [string range $Param(NTSSheet) 4 5]
+
+               # Finding the CULUC file in temporary or permanent locations
+               if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
+                   gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+               } else {
+                   gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+               }
+               gdalfile close FCULUC
+
+               Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
+               vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+               # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
+               vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
+               gdalband free RCULUC
+               gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
+
+               Log::Print INFO "Computing Building Height Variance HVAR (IP1=0) values over $Param(NTSSheet) (RAM needed: $memoryrequired)"
+               gdalband free RCULUC ;# to reduce possibilities of a real memory fault
+# this won't work but I haven't tested...
+               fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+               fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD False
+               fstdfield free BLDHFIELD
+               gdalband free RTEBPARAM
+            }
+         }
+         fstdfield gridinterp $Grid - NOP True ;# to conclude the AVERAGE_VARIANCE computations on all NTS sheets
+         fstdfield define $Grid -NOMVAR HVAR -IP1 0
+         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+      }
+      # HMIN calculations, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
+      if { $nomvar == "BLDH"} {
+         GenX::GridClear $Grid 0.0
+         foreach Param(NTSSheet) $Param(NTSSheets) {
+            # Identify path components for NTS sheet
+            set s250 [string range $Param(NTSSheet) 0 2]
+            set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
+            set s50  [string range $Param(NTSSheet) 4 5]
+
+            # Finding the CULUC file in temporary or permanent locations
+            if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
+                gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+            } else {
+                gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+            }
+            gdalfile close FCULUC
+
+            Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
+            vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+            # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
+            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
+            gdalband free RCULUC
+            gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
+
+            #----- Building height min computation
+            Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over $Param(NTSSheet)"
+            fstdfield gridinterp $Grid RTEBPARAM MINIMUM
+            fstdfield define $Grid -NOMVAR HMIN -IP1 0
+            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+            gdalband free RTEBPARAM
+         }
+      }
+      # HMAX calculations, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
+      if { $nomvar == "BLDH"} {
+         GenX::GridClear $Grid 0.0
+         foreach Param(NTSSheet) $Param(NTSSheets) {
+            # Identify path components for NTS sheet
+            set s250 [string range $Param(NTSSheet) 0 2]
+            set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
+            set s50  [string range $Param(NTSSheet) 4 5]
+
+            # Finding the CULUC file in temporary or permanent locations
+            if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
+                gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+            } else {
+                gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+            }
+            gdalfile close FCULUC
+
+            Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
+            vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+            # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
+            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
+            gdalband free RCULUC
+            gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
+
+            #----- Building height max computation
+            Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
+            fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
+            fstdfield define $Grid -NOMVAR HMAX -IP1 0
+            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+            gdalband free RTEBPARAM
+         }
+      }
    }
    vector free CSVTEBPARAMS
 
@@ -2113,6 +2190,8 @@ proc UrbanX::Preload_PavBldParams { } {
    set    list $Param(BLDFvsLUT)
    append list $Param(PAVFvsLUT)
 
+puts "list = $list"
+
    foreach  p $list {
       set nomvar [lindex $p 0]
       set ip1 [lindex $p 1]
@@ -2120,6 +2199,7 @@ proc UrbanX::Preload_PavBldParams { } {
       if { $ip1 > 0 } {
          set ip1 [expr 1200-$ip1]
       }
+puts "nomvar = $nomvar"
       if { $nomvar == "VF" } {
          fstdfield read $PLVAR GPXOUTFILE -1 "" $ip1 -1 -1 "" "$nomvar"
       } else {
