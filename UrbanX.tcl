@@ -43,7 +43,13 @@ namespace eval UrbanX { } {
    set Param(BuildingsShapefile) ""     ;# 2.5D buildings shapefile for CITYNAME
    set Param(BuildingsHgtField)  ""     ;# Name of the height attribute of the 2.5D buildings shapefile
 
-   set Param(CULUCPath)          "/cnfs/dev/cmdd/afsm/lib/geo/CULUC/$Param(CULUCVersion)/" ;# Path to the permanent CULUC repository
+
+   # added at Serge's request ;-) will use the CULUC_PATH provided by the user if any
+   if { [info exists env(CULUC_PATH)] } {
+      set Param(CULUCPath) $env(CULUC_PATH)/CULUC
+   } else {
+      set Param(CULUCPath)       "/cnfs/dev/cmdd/afsm/lib/geo/CULUC/$Param(CULUCVersion)/" ;# Path to the permanent CULUC repository
+   } 
 
    #----- Directory where to find processing procs
    source $GENPHYSX_HOME/UrbanX-ClassesLUT.tcl
@@ -378,16 +384,15 @@ proc UrbanX::AreaDefine { Coverage Grid } {
          set Param(Lon1) [lindex $limits 3]
       }
    }
-#   if { $GenX::Param(GridFile)!="" && $Coverage!="True" } {
-#      Log::Print INFO "Using spatial extent of the $GenX::Param(GridFile) file"
-#      set limits [georef limit [fstdfield define $Grid -georef]]
-#      set Param(Lat0) [lindex $limits 0]
-#      set Param(Lon0) [lindex $limits 1]
-#      set Param(Lat1) [lindex $limits 2]
-#      set Param(Lon1) [lindex $limits 3]
-#   }
+   if { $GenX::Param(GridFile)!="" && $Coverage!="True" } {
+      Log::Print INFO "Using spatial extent of the $GenX::Param(GridFile) file"
+      set limits [georef limit [fstdfield define $Grid -georef]]
+      set Param(Lat0) [lindex $limits 0]
+      set Param(Lon0) [lindex $limits 1]
+      set Param(Lat1) [lindex $limits 2]
+      set Param(Lon1) [lindex $limits 3]
+   }
 
-# THIS DOESN'T SEEM TO WORK! IS THAT BECAUSE 0.01 is TOO LITTLE IN THE OGRLAYER PICK?
    # Adding buffer around grid in case extent of the grid is right on the NTS sheet limit - without it, there will be missing values for the averaging
    set Param(Lat0) [expr $Param(Lat0) - 0.01]
    set Param(Lon0) [expr $Param(Lon0) - 0.01]
@@ -1457,12 +1462,11 @@ proc UrbanX::TEB2FSTD { Grid } {
 	    set nomvar "NATF"
 	 }
 
-# this is dangerous since we're in an False averaging loop? - better do them all?
-	 # dont waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
-#	 if { $tebparam != "VF21" } {
+	 # Don't waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
+	 if { $tebparam != "VF21" } {
 	    Log::Print INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over $Param(NTSSheet)"
 	    fstdfield gridinterp $Grid RTEBPARAM AVERAGE False
-#	 }
+	 }
          gdalband free RTEBPARAM
       }
 
@@ -2190,8 +2194,6 @@ proc UrbanX::Preload_PavBldParams { } {
    set    list $Param(BLDFvsLUT)
    append list $Param(PAVFvsLUT)
 
-puts "list = $list"
-
    foreach  p $list {
       set nomvar [lindex $p 0]
       set ip1 [lindex $p 1]
@@ -2199,7 +2201,6 @@ puts "list = $list"
       if { $ip1 > 0 } {
          set ip1 [expr 1200-$ip1]
       }
-puts "nomvar = $nomvar"
       if { $nomvar == "VF" } {
          fstdfield read $PLVAR GPXOUTFILE -1 "" $ip1 -1 -1 "" "$nomvar"
       } else {
@@ -2796,7 +2797,7 @@ proc UrbanX::Process { Coverage Grid } {
           #----- Stop UrbanX if no area or gridfile is given
           return
       }
-#puts "Param(Lat0) Param(Lon0) Param(Lat1) Param(Lon1) = $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)"
+
       set Param(NTSSheets) [UrbanX::FindNTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
       Log::Print INFO "NTS sheets to process: $Param(NTSSheets)"
    }
