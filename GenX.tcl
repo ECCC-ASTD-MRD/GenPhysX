@@ -107,6 +107,7 @@ namespace eval GenX { } {
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
    set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
+   set Batch(Path)     "\$TMPDIR/GenPhysX\$\$"
 
    #----- Various database paths
 
@@ -282,9 +283,17 @@ proc GenX::Submit { } {
 
    upvar #0 argv gargv
 
-   set host [info hostname]
-   set rdir /tmp/GenPhysX[pid]_$Param(Secs)
+   set host  [info hostname]
    set rargv ""
+   set rem   0
+
+   #----- Check if local dir is reachable
+   set ldir [set tmpdir [file dirname [file normalize $Param(OutFile)]]]
+   if { [catch { exec ssh $Batch(Host) ls $ldir }] } {
+      set tmpdir $Batch(Path)
+      set rem    1
+      Log::Print INFO "Output path not reachable form batch host, will run instead in $Batch(Host):$tmpdir"
+   }
 
    #----- Create job script
    set f [open [set job $env(TMPDIR)/GenPhysX[pid]] w 0755]
@@ -292,10 +301,13 @@ proc GenX::Submit { } {
    puts $f "#!/bin/ksh\nset -x"
    puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
-   puts $f "trap \"cd ..; rm -fr $rdir\" 0 1 2 3 6 15 30"
+   puts $f "tmpdir=$tmpdir"
 
-   puts $f "mkdir $rdir"
-   puts $f "cd $rdir"
+   if { $rem } {
+      puts $f "trap \"cd ..; rm -fr \$tmpdir\" 0 1 2 3 6 15 30"
+      puts $f "mkdir -p \$tmpdir"
+   }
+   puts $f "cd \$tmpdir"
 
    if { $Param(GridFile)!="" } {
       puts $f "srcp $host:[file normalize $Param(GridFile)] ."
@@ -312,8 +324,6 @@ proc GenX::Submit { } {
    if { [file exists ${Param(OutFile)}_aux.fst] } {
       puts $f "srcp $host:[file normalize ${Param(OutFile)}_aux.fst] ."
    }
-
-   set ldir [file dirname [file normalize $Param(OutFile)]]
    append rargv " -result [file tail $Param(OutFile)]"
 
    #----- Remove batch flag from arguments
@@ -321,7 +331,10 @@ proc GenX::Submit { } {
    set gargv [lreplace $gargv $idx $idx]
 
    puts $f "\n[file normalize [info script]] $gargv \\\n   $rargv\n"
-   puts $f "srcp -r [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r $rdir"
+
+   if { $rem } {
+      puts $f "srcp -r [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r \$tmpdir"
+   }
 
    if { $Batch(Mail)!="" } {
       puts $f "echo $Param(OutFile) | mail -s \"GenPhysX job done\" $Batch(Mail) "
@@ -508,6 +521,7 @@ proc GenX::CommandLine { } {
 
    Batch mode parameters:
       \[-batch\]    [format "%-30s : Launch in batch mode" ""]
+      \[-path\]     [format "%-30s : Remote path if local not accessible" ($Batch(Path))]
       \[-mail\]     [format "%-30s : EMail address to send completion mail" ($Batch(Mail))]
       \[-mach\]     [format "%-30s : Machine to run on in batch mode" ($Batch(Host))]
       \[-t\]        [format "%-30s : Reserved CPU time (s)" ($Batch(Time))]
