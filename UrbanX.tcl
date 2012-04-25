@@ -27,7 +27,7 @@ namespace eval UrbanX { } {
    variable Path
 
    set Param(Version)       	 0.95   ;# UrbanX version number
-   set Param(CULUCVersion)       0.9    ;# CULUC version number
+   set Param(CULUCVersion)       0.9.1  ;# CULUC version number
    set Param(Resolution)         5      ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
    set Param(Mode)               FAST   ;# Rasterization mode: INCLUDED or FAST - fast is... much much faster!
    set Param(HeightGain)         0      ;# Default value if proc HeightGain is not ran
@@ -1295,7 +1295,7 @@ proc UrbanX::Priorities2TEB { } {
 
    Log::Print DEBUG "Masking area outside of NTS sheet $Param(NTSSheet)"
    # Using limits to burn NoData 0 values outside of NTS sheet, where data is incomplete
-   eval ogrlayer read NTSMASKLAYER$Param(NTSSheet) [lindex [ogrfile open NTSMASKSHAPE$Param(NTSSheet) read [glob -nocomplain $Param(NTSSheetPath)/*_LI_1210009_2.shp]] 0]
+   eval ogrlayer read NTSMASKLAYER$Param(NTSSheet) [lindex [ogrfile open NTSMASKSHAPE$Param(NTSSheet) read [glob -nocomplain $Param(NTSSheetPath)/$Param(NTSSheet)*_LI_1210009_2.shp]] 0]
    gdalband create RNTSMASK $Param(Width) $Param(Height) 1 Byte
    gdalband define RNTSMASK -georef UTMREF$Param(NTSSheet)
    gdalband gridinterp RNTSMASK NTSMASKLAYER$Param(NTSSheet) $Param(Mode) 1
@@ -2832,15 +2832,18 @@ proc UrbanX::Process { Coverage Grid } {
 
 	 Log::Print INFO "Locating CanVec files to be processed for NTS sheet $Param(NTSSheet)"
 	 # OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]	  
-	 set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
+         # Path structure for CanVec-7.0: set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
+         # Path structure for CanVec-9.0
+         set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl
+         Log::Print DEBUG "Using CanVec files from $GenX::Path(CANVEC)"
 	 foreach ntslayer $Param(Entities) {
-	     if { [llength [set lst [glob -nocomplain $Param(NTSSheetPath)/*$ntslayer*.shp]]] } {
+	     if { [llength [set lst [glob -nocomplain $Param(NTSSheetPath)/$ntssheet*$ntslayer*.shp]]] } {
                 set Param(Files) [concat $Param(Files) $lst]
 	     }
 	 }
 
          # Find and use the extent of the NTS sheet being processed
-	 eval ogrlayer read NTSLAYER$ntssheet [lindex [ogrfile open NTSSHAPE$ntssheet read [glob -nocomplain $Param(NTSSheetPath)/*_LI_1210009_2.shp]] 0]
+	 eval ogrlayer read NTSLAYER$ntssheet [lindex [ogrfile open NTSSHAPE$ntssheet read [glob -nocomplain $Param(NTSSheetPath)/$ntssheet*_LI_1210009_2.shp]] 0]
 	 set extent [ogrlayer stats NTSLAYER$ntssheet -extent] ;# in lat long
 	 set Param(Lat0) [lindex $extent 1]
 	 set Param(Lon0) [lindex $extent 0]

@@ -1177,7 +1177,8 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
       set s250 [string range $feuillet 0 2]
       set sl   [string tolower [string range $feuillet 3 3]]
       set s50  [string range $feuillet 4 5]
-      set path $Path(CANVEC)/$s250/$sl/$s250$sl$s50
+      # Path structure for CanVec-9.0:
+      set path $Path(CANVEC)/$s250/$sl
 
       foreach layer $Layers {
          if { [llength [set lst [glob -nocomplain $path/*$layer*.shp]]] } {
