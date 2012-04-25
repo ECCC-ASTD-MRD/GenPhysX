@@ -43,6 +43,11 @@ namespace eval UrbanX { } {
    set Param(BuildingsShapefile) ""     ;# 2.5D buildings shapefile for CITYNAME
    set Param(BuildingsHgtField)  ""     ;# Name of the height attribute of the 2.5D buildings shapefile
 
+   # Optional TEB parameters - they are not computed by default in order to reduce processing time
+   # According to Sylvie and Maria, optional TEB parameters are: SUMF DPBH Z0H BLDW HVAR HMIN HMAX
+   # There's only BLDW that is still computed since required by WHOR param
+   set Param(OptionalTEBParams) 0          ;# By default, we don't process optional TEB parameters
+
 
    # added at Serge's request ;-) will use the CULUC_PATH provided by the user if any
    if { [info exists env(CULUC_PATH)] } {
@@ -1482,7 +1487,7 @@ proc UrbanX::TEB2FSTD { Grid } {
       }
 
       # HVAR calculation, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
-      if { $nomvar == "BLDH"} {
+      if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
          GenX::GridClear $Grid 0.0
          foreach Param(NTSSheet) $Param(NTSSheets) {
             # Building height variance computation
@@ -1490,7 +1495,7 @@ proc UrbanX::TEB2FSTD { Grid } {
             # -1 means that we don't even try to do it at the moment... will need to test on a 64 bits OS...
             if { $memoryrequired > -1 } {
                # Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
-               Log::Print INFO "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) over  target grid"
+               Log::Print INFO "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) $Param(NTSSheet)"
             } else {
                # Identify path components for NTS sheet
                set s250 [string range $Param(NTSSheet) 0 2]
@@ -1526,7 +1531,7 @@ proc UrbanX::TEB2FSTD { Grid } {
          fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
       }
       # HMIN calculations, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
-      if { $nomvar == "BLDH"} {
+      if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
          GenX::GridClear $Grid 0.0
          foreach Param(NTSSheet) $Param(NTSSheets) {
             # Identify path components for NTS sheet
@@ -1558,7 +1563,7 @@ proc UrbanX::TEB2FSTD { Grid } {
          }
       }
       # HMAX calculations, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
-      if { $nomvar == "BLDH"} {
+      if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
          GenX::GridClear $Grid 0.0
          foreach Param(NTSSheet) $Param(NTSSheets) {
             # Identify path components for NTS sheet
@@ -1606,12 +1611,6 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF"
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
 
-   Log::Print INFO "Computing SUMF: sum of NATF, BLDF and PAVF, for validation purposes"
-   GenX::GridClear $Grid 0.0
-   vexpr $Grid NATFFIELD+BLDFFIELD+PAVFFIELD
-   fstdfield define $Grid -NOMVAR SUMF -IP1 0
-   fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
    # WALL-O-HOR formulae provided by Sylvie Leroyer
    # bldw ---> mean width of building (BLDWFIELD)  --> add column 
 
@@ -1631,22 +1630,31 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    vexpr DISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD-1.0))) ;# Computing Displacement height
    vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))) ;# ifelse required to avoid dividing by 0
-
-   vexpr DISPBLDH ifelse(BLDHFIELD==0,0, DISPH/BLDHFIELD)
-
    vexpr $Grid ifelse(BLDFFIELD>0.9,max(Z0RFFIELD,$Grid),$Grid)  ;# we are on a roof surface --> use roof Z0
    vexpr $Grid ifelse(PAVFFIELD>0.9,max(Z0RDFIELD,$Grid),$Grid)  ;# we are on a paved surface --> use paved Z0
-
-   vexpr Z0ZH ifelse(BLDHFIELD==0,0, $Grid/BLDHFIELD)
-
    fstdfield define $Grid -NOMVAR Z0TW -IP1 0
    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   fstdfield define DISPBLDH -NOMVAR DPBH -IP1 0
-   fstdfield write DISPBLDH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield define Z0ZH  -NOMVAR Z0H -IP1 0
-   fstdfield write Z0ZH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   if { $Param(OptionalTEBParams) } {
+      # SUMF calculation
+      Log::Print INFO "Computing SUMF: sum of NATF, BLDF and PAVF, for validation purposes"
+      GenX::GridClear $Grid 0.0
+      vexpr $Grid NATFFIELD+BLDFFIELD+PAVFFIELD
+      fstdfield define $Grid -NOMVAR SUMF -IP1 0
+      fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   
+      # DPBH calculation
+      Log::Print INFO "Computing TEB parameter DISPBLDH DPBH (IP1=0) values over target grid"
+      vexpr DISPBLDH ifelse(BLDHFIELD==0,0, DISPH/BLDHFIELD)
+      fstdfield define DISPBLDH -NOMVAR DPBH -IP1 0
+      fstdfield write DISPBLDH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
+      # Z0ZH calculation
+      Log::Print INFO "Computing TEB parameter Z0ZH Z0H (IP1=0) values over target grid"
+      vexpr Z0ZH ifelse(BLDHFIELD==0,0, $Grid/BLDHFIELD)
+      fstdfield define Z0ZH  -NOMVAR Z0H -IP1 0
+      fstdfield write Z0ZH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
    fstdfield free BLDHFIELD BLDWFIELD BLDFFIELD NATFFIELD WHORFIELD REZ SURFTILE Z0RDFIELD Z0RFFIELD PAVFFIELD WHOR2FIELD WHOR3FIELD Z0ZH DISPBLDH DISPH
 
    Log::Print INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
@@ -1777,30 +1785,33 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    fstdfield define $Grid -NOMVAR BLDH -IP1 0
    fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
-   #----- Building height min computation
-   Log::Print INFO "Overwriting Building Height Minimum HMIN (IP1=0) where there are 2.5D buildings"
-   GenX::GridClear $Grid 0.0
-   fstdfield gridinterp $Grid RHAUTEURBLD MINIMUM
+   # Update HMIN and HMAX only if the optional TEB parameters are computed
+   if { $Param(OptionalTEBParams) } {
+      #----- Building height min computation
+      Log::Print INFO "Overwriting Building Height Minimum HMIN (IP1=0) where there are 2.5D buildings"
+      GenX::GridClear $Grid 0.0
+      fstdfield gridinterp $Grid RHAUTEURBLD MINIMUM
 
-   fstdfield read HMINFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMIN" ;# HMIN before the addition of 2.5D buildings HMIN
-   vexpr $Grid ifelse($Grid==0, HMINFIELD, $Grid) ;# to overwrite only where there is 2.5D data
-   fstdfield free HMINFIELD ;# invalid field because it has been overwritten
+      fstdfield read HMINFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMIN" ;# HMIN before the addition of 2.5D buildings HMIN
+      vexpr $Grid ifelse($Grid==0, HMINFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+      fstdfield free HMINFIELD ;# invalid field because it has been overwritten
 
-   fstdfield define $Grid -NOMVAR HMIN -IP1 0
-   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+      fstdfield define $Grid -NOMVAR HMIN -IP1 0
+      fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
 
-   #----- Building height max computation
-   Log::Print INFO "Overwriting Building Height Maximum HMAX (IP1=0) where there are 2.5D buildings"
-   GenX::GridClear $Grid 0.0
-   fstdfield gridinterp $Grid RHAUTEURBLD MAXIMUM
+      #----- Building height max computation
+      Log::Print INFO "Overwriting Building Height Maximum HMAX (IP1=0) where there are 2.5D buildings"
+      GenX::GridClear $Grid 0.0
+      fstdfield gridinterp $Grid RHAUTEURBLD MAXIMUM
 
-   fstdfield read HMAXFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMAX" ;# HMAX before the addition of 2.5D buildings HMAX
-   vexpr $Grid ifelse($Grid==0, HMAXFIELD, $Grid) ;# to overwrite only where there is 2.5D data
-   fstdfield free HMAXFIELD ;# invalid field because it has been overwritten
+      fstdfield read HMAXFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "HMAX" ;# HMAX before the addition of 2.5D buildings HMAX
+      vexpr $Grid ifelse($Grid==0, HMAXFIELD, $Grid) ;# to overwrite only where there is 2.5D data
+      fstdfield free HMAXFIELD ;# invalid field because it has been overwritten
 
-   fstdfield define $Grid -NOMVAR HMAX -IP1 0
-   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
-
+      fstdfield define $Grid -NOMVAR HMAX -IP1 0
+      fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+   }
+  
    #----- Building fraction
    Log::Print INFO "Overwriting building fraction (BLDF) where there are 2.5D buildings"
    GenX::GridClear $Grid 0.0
@@ -1865,17 +1876,19 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
    # Need to re-normalize VF due to changes made to PAVF and BLDF
    UrbanX::NormalizeVFvsPAVFBLDF
 
-   #----- Updating SUMF
-   Log::Print INFO "Updating SUMF using the new BLDF, NATF and PAVF values"
-   fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF" ;# Reading the updated values
-   fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF" ;# Reading the updated values
-   fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
+   If { $Param(OptionalTEBParams) } {
+      #----- Updating SUMF
+      Log::Print INFO "Updating SUMF using the new BLDF, NATF and PAVF values"
+      fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF" ;# Reading the updated values
+      fstdfield read PAVFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "PAVF" ;# Reading the updated values
+      fstdfield read BLDFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDF"
 
-   GenX::GridClear $Grid 0.0
-   vexpr $Grid BLDFFIELD+NATFFIELD+PAVFFIELD
-   fstdfield define $Grid -NOMVAR SUMF -IP1 0
-   fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
-   fstdfield free PAVFFIELD NATFFIELD
+      GenX::GridClear $Grid 0.0
+      vexpr $Grid BLDFFIELD+NATFFIELD+PAVFFIELD
+      fstdfield define $Grid -NOMVAR SUMF -IP1 0
+      fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
+      fstdfield free PAVFFIELD NATFFIELD
+   }
 
    #----- WALL_O_HOR
    Log::Print INFO "Overwriting WALL_O_HOR (WHOR) where there are 2.5D buildings"
@@ -2283,13 +2296,12 @@ proc UrbanX::Assign_DefaultPAVFBLDF { i j pavf } {
       set PLVAR  "PB_$nomvar$ip1"
 
       set value [lindex $p 2]
-# override default value of BLDW when PAVF == 1.0
+      # override default value of BLDW when PAVF == 1.0
       if { $pavf == 1.0 } {
          if { [string compare $nomvar "BLDW"] == 0 } {
             set value 50.0
          }
       }
-
       fstdfield stat $PLVAR -gridvalue $i $j $value
    }
 
