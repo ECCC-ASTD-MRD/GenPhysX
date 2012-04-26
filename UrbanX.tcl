@@ -2834,7 +2834,9 @@ proc UrbanX::Process { Coverage Grid } {
 	 # OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]	  
          # Path structure for CanVec-7.0: set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
          # Path structure for CanVec-9.0
-         set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl
+Log::Print WARNING "TEMPORARILY FORCING USING CanVec-9.0"
+set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
+#         set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl
          Log::Print DEBUG "Using CanVec files from $GenX::Path(CANVEC)"
 	 foreach ntslayer $Param(Entities) {
 	     if { [llength [set lst [glob -nocomplain $Param(NTSSheetPath)/$ntssheet*$ntslayer*.shp]]] } {
