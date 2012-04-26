@@ -97,7 +97,7 @@ namespace eval UrbanX { } {
    # Fichier contenant les polygones de dissemination area de StatCan, découpés selon l'index NTS 1:50000 et contenant la population ajustée aux nouveaux polygones
    set Param(PopFile2006SMOKE) $GenX::Path(StatCan)/SMOKE_FILLED/da2006-nts_lcc-nad83.shp
    # Next path needs to be updated and added to GenX
-   set Param(Census2006File) /cnfs/dev/cmoe/afsralx/StatCan2006/da2006_pop_labour.shp
+   set Param(Census2006File) $GenX::Path(StatCan)/da2006_pop_labour.shp
 
    # Next file should be moved to the data repertory with $GenX::Path()
    set Param(TEBParamsLUTCSVFile) $GENPHYSX_HOME/doc/TEB-Params_LUT.csv

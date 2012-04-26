@@ -148,7 +148,7 @@ namespace eval GenX { } {
    set Path(NHN)       $Path(DBase)/NHN
    set Path(GLAS)      $Path(DBase)/SimardPinto
 
-   set Path(StatCan)   /data/aqli04/afsulub/StatCan2006
+   set Path(StatCan)   /cnfs/dev/cmdd/afsm/lib/geo/StatCan2006
 
    #----- Metadata related variables
 
