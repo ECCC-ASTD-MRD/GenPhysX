@@ -1418,9 +1418,17 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
+#----- Fixing NOMVAR names from unique values to their RPN value
+   set nomvar_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
+   set nomvar_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
+
    foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {
       # Clearing grid for the new TEB parameter
       GenX::GridClear $Grid 0.0
+
+      set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
+      set ip1 [expr int($ip1)] ;# IP1 must be an integer
+
       foreach Param(NTSSheet) $Param(NTSSheets) {
 
          # Identify path components for NTS sheet
@@ -1447,7 +1455,7 @@ proc UrbanX::TEB2FSTD { Grid } {
          # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
          vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
          gdalband free RCULUC
-	 gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
+         gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
 
 	 # For debugging purposes, writing TEB parameter values at 5m in a file
 	 #file delete -force $Param(NTSSheet)_TEB-$tebparam.tif
@@ -1456,33 +1464,26 @@ proc UrbanX::TEB2FSTD { Grid } {
 	 #gdalfile close FILEOUT
 	 #Log::Print INFO "The file $Param(NTSSheet)_TEB-$tebparam.tif has been saved for debugging purposes"
 
-	 set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
-	 set ip1 [expr int($ip1)] ;# IP1 must be an integer
-
-	 #----- Fixing NOMVAR names from unique values to their RPN value
-	 set nomvar_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
-	 set nomvar_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
-	 if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
-	   set nomvar [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
-	 } else {
-	    set nomvar $tebparam
-	 }
-
-	 # rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
-	 if { $nomvar == "VEGF"} {
-	    set nomvar "NATF"
-	 }
-
 	 # Don't waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
-	 if { $tebparam != "VF21" } {
-	    Log::Print INFO "Averaging TEB parameter $nomvar (IP1=$ip1) values over $Param(NTSSheet)"
-	    fstdfield gridinterp $Grid RTEBPARAM AVERAGE False
-	 }
+         if { $tebparam != "VF21" } {
+            Log::Print INFO "Averaging TEB parameter $tebparam (IP1=$ip1) values over $Param(NTSSheet)"
+            fstdfield gridinterp $Grid RTEBPARAM AVERAGE False
+         }
          gdalband free RTEBPARAM
       }
-
       # Computing the gridinterp with all NTS sheets
       fstdfield gridinterp $Grid - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
+
+	   if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
+	      set nomvar [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
+	   } else {
+	      set nomvar $tebparam
+	   }
+
+	 # rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
+	   if { $nomvar == "VEGF"} {
+	     set nomvar "NATF"
+	   }
 
       # Writing result to gridfile
       fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
@@ -1563,10 +1564,10 @@ proc UrbanX::TEB2FSTD { Grid } {
             #----- Building height min computation
             Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over $Param(NTSSheet)"
             fstdfield gridinterp $Grid RTEBPARAM MINIMUM
-            fstdfield define $Grid -NOMVAR HMIN -IP1 0
-            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
             gdalband free RTEBPARAM
          }
+         fstdfield define $Grid -NOMVAR HMIN -IP1 0
+         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
       }
       # HMAX calculations, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
       if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
@@ -1595,10 +1596,10 @@ proc UrbanX::TEB2FSTD { Grid } {
             #----- Building height max computation
             Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
             fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
-            fstdfield define $Grid -NOMVAR HMAX -IP1 0
-            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
             gdalband free RTEBPARAM
          }
+         fstdfield define $Grid -NOMVAR HMAX -IP1 0
+         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
       }
    }
    vector free CSVTEBPARAMS
