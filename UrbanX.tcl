@@ -1430,9 +1430,15 @@ proc UrbanX::TEB2FSTD { Grid } {
 
          # Finding the CULUC file in temporary or permanent locations
          if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
-            gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+            if { [catch { gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] }] } {
+               Log::Print ERROR "ERROR: Can't read: $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif"
+               Log::End 1;
+            }
          } else {
-            gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
+            if { [catch { gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] }] } {
+               Log::Print ERROR "ERROR: Can't read: $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif"
+               Log::End 1;
+            }
          }
          gdalfile close FCULUC
 
