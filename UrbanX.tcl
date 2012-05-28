@@ -2844,8 +2844,15 @@ set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
 	     }
 	 }
 
+# Canvec may not have file for this NTS sheet
+    catch "glob -nocomplain $Param(NTSSheetPath)/$ntssheet*_LI_1210009_2.shp" sfile
+    if { ![file exist $sfile] } {
+       Log::Print INFO "Cannot find CanVec files for NTS sheet :  $Param(NTSSheet)"
+       continue
+    }
+
          # Find and use the extent of the NTS sheet being processed
-	 eval ogrlayer read NTSLAYER$ntssheet [lindex [ogrfile open NTSSHAPE$ntssheet read [glob -nocomplain $Param(NTSSheetPath)/$ntssheet*_LI_1210009_2.shp]] 0]
+	 eval ogrlayer read NTSLAYER$ntssheet [lindex [ogrfile open NTSSHAPE$ntssheet read $sfile] 0]
 	 set extent [ogrlayer stats NTSLAYER$ntssheet -extent] ;# in lat long
 	 set Param(Lat0) [lindex $extent 1]
 	 set Param(Lon0) [lindex $extent 0]
