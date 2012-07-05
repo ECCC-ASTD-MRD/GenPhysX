@@ -1418,6 +1418,9 @@ proc UrbanX::TEB2FSTD { Grid } {
 
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
+# concatanate NTS and US UTM Sheets together
+   set all_sheets  "$Param(USUTSSheets) $Param(NTSSheets)"
+
 #----- Fixing NOMVAR names from unique values to their RPN value
    set nomvar_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
    set nomvar_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
@@ -1429,8 +1432,32 @@ proc UrbanX::TEB2FSTD { Grid } {
       set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
       set ip1 [expr int($ip1)] ;# IP1 must be an integer
 
-      foreach Param(NTSSheet) $Param(NTSSheets) {
+	   if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
+	      set nomvar [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
+	   } else {
+	      set nomvar $tebparam
+	   }
+	   # rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
+	   if { $nomvar == "VEGF"} {
+	     set nomvar "NATF"
+	   }
+# check if the result was done already, then we can skip to next
+      if { $nomvar == "VF"} {
+         set fields [fstdfield find GPXOUTFILE -1 "" $ip1 -1 -1 "" "$nomvar"]
+         if { [llength $fields] > 0 } {
+            Log::Print INFO "$nomvar: found existing record, will not redo"
+            continue
+         }
+      } else {
+         set fields [fstdfield find GPXAUXFILE -1 "" $ip1 -1 -1 "" "$nomvar"]
+         if { [llength $fields] > 0 } {
+            Log::Print INFO "$nomvar: found existing record, will not redo"
+            continue
+         }
+      }
 
+      foreach sheet $all_sheets {
+         set Param(NTSSheet) $sheet
          # Identify path components for NTS sheet
          set s250 [string range $Param(NTSSheet) 0 2]
          set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
@@ -1474,17 +1501,6 @@ proc UrbanX::TEB2FSTD { Grid } {
       # Computing the gridinterp with all NTS sheets
       fstdfield gridinterp $Grid - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
 
-	   if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
-	      set nomvar [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
-	   } else {
-	      set nomvar $tebparam
-	   }
-
-	 # rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
-	   if { $nomvar == "VEGF"} {
-	     set nomvar "NATF"
-	   }
-
       # Writing result to gridfile
       fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
       if { $nomvar == "VF"} {
@@ -1496,7 +1512,8 @@ proc UrbanX::TEB2FSTD { Grid } {
       # HVAR calculation, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
       if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
          GenX::GridClear $Grid 0.0
-         foreach Param(NTSSheet) $Param(NTSSheets) {
+         foreach sheet $all_sheets {
+            set Param(NTSSheet) $sheet
             # Building height variance computation
             set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
             # -1 means that we don't even try to do it at the moment... will need to test on a 64 bits OS...
@@ -1540,7 +1557,8 @@ proc UrbanX::TEB2FSTD { Grid } {
       # HMIN calculations, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
       if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
          GenX::GridClear $Grid 0.0
-         foreach Param(NTSSheet) $Param(NTSSheets) {
+         foreach sheet $all_sheets {
+            set Param(NTSSheet) $sheet
             # Identify path components for NTS sheet
             set s250 [string range $Param(NTSSheet) 0 2]
             set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
@@ -1572,7 +1590,8 @@ proc UrbanX::TEB2FSTD { Grid } {
       # HMAX calculations, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
       if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
          GenX::GridClear $Grid 0.0
-         foreach Param(NTSSheet) $Param(NTSSheets) {
+         foreach sheet $all_sheets {
+            set Param(NTSSheet) $sheet
             # Identify path components for NTS sheet
             set s250 [string range $Param(NTSSheet) 0 2]
             set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
@@ -2042,7 +2061,7 @@ proc UrbanX::BLDF_Top_Filter { Grid threshold } {
          }
 
          if { $val >= $threshold } {
-            puts "Averaging:  $i $j : $val"
+#            puts "Averaging:  $i $j : $val"
             set value $val
             set range 1
             while {($value >= $threshold)&&($range <= 2)} {
@@ -2051,7 +2070,7 @@ proc UrbanX::BLDF_Top_Filter { Grid threshold } {
             }
             if { $value < $threshold } {
                fstdfield stat $Grid -gridvalue $i $j $value
-               puts "Replaced $val by $value at ($i $j) range=$range"
+#               puts "Replaced $val by $value at ($i $j) range=$range"
                incr changed
             }
          }
@@ -2718,6 +2737,67 @@ proc UrbanX::FindNTSSheets { Lat0 Lon0 Lat1 Lon1 } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <UrbanX::FindUSUTSSSheets>
+# Creation : July 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Find the US UTM sheets intersecting an area
+#
+# Parameters :
+#  <Lat0>    : Lower left corner latitude
+#  <Lon0>    : Lower left corner longitude
+#  <Lat1>    : Upper right corner latitude
+#  <Lon1>    : Upper right corner longitude  
+#
+# Return:
+#   <sheets>  : List of sheets intersecting with the area
+#
+# Remarks :   
+#
+#   US UTS are based on the UTM coordinate system
+#   US UTS sheets identifiers are similar to NTS sheets identifier
+#   and are compatible in the directory hierarchy and file naming in the CULUC structure
+#
+#       UULCRR
+#
+#    where  UU   is the UTM Zone ranging from 1 to 60 with 6 degree width
+#            L   is the Latitude Band from letter  C to X starting at -80S, 8 degree high
+#            C   is the sub column ranging from a to l at a width of DLON=0.5
+#           RR   is the sub row ranging from 1 to 32 at a width of DLAT=0.25
+#----------------------------------------------------------------------------
+proc UrbanX::FindUSUTSSheets { Lat0 Lon0 Lat1 Lon1 } {
+   variable Param
+
+   set  udsv  "_v"
+   set  sheets {}
+
+#
+# first make sure that the index file for US UTS sheets is available
+#
+   set  indexfile   /data/cmdd/afsm/lib/geo/NLCD2006/US_UTS/Index/Index.dbf
+   if { ![file exist $indexfile] } {
+      return $sheets
+   }
+
+   set layer [lindex [ogrfile open UTSINDEXFILE read $indexfile] 0]
+   eval ogrlayer read UTSINDEXLAYER $layer
+   set ids [ogrlayer pick UTSINDEXLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True]
+   foreach id $ids {
+      set sheet [ogrlayer define UTSINDEXLAYER -feature $id IDENTIFIAN]
+      set s250 [string range $sheet 0 2]
+      set sl   [string tolower [string range $sheet 3 3]]
+      set s50  [string range $sheet 4 5]
+#
+# All US sheet must be pre-generate because UrbanX wont generate it on the fly like the NTS sheet
+#
+      if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$sheet$udsv$Param(CULUCVersion).tif] } {
+         lappend sheets $sheet
+      }
+   }
+   ogrfile close UTSINDEXFILE
+   return $sheets
+}
+
+#----------------------------------------------------------------------------
 # Name     : <UrbanX::UTMZoneDefine>
 # Creation : October 2010 - Alexandre Lerous, Lucie Boucher - CMC/AQMAS
 #
@@ -2818,7 +2898,11 @@ proc UrbanX::Process { Coverage Grid } {
       }
 
       set Param(NTSSheets) [UrbanX::FindNTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
+      set Param(USUTSSheets) [UrbanX::FindUSUTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
       Log::Print INFO "NTS sheets to process: $Param(NTSSheets)"
+      if { [llength $Param(USUTSSheets)] > 0 } {
+         Log::Print INFO "US UTM sheets to process: $Param(USUTSSheets)"
+      }
    }
 
    # Generate the CULUC classification for the NTS sheet(s)
@@ -2908,7 +2992,8 @@ set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
 	 #UrbanX::VegeMask
 
          # Test is we're in CULUC generation mode, ie testing if it's a single NTS sheet in input
-         if { [string is integer [string range $Coverage 0 0]] } {
+#         if { [string is integer [string range $Coverage 0 0]] } 
+         if { [file isdir $UrbanX::Param(CULUCPath)] && [file writable $UrbanX::Param(CULUCPath)] } {
                # Move the CULUC file to its final destination
                file mkdir $Param(CULUCPath)/$s250/$sl/
                file copy -force $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif $Param(CULUCPath)/$s250/$sl/
