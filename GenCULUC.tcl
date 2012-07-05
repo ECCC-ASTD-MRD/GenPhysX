@@ -26,8 +26,10 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.5.
 set GENPHYSX_HOME [info script]
 while { ![catch { set GENPHYSX_HOME [file normalize [file link $GENPHYSX_HOME]] }] } {}
 set GENPHYSX_HOME [file dirname $GENPHYSX_HOME]
-source GenX.tcl         ;# for common variables required by UrbanX.tcl such as Param(SMOKE)
-source UrbanX.tcl       ;# for common variables between UrbanX and GenCULUC
+
+source $GENPHYSX_HOME/GenX.tcl         ;# for common variables required by UrbanX.tcl such as Param(SMOKE)
+source $GENPHYSX_HOME/UrbanX.tcl       ;# for common variables between UrbanX and GenCULUC
+
 package require Logger
 
 namespace eval GenCULUC { } {
@@ -75,6 +77,21 @@ namespace eval GenCULUC { } {
 
 }
 
+
+#----------------------------------------------------------------------------
+# Name     : <GenCULUC::Process>
+# Creation : 2012 - Alexandre Leroux - CMC/CMOE
+#
+# Goal     : Process all CULUC NTS sheets, starting with majors cities then 
+#            all the rest
+#
+# Parameters : none
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
 proc GenCULUC::Process { } {
    variable Param
 
@@ -90,8 +107,16 @@ proc GenCULUC::Process { } {
 
    Log::Print INFO "Launching UrbanX for the rest of Canada"
    set city "the rest of Canada"
+
    # find all nts sheets from sql list or elsewhere
    #foreach ntssheet run urbanx
+
+   # obtain list of all NTS sheets within the delimited north america area
+   set Param(NTSSheets) [UrbanX::FindNTSSheets 41.0 -141.0 84.0 -53.0]
+   Log::Print INFO "Total: [llength $Param(NTSSheets)] sheets to process"
+   foreach ntssheet $Param(NTSSheets) {
+      GenCULUC::LaunchUrbanX $ntssheet
+   }
 
    # Deleting temp files
    file delete -force temp_CULUC_tmp
@@ -99,29 +124,93 @@ proc GenCULUC::Process { } {
    Log::Print INFO "End of GenCULUC"
 }
 
-proc GenCULUC::LaunchUrbanX { Ntssheet City } {
+#----------------------------------------------------------------------------
+# Name     : <GenCULUC::LaunchUrbanX>
+# Creation : 2012 - Alexandre Leroux - CMC/CMOE
+#
+# Goal     : Generate a NTS sheet image
+#
+# Parameters :
+#     Ntssheet    nts sheet identifier
+#     City        optional for info display only
+#
+# Return:
+#
+# Remarks :
+#
+#     a .lock file will appears in the directory where the .tif file would be when generated
+#     to allow multiple processes to work concurrently on diffent sheet.
+#     also a .done will appear at the end of processing even if process failed to generate
+#     the image (empty sheet)
+#
+#----------------------------------------------------------------------------
+proc GenCULUC::LaunchUrbanX { Ntssheet {City ""} } {
    variable Param
+   global   GENPHYSX_HOME
+   global   TMPDIR
 
    # Needed for the path of existing CULUC files
    set s250 [string range $Ntssheet 0 2]
    set sl   [string tolower [string range $Ntssheet 3 3]]
    set s50  [string range $Ntssheet 4 5]
 
+   set outdir   $Param(CULUCPath)/$s250/$sl
+   set lockfile $outdir/CULUC_${Ntssheet}_v$Param(CULUCVersion).lock
+   set donefile $outdir/CULUC_${Ntssheet}_v$Param(CULUCVersion).done
    # Checking if CULUC has already been generated for the NTS sheet
-   if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_${Ntssheet}_v$Param(CULUCVersion).tif] } {
+   if { ![file isdir "$outdir"] } {
+      file mkdir  "$outdir"
+   } else {
+      if { [file exists $lockfile] } {
+         Log::Print INFO "CULUC_${Ntssheet}_$Param(CULUCVersion) is being computed"
+         return
+      }
+      if { [file exists $donefile] } {
+         Log::Print INFO "CULUC_${Ntssheet}_$Param(CULUCVersion) has been processed"
+         return
+      }
+   }
+
+
+   if { [file exists $outdir/CULUC_${Ntssheet}_v$Param(CULUCVersion).tif] } {
       Log::Print INFO "CULUC_${Ntssheet}_$Param(CULUCVersion) already exists and won't be computed"
    } else {
-      Log::Print INFO "Launching UrbanX over $Ntssheet for $City"
+      if { [file exists $lockfile] } {
+         Log::Print INFO "CULUC_${Ntssheet}_$Param(CULUCVersion) is being computed"
+         return
+      }
+      exec touch $lockfile
+      if { [string compare $City ""] != 0 } {
+         Log::Print INFO "Launching UrbanX over $Ntssheet for $City"
+      } else {
+         Log::Print INFO "Launching UrbanX over $Ntssheet"
+      }
       set starttime [clock seconds]
-      set err [catch { exec GenPhysX.tcl -urban $Ntssheet -gridfile $Param(GridFile) -result temp_CULUC 2>@1 } msg]
+      set err [catch { exec $GENPHYSX_HOME/GenPhysX.tcl -urban $Ntssheet -gridfile $Param(GridFile) -result $TMPDIR/temp_CULUC 2>@1 } msg]
       if { $err } {
          Log::Print ERROR "Could not launch GenPhysX, error message:\n\n\t$msg"
          Log::End 1
       }
-      Log::Print INFO "CULUC for $Ntssheet completed in [expr ([clock seconds]-$starttime)/60.0] minutes"      
+      if { [file exists $outdir/CULUC_${Ntssheet}_v$Param(CULUCVersion).tif] } {
+         Log::Print INFO "CULUC for $Ntssheet completed in [expr ([clock seconds]-$starttime)/60.0] minutes"
+      } else {
+         exec touch $donefile
+      }
       Log::Print INFO "Not creating the metadata file... this will need to be done!"
+      if { [file exist $lockfile] } {
+         if { [catch "exec rm $lockfile" errmsg] } {
+            Log::Print INFO $errmsg
+         }
+      }
    }
 }
 
+set TMPDIR [lindex $argv 0]
+if { ![file isdir $TMPDIR] } {
+   file mkdir $TMPDIR
+}
 # This is the main
 GenCULUC::Process
+
+# cleanup
+exec rm -rf $TMPDIR
