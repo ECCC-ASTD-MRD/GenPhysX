@@ -2171,7 +2171,7 @@ proc GeoPhysX::SubCorrectionFactor { } {
 proc GeoPhysX::SubTopoFilter { } {
 
    GenX::Procs
-   fstdfield read GPXMF GPXOUTFILE -1 "" 1200 -1 -1 "" "ME"
+   fstdfield read GPXMF GPXOUTFILE -1 "" -1 -1 -1 "" "ME"
 
    Log::Print INFO "Filtering ME"
 

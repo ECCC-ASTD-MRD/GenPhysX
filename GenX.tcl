@@ -588,7 +588,7 @@ proc GenX::ParseCommandLine { } {
 
    if { !$gargc } {
       GenX::CommandLine
-      Log::end 1
+      Log::End 1
    }
 
    #----- Parse arguments
