@@ -2855,7 +2855,17 @@ proc UrbanX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } { Name "" } } {
    set Param(Width)  [expr int(ceil(($longmax - $longmin)/$Res))]
    set Param(Height) [expr int(ceil(($latmax - $latmin)/$Res))]
 
-   georef define $Name -transform [list $longmin $Res 0.000000000000000 $latmin 0.000000000000000 $Res]
+# actually, they are not latitude/longitude but a projected coordinates which are
+# smaller on left and bigger on right for scalex > 0
+# smaller on bottom and bigger on top for scaley < 0
+   set scalex        [expr abs($Res)]
+   set scaley        [expr -1.0 * abs($Res)]
+   set uly           $latmax
+   set ulx           $longmin
+
+   set  transform [list $ulx $scalex 0.000000000000000 $uly 0.000000000000000 $scaley]
+
+   georef define $Name -transform $transform
 
    Log::Print INFO "For $Param(NTSSheet), UTM zone is $zone, with central meridian at $meridian and dimension $Param(Width)x$Param(Height)"
 
