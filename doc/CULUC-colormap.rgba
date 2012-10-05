@@ -1,5 +1,8 @@
 0 100 100 100 100 100 LINEAR
-000 000 000 000 000   	# NoData - black
+#
+# Source of index values: TEB-Params_LUT.xls - Color names taken from http://www.tayloredmktg.com/rgb/ and manual colors from http://www.colorschemer.com/online.html
+#
+000 000 000 000 255   	# NoData - black
 001 000 000 255 255   	# Water - Blue    # Index values source: TEB-Params_LUT.xls - color names taken from http://www.tayloredmktg.com/rgb/
 002 224 255 255 255   	# Snow+Ice - Light cyan
 003 085 107 047 255   	# Wet soil - Dark olive green
@@ -58,4 +61,3 @@
 208 095 158 160 255	# Fort - cadet blue
 209 072 209 204 255	# Silo - medium turquoise
 210 173 216 230 255	# Gas and oil facilities - light blue
-# Source of index values: TEB-Params_LUT.xls - Color names taken from http://www.tayloredmktg.com/rgb/ and manual colors from http://www.colorschemer.com/online.html
