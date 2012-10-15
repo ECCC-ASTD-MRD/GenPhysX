@@ -1318,8 +1318,7 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
 # Name     : <GeoPhysX::AverageGLAS>
 # Creation : Janvier 2009 - J.P. Gauthier - CMC/CMOE
 #
-# Goal     : Generate the 20 something vegetation types through averaging.
-#            using GlobCover Database
+# Goal     : Average vegetation canopy height using GLAS database
 #
 # Parameters :
 #   <Grid>   : Grid on which to generate the vegetation
@@ -2334,8 +2333,6 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield copy GPXZ0V2 GPXZ0V1
    GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
 
-#   vexpr GPXZ0V1 VCH*0.1
-
    foreach element $Param(VegeTypes) zzov $Param(VegeZ0vTypes) {
       set ip1 [expr 1200-$element]
       fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
@@ -2345,7 +2342,6 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
    fstdfield define GPXZ0V1 -NOMVAR ZVG1 -IP1 0 -IP2 0
    fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
 
    GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
    foreach element [lrange $Param(VegeTypes) 3 end] zzov [lrange $Param(VegeZ0vTypes) 3 end] {
@@ -2357,6 +2353,11 @@ proc GeoPhysX::SubRoughnessLength { } {
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
    fstdfield define GPXZ0V1 -NOMVAR ZVG2 -IP1 0 -IP2 0
    fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   #----- Local (vegetation) roughness length from canopy height
+   vexpr GPXZ0VG ifelse(GPXMG>0.0,max(GPXVCH*0.1,0.01),0.0)
+   fstdfield define GPXZ0VG -NOMVAR Z0VG -IP1 0 -IP2 0
+   fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Roughness length over soil
    fstdfield read GPXGA GPXOUTFILE -1 "" 1198 -1 -1 "" "VF"
@@ -2435,7 +2436,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S GPXZ0W GPXZPW \
-       GPXZ0V2 GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF GPXVCH
+       GPXZ0V2 GPXZ0VG GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF GPXVCH
 }
 
 #----------------------------------------------------------------------------
