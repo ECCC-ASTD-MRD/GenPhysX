@@ -47,7 +47,6 @@ namespace eval BioGenX { } {
    set Param(CoFracs26) { 0 0 0 1.0 1.0 1.0 1.0 1.0 1.0 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.5 0.25 0.25 0.0 1.0 0.25 }
 
    #----- Paths to emission factor files
-   set Path(Factors)      $GenX::Path(BELD3)/Factors
    set Path(BELD3Factors) beld3_beis3v13_ef.dat
    set Path(VFFactors)    vf_beis3v13_ef.dat
 
@@ -250,7 +249,7 @@ proc BioGenX::LocateGrid { Grid } {
    set BioGenX::Param(datasets) {}
 
    #----- Lecture d'une bande de la base de donnees beld3
-   set file $GenX::Path(BELD3)/beld3-16.tif
+   set file $GenX::Param(DBase)/$GenX::Path(BELD3)/beld3-16.tif
    gdalfile open BELD3($file) read $file
    eval "gdalband read PC_VEG {{BELD3($file) 1}}"
 
@@ -444,7 +443,7 @@ proc BioGenX::CalcEmissionsVF { Grid } {
 
    #----- Ouverture et lecture de chacune des colonnes du
    #----- fichier texte des taux d'emissions dus a la vegetation
-   BioGenX::ReadEmissfacFile $BioGenX::Path(Factors)/$BioGenX::Path(VFFactors)
+   BioGenX::ReadEmissfacFile $GenX::Param(DBase)/$GenX::Path(BELD3)/Factors/$BioGenX::Path(VFFactors)
 
    #----- Recuperation du champ VF
    if { [catch { fstdfield read BGXVF GPXOUTFILE -1 "" -1 -1 -1 "" "VF" } ] } {
@@ -535,7 +534,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
 
    #----- Ouverture et lecture de chacune des colonnes du
    #----- fichier texte des taux d'emissions dus a la vegetation
-   BioGenX::ReadEmissfacFile $BioGenX::Path(Factors)/$BioGenX::Path(BELD3Factors)
+   BioGenX::ReadEmissfacFile $GenX::Param(DBase)/$GenX::Path(BELD3)/Factors/$BioGenX::Path(BELD3Factors)
 
    #----- Calcul des superficies des tuiles GEM-MACH (AREA) en m2
    vexpr BGXAREA darea($Grid)
@@ -543,7 +542,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
    #----- Loop over files
    set i 0
 
-   set filelist [glob $GenX::Path(BELD3)/beld3-*.tif]
+   set filelist [glob $GenX::Param(DBase)/$GenX::Path(BELD3)/beld3-*.tif]
    set nfiles   [format "%3i" [llength $filelist] ]
 
    foreach file $filelist {

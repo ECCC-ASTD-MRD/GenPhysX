@@ -403,7 +403,7 @@ proc IndustrX::Process { Coverage } {
       set s250 [string range $feuillet 0 2]
       set sl   [string tolower [string range $feuillet 3 3]]
       set s50  [string range $feuillet 4 5]
-      set Path $GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50 ;#path du répertoire qui contient les données CanVec associées au feuillet
+      set Path $GenX::Param(DBase)/$GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50 ;#path du répertoire qui contient les données CanVec associées au feuillet
 
       if {![file exists $Path] } {
          #There are no CanVec files for this tile.  Skip the tile.

@@ -215,7 +215,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
    Log::Print INFO "Averaging topography using USGS database"
 
    #----- Loop over files
-   foreach file [glob $GenX::Path(TopoUSGS)/*] {
+   foreach file [glob $GenX::Param(DBase)/$GenX::Path(TopoUSGS)/*] {
       Log::Print DEBUG "   Processing USGS file : $file"
       fstdfile open GPXTOPOFILE read $file
 
@@ -257,7 +257,7 @@ proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
    Log::Print INFO "Averaging topography using GTOPO30 database"
 
    #----- Loop over files
-   foreach file [glob $GenX::Path(GTOPO30)/*.DEM] {
+   foreach file [glob $GenX::Param(DBase)/$GenX::Path(GTOPO30)/*.DEM] {
       Log::Print DEBUG "   Processing GTOPO30 file : $file"
       set bands [gdalfile open GTOPO30FILE read $file]
       if { [llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GTOPO30FILE]]]] } {
@@ -665,7 +665,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
    GenX::GridClear GPXMASK 0.0
 
    #----- Loop over files
-   foreach file [glob $GenX::Path(MaskUSGS)/*] {
+   foreach file [glob $GenX::Param(DBase)/$GenX::Path(MaskUSGS)/*] {
       Log::Print DEBUG "   Processing file : $file"
       fstdfile open GPXMASKFILE read $file
 
@@ -712,8 +712,7 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
    GenX::GridClear GPXMASK 0.0
 
    #----- Open the file
-#   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_200412_200606_V2.2_Global_CLA.tif
-   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_L4_200901_200912_V2.3.tif
+   gdalfile open GLOBFILE read $GenX::Param(DBase)/$GenX::Path(GlobCover)/GLOBCOVER_L4_200901_200912_V2.3.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLOBFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with GLOBCOVER database, mask will not be calculated"
@@ -770,7 +769,7 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
    GenX::GridClear GPXMASK 0.0
 
    #----- Open the file
-   gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1-glcc_bats.tif
+   gdalfile open GLCFILE read $GenX::Param(DBase)/$GenX::Path(GLC2000)/glc2000_v1_1-glcc_bats.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLCFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with GLC2000 database, mask will not be calculated"
@@ -843,7 +842,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    }
 
    #----- Use whatever we have for US
-   ogrfile open USLAKESFILE read $GenX::Path(Various)/mjwater.shp
+   ogrfile open USLAKESFILE read $GenX::Param(DBase)/$GenX::Path(Various)/mjwater.shp
    ogrlayer read USLAKES USLAKESFILE 0
    fstdfield gridinterp GPXMASK USLAKES ALIASED 1.0
    ogrfile close USLAKESFILE
@@ -993,7 +992,7 @@ proc GeoPhysX::AverageVegeUSGS { Grid } {
    Log::Print INFO "Averaging vegetation type using USGS database"
 
    #----- Loop over files
-   foreach file [glob $GenX::Path(VegeUSGS)/*] {
+   foreach file [glob $GenX::Param(DBase)/$GenX::Path(VegeUSGS)/*] {
       Log::Print DEBUG "   Processing file : $file"
       fstdfile open GPXVEGEFILE read $file
 
@@ -1207,7 +1206,7 @@ proc GeoPhysX::AverageVegeCORINE { Grid } {
    Log::Print INFO "Averaging vegetation type using CORINE database"
 
    #----- Open the file
-   gdalfile open CORINEFILE read $GenX::Path(CORINE)/lceugr100_00_pct.tif
+   gdalfile open CORINEFILE read $GenX::Param(DBase)/$GenX::Path(CORINE)/lceugr100_00_pct.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CORINEFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with CORINE database, vegetation will not be calculated"
@@ -1272,7 +1271,7 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
    Log::Print INFO "Averaging vegetation type using GlobCover database"
 
    #----- Open the file
-   gdalfile open GLOBFILE read $GenX::Path(GlobCover)/GLOBCOVER_L4_200901_200912_V2.3.tif
+   gdalfile open GLOBFILE read $GenX::Param(DBase)/$GenX::Path(GlobCover)/GLOBCOVER_L4_200901_200912_V2.3.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLOBFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with GLOBCOVER database, vegetation will not be calculated"
@@ -1336,7 +1335,7 @@ proc GeoPhysX::AverageGLAS { Grid } {
    Log::Print INFO "Averaging vegetation canopy height using GLAS database"
 
    #----- Open the file
-   gdalfile open GLASFILE read $GenX::Path(GLAS)/Simard_Pinto_3DGlobalVeg_JGR.tif
+   gdalfile open GLASFILE read $GenX::Param(DBase)/$GenX::Path(GLAS)/Simard_Pinto_3DGlobalVeg_JGR.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLASFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with GLAS database, vegetation will not be calculated"
@@ -1391,7 +1390,7 @@ proc GeoPhysX::AverageVegeGLC2000 { Grid } {
    Log::Print INFO "Averaging vegetation type using GLC2000 database"
 
    #----- Open the file
-   gdalfile open GLCFILE read $GenX::Path(GLC2000)/glc2000_v1_1-glcc_bats.tif
+   gdalfile open GLCFILE read $GenX::Param(DBase)/$GenX::Path(GLC2000)/glc2000_v1_1-glcc_bats.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLCFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with GLC2000 database, vegetation will not be calculated"
@@ -1456,7 +1455,7 @@ proc GeoPhysX::AverageVegeCCRS { Grid } {
    Log::Print INFO "Averaging vegetation type using CCRS database"
 
    #----- Open the file
-   gdalfile open CCRSFILE read $GenX::Path(CCRS)/LCC2005_V1_3.tif
+   gdalfile open CCRSFILE read $GenX::Param(DBase)/$GenX::Path(CCRS)/LCC2005_V1_3.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCRSFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with CCRS database, vegetation will not be calculated"
@@ -1558,7 +1557,7 @@ proc GeoPhysX::AverageSand { Grid } {
       foreach db $GenX::Param(Soil) {
          Log::Print DEBUG "   Processing database $db"
 
-         foreach file [glob $GenX::Path(Sand$db)/*] {
+         foreach file [glob $GenX::Param(DBase)/$GenX::Path(Sand$db)/*] {
             GenX::Procs Sand$db
             Log::Print DEBUG "      Processing file : $file"
             fstdfile open GPXSANDFILE read $file
@@ -1613,7 +1612,7 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
    GenX::GridClear { GPXJ1 GPXJ2 } 0.0
 
    #----- Open the file
-   gdalfile open JPLFILE read $GenX::Path(JPL)/sand_M03.tif
+   gdalfile open JPLFILE read $GenX::Param(DBase)/$GenX::Path(JPL)/sand_M03.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef JPLFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with JPL database, mask will not be calculated"
@@ -1647,7 +1646,7 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
    gdalfile close JPLFILE
 
    #----- Open the file
-   gdalfile open JPLFILE read $GenX::Path(JPL)/clay_M03.tif
+   gdalfile open JPLFILE read $GenX::Param(DBase)/$GenX::Path(JPL)/clay_M03.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef JPLFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with JPL database, mask will not be calculated"
@@ -1712,7 +1711,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
    GenX::GridClear $fields 0.0
 
    #----- Open the file
-   gdalfile open HWSDFILE read $GenX::Path(HWSD)/hwsd.bil
+   gdalfile open HWSDFILE read $GenX::Param(DBase)/$GenX::Path(HWSD)/hwsd.bil
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef HWSDFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with HWSD database, vegetation will not be calculated"
@@ -1726,7 +1725,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
       vector mem HWSDTABLE 20000
 
       Log::Print INFO "Reading HWSD correspondance table"
-      set f [open $GenX::Path(HWSD)/hwsd.csv]
+      set f [open $GenX::Param(DBase)/$GenX::Path(HWSD)/hwsd.csv]
 
       gets $f line
       while { ![eof $f] } {
@@ -1861,7 +1860,7 @@ proc GeoPhysX::AverageClay { Grid } {
          Log::Print DEBUG "   Processing database $db"
 
          #----- Loop over files
-         foreach file [glob $GenX::Path(Clay$db)/*] {
+         foreach file [glob $GenX::Param(DBase)/$GenX::Path(Clay$db)/*] {
             GenX::Procs Clay$db
             Log::Print DEBUG "      Processing file : $file"
             fstdfile open GPXCLAYFILE read $file
@@ -1915,7 +1914,7 @@ proc GeoPhysX::AverageTopoLow { Grid } {
    GenX::GridClear [list GPXLOW GPXLRMS] 0.0
 
    #----- Loop over files
-   foreach file [glob $GenX::Path(TopoLow)/*] {
+   foreach file [glob $GenX::Param(DBase)/$GenX::Path(TopoLow)/*] {
       Log::Print DEBUG "   Processing file : $file"
       fstdfile open GPXLOWFILE read $file
 
@@ -1974,7 +1973,7 @@ proc GeoPhysX::AverageGradient { Grid } {
    GenX::GridClear [list GPXGXX GPXGYY GPXGXY] 0.0
 
    #----- compute Gxx, Gyy, Gxy
-   foreach file [glob $GenX::Path(Grad)/*] {
+   foreach file [glob $GenX::Param(DBase)/$GenX::Path(Grad)/*] {
       Log::Print DEBUG "   Processing file: $file "
       fstdfile open GPXGXYFILE read $file
       foreach field_gx [fstdfield find GPXGXYFILE -1 "" -1 -1 -1 "" "GX"] \

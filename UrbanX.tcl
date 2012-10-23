@@ -107,7 +107,7 @@ namespace eval UrbanX { } {
 
    # À déplacer dans IndustrX - Fichier contenant l'index NTS à l'échelle 1:50000
    # Attention : s'assurer qu'il s'agit bien de l'index ayant servi au découpage du fichier PopFile2006SMOKE
-   set Param(NTSFile) $GenX::Path(NTS)/decoupage50k_2.shp
+   set Param(NTSFile) $GenX::Param(DBase)/$GenX::Path(NTS)/decoupage50k_2.shp
    # À déplacer dans IndustrX - entité CanVec déterminant la bordure des polygones NTS 50K
    set Param(NTSLayer) { LI_1210009_2 }
 
@@ -2719,7 +2719,7 @@ proc UrbanX::FindNTSSheets { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
 
    if { ![ogrlayer is NTSLAYER50K] } {
-      set nts_layer [lindex [ogrfile open SHAPE50K read $GenX::Path(NTS)/decoupage50k_2.shp] 0]
+      set nts_layer [lindex [ogrfile open SHAPE50K read  $GenX::Param(DBase)/$GenX::Path(NTS)/decoupage50k_2.shp] 0]
       eval ogrlayer read NTSLAYER50K $nts_layer
    }
 
@@ -2933,12 +2933,12 @@ proc UrbanX::Process { Coverage Grid } {
 
 	 Log::Print INFO "Locating CanVec files to be processed for NTS sheet $Param(NTSSheet)"
 	 # OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]	  
-         # Path structure for CanVec-7.0: set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
+         # Path structure for CanVec-7.0: set Param(NTSSheetPath)  $GenX::Param(DBase)/$GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
          # Path structure for CanVec-9.0
 Log::Print WARNING "TEMPORARILY FORCING USING CanVec-9.0"
 set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
-#         set Param(NTSSheetPath) $GenX::Path(CANVEC)/$s250/$sl
-         Log::Print DEBUG "Using CanVec files from $GenX::Path(CANVEC)"
+#         set Param(NTSSheetPath)  $GenX::Param(DBase)/$GenX::Path(CANVEC)/$s250/$sl
+         Log::Print DEBUG "Using CanVec files from  $GenX::Param(DBase)/$GenX::Path(CANVEC)"
 	 foreach ntslayer $Param(Entities) {
 	     if { [llength [set lst [glob -nocomplain $Param(NTSSheetPath)/$ntssheet*$ntslayer*.shp]]] } {
                 set Param(Files) [concat $Param(Files) $lst]

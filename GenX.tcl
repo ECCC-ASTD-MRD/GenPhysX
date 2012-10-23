@@ -112,41 +112,41 @@ namespace eval GenX { } {
    #----- Various database paths
 
    if  { [info exists env(GENPHYSX_DBASE)] } {
-      set Path(DBase) $env(GENPHYSX_DBASE)
+      set Param(DBase) $env(GENPHYSX_DBASE)
    } else {
-      set Path(DBase) /data/shared_1_b0/armn
+      set Param(DBase) /data/shared_1_b0/armn
    }
 
-   set Path(SandUSDA)  $Path(DBase)/RPN/sand_usda
-   set Path(SandFAO)   $Path(DBase)/RPN/sand_fao
-   set Path(SandAGRC)  $Path(DBase)/RPN/sand_argc
-   set Path(ClayUSDA)  $Path(DBase)/RPN/clay_usda
-   set Path(ClayFAO)   $Path(DBase)/RPN/clay_fao
-   set Path(ClayAGRC)  $Path(DBase)/RPN/clay_argc
-   set Path(TopoUSGS)  $Path(DBase)/RPN/me_usgs2002
-   set Path(MaskUSGS)  $Path(DBase)/RPN/mg_usgs2002
-   set Path(VegeUSGS)  $Path(DBase)/RPN/vg_usgs2002
-   set Path(TopoLow)   $Path(DBase)/RPN/data_lres
-   set Path(Grad)      $Path(DBase)/RPN/data_grad
-   set Path(HWSD)      $Path(DBase)/HWSD
-   set Path(SRTM)      $Path(DBase)/SRTMv4
-   set Path(CDED)      $Path(DBase)/CDED
-   set Path(ASTERGDEM) $Path(DBase)/ASTGTM_V1.1
-   set Path(GTOPO30)   $Path(DBase)/GTOPO30
-   set Path(EOSD)      $Path(DBase)/EOSD
-   set Path(BNDT)      $Path(DBase)/BNDT
-   set Path(NTS)       $Path(DBase)/NTS
-   set Path(CANVEC)    $Path(DBase)/CanVec
-   set Path(CORINE)    $Path(DBase)/CORINE
-   set Path(GlobCover) $Path(DBase)/GlobCover
-   set Path(GLC2000)   $Path(DBase)/GLC2000_USGS
-   set Path(CCRS)      $Path(DBase)/CCRS-LC2005
-   set Path(Various)   $Path(DBase)/Various
-   set Path(BELD3)     $Path(DBase)/BELD3
-   set Path(LCC2000V)  $Path(DBase)/LCC2000V
-   set Path(JPL)       $Path(DBase)/JPL
-   set Path(NHN)       $Path(DBase)/NHN
-   set Path(GLAS)      $Path(DBase)/SimardPinto
+   set Path(SandUSDA)  RPN/sand_usda
+   set Path(SandFAO)   RPN/sand_fao
+   set Path(SandAGRC)  RPN/sand_argc
+   set Path(ClayUSDA)  RPN/clay_usda
+   set Path(ClayFAO)   RPN/clay_fao
+   set Path(ClayAGRC)  RPN/clay_argc
+   set Path(TopoUSGS)  RPN/me_usgs2002
+   set Path(MaskUSGS)  RPN/mg_usgs2002
+   set Path(VegeUSGS)  RPN/vg_usgs2002
+   set Path(TopoLow)   RPN/data_lres
+   set Path(Grad)      RPN/data_grad
+   set Path(HWSD)      HWSD
+   set Path(SRTM)      SRTMv4
+   set Path(CDED)      CDED
+   set Path(ASTERGDEM) ASTGTM_V1.1
+   set Path(GTOPO30)   GTOPO30
+   set Path(EOSD)      EOSD
+   set Path(BNDT)      BNDT
+   set Path(NTS)       NTS
+   set Path(CANVEC)    CanVec
+   set Path(CORINE)    CORINE
+   set Path(GlobCover) GlobCover
+   set Path(GLC2000)   GLC2000_USGS
+   set Path(CCRS)      CCRS-LC2005
+   set Path(Various)   Various
+   set Path(BELD3)     BELD3
+   set Path(LCC2000V)  LCC2000V
+   set Path(JPL)       JPL
+   set Path(NHN)       NHN
+   set Path(GLAS)      SimardPinto
 
    set Path(StatCan)   /cnfs/dev/cmdd/afsm/lib/geo/StatCan2006
 
@@ -299,7 +299,7 @@ proc GenX::Submit { } {
    set f [open [set job $env(TMPDIR)/GenPhysX[pid]] w 0755]
 
    puts $f "#!/bin/ksh\nset -x"
-   puts $f "\nexport GENPHYSX_DBASE=$Path(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0"
+   puts $f "\nexport GENPHYSX_DBASE=$Param(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
    puts $f "tmpdir=$tmpdir"
 
@@ -443,7 +443,7 @@ proc GenX::MetaData { Grid } {
    if { [llength $Meta(Databases)] } {
       append meta "Databases used :\n"
       foreach data $Meta(Databases) {
-         catch { append meta [format "   %-10s: %s\n" $data $Path($data)] }
+         catch { append meta [format "   %-10s: %s\n" $data $Param(DBase)/$Path($data)] }
       }
    }
 
@@ -493,6 +493,7 @@ proc GenX::CommandLine { } {
       \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Param(GridFile))]
       \[-result\]   [format "%-30s : Result filename" ($Param(OutFile))]
       \[-target\]   [format "%-30s : Set necessary flags for target model {$Param(Targets)}" ($Param(Target))]
+      \[-dbase\]    [format "%-30s : Databases path" ($Param(DBase))]
       \[-param\]    [format "%-30s : User parameter definition to include" ($Param(Script))]
 
    Processing parameters:
@@ -600,7 +601,7 @@ proc GenX::ParseCommandLine { } {
          "result"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(OutFile)] }
          "target"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Target) $GenX::Param(Targets)]; GenX::ParseTarget; incr flags }
          "gridfile"  { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(GridFile)] }
-         "dbase"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Path(DBase)] }
+         "dbase"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(DBase)] }
          "batch"     { set i [Args::Parse $gargv $gargc $i 0 GenX::Batch(On)] }
          "mach"      { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Host)] }
          "t"         { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Time)] }
@@ -697,8 +698,8 @@ proc GenX::ParseCommandLine { } {
       GenX::Submit
    } else {
       #----- Check for database accessibility
-      if { ![file readable $Path(DBase)] } {
-         Log::Print ERROR "Invalid database directory ($Path(DBase))"
+      if { ![file readable $Param(DBase)] } {
+         Log::Print ERROR "Invalid database directory ($Param(DBase))"
          Log::End 1
       }
       cd [file dirname [file normalize $Param(OutFile)]]
@@ -1109,6 +1110,7 @@ proc GenX::CacheFree { } {
 #----------------------------------------------------------------------------
 proc GenX::ASTERGDEMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
+   variable Param
 
    set files { }
    set lon0 [expr int(floor($Lon0/5))*5]
@@ -1134,7 +1136,7 @@ proc GenX::ASTERGDEMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
             set lo $lon
          }
 
-         if { [llength [set lst [glob -nocomplain [format "$Path(ASTERGDEM)/UNIT_%s%02i%s%03i/*_dem.tif" $y $la $x $lo]]]] } {
+         if { [llength [set lst [glob -nocomplain [format "$Param(DBase)/$Path(ASTERGDEM)/UNIT_%s%02i%s%03i/*_dem.tif" $y $la $x $lo]]]] } {
             set files [concat $files $lst]
          }
       }
@@ -1163,9 +1165,10 @@ proc GenX::ASTERGDEMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #----------------------------------------------------------------------------
 proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
    variable Path
+   variable Param
 
    if { ![ogrlayer is NTSLAYER50K] } {
-      set nts_layer [lindex [ogrfile open SHAPE50K read $Path(NTS)/decoupage50k_2.shp] 0]
+      set nts_layer [lindex [ogrfile open SHAPE50K read $Param(DBase)/$Path(NTS)/decoupage50k_2.shp] 0]
       eval ogrlayer read NTSLAYER50K $nts_layer
    }
 
@@ -1178,7 +1181,7 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
       set sl   [string tolower [string range $feuillet 3 3]]
       set s50  [string range $feuillet 4 5]
       # Path structure for CanVec-9.0:
-      set path $Path(CANVEC)/$s250/$sl
+      set path $Param(DBase)/$Path(CANVEC)/$s250/$sl
 
       foreach layer $Layers {
          if { [llength [set lst [glob -nocomplain $path/*$layer*.shp]]] } {
@@ -1209,6 +1212,7 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
 #----------------------------------------------------------------------------
 proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
+   variable Param
 
    set files { }
    set lonmax [expr int(ceil((180.0 + $Lon1)/5))]
@@ -1216,7 +1220,7 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 
    for { set lat [expr int(ceil(24-((60.0 + $Lat1)/5)))]} { $lat<=$latmax } { incr lat } {
       for { set lon [expr int(ceil((180.0 + $Lon0)/5))] } { $lon<=$lonmax } { incr lon } {
-         if { [file exists [set path [format "$Path(SRTM)/srtm_%02i_%02i.TIF" $lon $lat]]] } {
+         if { [file exists [set path [format "$Param(DBase)/$Path(SRTM)/srtm_%02i_%02i.TIF" $lon $lat]]] } {
             lappend files $path
          }
       }
@@ -1245,13 +1249,14 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #----------------------------------------------------------------------------
 proc GenX::CDEDFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
    variable Path
+   variable Param
 
    if { $Res!=50 && $Res!=250 } {
       Log::Print ERROR "Wrong resolution, must be 50 or 250."
       Log::End 1
    }
    if { ![ogrlayer is NTSLAYER${Res}K] } {
-      set nts_layer [lindex [ogrfile open SHAPE${Res}K read $Path(NTS)/decoupage${Res}k_2.shp] 0]
+      set nts_layer [lindex [ogrfile open SHAPE${Res}K read $Param(DBase)/$Path(NTS)/decoupage${Res}k_2.shp] 0]
       eval ogrlayer read NTSLAYER${Res}K $nts_layer
    }
 
@@ -1265,9 +1270,9 @@ proc GenX::CDEDFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
       set s50  [string range $feuillet 4 5]
 
       if { $Res==50 } {
-         set path $Path(CDED)/$s250/$sl/$s250$sl$s50
+         set path $Param(DBase)/$Path(CDED)/$s250/$sl/$s250$sl$s50
       } else {
-         set path $Path(CDED)/$s250/$sl/$s250$sl
+         set path $Param(DBase)/$Path(CDED)/$s250/$sl/$s250$sl
       }
 
       if { [llength [set lst [glob -nocomplain $path/*deme*.tif]]] } {
@@ -1300,9 +1305,10 @@ proc GenX::CDEDFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
 #----------------------------------------------------------------------------
 proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
+   variable Param
 
    if { ![ogrlayer is NTSLAYER250K] } {
-      set nts_layer [lindex [ogrfile open SHAPE250K read $Path(NTS)/decoupage250k_2.shp] 0]
+      set nts_layer [lindex [ogrfile open SHAPE250K read $Param(DBase)/$Path(NTS)/decoupage250k_2.shp] 0]
       eval ogrlayer read NTSLAYER250K $nts_layer
    }
 
@@ -1310,7 +1316,7 @@ proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    foreach id [ogrlayer pick NTSLAYER250K [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
       set feuillet [ogrlayer define NTSLAYER250K -feature $id IDENTIFIAN]
       set s250 [string range $feuillet 0 3]
-      if { [file exists [set path $Path(EOSD)/${s250}_lc_1/${s250}_lc_1.tif]] } {
+      if { [file exists [set path $Param(DBase)/$Path(EOSD)/${s250}_lc_1/${s250}_lc_1.tif]] } {
          lappend files $path
       }
    }
@@ -1337,9 +1343,10 @@ proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #----------------------------------------------------------------------------
 proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
+   variable Param
 
    if { ![ogrlayer is NHNLAYER] } {
-      set nhn_layer [lindex [ogrfile open NHNINDEX read $Path(NHN)/index/NHN_INDEX_07_INDEX_WORKUNIT_LIMIT_2.shp] 0]
+      set nhn_layer [lindex [ogrfile open NHNINDEX read $Param(DBase)/$Path(NHN)/index/NHN_INDEX_07_INDEX_WORKUNIT_LIMIT_2.shp] 0]
       eval ogrlayer read NHNLAYER $nhn_layer
    }
 
@@ -1347,8 +1354,8 @@ proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    foreach id [ogrlayer pick NHNLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
       set feuillet [ogrlayer define NHNLAYER -feature $id DATASETNAM]
       set wscmda [ogrlayer define NHNLAYER -feature $id WSCMDA]
-      if { [llength [set path [glob -nocomplain $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*]]] } {
-         lappend files $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}
+      if { [llength [set path [glob -nocomplain $Param(DBase)/$Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*]]] } {
+         lappend files $Param(DBase)/$Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}
       }
    }
    return $files
@@ -1374,9 +1381,10 @@ proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #----------------------------------------------------------------------------
 proc GenX::LCC2000VFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
+   variable Param
 
    if { ![ogrlayer is NTSLAYER250K] } {
-      set nts_layer [lindex [ogrfile open SHAPE250K read $Path(NTS)/decoupage250k_2.shp] 0]
+      set nts_layer [lindex [ogrfile open SHAPE250K read $Param(DBase)/$Path(NTS)/decoupage250k_2.shp] 0]
       eval ogrlayer read NTSLAYER250K $nts_layer
    }
 
@@ -1386,7 +1394,7 @@ proc GenX::LCC2000VFindFiles { Lat0 Lon0 Lat1 Lon1 } {
       set s250 [string range $feuillet 0 2]
       set maj  [string toupper [string range $feuillet 0 3]]
 
-      if { [llength [set path [glob -nocomplain $Path(LCC2000V)/${s250}/*LCC2000-V_${maj}*.shp]]] } {
+      if { [llength [set path [glob -nocomplain $Param(DBase)/$Path(LCC2000V)/${s250}/*LCC2000-V_${maj}*.shp]]] } {
          set files [concat $files $path]
       }
    }
