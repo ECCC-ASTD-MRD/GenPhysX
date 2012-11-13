@@ -110,11 +110,11 @@ namespace eval GenX { } {
    set Batch(Path)     "\$TMPDIR/GenPhysX\$\$"
 
    #----- Various database paths
+   set Param(DBaseHAWA) /data/shared_1_b0/armn
+   set Param(DBase)     /cnfs/dev/cmdd/afsm/lib/geo
 
    if  { [info exists env(GENPHYSX_DBASE)] } {
       set Param(DBase) $env(GENPHYSX_DBASE)
-   } else {
-      set Param(DBase) /data/shared_1_b0/armn
    }
 
    set Path(SandUSDA)  RPN/sand_usda
@@ -286,6 +286,11 @@ proc GenX::Submit { } {
    set host  [info hostname]
    set rargv ""
    set rem   0
+
+   #----- Check for local DBase path
+   if { $Batch(Host)=="hawa" } {
+      set Param(DBase) $Param(DBaseHAWA)
+   }
 
    #----- Check if local dir is reachable
    set ldir [set tmpdir [file dirname [file normalize $Param(OutFile)]]]

@@ -842,10 +842,10 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    }
 
    #----- Use whatever we have for US
-   ogrfile open USLAKESFILE read $GenX::Param(DBase)/$GenX::Path(Various)/mjwater.shp
-   ogrlayer read USLAKES USLAKESFILE 0
-   fstdfield gridinterp GPXMASK USLAKES ALIASED 1.0
-   ogrfile close USLAKESFILE
+#   ogrfile open USLAKESFILE read $GenX::Param(DBase)/$GenX::Path(Various)/mjwater.shp
+#   ogrlayer read USLAKES USLAKESFILE 0
+#   fstdfield gridinterp GPXMASK USLAKES ALIASED 1.0
+#   ogrfile close USLAKESFILE
 
    vexpr GPXMASK 1.0-clamp(GPXMASK,0.0,1.0)
 
