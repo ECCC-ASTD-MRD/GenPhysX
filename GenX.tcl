@@ -1014,7 +1014,8 @@ proc GenX::GridGet { File } {
       } else {
          #----- Otherwise, use the first field found as output grid
          fstdfield read GRID GPXGRIDFILE -1 "" -1 -1 -1 "" ""
-         fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -IP1 $tip1
+         fstdfield clear GRID 0.0
+         fstdfield define GRID -NOMVAR "GRID" -TYPVAR C -IP1 $tip1 -DATYP 1
          fstdfield write GRID GPXAUXFILE -16 True $GenX::Param(Compress)
       }
    }
