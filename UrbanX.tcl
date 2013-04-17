@@ -54,7 +54,7 @@ namespace eval UrbanX { } {
       set Param(CULUCPath) $env(CULUC_PATH)/CULUC
    } else {
       set Param(CULUCPath)       "/cnfs/dev/cmdd/afsm/lib/geo/CULUC/$Param(CULUCVersion)/" ;# Path to the permanent CULUC repository
-   } 
+   }
 
    #----- Directory where to find processing procs
    source $GENPHYSX_HOME/UrbanX-ClassesLUT.tcl
@@ -120,47 +120,47 @@ namespace eval UrbanX { } {
 
 
    # Lookup Table for redistribution of PAVF and BLDF into other TEB parameters
-   set  Param(BLDFvsLUT)  { 
+   set  Param(BLDFvsLUT)  {
               {BLDH 0 7.0}
               {BLDW 0 14.0}
-              {Z0RF 0 0.15} 
-              {ALRF 0 0.15} 
-              {ALWL 0 0.25} 
-              {EMRF 0 0.91} 
-              {EMWL 0 0.85} 
-              {HCRF 1 3000000} 
-              {HCWL 1 1550000} 
-              {HCRF 2 1500000} 
-              {HCWL 2 1550000} 
-              {HCRF 3 290000} 
-              {HCWL 3 290000} 
-              {TCRF 1 1.51} 
-              {TCWL 1 0.9338} 
-              {TCRF 2 0.15} 
-              {TCWL 2 0.9338} 
-              {TCRF 3 0.04} 
-              {TCWL 3 0.05} 
-              {DPRF 1 0.05} 
-              {DPWL 1 0.02} 
-              {DPRF 2 0.4} 
-              {DPWL 2 0.125} 
-              {DPRF 3 0.1} 
-              {DPWL 3 0.05} 
+              {Z0RF 0 0.15}
+              {ALRF 0 0.15}
+              {ALWL 0 0.25}
+              {EMRF 0 0.91}
+              {EMWL 0 0.85}
+              {HCRF 1 3000000}
+              {HCWL 1 1550000}
+              {HCRF 2 1500000}
+              {HCWL 2 1550000}
+              {HCRF 3 290000}
+              {HCWL 3 290000}
+              {TCRF 1 1.51}
+              {TCWL 1 0.9338}
+              {TCRF 2 0.15}
+              {TCWL 2 0.9338}
+              {TCRF 3 0.04}
+              {TCWL 3 0.05}
+              {DPRF 1 0.05}
+              {DPWL 1 0.02}
+              {DPRF 2 0.4}
+              {DPWL 2 0.125}
+              {DPRF 3 0.1}
+              {DPWL 3 0.05}
               }
 
-   set  Param(PAVFvsLUT)  { 
-              {Z0RD 0 0.05} 
-              {ALRD 0 0.16} 
-              {EMRD 0 0.93} 
-              {HCRD 1 1000000} 
-              {HCRD 2 3000000} 
-              {HCRD 3 1300000} 
-              {TCRD 1 0.7} 
-              {TCRD 2 1.8} 
-              {TCRD 3 0.3} 
-              {DPRD 1 0.08} 
-              {DPRD 2 0.2} 
-              {DPRD 3 1.0} 
+   set  Param(PAVFvsLUT)  {
+              {Z0RD 0 0.05}
+              {ALRD 0 0.16}
+              {EMRD 0 0.93}
+              {HCRD 1 1000000}
+              {HCRD 2 3000000}
+              {HCRD 3 1300000}
+              {TCRD 1 0.7}
+              {TCRD 2 1.8}
+              {TCRD 3 0.3}
+              {DPRD 1 0.08}
+              {DPRD 2 0.2}
+              {DPRD 3 1.0}
               }
 }
 
@@ -1638,7 +1638,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
 
    # WALL-O-HOR formulae provided by Sylvie Leroyer
-   # bldw ---> mean width of building (BLDWFIELD)  --> add column 
+   # bldw ---> mean width of building (BLDWFIELD)  --> add column
 
    # Wall-O-Hor calculation
    Log::Print INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
@@ -1668,7 +1668,7 @@ proc UrbanX::TEB2FSTD { Grid } {
       vexpr $Grid NATFFIELD+BLDFFIELD+PAVFFIELD
       fstdfield define $Grid -NOMVAR SUMF -IP1 0
       fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   
+
       # DPBH calculation
       Log::Print INFO "Computing TEB parameter DISPBLDH DPBH (IP1=0) values over target grid"
       vexpr DISPBLDH ifelse(BLDHFIELD==0,0, DISPH/BLDHFIELD)
@@ -1837,7 +1837,7 @@ proc UrbanX::3DBld2TEBGeoParams { Grid } {
       fstdfield define $Grid -NOMVAR HMAX -IP1 0
       fstdfield write $Grid GPXAUXFILE -32 True $GenX::Param(Compress)
    }
-  
+
    #----- Building fraction
    Log::Print INFO "Overwriting building fraction (BLDF) where there are 2.5D buildings"
    GenX::GridClear $Grid 0.0
@@ -2214,7 +2214,7 @@ proc UrbanX::Balance_BLDFvsPAVF { } {
 
    return $changed
 }
- 
+
 #----------------------------------------------------------------------------
 # Name     : <Preload_PavBldParams>
 # Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
@@ -2278,7 +2278,7 @@ proc UrbanX::Save_LoadedPavBldParams { auxfile } {
 # Name     : <Free_LoadedPavBLdParams>
 # Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
 #
-# Goal     : cleanup memory allocated for storing TEB params associated 
+# Goal     : cleanup memory allocated for storing TEB params associated
 #            with BLDF and PAVF
 #
 # Parameters :
@@ -2304,7 +2304,7 @@ proc UrbanX::Free_LoadedPavBLdParams { } {
 # Name     : <Assign_DefaultPAVFBLDF>
 # Creation : Jan 2012 - Vanh Souvanlasy - CMC/CMDS
 #
-# Goal     : assign default a value from LUT on TEB params associated 
+# Goal     : assign default a value from LUT on TEB params associated
 #            with BLDF and PAVF
 #
 # Parameters :
@@ -2428,7 +2428,7 @@ proc UrbanX::Assign_AverageParams { i j range bldf pavf } {
 # Parameters :
 #   <Grid>     : Grid to process
 #   <i0 j0>    : location of grid point
-#   <range>    : 
+#   <range>    :
 #
 # Return: averaged value
 #
@@ -2494,7 +2494,7 @@ proc UrbanX::Grid_NearestAverage { Grid  i0  j0  range } {
 # Return:
 #
 # Remarks :
-#   BLDF and PAVF are fixed, only VF values are rescale to fit 
+#   BLDF and PAVF are fixed, only VF values are rescale to fit
 #
 #----------------------------------------------------------------------------
 proc UrbanX::NormalizeVFvsPAVFBLDF { } {
@@ -2548,12 +2548,12 @@ proc UrbanX::NormalizeVFvsPAVFBLDF { } {
 #
 # Goal     : generate VG field for UrbanX
 #
-# Parameters : 
+# Parameters :
 #
 # Return:
 #
 # Remarks :
-#   BLDF and PAVF are fixed, only VF values are rescale to fit 
+#   BLDF and PAVF are fixed, only VF values are rescale to fit
 #
 #----------------------------------------------------------------------------
 proc UrbanX::DominantVege { Grid } {
@@ -2689,7 +2689,7 @@ proc dist {lat1 lat2 lon1 lon2} {
 
 #set diagonale [expr ([dist $Param(Lat0) $Param(Lat1) $Param(Lon0) $Param(Lon1)]*1000)] ;# diagonale en metres
 #set Param(Deg2M)  [expr (sqrt(($Param(Lat1)-$Param(Lat0))*($Param(Lat1)-$Param(Lat0))+($Param(Lon1)-$Param(Lon0))*($Param(Lon1)-$Param(Lon0))))]
- 
+
   #set Param(Deg2M) [expr [expr ($Param(Lon1)-$Param(Lon0))]/$largeur] ;# deg par metres
   #set Param(Deg2M) [expr (1/$largeur)] ;# deg par metres
 #puts "Param(Deg2M) = $Param(Deg2M)"
@@ -2707,7 +2707,7 @@ proc dist {lat1 lat2 lon1 lon2} {
 #  <Lat0>    : Lower left corner latitude
 #  <Lon0>    : Lower left corner longitude
 #  <Lat1>    : Upper right corner latitude
-#  <Lon1>    : Upper right corner longitude  
+#  <Lon1>    : Upper right corner longitude
 #
 # Return:
 #   <sheets>  : List of NTS sheets intersecting with the area
@@ -2746,12 +2746,12 @@ proc UrbanX::FindNTSSheets { Lat0 Lon0 Lat1 Lon1 } {
 #  <Lat0>    : Lower left corner latitude
 #  <Lon0>    : Lower left corner longitude
 #  <Lat1>    : Upper right corner latitude
-#  <Lon1>    : Upper right corner longitude  
+#  <Lon1>    : Upper right corner longitude
 #
 # Return:
 #   <sheets>  : List of sheets intersecting with the area
 #
-# Remarks :   
+# Remarks :
 #
 #   US UTS are based on the UTM coordinate system
 #   US UTS sheets identifiers are similar to NTS sheets identifier
@@ -2932,7 +2932,7 @@ proc UrbanX::Process { Coverage Grid } {
          Log::Print INFO "The file CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif has not been found and will be created"
 
 	 Log::Print INFO "Locating CanVec files to be processed for NTS sheet $Param(NTSSheet)"
-	 # OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]	  
+	 # OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
          # Path structure for CanVec-7.0: set Param(NTSSheetPath)  $GenX::Param(DBase)/$GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
          # Path structure for CanVec-9.0
 Log::Print WARNING "TEMPORARILY FORCING USING CanVec-9.0"
@@ -3002,7 +3002,7 @@ set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
 	 #UrbanX::VegeMask
 
          # Test is we're in CULUC generation mode, ie testing if it's a single NTS sheet in input
-#         if { [string is integer [string range $Coverage 0 0]] } 
+#         if { [string is integer [string range $Coverage 0 0]] }
          if { [file isdir $UrbanX::Param(CULUCPath)] && [file writable $UrbanX::Param(CULUCPath)] } {
                # Move the CULUC file to its final destination
                file mkdir $Param(CULUCPath)/$s250/$sl/
@@ -3036,7 +3036,7 @@ set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
    }
    foreach ntssheet $Param(NTSSheets) {
        #----- Deleting all UrbanX temporary files
-       UrbanX::DeleteTempFiles $ntssheet  
+       UrbanX::DeleteTempFiles $ntssheet
    }
    Log::Print INFO "End of UrbanX"
 }

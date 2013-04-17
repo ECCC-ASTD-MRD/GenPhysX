@@ -1029,7 +1029,6 @@ proc GenX::GridGet { File } {
       lappend grids GRID$i
       incr i
    }
-
    fstdfile close GPXGRIDFILE
 
    #----- Check if we're in a sub-process, if so return only the needed grid

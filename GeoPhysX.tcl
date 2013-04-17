@@ -2354,9 +2354,13 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Local (vegetation) roughness length from canopy height
-   vexpr GPXZ0VG ifelse(GPXMG>0.0,max(GPXVCH*0.1,0.01),0.0)
-   fstdfield define GPXZ0VG -NOMVAR Z0VG -IP1 0 -IP2 0
-   fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   if { [fstdfield is GPXVCH] } {
+      vexpr GPXZ0VG ifelse(GPXMG>0.0,max(GPXVCH*0.1,0.01),0.0)
+      fstdfield define GPXZ0VG -NOMVAR Z0VG -IP1 0 -IP2 0
+      fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   } else {
+      Log::Print WARNING "Missing VCH, could not calculate Local (vegetation) roughness length from canopy height (Z0VG)"
+   }
 
    #----- Roughness length over soil
    fstdfield read GPXGA GPXOUTFILE -1 "" 1198 -1 -1 "" "VF"
