@@ -2197,10 +2197,15 @@ proc GeoPhysX::SubLaunchingHeight { } {
    variable Const
 
    GenX::Procs
-   fstdfield read GPXMEL  GPXAUXFILE -1 "" -1 -1 -1 "" "MEL"
-   fstdfield read GPXLRMS GPXAUXFILE -1 "" -1 -1 -1 "" "LRMS"
-   fstdfield read GPXFLR  GPXAUXFILE -1 "" -1 -1 -1 "" "FLR"
-   fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
+   if { [catch {
+      fstdfield read GPXMEL  GPXAUXFILE -1 "" -1 -1 -1 "" "MEL"
+      fstdfield read GPXLRMS GPXAUXFILE -1 "" -1 -1 -1 "" "LRMS"
+      fstdfield read GPXFLR  GPXAUXFILE -1 "" -1 -1 -1 "" "FLR"
+      fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG" } ] } {
+    
+      Log::Print WARNING "Missing fields, will not calculate launching height"
+      return
+   }
 
    #----- Corrected fields (based on resolution criteria)
    vexpr GPXMEL  GPXMEL *GPXFLR
@@ -2232,12 +2237,19 @@ proc GeoPhysX::SubY789 { } {
    variable Const
 
    GenX::Procs
-   fstdfield read GPXGXX  GPXAUXFILE -1 "" -1 -1 -1 "" "GXX"
-   fstdfield read GPXGYY  GPXAUXFILE -1 "" -1 -1 -1 "" "GYY"
-   fstdfield read GPXGXY  GPXAUXFILE -1 "" -1 -1 -1 "" "GXY"
-   fstdfield read GPXFLR  GPXAUXFILE -1 "" -1 -1 -1 "" "FLR"
-   fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
-   fstdfield read GPXLH   GPXOUTFILE -1 "" -1 -1 -1 "" "LH"
+
+   #----- check for needed fields
+   if { [catch {
+      fstdfield read GPXGXX  GPXAUXFILE -1 "" -1 -1 -1 "" "GXX"
+      fstdfield read GPXGYY  GPXAUXFILE -1 "" -1 -1 -1 "" "GYY"
+      fstdfield read GPXGXY  GPXAUXFILE -1 "" -1 -1 -1 "" "GXY"
+      fstdfield read GPXFLR  GPXAUXFILE -1 "" -1 -1 -1 "" "FLR"
+      fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
+      fstdfield read GPXLH   GPXOUTFILE -1 "" -1 -1 -1 "" "LH" } ] } {
+    
+      Log::Print WARNING "Missing fields, will not calculate Y789 fields"
+      return
+   }
 
    #----- Corrected fields (based on resolution criteria)
    vexpr GPXGXX GPXGXX*GPXFLR
@@ -2288,14 +2300,21 @@ proc GeoPhysX::SubRoughnessLength { } {
    variable Const
 
    GenX::Procs
-   fstdfield read GPXME   GPXOUTFILE -1 "" -1 -1 -1 "" "ME"
-   fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
-   fstdfield read GPXMRMS GPXAUXFILE -1 "" -1 -1 -1 "" "MRMS"
-   fstdfield read GPXMEL  GPXAUXFILE -1 "" -1 -1 -1 "" "MEL"
-   fstdfield read GPXLRMS GPXAUXFILE -1 "" -1 -1 -1 "" "LRMS"
-   fstdfield read GPXFHR  GPXAUXFILE -1 "" -1 -1 -1 "" "FHR"
-   fstdfield read GPXFLR  GPXAUXFILE -1 "" -1 -1 -1 "" "FLR"
-   fstdfield read GPXVCH  GPXAUXFILE -1 "" -1 -1 -1 "" "VCH"
+   
+   #----- check for needed fields
+   if { [catch {
+      fstdfield read GPXME   GPXOUTFILE -1 "" -1   -1 -1 "" "ME"
+      fstdfield read GPXMG   GPXOUTFILE -1 "" -1   -1 -1 "" "MG"
+      fstdfield read GPXMRMS GPXAUXFILE -1 "" -1   -1 -1 "" "MRMS"
+      fstdfield read GPXMEL  GPXAUXFILE -1 "" -1   -1 -1 "" "MEL"
+      fstdfield read GPXLRMS GPXAUXFILE -1 "" -1   -1 -1 "" "LRMS"
+      fstdfield read GPXFHR  GPXAUXFILE -1 "" -1   -1 -1 "" "FHR"
+      fstdfield read GPXFLR  GPXAUXFILE -1 "" -1   -1 -1 "" "FLR"
+      fstdfield read GPXZ0V1 GPXOUTFILE -1 "" 1199 -1 -1 "" "VF" } ] } {
+    
+      Log::Print WARNING "Missing fields, will not calculate roughness length"
+      return
+   }
 
    vexpr GPXME   GPXME  *GPXFHR
    vexpr GPXMRMS GPXMRMS*GPXFHR
@@ -2354,7 +2373,8 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Local (vegetation) roughness length from canopy height
-   if { [fstdfield is GPXVCH] } {
+   
+   if { ![catch { fstdfield read GPXVCH  GPXAUXFILE -1 "" -1 -1 -1 "" "VCH" }] } {
       vexpr GPXZ0VG ifelse(GPXMG>0.0,max(GPXVCH*0.1,0.01),0.0)
       fstdfield define GPXZ0VG -NOMVAR Z0VG -IP1 0 -IP2 0
       fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
