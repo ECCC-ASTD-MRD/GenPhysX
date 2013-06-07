@@ -85,6 +85,7 @@ namespace eval GenX { } {
    set Param(Process)   ""                    ;#Current processing id
    set Param(OutFile)   genphysx              ;#Output file prefix
    set Param(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
+   set Param(NML)       ""                   ;#GEM namelist
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
@@ -605,6 +606,7 @@ proc GenX::ParseCommandLine { } {
          "verbose"   { set i [Args::Parse $gargv $gargc $i 1 Log::Param(Level)] }
          "result"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(OutFile)] }
          "target"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Target) $GenX::Param(Targets)]; GenX::ParseTarget; incr flags }
+         "nml"       { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(NML)]; GenX::GetNML $GenX::Param(NML) }
          "gridfile"  { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(GridFile)] }
          "dbase"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(DBase)] }
          "batch"     { set i [Args::Parse $gargv $gargc $i 0 GenX::Batch(On)] }
