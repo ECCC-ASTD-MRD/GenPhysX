@@ -1030,6 +1030,13 @@ proc GenX::GridGet { File } {
       incr i
    }
    fstdfile close GPXGRIDFILE
+   
+   #----- Check for global (wrap-around) girds for filter settings
+   if { [lsearch -exact [georef define [fstdfield define [lindex $grids 0] -georef] -type] WRAP]!=-1 } {
+      set GenX::Settings(Settings(GRD_TYP_S) GU
+   } else {
+      set GenX::Settings(Settings(GRD_TYP_S) LU
+   }
 
    #----- Check if we're in a sub-process, if so return only the needed grid
    if { $Param(Process)!="" } {

@@ -506,7 +506,7 @@ proc GeoPhysX::AverageAspect { Grid } {
 
    #----- Create latlon referential since original data is in latlon
    georef create LLREF
-   eval georef define LLREF -border 1 -projection \{GEOGCS\[\"WGS 84\",DATUM\[\"WGS_1984\",SPHEROID\[\"WGS 84\",6378137,298.2572235629972,AUTHORITY\[\"EPSG\",\"7030\"\]\],AUTHORITY\[\"EPSG\",\"6326\"\]\],PRIMEM\[\"Greenwich\",0\],UNIT\[\"degree\",0.0174532925199433\],AUTHORITY\[\"EPSG\",\"4326\"\]\]\}
+   eval georef define LLREF -projection \{GEOGCS\[\"WGS 84\",DATUM\[\"WGS_1984\",SPHEROID\[\"WGS 84\",6378137,298.2572235629972,AUTHORITY\[\"EPSG\",\"7030\"\]\],AUTHORITY\[\"EPSG\",\"6326\"\]\],PRIMEM\[\"Greenwich\",0\],UNIT\[\"degree\",0.0174532925199433\],AUTHORITY\[\"EPSG\",\"4326\"\]\]\}
 
    #----- Create work tile with border included
    gdalband create DEMTILE [expr $GenX::Param(TileSize)+2] [expr $GenX::Param(TileSize)+2] 1 Int16
@@ -526,7 +526,7 @@ proc GeoPhysX::AverageAspect { Grid } {
          set lo1 [expr $lon+$dpix+$res]
          set data False
          gdalband clear DEMTILE
-         gdalband define DEMTILE -transform [list $lo0 $res 0.0 $la1 0.0 -$res]
+         gdalband define DEMTILE -transform [list $lo0 $res 0.0 $la0 0.0 $res]
          Log::Print DEBUG "   Processing area from $la0,$lo0 to $la1,$lo1"
 
          #----- Process STRM first, if asked for
@@ -534,7 +534,7 @@ proc GeoPhysX::AverageAspect { Grid } {
             foreach file $srtmfiles {
                GenX::CacheGet $file -32768
                Log::Print DEBUG "      Processing SRTM DEM file $file"
-               gdalband gridinterp DEMTILE $file
+               gdalband gridinterp DEMTILE $file NEAREST
             }
             set data True
          }
@@ -544,19 +544,21 @@ proc GeoPhysX::AverageAspect { Grid } {
             foreach file $dnecfiles {
                GenX::CacheGet $file [expr $CDED==50?-32767:0]
                Log::Print DEBUG "      Processing CDED DEM file $file"
-#               set ll [gdalband stats $file -gridpoint 0.0 0.0]
-#               puts stderr "ll= $ll"
-#               puts stderr "xy= [set xy [gdalband stats DEMTILE -coordpoint [lindex $ll 0] [lindex $ll 1] True]]"
-#               gdalband tile DEMTILE $file [expr int([lindex $xy 0])] [expr int([lindex $xy 1])]
-               gdalband gridinterp DEMTILE $file
+               gdalband gridinterp DEMTILE $file NEAREST
             }
             set data True
          }
 
          #----- If the tile has data, process on destination grid
          if { $data } {
+#file delete -force  gdal.$xla.$xlo.tif
+#gdalfile open FILEOUT write gdal.$xla.$xlo.tif "GeoTIFF"
+#gdalband write { DEMTILE } FILEOUT
+#gdalfile close FILEOUT
             Log::Print DEBUG "   Computing slope and aspect per quadrant"
+            georef define LLREF -border 1 
             GeoPhysX::AverageAspectTile $Grid DEMTILE
+            georef define LLREF -border 0 
          }
       }
    }
@@ -613,6 +615,63 @@ proc GeoPhysX::AverageAspect { Grid } {
 
    fstdfield free GPXSLA GPXSLAN GPXSLAE GPXSLAS GPXSLAW GPXFSA GPXFSAN GPXFSAE GPXFSAS GPXFSAW
    gdalband free DEMTILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageAspect>
+# Creation : Septembre 2007 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the aspect ratio and mean slope.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the data.
+#   <Band>   : Topo data.
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageAspectTile { Grid Band } {
+
+   #----- Calculate slope and aspect for the tile
+   vexpr SLATILE dslopedeg($Band)
+   vexpr FSATILE daspect($Band)
+
+   #----- Define aspect ranges
+   vexpr FSAN ifelse((FSATILE>315 || FSATILE<=45)  && SLATILE!=0.0,1,-1)
+   vexpr FSAE ifelse((FSATILE>45 && FSATILE<=135)  && SLATILE!=0.0,1,-1)
+   vexpr FSAS ifelse((FSATILE>135 && FSATILE<=225) && SLATILE!=0.0,1,-1)
+   vexpr FSAW ifelse((FSATILE>225 && FSATILE<=315) && SLATILE!=0.0,1,-1)
+
+   #----- Set slope mask on the aspect ranges
+   vexpr SLAN  ifelse(FSAN!=-1,SLATILE,-1)
+   vexpr SLAE  ifelse(FSAE!=-1,SLATILE,-1)
+   vexpr SLAS  ifelse(FSAS!=-1,SLATILE,-1)
+   vexpr SLAW  ifelse(FSAW!=-1,SLATILE,-1)
+
+   gdalband stats FSAN -nodata -1
+   gdalband stats FSAE -nodata -1
+   gdalband stats FSAS -nodata -1
+   gdalband stats FSAW -nodata -1
+   gdalband stats SLAN -nodata -1
+   gdalband stats SLAE -nodata -1
+   gdalband stats SLAS -nodata -1
+   gdalband stats SLAW -nodata -1
+
+   #----- Do the averaging on destination grid
+   fstdfield gridinterp GPXFSAN FSAN COUNT False
+   fstdfield gridinterp GPXFSAE FSAE COUNT False
+   fstdfield gridinterp GPXFSAS FSAS COUNT False
+   fstdfield gridinterp GPXFSAW FSAW COUNT False
+
+   fstdfield gridinterp GPXSLAN SLAN AVERAGE False
+   fstdfield gridinterp GPXSLAE SLAE AVERAGE False
+   fstdfield gridinterp GPXSLAS SLAS AVERAGE False
+   fstdfield gridinterp GPXSLAW SLAW AVERAGE False
+
+   fstdfield gridinterp GPXFSA  FSATILE AVERAGE False
+   fstdfield gridinterp GPXSLA  SLATILE AVERAGE False
 }
 
 #----------------------------------------------------------------------------
@@ -2015,63 +2074,6 @@ proc GeoPhysX::AverageGradient { Grid } {
    fstdfield write GPXGXY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    fstdfield free GXYTILE GXYTILE1 GXYTILE2 GXYTILE1X GXYTILE2Y GPXGXX GPXGYY GPXGXY
-}
-
-#----------------------------------------------------------------------------
-# Name     : <GeoPhysX::AverageAspect>
-# Creation : Septembre 2007 - J.P. Gauthier - CMC/CMOE
-#
-# Goal     : Generate the aspect ratio and mean slope.
-#
-# Parameters :
-#   <Grid>   : Grid on which to generate the data.
-#   <Band>   : Topo data.
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GeoPhysX::AverageAspectTile { Grid Band } {
-
-   #----- Calculate slope and aspect for the tile
-   vexpr SLATILE dslopedeg($Band)
-   vexpr FSATILE daspect($Band)
-
-   #----- Define aspect ranges
-   vexpr FSAN ifelse((FSATILE>315 || FSATILE<=45)  && SLATILE!=0.0,1,-1)
-   vexpr FSAE ifelse((FSATILE>45 && FSATILE<=135)  && SLATILE!=0.0,1,-1)
-   vexpr FSAS ifelse((FSATILE>135 && FSATILE<=225) && SLATILE!=0.0,1,-1)
-   vexpr FSAW ifelse((FSATILE>225 && FSATILE<=315) && SLATILE!=0.0,1,-1)
-
-   #----- Set slope mask on the aspect ranges
-   vexpr SLAN  ifelse(FSAN!=-1,SLATILE,-1)
-   vexpr SLAE  ifelse(FSAE!=-1,SLATILE,-1)
-   vexpr SLAS  ifelse(FSAS!=-1,SLATILE,-1)
-   vexpr SLAW  ifelse(FSAW!=-1,SLATILE,-1)
-
-   gdalband stats FSAN -nodata -1
-   gdalband stats FSAE -nodata -1
-   gdalband stats FSAS -nodata -1
-   gdalband stats FSAW -nodata -1
-   gdalband stats SLAN -nodata -1
-   gdalband stats SLAE -nodata -1
-   gdalband stats SLAS -nodata -1
-   gdalband stats SLAW -nodata -1
-
-   #----- Do the averaging on destination grid
-   fstdfield gridinterp GPXFSAN FSAN COUNT False
-   fstdfield gridinterp GPXFSAE FSAE COUNT False
-   fstdfield gridinterp GPXFSAS FSAS COUNT False
-   fstdfield gridinterp GPXFSAW FSAW COUNT False
-
-   fstdfield gridinterp GPXSLAN SLAN AVERAGE False
-   fstdfield gridinterp GPXSLAE SLAE AVERAGE False
-   fstdfield gridinterp GPXSLAS SLAS AVERAGE False
-   fstdfield gridinterp GPXSLAW SLAW AVERAGE False
-
-   fstdfield gridinterp GPXFSA  FSATILE AVERAGE False
-   fstdfield gridinterp GPXSLA  SLATILE AVERAGE False
 }
 
 #----------------------------------------------------------------------------
