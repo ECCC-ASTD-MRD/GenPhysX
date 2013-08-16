@@ -57,7 +57,7 @@ namespace eval UrbanX { } {
    }
 
    #----- Directory where to find processing procs
-   source $GENPHYSX_HOME/UrbanX-ClassesLUT.tcl
+   source $GENPHYSX_HOME/lib/UrbanX-ClassesLUT.tcl
 
    set Param(Entities)   	[UrbanX-ClassesLUT::SetParamEntities]
    set Param(Priorities) 	[UrbanX-ClassesLUT::SetParamPriorities]

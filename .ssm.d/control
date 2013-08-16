@@ -1,0 +1,6 @@
+Package: GenPhysX
+Version: 1.2
+Platform: All
+Maintainer: Jean-Philippe Gauthier
+BuildInfo: From SVN $Id$
+Description: Geophysical field generator
