@@ -47,6 +47,9 @@ package require TclSystem
 package require MetData
 package require Logger
 
+set Log::Param(SPI)       7.6.0
+set Log::Param(Level)     INFO
+
 namespace eval GenX { } {
    global env
    variable Settings
