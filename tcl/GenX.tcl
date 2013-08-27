@@ -43,6 +43,7 @@
 #============================================================================
 
 package require TclData
+package require TclGeoPhy
 package require TclSystem
 package require MetData
 package require Logger
@@ -58,7 +59,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)   1.2                   ;#Application version
+   set Param(Version)   2.0                   ;#Application version
    set Param(Secs)      [clock seconds]       ;#To calculate execution time
    set Param(TileSize)  1024                  ;#Tile size to use for large dataset
    set Param(Cache)     {}                    ;#Input data cache list
@@ -101,8 +102,8 @@ namespace eval GenX { } {
    set Param(Urbans)    { True HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
-   set Param(Subs)      { STD }
-   set Param(Targets)   { GEMMESO GEM4.4 }   ;#Model cible
+   set Param(Subs)      { LEGACY STD }
+   set Param(Targets)   { LEGACY GEMMESO GEM4.4 }   ;#Model cible
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     hawa                  ;#Host onto which to submit the job
@@ -198,7 +199,7 @@ proc GenX::Process { Grid } {
       GeoPhysX::AverageTopoLow  $Grid
       GeoPhysX::AverageGradient $Grid
    }
-
+   
    #----- Slope and Aspect
    if { $Param(Aspect)!="" } {
       GeoPhysX::AverageAspect $Grid
@@ -230,12 +231,17 @@ proc GenX::Process { Grid } {
    }
 
    #----- Sub grid calculations
-   if { $Param(Sub)!="" } {
-      GeoPhysX::SubCorrectionFactor
-      GeoPhysX::SubTopoFilter
-      GeoPhysX::SubLaunchingHeight
-      GeoPhysX::SubY789
-      GeoPhysX::SubRoughnessLength
+   switch $Param(Sub) {
+      "STD" {
+         GeoPhysX::SubCorrectionFactor
+         GeoPhysX::SubTopoFilter
+         GeoPhysX::SubLaunchingHeight
+         GeoPhysX::SubY789
+         GeoPhysX::SubRoughnessLength
+      }
+      "LEGACY" {
+         GeoPhysX::LegacySub $Grid
+      }
    }
 
    #----- Biogenic emissions calculations
@@ -669,7 +675,7 @@ proc GenX::ParseCommandLine { } {
       }
    }
 
-   if { $Param(Sub)!="" } {
+   if { $Param(Sub)=="STD" } {
       if { $Param(Mask)=="" } {
          Log::Print ERROR "To generate sub-grid post-processed fields you need to generate the mask"
          GenX::Continue
@@ -736,6 +742,21 @@ proc GenX::ParseTarget { } {
    variable Settings
 
    switch $Param(Target) {
+      "LEGACY"  { set Param(Topo)     "USGS"
+                  set Param(Vege)     "USGS"
+                  set Param(Mask)     "USGS"
+                  set Param(Soil)     "USDA AGRC FAO"
+                  set Param(Check)    "STD"
+                  set Param(Sub)      "STD"
+                  set Param(Z0Filter) True
+                  set Param(Compress) False
+                  set Param(Sub)      LEGACY
+
+                  set Settings(GRD_TYP_S)    GU
+                  set Settings(TOPO_DGFMS_L) True
+                  set Settings(TOPO_DGFMX_L) True
+                  set Settings(TOPO_FILMX_L) True
+               }
       "GEMMESO" { set Param(Topo)     "USGS"
                   set Param(Vege)     "USGS"
                   set Param(Mask)     "USGS"
@@ -988,7 +1009,7 @@ proc GenX::GridGet { File } {
 
       #----- Read grid descriptors from source file and write grid field in aux file
       if { [llength [set tics [fstdfield find GPXGRIDFILE -1 "" -1 -1 -1 "" ">>"]]] } {
-         foreach tic $tics {
+        foreach tic $tics {
             fstdfield read TIC GPXGRIDFILE $tic
 
             set ip1 [fstdfield define TIC -IP1]

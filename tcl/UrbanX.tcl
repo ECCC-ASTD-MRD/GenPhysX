@@ -20,7 +20,7 @@
 #============================================================================
 
 namespace eval UrbanX { } {
-   global GENPHYSX_HOME
+   global env
    variable Param
    variable Const
    variable Meta
@@ -57,7 +57,7 @@ namespace eval UrbanX { } {
    }
 
    #----- Directory where to find processing procs
-   source $GENPHYSX_HOME/lib/UrbanX-ClassesLUT.tcl
+   source $env(GENPHYSX_PATH)/tcl/UrbanX-ClassesLUT.tcl
 
    set Param(Entities)   	[UrbanX-ClassesLUT::SetParamEntities]
    set Param(Priorities) 	[UrbanX-ClassesLUT::SetParamPriorities]
@@ -100,7 +100,7 @@ namespace eval UrbanX { } {
    set Param(Census2006File) $GenX::Path(StatCan)/da2006_pop_labour.shp
 
    # Next file should be moved to the data repertory with $GenX::Path()
-   set Param(TEBParamsLUTCSVFile) $GENPHYSX_HOME/doc/TEB-Params_LUT.csv
+   set Param(TEBParamsLUTCSVFile) $env(GENPHYSX_PATH)/doc/TEB-Params_LUT.csv
 
    # Pour IndustrX seulement : fichier contenant 1 polygone pour chaque province ou territoire du Canada - pourrait être déplacé dans IndustrX
    set Param(ProvincesGeom) $GenX::Path(StatCan)/Provinces_lcc-nad83.shp
@@ -1256,7 +1256,7 @@ proc UrbanX::LCC2000V { } {
 #
 #----------------------------------------------------------------------------
 proc UrbanX::Priorities2TEB { } {
-   global GENPHYSX_HOME
+   global   env
    variable Param
 
    GenX::Procs
@@ -1308,7 +1308,7 @@ proc UrbanX::Priorities2TEB { } {
    Log::Print INFO "Applying TIFF colormap to the CULUC classes"
    # The colormap id needs the $Param(NTSSheet) because it makes conflicts even after the colormap free
    colormap create CULUCCOLORMAP$Param(NTSSheet)
-   colormap read CULUCCOLORMAP$Param(NTSSheet) $GENPHYSX_HOME/doc/CULUC-colormap.rgba
+   colormap read CULUCCOLORMAP$Param(NTSSheet) $$env(GENPHYSX_PATH)/doc/CULUC-colormap.rgba
 
    gdalband define RTEB -indexed True
    gdalband configure RTEB -colormap CULUCCOLORMAP$Param(NTSSheet)

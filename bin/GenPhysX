@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+export GENPHYSX_PATH=${0%GenPhysX}..
+export TCLLIBPATH="${GENPHYSX_PATH}/lib ${TCLLIBPATH}"
+
+exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH}/tclsh "${GENPHYSX_PATH}/tcl/GenPhysX.tcl" "$@"

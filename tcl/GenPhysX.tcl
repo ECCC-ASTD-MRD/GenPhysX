@@ -1,6 +1,3 @@
-#!/bin/sh
-# the next line restarts using tclsh \
-exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.5.2}/tclsh "$0" "$@"
 #============================================================================
 # Environnement Canada
 # Centre Meteorologique Canadien
@@ -62,16 +59,13 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.5.
 #
 #============================================================================
 
-#----- Directory where to find processing procs
-set GENPHYSX_HOME [file normalize [file dirname [info script]]/../]
-
-source $GENPHYSX_HOME/lib/GenX.tcl
-source $GENPHYSX_HOME/lib/GeoPhysX.tcl
-source $GENPHYSX_HOME/lib/BioGenX.tcl
-source $GENPHYSX_HOME/lib/HydroX.tcl
-source $GENPHYSX_HOME/lib/UrbanPhysX.tcl
-source $GENPHYSX_HOME/lib/UrbanX.tcl
-source $GENPHYSX_HOME/lib/IndustrX.tcl
+source $env(GENPHYSX_PATH)/tcl/GenX.tcl
+source $env(GENPHYSX_PATH)/tcl/GeoPhysX.tcl
+source $env(GENPHYSX_PATH)/tcl/BioGenX.tcl
+source $env(GENPHYSX_PATH)/tcl/HydroX.tcl
+source $env(GENPHYSX_PATH)/tcl/UrbanPhysX.tcl
+source $env(GENPHYSX_PATH)/tcl/UrbanX.tcl
+source $env(GENPHYSX_PATH)/tcl/IndustrX.tcl
 
 Log::Start GenPhysX $GenX::Param(Version)
 
