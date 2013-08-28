@@ -1,16 +1,14 @@
 #!/bin/sh
-reconf=$1
+arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
 VERSION="2.0"
-SSM_BASE=/cnfs/dev/cmoe/afsr005/ssm
-SSM_WORK=${SSM_BASE}/workspace/${NAME}_${VERSION}_${ORDENV_PLAT}
+
+SSM_NAME=${NAME}_${VERSION}_${ORDENV_PLAT}
 
 MAKE=make
-INST=/users/dor/afsr/005
-LIB=${INST}/lib/${ORDENV_PLAT}
-INC=${INST}/include
+TCL=/cnfs/ops/cmoe/afsr005/Lib/7.6.0/${ORDENV_PLAT}/SPI
 
 unset LD_LIBRARY_PATH
 
@@ -23,31 +21,33 @@ echo ""
 echo ""
 echo "----- Making TclGeoPhy Library Object -----"
 echo ""
-if [[ -n $reconf ]]; then
+if [[ $arg = "reconf" ]]; then
    make distclean
    ./configure \
-      --exec-prefix=${LIB}/TclTk \
+      --exec-prefix=${TCL}/TclTk \
       --enable-threads \
       --enable-64bit \
-      --with-tcl=${LIB}/TclTk/lib \
-      --with-tk=${LIB}/TclTk/lib \
+      --with-tcl=${TCL}/TclTk/lib \
+      --with-tk=${TCL}/TclTk/lib \
       --with-eer=/home/afsr/005/Projects/libeerUtils \
-      --with-rmn=/cnfs/ops/cmoe/afsr005/Lib/${BASE_ARCH}/librmn-13 \
-      --with-gdal=/cnfs/ops/cmoe/afsr005/Lib/${BASE_ARCH}/gdal-1.10.0/bin/gdal-config
+      --with-rmn=/cnfs/ops/cmoe/afsr005/Lib/${ORDENV_PLAT}/librmn-13 \
+      --with-gdal=/cnfs/ops/cmoe/afsr005/Lib/${ORDENV_PLAT}/gdal-1.10.0/bin/gdal-config
 fi
 
-$MAKE
+$MAKE install
 
-echo ""
-echo "----- Building ssm package : ${SSM_WORK} -----"
-echo ""
-rm -f -r ${SSM_WORK} ${SSM_BASE}/package/${NAME}_${VERSION}_${ORDENV_PLAT}.ssm 
-mkdir -p ${SSM_WORK}/.ssm.d ${SSM_WORK}/etc/profile.d
-cp -r ../bin ${SSM_WORK}
-cp -r ../lib ${SSM_WORK}
-cp -r ../tcl ${SSM_WORK}
-cp -r ../doc ${SSM_WORK}
-cp ../.ssm.d/post-install ${SSM_WORK}/.ssm.d
-find ${SSM_WORK} -name .svn -exec rm -f -r {} \;
-sed -e 's/NAME/${NAME}/' -e 's/VERSION/${VERSION}/' -e 's/PLATFORM/${ORDENV_PLAT}/' -e 's/MAINTAINER/${USER}/' -e 's/DESC/${DESC}/' ../.ssm.d/control > ${SSM_WORK}/.ssm.d/control
-cd ${SSM_BASE}/workspace; tar -zcvf ${SSM_BASE}/package/${NAME}_${VERSION}_${ORDENV_PLAT}.ssm ${NAME}_${VERSION}_${ORDENV_PLAT}
+if [[ $arg = "ssm" ]]; then
+   echo ""
+   echo "----- Building ssm package : ${SSM_DEV}/workspace/${SSM_NAME} -----"
+   echo ""
+   rm -f -r ${SSM_DEV}/workspace/${SSM_NAME} ${SSM_DEV}/package/${NAME}_${VERSION}_${ORDENV_PLAT}.ssm 
+   mkdir -p ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d ${SSM_DEV}/workspace/${SSM_NAME}/etc/profile.d
+   cp -r ../bin ${SSM_DEV}/workspace/${SSM_NAME}
+   cp -r ../lib ${SSM_DEV}/workspace/${SSM_NAME}
+   cp -r ../tcl ${SSM_DEV}/workspace/${SSM_NAME}
+   cp -r ../doc ${SSM_DEV}/workspace/${SSM_NAME}
+   cp ../.ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
+   find ${SSM_DEV}/workspace/${SSM_NAME} -name .svn -exec rm -f -r {} \;
+   sed -e 's/NAME/${NAME}/' -e 's/VERSION/${VERSION}/' -e 's/PLATFORM/${ORDENV_PLAT}/' -e 's/MAINTAINER/${USER}/' -e 's/DESC/${DESC}/' ../.ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
+   cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${NAME}_${VERSION}_${ORDENV_PLAT}.ssm ${NAME}_${VERSION}_${ORDENV_PLAT}
+fi

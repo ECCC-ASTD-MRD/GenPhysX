@@ -32,6 +32,25 @@
  */
 #include "GeoPhy.h"
 
+/*----------------------------------------------------------------------------
+ * Nom      : <GeoPhy_SubTranspose>
+ * Creation : Aout 2013 - J.P. Gauthier - CMC/CMOE
+ *
+ * But      : Interpolate Def data into the subgrid tile
+ *
+ * Parametres :
+ *  <Def>     : Field data definition.
+ *  <I>       : Gridpoint i.
+ *  <J>       : Gridpoint j.
+ *  <Sub>     : Subgrid array (SubSample*SubSample).
+ *
+ * Retour:
+ *  <...>     : 0:Fail 1:Ok  
+ *
+ * Remarques :
+ *    - Uses TclGeoEER TDataDef structure
+ *----------------------------------------------------------------------------
+*/
 int GeoPhy_SubTranspose(TDataDef *Def,int I,int J,float *Sub) {
    
    int   i,j,idx,gdx[4];
@@ -62,6 +81,28 @@ int GeoPhy_SubTranspose(TDataDef *Def,int I,int J,float *Sub) {
    return(1);
 }
 
+/*----------------------------------------------------------------------------
+ * Nom      : <GGeoPhy_GridPointResolution>
+ * Creation : Aout 2013 - J.P. Gauthier - CMC/CMOE
+ *
+ * But      : Get teh grid resolutiopn in X and Y in meters
+ *
+ * Parametres :
+ *  <Ref>     : Georeference definition.
+ *  <Def>     : Field data definition.
+ *  <I>       : Gridpoint i.
+ *  <J>       : Gridpoint j.
+ *  <DX>      : X resolution in meters.
+ *  <DY>      : Y resolution in meters.
+ *
+ * Retour:
+ *  <...>     : 0:Fail 1:Ok  
+ *
+ * Remarques :
+ *    - We use the middle of the grid cell as a goo distance approximation
+ *      instead of usgin the average/max of each side
+ *----------------------------------------------------------------------------
+*/
 int GeoPhy_GridPointResolution(TGeoRef *Ref,TDataDef *Def,int I,int J,double *DX,double *DY) {
    
    float  di[4],dj[4],dlat[4],dlon[4];
@@ -103,8 +144,8 @@ int GeoPhy_GridPointResolution(TGeoRef *Ref,TDataDef *Def,int I,int J,double *DX
  *  <ASTOT>   : VALEUR DE A/S. 
  *  <NI>      : NOMBRE DE POINTS EN I DE LA GRILLE CIBLE.
  *  <NJ>      : NOMBRE DE POINTS EN J DE LA GRILLE CIBLE.
- *  <DX>   : RESOLUTION EN X DE LA GRILLE CIBLE.
- *  <DY>   : RESOLUTION EN Y DE LA GRILLE CIBLE.
+ *  <DX>      : RESOLUTION EN X DE LA GRILLE CIBLE.
+ *  <DY>      : RESOLUTION EN Y DE LA GRILLE CIBLE.
  *  <VAR>     : VALEUR DE LA VARIANCE DES ECHELLES NON-RESOLUES.
  *  <HX2>     : PENTE EN X AU CARRE DES ECHELLES NON-RESOLUES.
  *  <HY2>     : PENTE EN Y AU CARRE DES ECHELLES NON-RESOLUES.
@@ -118,7 +159,6 @@ int GeoPhy_GridPointResolution(TGeoRef *Ref,TDataDef *Def,int I,int J,double *DX
  *      et revisee en 2001
  *----------------------------------------------------------------------------
 */
-
 int GeoPhy_LegacyAsh(TDataDef *Topo,float *H,float DX,float DY,float *HTOT,float *ASTOT,float *VAR,float *HX2,float *HY2, float *HXY) {
 
    float dhdx,dhdx2,dhdy,dhdy2,dhdxdy,hy,hx,sasx,sasy,avgh,varh,sumh,hh,ll;
@@ -146,7 +186,7 @@ int GeoPhy_LegacyAsh(TDataDef *Topo,float *H,float DX,float DY,float *HTOT,float
       for(i=0;i<Topo->SubSample-1;i++,idx++) {
 
          // Calcul du terme A/S en direction des x.
-         sasx += fabsf(H[idx+1] - H[idx]);
+         sasx += fabsf(H[idx+1]-H[idx]);
 
          // Calcul de la moyenne des echelles non-resolues
          avgh += H[idx];
@@ -154,59 +194,53 @@ int GeoPhy_LegacyAsh(TDataDef *Topo,float *H,float DX,float DY,float *HTOT,float
          // Calcul des pentes en x et en y des echelles non-resolues.
          // Methode de differenciation de second ordre (Leapfrog).
          if (j==0) {
-            dhdy  = (H[idx+ni] - H[idx])/sdy;
+            dhdy  = (H[idx+ni]-H[idx])/sdy;
          } else if (j==s) {
-            dhdy = (H[idx] - H[idx-ni])/sdy;
+            dhdy = (H[idx]-H[idx-ni])/sdy;
          } else {
-            dhdy = (H[idx+ni] - H[idx-ni])/(2.0*sdy);
+            dhdy = (H[idx+ni]-H[idx-ni])/(2.0*sdy);
          }
-         dhdy2 += (dhdy*dhdy);
 
          if (i==0) {
-            dhdx = (H[idx+1] - H[idx])/sdx;
+            dhdx = (H[idx+1]-H[idx])/sdx;
          } else {
-            dhdx = (H[idx+1] - H[idx-1])/(2.0*sdx);
+            dhdx = (H[idx+1]-H[idx-1])/(2.0*sdx);
          }
-         dhdx2 += (dhdx*dhdx);
+         
+         dhdy2  += (dhdy*dhdy);
+         dhdx2  += (dhdx*dhdx);
          dhdxdy += (dhdx*dhdy);               
 
          // Recherche des MAX et des MIN en direction des x.     
          if (H[idx+1]==H[idx]) {
-
             tmp[i+1] = 3;
 
             if (icheq==0) {
                tmp[i] = 3;
                icheq = 1;
-
                continue;
             }
 
          } else if (H[idx+1] > H[idx]) {
-
             tmp[i+1] = 2;
 
             if (icheq==0) {
                idm[++tm] = i;
                tmp[i] = 1;
                icheq = 1;
-
                continue;
             }
 
          } else {
-
             tmp[i+1] = 1;
 
             if (icheq==0) {
                idm[++tm] = i;
                tmp[i] = 2;
                icheq = 1;
-
                continue;
             }
          }
-
 
          if (tmp[i]>2) {
             if (tmp[i+1]==1) {
@@ -225,23 +259,23 @@ int GeoPhy_LegacyAsh(TDataDef *Topo,float *H,float DX,float DY,float *HTOT,float
          }
       }
 
-      // Calcul des pentes en x et en y des echelles non-resolues a la frontiere i=Topo->SubSample
+      // Calcul des pentes en x et en y des echelles non-resolues a la frontiere i=Topo->SubSample-1
       idxe=j*ni+ni-1;
-      dhdx   = (H[idxe] - H[idxe-1])/sdx;
-      dhdx2 += (dhdx*dhdx);
+      dhdx   = (H[idxe]-H[idxe-1])/sdx;
 
       if (j==0) {
-         dhdy = (H[idxe+ni] - H[idxe])/sdy;
+         dhdy = (H[idxe+ni]-H[idxe])/sdy;
       } else if (j==s) {
-         dhdy = (H[idxe] - H[idxe-ni])/sdy;
+         dhdy = (H[idxe]-H[idxe-ni])/sdy;
       } else {
-         dhdy = (H[idxe+ni] - H[idxe-ni])/(2.0*sdy);
+         dhdy = (H[idxe+ni]-H[idxe-ni])/(2.0*sdy);
       }
+
       dhdy2  += (dhdy*dhdy);
+      dhdx2  += (dhdx*dhdx);
       dhdxdy += (dhdx*dhdy);
 
       // Calcul de la moyenne des echelles non-resolues
-
       avgh = avgh + H[idxe];
 
       if (tmp[s]==1) {
@@ -391,7 +425,7 @@ int GeoPhy_LegacyAsh(TDataDef *Topo,float *H,float DX,float DY,float *HTOT,float
 }
 
 /*----------------------------------------------------------------------------
- * Nom      : <GeoPhy_LegacyZ0>
+ * Nom      : <GeoPhy_SubGridLegacy>
  * Creation : Aout 2013 - J.P. Gauthier - CMC/CMOE
  *
  * But      : Calcul de la longueur de rugosite scalaire donnée par Grant et Mason.
@@ -415,7 +449,7 @@ int GeoPhy_LegacyAsh(TDataDef *Topo,float *H,float DX,float DY,float *HTOT,float
  *      et revisee en 2001
  *----------------------------------------------------------------------------
 */
-int GeoPhy_LegacyZ0(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TData *LH,TData *DH,TData *HX2,TData *HY2,TData *HXY) {
+int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TData *LH,TData *DH,TData *HX2,TData *HY2,TData *HXY) {
  
    int   i,j,idx,ind,s,vg,sub;
    float as,htot,sum,silh;
@@ -459,7 +493,7 @@ int GeoPhy_LegacyZ0(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TData *
          sum = 0.0f;
          sub=idx*s;
          for(ind=0;ind<s;ind++,sub++) {
-            sum += topo[ind] = Topo->Def->Sub[sub]==0.0?0.0:Topo->Def->Sub[sub]-topo[ind];
+            sum += topo[ind] = (Topo->Def->Sub[sub]==Topo->Def->NoData)?0.0:Topo->Def->Sub[sub]-topo[ind];
          }
          dh[idx] = sum/s;
 
@@ -496,7 +530,7 @@ int GeoPhy_LegacyZ0(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TData *
  *  <TCL_...> : Code d'erreur de TCL.
  *
  * Remarques :
- *
+ *   - Extrait du filtre de GEM
  *----------------------------------------------------------------------------
 */
 int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {

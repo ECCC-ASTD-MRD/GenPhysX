@@ -37,12 +37,12 @@
 #include "tcl.h"
 #include "tclData.h"
 
-#define VK       0.4f         //
-#define CT       0.5f         //
-#define HMIN     2.7182818f   //
+#define VK       0.4f         // ???
+#define CT       0.5f         // ???
+#define HMIN     2.7182818f   // ???
 #define SUB_SIZE 256          // Sub-grid maximum resolution
 
-int GeoPhy_LegacyZ0(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TData *VAR,TData *HMH,TData *HX2,TData *HY2,TData *HXY);
+int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TData *VAR,TData *HMH,TData *HX2,TData *HY2,TData *HXY);
 int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set);
 
 #endif

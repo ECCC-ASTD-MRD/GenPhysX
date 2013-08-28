@@ -86,8 +86,8 @@ static int GeoPhy_Cmd(ClientData clientData,Tcl_Interp *Interp,int Objc,Tcl_Obj 
    int   idx,pid;
    TData  *topo,*vege,*zz,*lh,*dh,*hx2,*hy2,*hxy;
    
-   static CONST char *sopt[] = { "zfilter","legacy_z0",NULL };
-   enum               opt { ZFILTER,LEGACY_z0 };
+   static CONST char *sopt[] = { "zfilter","subgrid_legacy",NULL };
+   enum               opt { ZFILTER,SUBGRID_LEGACY };
 
    Tcl_ResetResult(Interp);
 
@@ -111,7 +111,7 @@ static int GeoPhy_Cmd(ClientData clientData,Tcl_Interp *Interp,int Objc,Tcl_Obj 
          return(GeoPhy_ZFilterTopo(Interp,topo,Objv[3]));
          break;
 
-      case LEGACY_z0:
+      case SUBGRID_LEGACY:
          if(Objc<10) {
             Tcl_WrongNumArgs(Interp,2,Objv,"topo vege zz lh dh hx2 hy2 hxy");
             return(TCL_ERROR);
@@ -125,7 +125,7 @@ static int GeoPhy_Cmd(ClientData clientData,Tcl_Interp *Interp,int Objc,Tcl_Obj 
          hy2=Data_Get(Tcl_GetString(Objv[8]));
          hxy=Data_Get(Tcl_GetString(Objv[9]));
          
-         return(GeoPhy_LegacyZ0(Interp,topo,vege,zz,lh,dh,hx2,hy2,hxy));
+         return(GeoPhy_SubGridLegacy(Interp,topo,vege,zz,lh,dh,hx2,hy2,hxy));
          break;
    }
    return(TCL_OK);
