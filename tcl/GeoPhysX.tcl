@@ -180,9 +180,7 @@ proc GeoPhysX::AverageTopo { Grid } {
    #----- Save output
    fstdfield gridinterp GPXME - NOP True
    fstdfield define GPXME -NOMVAR ME -IP2 0
-   vexpr GPXMER ifelse(GPXME==-99.0,0.0,GPXME)   ;#USGS NoData value
-   vexpr GPXMER ifelse(GPXMER<-32000,0.0,GPXMER)   ;#SRTM and CDED NoData value
-   fstdfield write GPXMER GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield write GPXME GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Save RMS
    fstdfield gridinterp GPXRMS - NOP True
@@ -194,7 +192,7 @@ proc GeoPhysX::AverageTopo { Grid } {
    fstdfield define GPXRES -NOMVAR MRES -IP1 1200
    fstdfield write GPXRES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   fstdfield free GPXRMS GPXMER GPXRES GPXTSK
+   fstdfield free GPXRMS GPXRES GPXTSK
 }
 
 #----------------------------------------------------------------------------
@@ -2224,11 +2222,16 @@ proc GeoPhysX::LegacySub { Grid } {
    fstdfield copy GPXY8 $Grid
    fstdfield copy GPXY9 $Grid
   
-   Log::Print INFO "Computing legacy sub grid fields Z0 LH DH Y7 Y8 Y9"
-   geophy zfilter GPXME GenX::Settings
-   geophy legacy_z0 GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9
+   Log::Print INFO "Computing legacy sub grid fields Z0 ZP LH DH Y7 Y8 Y9"
    
+   geophy zfilter GPXME GenX::Settings
+   geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9
+   
+   vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
+   vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+
    fstdfield define GPXZ0 -NOMVAR Z0 -IP1 0 -IP2 0
+   fstdfield define GPXZP -NOMVAR ZP -IP1 0 -IP2 0
    fstdfield define GPXLH -NOMVAR LH -IP1 0 -IP2 0
    fstdfield define GPXDH -NOMVAR DH -IP1 0 -IP2 0
    fstdfield define GPXY7 -NOMVAR Y7 -IP1 0 -IP2 0
@@ -2236,13 +2239,14 @@ proc GeoPhysX::LegacySub { Grid } {
    fstdfield define GPXY9 -NOMVAR Y9 -IP1 0 -IP2 0
 
    fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXLH GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXDH GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXY7 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXY8 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXY9 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   fstdfield free GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9
+   fstdfield free GPXVG GPXZ0 GPXZP GPXLH GPXDH GPXY7 GPXY8 GPXY9
 }
 
 proc GeoPhysX::SubLaunchingHeight { } {

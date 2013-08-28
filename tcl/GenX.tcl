@@ -240,6 +240,7 @@ proc GenX::Process { Grid } {
          GeoPhysX::SubRoughnessLength
       }
       "LEGACY" {
+         GeoPhysX::SubTopoFilter
          GeoPhysX::LegacySub $Grid
       }
    }
