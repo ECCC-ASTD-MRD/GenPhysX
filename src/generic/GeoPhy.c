@@ -548,32 +548,6 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
    }
    GeoRef_Expand(Field->Ref);
 
-/*
- * AX and AY are available only for Z grid, not for others like G,A,B,N,S,L grid
- * they are latitude and longitude of gridpoints as needed by smp_digt_flt() and 
- * smp_2del_flt(), these functions will crash without them
- */
-   if  (Field->Ref->AX == NULL)
-      {
-      double lat, lon;
-      Field->Ref->AX = (float *)malloc( sizeof(float) * Field->Def->NI );
-      for(i=0;i<Field->Def->NI;i++)
-         {
-         Field->Ref->Project(Field->Ref,i,0,&lat,&lon,1,1);
-         Field->Ref->AX[i] = lon;
-         }
-      }
-   if  (Field->Ref->AY == NULL)
-      {
-      double lat, lon;
-      Field->Ref->AY = (float *)malloc( sizeof(float) * Field->Def->NJ );
-      for(j=0;j<Field->Def->NJ;j++)
-         {
-         Field->Ref->Project(Field->Ref,0,j,&lat,&lon,1,1);
-         Field->Ref->AY[j] = lat;
-         }
-      }
-
    dgfm=5;
    lcfac=2.0;
    mlr=3.0;
