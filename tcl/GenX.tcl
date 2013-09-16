@@ -91,7 +91,7 @@ namespace eval GenX { } {
    set Param(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
    set Param(NML)       ""                   ;#GEM namelist
 
-   set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 }
+   set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL }
@@ -138,6 +138,7 @@ namespace eval GenX { } {
    set Path(CDED)      CDED
    set Path(ASTERGDEM) ASTGTM_V1.1
    set Path(GTOPO30)   GTOPO30
+   set Path(GMTED2010) GMTED2010
    set Path(EOSD)      EOSD
    set Path(BNDT)      BNDT
    set Path(NTS)       NTS

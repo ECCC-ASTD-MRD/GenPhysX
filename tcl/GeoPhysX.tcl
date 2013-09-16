@@ -24,6 +24,7 @@
 #   GeoPhysX::AverageTopoCDED      { Grid { Res 250 } }
 #   GeoPhysX::AverageTopoSRTM      { Grid }
 #   GeoPhysX::AverageTopoASTERGDEM { Grid }
+#   GeoPhysX::AverageTopoGMTED2010 { Grid { Res 30 } }
 #
 #   GeoPhysX::AverageMask          { Grid }
 #   GeoPhysX::AverageMaskUSGS      { Grid }
@@ -174,6 +175,9 @@ proc GeoPhysX::AverageTopo { Grid } {
          "CDED250"   { GeoPhysX::AverageTopoCDED      GPXME 250 ;#----- CDED250 topograhy averaging method (Canada 25m) }
          "ASTERGDEM" { GeoPhysX::AverageTopoASTERGDEM GPXME     ;#----- ASTERGDEM topograhy averaging method (Global but south pole 25m) }
          "GTOPO30"   { GeoPhysX::AverageTopoGTOPO30   GPXME     ;#----- GTOPO30 topograhy averaging method (Global  900m) }
+         "GMTED30"   { GeoPhysX::AverageTopoGMTED2010 GPXME 30  ;#----- GMTED2010 topograhy averaging method (Global  900m) }
+         "GMTED15"   { GeoPhysX::AverageTopoGMTED2010 GPXME 15  ;#----- GMTED2010 topograhy averaging method (Global  450m) }
+         "GMTED75"   { GeoPhysX::AverageTopoGMTED2010 GPXME 75  ;#----- GMTED2010 topograhy averaging method (Global  225m) }
       }
    }
 
@@ -427,6 +431,69 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
    fstdfield gridinterp GPXRMS - ACCUM
    vexpr GPXRES ifelse((GPXTSK && GPXRMS),[expr $Res==250?90:25],GPXRES)
 
+   #----- Use accumulator to figure out coverage in destination
+   #----- But remove border of coverage since it will not be full
+   #----- Apply coverage mask for next resolution
+   fstdfield gridinterp $Grid - ACCUM
+   vexpr GPXTSK !fpeel($Grid)
+   fstdfield stats $Grid -mask GPXTSK
+   fstdfield stats GPXRMS -mask GPXTSK
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageTopoGMTED2010>
+# Creation : September 2013 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the topography using GMTED2010
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
+
+   GenX::Procs GMTED2010
+   Log::Print INFO "Averaging topography using GMTED2010 ${Res} database"
+
+   #----- Open the file
+   gdalfile open GMTEDFILE read $GenX::Param(DBase)/$GenX::Path(GMTED2010)/products/median/md${Res}_grd.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GMTEDFILE]]]] } {
+      Log::Print WARNING "Specified grid does not intersect with GMTED2010 database, mask will not be calculated"
+   } else {
+      Log::Print INFO "Grid intersection with GMTED2010 database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+            gdalband read GMTEDTILE { { GMTEDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats GMTEDTILE -celldim $GenX::Param(Cell)
+
+            fstdfield gridinterp $Grid GMTEDTILE AVERAGE False
+            fstdfield gridinterp GPXRMS GMTEDTILE AVERAGE_SQUARE False
+         }
+      }
+      gdalband free GMTEDTILE
+   }
+   gdalfile close GMTEDFILE
+
+   #----- Create source resolution used in destination
+   switch $Res {
+      30 { set d  900.0 }
+      15 { set d  450.0 }
+      75 { set d  225.0 }
+   }
+   fstdfield gridinterp GPXRMS - ACCUM
+   vexpr GPXRES ifelse((GPXTSK && GPXRMS),$d,GPXRES)
    #----- Use accumulator to figure out coverage in destination
    #----- But remove border of coverage since it will not be full
    #----- Apply coverage mask for next resolution
