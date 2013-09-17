@@ -447,7 +447,8 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
 # Goal     : Generate the topography using GMTED2010
 #
 # Parameters :
-#   <Grid>   : Grid on which to generate the mask
+#   <Grid>   : Grid on which to generate the topography
+#   <Res>    : resolution of dataset to use
 #
 # Return:
 #
@@ -457,13 +458,13 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
 proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
 
    GenX::Procs GMTED2010
-   Log::Print INFO "Averaging topography using GMTED2010 ${Res} database"
+   Log::Print INFO "Averaging topography using GMTED2010 md${Res} database"
 
    #----- Open the file
    gdalfile open GMTEDFILE read $GenX::Param(DBase)/$GenX::Path(GMTED2010)/products/median/md${Res}_grd.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GMTEDFILE]]]] } {
-      Log::Print WARNING "Specified grid does not intersect with GMTED2010 database, mask will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with GMTED2010 database, topo will not be calculated"
    } else {
       Log::Print INFO "Grid intersection with GMTED2010 database is { $limits }"
       set x0 [lindex $limits 0]
