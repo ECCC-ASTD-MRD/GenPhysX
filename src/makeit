@@ -4,11 +4,13 @@ arg=$1
 NAME="GenPhysX"
 DESC="Geophysical field generator."
 VERSION="2.0"
+MAINTAINER="Jean-Philippe Gauthier"
 
 SSM_NAME=${NAME}_${VERSION}_${ORDENV_PLAT}
 
 MAKE=make
-TCL=/cnfs/ops/cmoe/afsr005/Lib/7.6.0/${ORDENV_PLAT}/SPI
+#TCL=/cnfs/ops/cmoe/afsr005/Lib/7.6.0/${ORDENV_PLAT}/SPI
+TCL=/ssm/net/cmoe/apps/SPI_7.6.0_all/lib/${ORDENV_PLAT}
 
 unset LD_LIBRARY_PATH
 
@@ -18,29 +20,12 @@ echo ""
 echo "----- Building platform : ${ORDENV_PLAT} -----"
 echo ""
 
-echo ""
-echo "----- Making TclGeoPhy Library Object -----"
-echo ""
-if [[ $arg = "reconf" ]]; then
-   make distclean
-   ./configure \
-      --exec-prefix=${TCL}/TclTk \
-      --enable-threads \
-      --enable-64bit \
-      --with-tcl=${TCL}/TclTk/lib \
-      --with-tk=${TCL}/TclTk/lib \
-      --with-eer=/home/afsr/005/Projects/libeerUtils \
-      --with-rmn=/cnfs/ops/cmoe/afsr005/Lib/${ORDENV_PLAT}/librmn-13 \
-      --with-gdal=/cnfs/ops/cmoe/afsr005/Lib/${ORDENV_PLAT}/gdal-1.10.0/bin/gdal-config
-fi
-
-$MAKE install
-
 if [[ $arg = "ssm" ]]; then
+
    echo ""
    echo "----- Building ssm package : ${SSM_DEV}/workspace/${SSM_NAME} -----"
    echo ""
-   rm -f -r ${SSM_DEV}/workspace/${SSM_NAME} ${SSM_DEV}/package/${NAME}_${VERSION}_${ORDENV_PLAT}.ssm 
+   rm -f -r ${SSM_DEV}/workspace/${SSM_NAME} ${SSM_DEV}/package/${SSM_NAME}.ssm 
    mkdir -p ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d ${SSM_DEV}/workspace/${SSM_NAME}/etc/profile.d
    cp -r ../bin ${SSM_DEV}/workspace/${SSM_NAME}
    cp -r ../lib ${SSM_DEV}/workspace/${SSM_NAME}
@@ -48,6 +33,25 @@ if [[ $arg = "ssm" ]]; then
    cp -r ../doc ${SSM_DEV}/workspace/${SSM_NAME}
    cp ../.ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
    find ${SSM_DEV}/workspace/${SSM_NAME} -name .svn -exec rm -f -r {} \;
-   sed -e 's/NAME/${NAME}/' -e 's/VERSION/${VERSION}/' -e 's/PLATFORM/${ORDENV_PLAT}/' -e 's/MAINTAINER/${USER}/' -e 's/DESC/${DESC}/' ../.ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
-   cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${NAME}_${VERSION}_${ORDENV_PLAT}.ssm ${NAME}_${VERSION}_${ORDENV_PLAT}
+   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/DESC/${DESC}/" ../.ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
+   cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
+else
+
+echo ""
+echo "----- Making TclGeoPhy Library Object -----"
+echo ""
+   if [[ $arg = "reconf" ]]; then
+      make distclean
+      ./configure \
+         --exec-prefix=${TCL}/TclTk \
+         --enable-threads \
+         --enable-64bit \
+         --with-tcl=${TCL}/TclTk/lib \
+         --with-tk=${TCL}/TclTk/lib \
+         --with-eer=/ssm/net/cmoe/eer/beta/${ORDENV_PLAT} \
+         --with-rmn=/cnfs/ops/cmoe/afsr005/Lib/${ORDENV_PLAT}/librmn-13 \
+         --with-gdal=/cnfs/ops/cmoe/afsr005/Lib/${ORDENV_PLAT}/gdal-1.10.0/bin/gdal-config
+   fi
+
+   $MAKE install
 fi

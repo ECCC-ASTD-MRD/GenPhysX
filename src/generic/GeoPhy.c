@@ -51,31 +51,27 @@
  *    - Uses TclGeoEER TDataDef structure
  *----------------------------------------------------------------------------
 */
-int GeoPhy_SubTranspose(TDataDef *Def,int I,int J,float *Sub) {
+int GeoPhy_SubTranspose(TData *Topo,int I,int J,float *Sub) {
    
-   int   i,j,idx,gdx[4];
-   float di,dj,dv,v[4];
+   int   i,j,idx;
+   double di,dj,d,val,val1;
    
-   gdx[0]=J*Def->NI+I;
-   gdx[1]=gdx[0]+1;
-
-   J=J+1>=Def->NJ?J-2:J;
-   gdx[2]=(J+1)*Def->NI+I;
-   gdx[3]=gdx[2]+1;
-   
-   Def_GetQuad(Def,0,gdx,v);
-
-   dv=v[2]-v[0];
-
    idx=0;
-   for(j=0;j<Def->SubSample;j++) {
-      dj = (float)j/(Def->SubSample-1);
-      
-      for(i=0;i<Def->SubSample;i++,idx++) {
-         di = (float)i/(Def->SubSample-1);
+   d=1.0/(Topo->Def->SubSample-1);
 
-         Sub[idx] = v[0]+(v[1]-v[0])*di+(dv+(v[3]-v[1]-dv)*di)*dj;
-      }
+   for(j=0;j<Topo->Def->SubSample;j++) {
+      dj=(double)J-0.5+d*j;
+      if (dj<=-0.5) dj=-0.499;
+      if (dj>=(double)Topo->Def->NJ-0.501) dj=Topo->Def->NJ-0.501;
+      
+      for(i=0;i<Topo->Def->SubSample;i++,idx++) {
+         di=(double)I-0.5+d*i;
+         if (di<=-0.5) di=-0.499;
+         if (di>=(double)Topo->Def->NI-0.501) di=Topo->Def->NI-0.501;
+         
+         Topo->Ref->Value(Topo->Ref,Topo->Def,'L',0,di,dj,0,&val,&val1);
+         Sub[idx] = val;         
+     }
    }
    
    return(1);
@@ -484,7 +480,7 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
       for(i=0;i<Topo->Def->NI;i++,idx++) {
 
          // Interpolate topo on subgrid
-         GeoPhy_SubTranspose(Topo->Def,i,j,topo);
+         GeoPhy_SubTranspose(Topo,i,j,topo);
          
          // Get gridpoint resolution (meters)
          GeoPhy_GridPointResolution(Topo->Ref,Topo->Def,i,j,&dx,&dy);
@@ -493,7 +489,12 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
          sum = 0.0f;
          sub=idx*s;
          for(ind=0;ind<s;ind++,sub++) {
-            sum += topo[ind] = (Topo->Def->Sub[sub]==Topo->Def->NoData)?0.0:Topo->Def->Sub[sub]-topo[ind];
+            // If the value is valid
+            if (Topo->Def->Sub[sub]!=Topo->Def->NoData) {
+               sum += topo[ind] = Topo->Def->Sub[sub]-topo[ind];
+            } else {
+               topo[ind] = 0.0;
+            }
          }
          dh[idx] = sum/s;
 

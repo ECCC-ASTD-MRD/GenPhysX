@@ -110,7 +110,7 @@ TEA_ADD_SOURCES([generic/tclGeoPhy.c\
                  smp_2del_flt.f smp_coef_dgt.f smp_digt_flt.f smp_fltp_gem.f smp_grid_spc.f])
 
 TEA_ADD_HEADERS([])
-TEA_ADD_INCLUDES([-Igeneric -I/users/dor/afsr/005/Projects/eerSPI/LibTkGL/TclGeoEER/generic])
+TEA_ADD_INCLUDES([-Igeneric])
 TEA_ADD_LIBS([-lc -L${TCL_BIN_DIR}/TclGeoEER7.6.0 -lTclGeoEER7.6.0])
 TEA_ADD_CFLAGS([])
 TEA_ADD_STUB_SOURCES([])
