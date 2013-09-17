@@ -196,9 +196,7 @@ proc GenX::Process { Grid } {
 
    #----- Topography
    if { $Param(Topo)!="" } {
-      GeoPhysX::AverageTopo     $Grid
-      GeoPhysX::AverageTopoLow  $Grid
-      GeoPhysX::AverageGradient $Grid
+      GeoPhysX::AverageTopo $Grid
    }
    
    #----- Slope and Aspect
@@ -234,6 +232,8 @@ proc GenX::Process { Grid } {
    #----- Sub grid calculations
    switch $Param(Sub) {
       "STD" {
+         GeoPhysX::AverageTopoLow  $Grid
+         GeoPhysX::AverageGradient $Grid
          GeoPhysX::SubCorrectionFactor
          GeoPhysX::SubTopoFilter
          GeoPhysX::SubLaunchingHeight
@@ -749,10 +749,9 @@ proc GenX::ParseTarget { } {
                   set Param(Mask)     "USGS"
                   set Param(Soil)     "USDA AGRC FAO"
                   set Param(Check)    "STD"
-                  set Param(Sub)      "STD"
-                  set Param(Z0Filter) True
+                  set Param(Sub)      "LEGACY"
+                  set Param(Z0Filter) False
                   set Param(Compress) False
-                  set Param(Sub)      LEGACY
 
                   set Settings(GRD_TYP_S)    GU
                   set Settings(TOPO_DGFMS_L) True

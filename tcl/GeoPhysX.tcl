@@ -2297,6 +2297,12 @@ proc GeoPhysX::LegacySub { Grid } {
    vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
    vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
 
+   #------ Filter roughness length
+   if { $GenX::Param(Z0Filter) } {
+      Log::Print INFO "Filtering Z0"
+      geophy zfilter GPXZ0 GenX::Settings
+   }
+
    fstdfield define GPXZ0 -NOMVAR Z0 -IP1 0 -IP2 0
    fstdfield define GPXZP -NOMVAR ZP -IP1 0 -IP2 0
    fstdfield define GPXLH -NOMVAR LH -IP1 0 -IP2 0

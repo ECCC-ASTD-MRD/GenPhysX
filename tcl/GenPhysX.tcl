@@ -56,7 +56,12 @@
 # Retour:
 #
 # Remarks  :
-#
+#   - fix vs genesis:
+#       - 425m+ high non-existant island above Columbia in Caribbean sea
+#       - Hawaii topo is really bad
+#       - First and last overlapping x gridpoint on global grids different
+#       - LH extending far into sea
+#       - genesis seems to average with an offset toward the east (see -25.14 -70.49 823,288)
 #============================================================================
 
 source $env(GENPHYSX_PATH)/tcl/GenX.tcl
