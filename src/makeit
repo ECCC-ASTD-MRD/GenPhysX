@@ -9,8 +9,10 @@ MAINTAINER="Jean-Philippe Gauthier"
 SSM_NAME=${NAME}_${VERSION}_${ORDENV_PLAT}
 
 MAKE=make
+SPI_VERSION=7.6.0
 #TCL=/cnfs/ops/cmoe/afsr005/Lib/7.6.0/${ORDENV_PLAT}/SPI
-TCL=/ssm/net/cmoe/apps/SPI_7.6.0_all/lib/${ORDENV_PLAT}
+TCL=/ssm/net/cmoe/apps/SPI_${SPI_VERSION}_all/lib/${ORDENV_PLAT}
+LIB=/cnfs/ops/cmoe/afsr005/Lib/${SPI_VERSION}/${LIB}/${ORDENV_PLAT}
 
 unset LD_LIBRARY_PATH
 
@@ -49,8 +51,8 @@ echo ""
          --with-tcl=${TCL}/TclTk/lib \
          --with-tk=${TCL}/TclTk/lib \
          --with-eer=/ssm/net/cmoe/eer/beta/${ORDENV_PLAT} \
-         --with-rmn=/cnfs/ops/cmoe/afsr005/Lib/${ORDENV_PLAT}/librmn-13 \
-         --with-gdal=/cnfs/ops/cmoe/afsr005/Lib/${ORDENV_PLAT}/gdal-1.10.0/bin/gdal-config
+         --with-rmn=${LIB}/librmn-14 \
+         --with-gdal=${LIB}/gdal-1.10.0/bin/gdal-config
    fi
 
    $MAKE install

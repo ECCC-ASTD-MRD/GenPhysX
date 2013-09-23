@@ -304,8 +304,9 @@ VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macos
 #========================================================================
 
 %.o:%.f
-#	gfortran $< $(CCOPTIONS) -c -o $@ -L$(EER_DIR)/lib/$(ORDENV_PLAT) -lrmn
-	s.compile -src $< -optf="-o $@"
+	gfortran $< $(CCOPTIONS) -fPIC -c -o $@
+#	gfortran $< $(CCOPTIONS) -c -o $@ -L$(EER_DIR)/lib/$(ORDENV_PLAT) -lrmne
+#	s.compile -src $< -optf="-o $@"
 
 #========================================================================
 # Distribution creation
