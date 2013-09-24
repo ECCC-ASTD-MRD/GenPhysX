@@ -106,7 +106,7 @@ namespace eval GenX { } {
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 }   ;#Model cible
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
-   set Batch(Host)     hawa                  ;#Host onto which to submit the job
+   set Batch(Host)     pollux                ;#Host onto which to submit the job
    set Batch(Queue)    ""                    ;#Queue to use for the job
    set Batch(Mem)      2G                    ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
@@ -115,8 +115,7 @@ namespace eval GenX { } {
    set Batch(Path)     "\$TMPDIR/GenPhysX\$\$"
 
    #----- Various database paths
-   set Param(DBaseHAWA) /data/shared_1_b0/armn
-   set Param(DBase)     /cnfs/dev/cmdd/afsm/lib/geo
+   set Param(DBase)    /cnfs/dev/cmdd/afsm/lib/geo
 
    if  { [info exists env(GENPHYSX_DBASE)] } {
       set Param(DBase) $env(GENPHYSX_DBASE)
@@ -299,11 +298,6 @@ proc GenX::Submit { } {
    set rargv ""
    set rem   0
 
-   #----- Check for local DBase path
-   if { $Batch(Host)=="hawa" } {
-      set Param(DBase) $Param(DBaseHAWA)
-   }
-
    #----- Check if local dir is reachable
    set ldir [set tmpdir [file dirname [file normalize $Param(OutFile)]]]
    if { [catch { exec ssh $Batch(Host) ls $ldir }] } {
@@ -315,8 +309,10 @@ proc GenX::Submit { } {
    #----- Create job script
    set f [open [set job $env(TMPDIR)/GenPhysX[pid]] w 0755]
 
-   puts $f "#!/bin/ksh\nset -x"
-   puts $f "\nexport GENPHYSX_DBASE=$Param(DBase)\nexport SPI_PATH=$env(SPI_PATH)\nexport GENPHYSX_PRIORITY=-0"
+   puts $f "#!/bin/ksh\nset -x\n"
+   puts $f ". ssmuse-sh -p /ssm/net/cmoe/apps/SPI_7.6.0"
+   puts $f ". ssmuse-sh -p /ssm/net/cmoe/apps/GenPhysX_2.0"
+   puts $f "\nexport GENPHYSX_DBASE=$Param(DBase)\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
    puts $f "tmpdir=$tmpdir"
 
@@ -327,18 +323,22 @@ proc GenX::Submit { } {
    puts $f "cd \$tmpdir"
 
    if { $Param(GridFile)!="" } {
-      puts $f "srcp $host:[file normalize $Param(GridFile)] ."
+      if { $rem } {
+         puts $f "srcp $host:[file normalize $Param(GridFile)] ."
+      }
       append rargv " -gridfile [file tail $Param(GridFile)]"
    }
 
    if { $Param(Script)!="" } {
-      puts $f "srcp $host:[file normalize $Param(Script)] ."
+      if { $rem } {
+         puts $f "srcp $host:[file normalize $Param(Script)] ."
+      }
       append rargv " -param [file tail $Param(Script)]"
    }
-   if { [file exists $Param(OutFile).fst] } {
+   if { [file exists $Param(OutFile).fst] && $rem } {
       puts $f "srcp $host:[file normalize ${Param(OutFile)}.fst] ."
    }
-   if { [file exists ${Param(OutFile)}_aux.fst] } {
+   if { [file exists ${Param(OutFile)}_aux.fst] && $rem } {
       puts $f "srcp $host:[file normalize ${Param(OutFile)}_aux.fst] ."
    }
    append rargv " -result [file tail $Param(OutFile)]"
@@ -347,7 +347,7 @@ proc GenX::Submit { } {
    set idx [lsearch -exact $gargv "-batch"]
    set gargv [lreplace $gargv $idx $idx]
 
-   puts $f "\n[file normalize [info script]] $gargv \\\n   $rargv\n"
+   puts $f "GenPhysX $gargv \\\n   $rargv\n"
 
    if { $rem } {
       puts $f "srcp -r [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r \$tmpdir"
