@@ -229,11 +229,11 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
          fstdfield read USGSTILE GPXTOPOFILE $field
          fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Param(Cell)
 
-         fstdfield gridinterp $Grid USGSTILE AVERAGE False
-         
+         fstdfield gridinterp $Grid USGSTILE AVERAGE False         
          if { $GenX::Param(Sub)=="LEGACY" } {
             fstdfield gridinterp $Grid USGSTILE SUBLINEAR 11
          }
+         
          fstdfield gridinterp GPXRMS USGSTILE AVERAGE_SQUARE False
       }
       fstdfile close GPXTOPOFILE
@@ -275,7 +275,11 @@ proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
          #----- Replace nodata value with 0 meters
          vexpr GTOPO30TILE ifelse(GTOPO30TILE==-9999,0,GTOPO30TILE)
 
-         fstdfield gridinterp $Grid GTOPO30TILE AVERAGE False
+         fstdfield gridinterp $Grid GTOPO30TILE AVERAGE False         
+         if { $GenX::Param(Sub)=="LEGACY" } {
+            fstdfield gridinterp $Grid GTOPO30TILE SUBLINEAR 11
+         }
+         
          fstdfield gridinterp GPXRMS GTOPO30TILE AVERAGE_SQUARE False
       }
       gdalfile close GTOPO30FILE
@@ -319,6 +323,10 @@ proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
       gdalband stats ATSERGDEMTILE -nodata -9999 -celldim $GenX::Param(Cell)
 
       fstdfield gridinterp $Grid ATSERGDEMTILE AVERAGE False
+      if { $GenX::Param(Sub)=="LEGACY" } {
+         fstdfield gridinterp $Grid ATSERGDEMTILE SUBLINEAR 11
+      }
+      
       fstdfield gridinterp GPXRMS ATSERGDEMTILE AVERAGE_SQUARE False
       gdalfile close ATSERGDEMFILE
    }
@@ -370,6 +378,10 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
       gdalband stats SRTMTILE -celldim $GenX::Param(Cell)
 
       fstdfield gridinterp $Grid SRTMTILE AVERAGE False
+      if { $GenX::Param(Sub)=="LEGACY" } {
+         fstdfield gridinterp $Grid SRTMTILE SUBLINEAR 11
+      }
+      
       fstdfield gridinterp GPXRMS SRTMTILE AVERAGE_SQUARE False
 
       gdalfile close SRTMFILE
@@ -422,6 +434,10 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
       gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim $GenX::Param(Cell)
 
       fstdfield gridinterp $Grid CDEDTILE AVERAGE False
+      if { $GenX::Param(Sub)=="LEGACY" } {
+         fstdfield gridinterp $Grid CDEDTILE SUBLINEAR 11
+      }
+      
       fstdfield gridinterp GPXRMS CDEDTILE AVERAGE_SQUARE False
       gdalfile close CDEDFILE
    }
@@ -480,6 +496,10 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
             gdalband stats GMTEDTILE -celldim $GenX::Param(Cell)
 
             fstdfield gridinterp $Grid GMTEDTILE AVERAGE False
+            if { $GenX::Param(Sub)=="LEGACY" } {
+               fstdfield gridinterp $Grid GMTEDTILE SUBLINEAR 11
+            }
+            
             fstdfield gridinterp GPXRMS GMTEDTILE AVERAGE_SQUARE False
          }
       }
@@ -1099,7 +1119,9 @@ proc GeoPhysX::AverageVege { Grid } {
    fstdfield free GPXVF
 
    #----- Vegetation canopy height
-   GeoPhysX::AverageGLAS $Grid
+   if { $GenX::Param(Sub)!="LEGACY" } {
+      GeoPhysX::AverageGLAS $Grid
+   }
 }
 
 #----------------------------------------------------------------------------
