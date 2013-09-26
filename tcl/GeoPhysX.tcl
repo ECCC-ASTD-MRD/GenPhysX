@@ -476,8 +476,9 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
    GenX::Procs GMTED2010
    Log::Print INFO "Averaging topography using GMTED2010 md${Res} database"
 
+   # we use the mean instead of median because Antarctica and Groenland is missing in median products
    #----- Open the file
-   gdalfile open GMTEDFILE read $GenX::Param(DBase)/$GenX::Path(GMTED2010)/products/median/md${Res}_grd.tif
+   gdalfile open GMTEDFILE read $GenX::Param(DBase)/$GenX::Path(GMTED2010)/products/mean/mn${Res}_grd.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GMTEDFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with GMTED2010 database, topo will not be calculated"
