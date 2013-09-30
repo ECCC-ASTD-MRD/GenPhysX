@@ -110,7 +110,7 @@ if { [llength $grids]>1 } {
       file copy -force $GenX::Param(OutFile).fst $GenX::Param(OutFile)$Param(Process).fst
       file copy -force $GenX::Param(OutFile)_aux.fst $GenX::Param(OutFile)$Param(Process)_aux.fst
 
-      set channel [open "|[info script] $argv -process $Param(Process) 2>@1" r+]
+      set channel [open "|GenPhysX $argv -process $Param(Process) 2>@1" r+]
       fconfigure $channel -blocking False -buffering line
       fileevent $channel readable [list ProcessCheck $channel]
       incr Param(Process) 1
