@@ -539,9 +539,9 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
    Tcl_Obj *obj;
 
    float *fld,lcfac,mlr,frco;
-   int    idx,i,j,nio,njo,dgfm;
-   int    lagrd=0,digfil=0,tdxfil=0,mapfac=0,norm=0;
-   char   grtyp[2]="GU";
+   int    idx,i,j,nio,njo,dgfm,cliporo,norm;
+   int    digfil=0,tdxfil=0,mapfac=0;
+   char   grtyp[2]="GU",lagrd;
 
    if (!Field) {
       Tcl_AppendResult(Interp,"GeoPhy_ZFilterTopo: Invalid topography field",(char*)NULL);
@@ -555,11 +555,13 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
    norm=TRUE;
    frco=0.5;
    lagrd=FALSE;
+   cliporo=TRUE;
 
-   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"GRD_TYP_S",0x0)))    { grtyp[0]=Tcl_GetString(obj)[0];grtyp[1]=Tcl_GetString(obj)[1]; }
-   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_DGFMS_L",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&mapfac); }
-   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_DGFMX_L",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&digfil); }
-   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_FILMX_L",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&tdxfil); }
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"GRD_TYP_S",0x0)))       { grtyp[0]=Tcl_GetString(obj)[0];grtyp[1]=Tcl_GetString(obj)[1]; }
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_DGFMS_L",0x0)))    { Tcl_GetBooleanFromObj(Interp,obj,&mapfac); }
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_DGFMX_L",0x0)))    { Tcl_GetBooleanFromObj(Interp,obj,&digfil); }
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_FILMX_L",0x0)))    { Tcl_GetBooleanFromObj(Interp,obj,&tdxfil); }
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_CLIP_ORO_L",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&cliporo); }
 
    if (!digfil && !tdxfil) {
       return(TCL_OK);
@@ -568,28 +570,37 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
    if ( grtyp[0]=='L' && grtyp[1]=='U' ) {
      lagrd=TRUE;
    }
+   grtyp[0]='G';
 
    nio=lagrd?Field->Def->NI:Field->Def->NI-1;
    njo=Field->Def->NJ;
 
    fld=(float*)malloc(nio*njo*sizeof(float));
-   for(i=0;i<nio;i++) {
-      for(j=0;j<njo;j++) {
-         idx=j*nio+i;
-         Def_Get(Field->Def,0,FIDX2D(Field->Def,i,j),fld[idx]);
-         if (fld[idx]<0.0)
-            fld[idx]=0.0;
+      for(i=0;i<nio;i++) {
+         for(j=0;j<njo;j++) {
+            idx=j*nio+i;
+            Def_Get(Field->Def,0,FIDX2D(Field->Def,i,j),fld[idx]);
+         }
       }
-   }
 
 
    /*Apply digital filter*/
    if (digfil) {
+      if (cliporo) {
+         for(i=0;i<nio*njo;i++) {
+            if (fld[i]<0.0) fld[i]=0.0;
+         }
+      }
       f77name(smp_digt_flt)(fld,Field->Ref->AX,Field->Ref->AY,&nio,&njo,&lagrd,grtyp,&dgfm,&lcfac,&mlr,&mapfac,&norm);
    }
 
    /*Apply 2-delta-xy filter*/
    if (tdxfil) {
+      if (cliporo) {
+         for(i=0;i<nio*njo;i++) {
+            if (fld[i]<0.0) fld[i]=0.0;
+         }
+      }
       f77name(smp_2del_flt)(fld,Field->Ref->AX,Field->Ref->AY,&nio,&njo,&lagrd,grtyp,&frco);
    }
 
