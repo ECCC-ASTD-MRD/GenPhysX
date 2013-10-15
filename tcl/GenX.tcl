@@ -83,6 +83,7 @@ namespace eval GenX { } {
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
    set Param(Compress)  False                 ;#Compress standard file output
+   set Param(TopoStag)  False                 ;#Treat mulitple grids as staggered topography
    set Param(NBits)     32                    ;#Compress standard file output
    set Param(Cell)      1                     ;#Grid cell dimension (1=1D(point 2=2D(area))
    set Param(Script)    ""                    ;#User definition script
@@ -198,6 +199,11 @@ proc GenX::Process { Grid } {
       GeoPhysX::AverageTopo $Grid
    }
    
+   #----- If staggered topograhy is enabled and this is not the first grid, exit
+   if { $Param(TopoStag) && $Param(Process) } {
+      return
+   }
+
    #----- Slope and Aspect
    if { $Param(Aspect)!="" } {
       GeoPhysX::AverageAspect $Grid
@@ -532,6 +538,7 @@ proc GenX::CommandLine { } {
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
 
    Specific processing parameters:
+      \[-topostag\] [format "%-30s : Treat multiple grids as staggered topography grids" ""]
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
       \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" ($Param(Cell))]
       \[-compress\] [format "%-30s : Compress standard file output" ($Param(Compress))]
@@ -639,6 +646,7 @@ proc GenX::ParseCommandLine { } {
          "rindex"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(SMOKEIndex)] }
          "check"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Check)]; incr flags }
          "diag"      { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(Diag)] }
+         "topostag"  { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(TopoStag)] }
          "z0filter"  { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(Z0Filter)]; incr flags }
          "celldim"   { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Cell)] }
          "compress"  { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(Compress)] }
@@ -752,6 +760,7 @@ proc GenX::ParseTarget { } {
                   set Param(Sub)      "LEGACY"
                   set Param(Z0Filter) False
                   set Param(Compress) False
+                  set Param(TopoStag) True
 
                   set Settings(GRD_TYP_S)    GU
                   set Settings(TOPO_DGFMS_L) True

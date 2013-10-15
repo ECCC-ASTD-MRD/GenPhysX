@@ -110,7 +110,7 @@ if { [llength $grids]>1 } {
       file copy -force $GenX::Param(OutFile).fst $GenX::Param(OutFile)$Param(Process).fst
       file copy -force $GenX::Param(OutFile)_aux.fst $GenX::Param(OutFile)$Param(Process)_aux.fst
 
-      set channel [open "|GenPhysX $argv -process $Param(Process) 2>@1" r+]
+      set channel [open "|$env(GENPHYSX_PATH)/bin/GenPhysX $argv -process $Param(Process) 2>@1" r+]
       fconfigure $channel -blocking False -buffering line
       fileevent $channel readable [list ProcessCheck $channel]
       incr Param(Process) 1
@@ -123,13 +123,13 @@ if { [llength $grids]>1 } {
    Log::Print INFO "Merging results"
    set Param(Process) 0
    foreach grid [lreverse $grids] {
-      set err [catch { exec editfst+ -i 0 -e -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst 2>@1 } msg]
+      set err [catch { exec editfst -i 0 -s $GenX::Param(OutFile)$Param(Process).fst -d $GenX::Param(OutFile).fst 2>@1 } msg]
       if { $err } {
          Log::Print ERROR "Problems while merging results from grid #$Param(Process):\n\n\t:$msg"
       } else {
          file delete $GenX::Param(OutFile)$Param(Process).fst
       }
-      set err [catch { exec editfst+ -i 0 -e -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst 2>@1 } msg]
+      set err [catch { exec editfst -i 0 -s $GenX::Param(OutFile)$Param(Process)_aux.fst -d $GenX::Param(OutFile)_aux.fst 2>@1 } msg]
       if { $err } {
          Log::Print ERROR "Problems while merging auxiliary results from grid #$Param(Process):\n\n\t:$msg"
       } else {

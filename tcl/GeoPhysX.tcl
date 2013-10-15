@@ -186,15 +186,19 @@ proc GeoPhysX::AverageTopo { Grid } {
    fstdfield define GPXME -NOMVAR ME -IP2 0
    fstdfield write GPXME GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   #----- Save RMS
-   fstdfield gridinterp GPXRMS - NOP True
-   vexpr GPXRMS sqrt(GPXRMS)
-   fstdfield define GPXRMS -NOMVAR MRMS -IP1 1200
-   fstdfield write GPXRMS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   #----- Process RMS and resolution only for unstaggered grids
+   if { !$GenX::Param(TopoStag) || $GenX::Param(Process)==0 } {
+   
+      #----- Save RMS
+      fstdfield gridinterp GPXRMS - NOP True
+      vexpr GPXRMS sqrt(GPXRMS)
+      fstdfield define GPXRMS -NOMVAR MRMS -IP1 1200
+      fstdfield write GPXRMS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   #----- Save resolution
-   fstdfield define GPXRES -NOMVAR MRES -IP1 1200
-   fstdfield write GPXRES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      #----- Save resolution
+      fstdfield define GPXRES -NOMVAR MRES -IP1 1200
+      fstdfield write GPXRES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
 
    fstdfield free GPXRMS GPXRES GPXTSK
 }
