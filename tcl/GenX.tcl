@@ -762,7 +762,6 @@ proc GenX::ParseTarget { } {
                   set Param(Compress) False
                   set Param(TopoStag) True
 
-                  set Settings(GRD_TYP_S)    GU
                   set Settings(TOPO_DGFMS_L) True
                   set Settings(TOPO_DGFMX_L) True
                   set Settings(TOPO_FILMX_L) True
@@ -776,7 +775,6 @@ proc GenX::ParseTarget { } {
                   set Param(Z0Filter) True
                   set Param(Compress) False
 
-                  set Settings(GRD_TYP_S)    GU
                   set Settings(TOPO_DGFMS_L) True
                   set Settings(TOPO_DGFMX_L) True
                   set Settings(TOPO_FILMX_L) True
@@ -791,7 +789,6 @@ proc GenX::ParseTarget { } {
                   set Param(Compress) False
                   set Param(Cell)     2
 
-                  set Settings(GRD_TYP_S)    GU
                   set Settings(TOPO_DGFMS_L) True
                   set Settings(TOPO_DGFMX_L) True
                   set Settings(TOPO_FILMX_L) True
@@ -995,6 +992,7 @@ proc GenX::GridCopyDesc { Field FileIn FileOut } {
 #----------------------------------------------------------------------------
 proc GenX::GridGet { File } {
    variable Param
+   variable Settings
 
    set grids {}
 
@@ -1069,9 +1067,9 @@ proc GenX::GridGet { File } {
    
    #----- Check for global (wrap-around) girds for filter settings
    if { [lsearch -exact [georef define [fstdfield define [lindex $grids 0] -georef] -type] WRAP]!=-1 } {
-      set GenX::Settings(Settings(GRD_TYP_S) GU
+      set Settings(GRD_TYP_S) GU
    } else {
-      set GenX::Settings(Settings(GRD_TYP_S) LU
+      set Settings(GRD_TYP_S) LU
    }
 
    #----- Check if we're in a sub-process, if so return only the needed grid
