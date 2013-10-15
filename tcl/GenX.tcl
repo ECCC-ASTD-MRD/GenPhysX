@@ -200,7 +200,7 @@ proc GenX::Process { Grid } {
    }
    
    #----- If staggered topograhy is enabled and this is not the first grid, exit
-   if { $Param(TopoStag) && $Param(Process) } {
+   if { $Param(TopoStag) && $Param(Process)!="" && $Param(Process)!=0 } {
       return
    }
 

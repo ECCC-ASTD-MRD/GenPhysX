@@ -104,12 +104,13 @@ int GeoPhy_GridPointResolution(TGeoRef *Ref,TDataDef *Def,int I,int J,double *DX
    float  di[4],dj[4],dlat[4],dlon[4];
    double dx[4],dy[4];
    
+   I+=1.0;J+=1.0;
    di[0]=I-0.5; dj[0]=J;
    di[1]=I+0.5; dj[1]=J;
    di[2]=I;     dj[2]=J-0.5;
    di[3]=I;     dj[3]=J+0.5;
 
-   // Reproject gridpoint length coordinates os segments crossing center of cell
+   // Reproject gridpoint length coordinates as segments crossing center of cell
    c_gdllfxy(Ref->Ids[0],dlat,dlon,di,dj,4);
    dx[0]=DEG2RAD(dlon[0]); dy[0]=DEG2RAD(dlat[0]);
    dx[1]=DEG2RAD(dlon[1]); dy[1]=DEG2RAD(dlat[1]);
