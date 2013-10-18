@@ -621,38 +621,38 @@ proc GenX::ParseCommandLine { } {
    for { set i 0 } { $i < $gargc } { incr i } {
       switch -exact [string trimleft [lindex $gargv $i] "-"] {
          "version"   { puts "$Param(Version)"; Log::End 0 }
-         "verbose"   { set i [Args::Parse $gargv $gargc $i 1 Log::Param(Level)] }
-         "result"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(OutFile)] }
-         "target"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Target) $GenX::Param(Targets)]; GenX::ParseTarget; incr flags }
-         "nml"       { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(NML)]; GenX::GetNML $GenX::Param(NML) }
-         "gridfile"  { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(GridFile)] }
-         "dbase"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(DBase)] }
-         "batch"     { set i [Args::Parse $gargv $gargc $i 0 GenX::Batch(On)] }
-         "mach"      { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Host)] }
-         "t"         { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Time)] }
-         "cm"        { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Mem)] }
-         "mail"      { set i [Args::Parse $gargv $gargc $i 1 GenX::Batch(Mail)] }
-         "topo"      { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Topo) $GenX::Param(Topos)]; incr flags }
-         "mask"      { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Mask) $GenX::Param(Masks)]; incr flags }
-         "geomask"   { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
-         "vege"      { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
-         "soil"      { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
-         "subgrid"   { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Sub)]; incr flags }
-         "aspect"    { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Aspect)]; incr flags }
-         "biogenic"  { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
-         "hydro"     { set i [Args::Parse $gargv $gargc $i 2 GenX::Param(Hydro) $GenX::Param(Hydros)]; incr flags }
-         "urban"     { set i [Args::Parse $gargv $gargc $i 3 GenX::Param(Urban) $GenX::Param(Urbans) {???[A-Za-z]??}]; incr flags }
-         "smoke"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(SMOKE) $GenX::Param(SMOKES)]; incr flags }
-         "rindex"    { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(SMOKEIndex)] }
-         "check"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Check)]; incr flags }
-         "diag"      { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(Diag)] }
-         "topostag"  { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(TopoStag)] }
-         "z0filter"  { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(Z0Filter)]; incr flags }
-         "celldim"   { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Cell)] }
-         "compress"  { set i [Args::Parse $gargv $gargc $i 0 GenX::Param(Compress)] }
-         "nbits"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(NBits)] }
-         "param"     { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Script)] }
-         "process"   { set i [Args::Parse $gargv $gargc $i 1 GenX::Param(Process)] }
+         "verbose"   { set i [Args::Parse $gargv $gargc $i VALUE         Log::Param(Level)] }
+         "result"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(OutFile)] }
+         "target"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Target) $GenX::Param(Targets)]; GenX::ParseTarget; incr flags }
+         "nml"       { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(NML)]; GenX::GetNML $GenX::Param(NML) }
+         "gridfile"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(GridFile)] }
+         "dbase"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(DBase)] }
+         "batch"     { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Batch(On)] }
+         "mach"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Batch(Host)] }
+         "t"         { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Batch(Time)] }
+         "cm"        { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Batch(Mem)] }
+         "mail"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Batch(Mail)] }
+         "topo"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Topo) $GenX::Param(Topos)]; incr flags }
+         "mask"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Mask) $GenX::Param(Masks)]; incr flags }
+         "geomask"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
+         "vege"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
+         "soil"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
+         "subgrid"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Sub)]; incr flags }
+         "aspect"    { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Aspect)]; incr flags }
+         "biogenic"  { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
+         "hydro"     { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Hydro) $GenX::Param(Hydros)]; incr flags }
+         "urban"     { set i [Args::Parse $gargv $gargc $i FLAG_OR_VALUE GenX::Param(Urban) $GenX::Param(Urbans) {???[A-Za-z]??}]; incr flags }
+         "smoke"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(SMOKE) $GenX::Param(SMOKES)]; incr flags }
+         "rindex"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(SMOKEIndex)] }
+         "check"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Check)]; incr flags }
+         "diag"      { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Diag)] }
+         "topostag"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(TopoStag)] }
+         "z0filter"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0Filter)]; incr flags }
+         "celldim"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Cell)] }
+         "compress"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Compress)] }
+         "nbits"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(NBits)] }
+         "param"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Script)] }
+         "process"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Process)] }
          "help"      { GenX::CommandLine ; Log:::End 0 }
          default     { Log::Print ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; Log::End 1 }
       }
