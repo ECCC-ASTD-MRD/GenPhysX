@@ -112,7 +112,7 @@ namespace eval GenX { } {
    set Batch(Mem)      2G                    ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
-   set Batch(Submit)   "/usr/local/env/armnlib/scripts/ord_soumet"
+   set Batch(Submit)   ord_soumet
    set Batch(Path)     "\$TMPDIR/GenPhysX\$\$"
 
    #----- Various database paths
