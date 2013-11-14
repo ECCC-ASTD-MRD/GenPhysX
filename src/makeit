@@ -3,15 +3,15 @@ arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.0"
+VERSION="2.0.1"
 MAINTAINER="Jean-Philippe Gauthier"
 
 SSM_NAME=${NAME}_${VERSION}_${ORDENV_PLAT}
 
 MAKE=make
-SPI_VERSION=7.6.0
-#TCL=/cnfs/ops/cmoe/afsr005/Lib/7.6.0/${ORDENV_PLAT}/SPI
-TCL=/ssm/net/cmoe/apps/SPI_${SPI_VERSION}_all/lib/${ORDENV_PLAT}
+SPI_VERSION=7.6.1
+TCL=/cnfs/ops/cmoe/afsr005/Lib/7.6.1/${ORDENV_PLAT}/SPI
+#TCL=/ssm/net/cmoe/apps/SPI_${SPI_VERSION}_all/lib/${ORDENV_PLAT}
 LIB=/cnfs/ops/cmoe/afsr005/Lib/${SPI_VERSION}/${ORDENV_PLAT}
 
 unset LD_LIBRARY_PATH

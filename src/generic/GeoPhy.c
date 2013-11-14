@@ -490,6 +490,7 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
          sum = 0.0f;
          sub=idx*s;
          for(ind=0;ind<s;ind++,sub++) {
+
             // If the value is valid
             if (Topo->Def->Sub[sub]!=Topo->Def->NoData) {
                sum += topo[ind] = Topo->Def->Sub[sub]-topo[ind];

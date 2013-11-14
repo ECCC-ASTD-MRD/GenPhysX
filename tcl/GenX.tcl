@@ -48,7 +48,7 @@ package require TclSystem
 package require MetData
 package require Logger
 
-set Log::Param(SPI)       7.6.0
+set Log::Param(SPI)       7.6.1
 set Log::Param(Level)     INFO
 
 namespace eval GenX { } {
@@ -59,7 +59,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)   2.0                   ;#Application version
+   set Param(Version)   2.0.1                 ;#Application version
    set Param(Secs)      [clock seconds]       ;#To calculate execution time
    set Param(TileSize)  1024                  ;#Tile size to use for large dataset
    set Param(Cache)     {}                    ;#Input data cache list
@@ -365,18 +365,13 @@ proc GenX::Submit { } {
    close $f
 
    #----- Launch job script
-   if { ![file exists $Batch(Submit)] } {
-      Log::Print ERROR "Could not find job submission program $Batch(Submit)"
+   Log::Print INFO "Using $Batch(Submit) to launch job ... "
+   set err [catch { exec $Batch(Submit) $job -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) 2>@1 } msg]
+   if { $err } {
+      Log::Print ERROR "Could not launch job ($job) on $Batch(Host)\n\n\t$msg"
       Log::End 1
    } else {
-      Log::Print INFO "Using $Batch(Submit) to launch job ... "
-      set err [catch { exec $Batch(Submit) $job -threads 4 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) 2>@1 } msg]
-      if { $err } {
-         Log::Print ERROR "Could not launch job ($job) on $Batch(Host)\n\n\t$msg"
-         Log::End 1
-      } else {
-         Log::Print INFO "Job ($job) launched on $Batch(Host) ... "
-      }
+      Log::Print INFO "Job ($job) launched on $Batch(Host) ... "
    }
 
 #   file delete -force $job
