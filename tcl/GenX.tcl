@@ -59,11 +59,13 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)   2.0.1                 ;#Application version
-   set Param(Secs)      [clock seconds]       ;#To calculate execution time
-   set Param(TileSize)  1024                  ;#Tile size to use for large dataset
-   set Param(Cache)     {}                    ;#Input data cache list
-   set Param(CacheMax)  20                    ;#Input data cache max
+   set Param(Version)      2.0.1               ;#Application version
+   set Param(VersionState) beta                ;#Application state
+   
+   set Param(Secs)      [clock seconds]        ;#To calculate execution time
+   set Param(TileSize)  1024                   ;#Tile size to use for large dataset
+   set Param(Cache)     {}                     ;#Input data cache list
+   set Param(CacheMax)  20                     ;#Input data cache max
 
    set Param(Vege)       ""                    ;#Vegetation data selected
    set Param(Soil)       ""                    ;#Soil type data selected
@@ -316,8 +318,8 @@ proc GenX::Submit { } {
    set f [open [set job $env(TMPDIR)/GenPhysX[pid]] w 0755]
 
    puts $f "#!/bin/ksh\nset -x\n"
-   puts $f ". ssmuse-sh -p /ssm/net/cmoe/apps/SPI_7.6.0"
-   puts $f ". ssmuse-sh -p /ssm/net/cmoe/apps/GenPhysX_2.0"
+   puts $f ". ssmuse-sh -p [join [lrange [split $env(SPI_PATH) _] 0 end-1] _]"
+   puts $f ". ssmuse-sh -p /ssm/net/cmoe/apps/$Param(VersionState)/GenPhysX_$Param(Version)"
    puts $f "\nexport GENPHYSX_DBASE=$Param(DBase)\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
    puts $f "tmpdir=$tmpdir"

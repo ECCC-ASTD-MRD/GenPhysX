@@ -72,7 +72,7 @@ source $env(GENPHYSX_PATH)/tcl/UrbanPhysX.tcl
 source $env(GENPHYSX_PATH)/tcl/UrbanX.tcl
 source $env(GENPHYSX_PATH)/tcl/IndustrX.tcl
 
-Log::Start GenPhysX $GenX::Param(Version)
+Log::Start GenPhysX $GenX::Param(Version)$GenX::Param(VersionState)
 
 #----- Parse the arguments
 GenX::ParseCommandLine

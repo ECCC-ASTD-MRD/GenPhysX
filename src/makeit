@@ -1,6 +1,8 @@
 #!/bin/sh
 arg=$1
 
+#----- TODO: Change ssm packages for remote runs
+
 NAME="GenPhysX"
 DESC="Geophysical field generator."
 VERSION="2.0.1"
