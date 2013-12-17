@@ -48,7 +48,7 @@ package require TclSystem
 package require MetData
 package require Logger
 
-set Log::Param(SPI)       7.6.1
+set Log::Param(SPI)       7.6.2
 set Log::Param(Level)     INFO
 
 namespace eval GenX { } {
@@ -60,7 +60,7 @@ namespace eval GenX { } {
    variable Batch
 
    set Param(Version)      2.0.1               ;#Application version
-   set Param(VersionState) beta                ;#Application state
+   set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time
    set Param(TileSize)  1024                   ;#Tile size to use for large dataset
@@ -124,37 +124,38 @@ namespace eval GenX { } {
       set Param(DBase) $env(GENPHYSX_DBASE)
    }
 
-   set Path(SandUSDA)  RPN/sand_usda
-   set Path(SandFAO)   RPN/sand_fao
-   set Path(SandAGRC)  RPN/sand_argc
-   set Path(ClayUSDA)  RPN/clay_usda
-   set Path(ClayFAO)   RPN/clay_fao
-   set Path(ClayAGRC)  RPN/clay_argc
-   set Path(TopoUSGS)  RPN/me_usgs2002
-   set Path(MaskUSGS)  RPN/mg_usgs2002
-   set Path(VegeUSGS)  RPN/vg_usgs2002
-   set Path(TopoLow)   RPN/data_lres
-   set Path(Grad)      RPN/data_grad
-   set Path(HWSD)      HWSD
-   set Path(SRTM)      SRTMv4
-   set Path(CDED)      CDED
-   set Path(ASTERGDEM) ASTGTM_V1.1
-   set Path(GTOPO30)   GTOPO30
-   set Path(GMTED2010) GMTED2010
-   set Path(EOSD)      EOSD
-   set Path(BNDT)      BNDT
-   set Path(NTS)       NTS
-   set Path(CANVEC)    CanVec
-   set Path(CORINE)    CORINE
-   set Path(GlobCover) GlobCover
-   set Path(GLC2000)   GLC2000_USGS
-   set Path(CCRS)      CCRS-LC2005
-   set Path(Various)   Various
-   set Path(BELD3)     BELD3
-   set Path(LCC2000V)  LCC2000V
-   set Path(JPL)       JPL
-   set Path(NHN)       NHN
-   set Path(GLAS)      SimardPinto
+   set Path(SandUSDA)   RPN/sand_usda
+   set Path(SandFAO)    RPN/sand_fao
+   set Path(SandAGRC)   RPN/sand_argc
+   set Path(ClayUSDA)   RPN/clay_usda
+   set Path(ClayFAO)    RPN/clay_fao
+   set Path(ClayAGRC)   RPN/clay_argc
+   set Path(TopoUSGS)   RPN/me_usgs2002
+   set Path(MaskUSGS)   RPN/mg_usgs2002
+   set Path(VegeUSGS)   RPN/vg_usgs2002
+   set Path(TopoLow)    RPN/data_lres
+   set Path(Grad)       RPN/data_grad
+   set Path(HWSD)       HWSD
+   set Path(SRTM)       SRTMv4
+   set Path(CDED)       CDED
+   set Path(ASTERGDEM)  ASTGTM_V1.1
+   set Path(GTOPO30)    GTOPO30
+   set Path(GMTED2010)  GMTED2010
+   set Path(EOSD)       EOSD
+   set Path(BNDT)       BNDT
+   set Path(NTS)        NTS
+   set Path(CANVEC)     CanVec
+   set Path(CORINE)     CORINE
+   set Path(GlobCover)  GlobCover
+   set Path(GLC2000)    GLC2000_USGS
+   set Path(CCRS)       CCRS-LC2005
+   set Path(Various)    Various
+   set Path(BELD3)      BELD3
+   set Path(LCC2000V)   LCC2000V
+   set Path(JPL)        JPL
+   set Path(NHN)        NHN
+   set Path(GLAS)       SimardPinto
+   set Path(CanadaProv) Various
 
    set Path(StatCan)   /cnfs/dev/cmdd/afsm/lib/geo/StatCan2006
 

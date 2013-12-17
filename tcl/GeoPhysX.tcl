@@ -737,7 +737,7 @@ proc GeoPhysX::AverageAspectTile { Grid Band } {
 
    #----- Define aspect ranges
    vexpr FSAN ifelse((FSATILE>315 || FSATILE<=45)  && SLATILE!=0.0,1,-1)
-   vexpr FSAE ifelse((FSATILE>45 && FSATILE<=135)  && SLATILE!=0.0,1,-1)
+   vexpr FSAE ifelse((FSATILE>45  && FSATILE<=135) && SLATILE!=0.0,1,-1)
    vexpr FSAS ifelse((FSATILE>135 && FSATILE<=225) && SLATILE!=0.0,1,-1)
    vexpr FSAW ifelse((FSATILE>225 && FSATILE<=315) && SLATILE!=0.0,1,-1)
 
@@ -767,8 +767,8 @@ proc GeoPhysX::AverageAspectTile { Grid Band } {
    fstdfield gridinterp GPXSLAS SLAS AVERAGE False
    fstdfield gridinterp GPXSLAW SLAW AVERAGE False
 
-   fstdfield gridinterp GPXFSA  FSATILE AVERAGE False
-   fstdfield gridinterp GPXSLA  SLATILE AVERAGE False
+   fstdfield gridinterp GPXFSA FSATILE VECTOR_AVERAGE False
+   fstdfield gridinterp GPXSLA SLATILE AVERAGE False
 }
 
 #----------------------------------------------------------------------------
@@ -1061,7 +1061,7 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
    variable Path
    variable Param
 
-   GenX::Procs
+   GenX::Procs CanadaProv
    Log::Print INFO "Averaging geopolitical mask using CANADA database"
 
    fstdfield copy GPXMASK $Grid
@@ -1069,7 +1069,7 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
 
    #----- Loop over files
 
-   ogrfile open CANPROVFILE read /data/cmoe/afsr005/Data/Vector/Country/Canada/Provinces.shp
+   ogrfile open CANPROVFILE read $Path(CanadaProv)/Provinces.shp
    ogrlayer read CANPROV CANPROVFILE 0
    fstdfield gridinterp GPXMASK CANPROV INTERSECT
    ogrfile close CANPROVFILE
@@ -1489,7 +1489,7 @@ proc GeoPhysX::AverageGLAS { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs AverageGLAS
+   GenX::Procs GLAS
    Log::Print INFO "Averaging vegetation canopy height using GLAS database"
 
    #----- Open the file
@@ -1702,7 +1702,7 @@ proc GeoPhysX::AverageSoil { Grid } {
 proc GeoPhysX::AverageSand { Grid } {
    variable Param
 
-   GenX::Procs
+   GenX::Procs SandUSDA SandFAO SandAGRC
    fstdfield copy GPXJ1 $Grid
 
    #----- Boucle sur les types
@@ -1763,7 +1763,7 @@ proc GeoPhysX::AverageSand { Grid } {
 proc GeoPhysX::AverageSoilJPL { Grid } {
    variable Param
 
-   GenX::Procs
+   GenX::Procs JPL
    fstdfield copy GPXJ1 $Grid
    fstdfield copy GPXJ2 $Grid
 
@@ -2004,7 +2004,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
 proc GeoPhysX::AverageClay { Grid } {
    variable Param
 
-   GenX::Procs
+   GenX::Procs ClayUSDA ClayFAO ClayAGRC
    fstdfield copy GPXJ2 $Grid
 
    #----- Loop over types
