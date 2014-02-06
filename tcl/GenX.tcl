@@ -59,7 +59,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.0.1               ;#Application version
+   set Param(Version)      2.0.2               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time
@@ -334,23 +334,26 @@ proc GenX::Submit { } {
    if { $Param(GridFile)!="" } {
       if { $rem } {
          puts $f "srcp $host:[file normalize $Param(GridFile)] ."
+         append rargv " -gridfile [file tail $Param(GridFile)]"
       }
-      append rargv " -gridfile [file tail $Param(GridFile)]"
    }
 
    if { $Param(Script)!="" } {
       if { $rem } {
          puts $f "srcp $host:[file normalize $Param(Script)] ."
+         append rargv " -param [file tail $Param(Script)]"
       }
-      append rargv " -param [file tail $Param(Script)]"
    }
+   
    if { [file exists $Param(OutFile).fst] && $rem } {
       puts $f "srcp $host:[file normalize ${Param(OutFile)}.fst] ."
    }
    if { [file exists ${Param(OutFile)}_aux.fst] && $rem } {
       puts $f "srcp $host:[file normalize ${Param(OutFile)}_aux.fst] ."
    }
-   append rargv " -result [file tail $Param(OutFile)]"
+   if { $rem } {
+      append rargv " -result [file tail $Param(OutFile)]"
+   }
 
    #----- Remove batch flag from arguments
    set idx [lsearch -exact $gargv "-batch"]
