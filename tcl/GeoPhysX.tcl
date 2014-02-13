@@ -1211,7 +1211,7 @@ proc GeoPhysX::AverageVegeEOSD { Grid } {
 
          #----- We have to maks some data since they might overlap a bit
          gdalband copy EOSDMASK EOSDTILE
-         vexpr EOSDMASK EOSDMASK<<0
+         gdalband clear EOSDMASK 0.0
 
          #----- Burn NTS limits and mask EOSD
          set nts [string range [file tail $file] 0 3]
