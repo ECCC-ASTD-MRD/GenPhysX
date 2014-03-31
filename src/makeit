@@ -5,13 +5,13 @@ arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.0.1"
+VERSION="2.0.2"
 MAINTAINER="Jean-Philippe Gauthier"
 
 SSM_NAME=${NAME}_${VERSION}_${ORDENV_PLAT}
 
 MAKE=make
-SPI_VERSION=7.6.2
+SPI_VERSION=7.7.0
 TCL=/cnfs/ops/cmoe/afsr005/Lib/${SPI_VERSION}/${ORDENV_PLAT}/SPI
 #TCL=/ssm/net/cmoe/apps/SPI_${SPI_VERSION}_all/lib/${ORDENV_PLAT}
 LIB=/cnfs/ops/cmoe/afsr005/Lib/${SPI_VERSION}/${ORDENV_PLAT}
@@ -46,6 +46,7 @@ echo "----- Making TclGeoPhy Library Object -----"
 echo ""
    if [[ $arg = "reconf" ]]; then
       make distclean
+      autoconf2.50
       ./configure \
          --exec-prefix=${TCL}/TclTk \
          --enable-threads \

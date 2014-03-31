@@ -111,7 +111,7 @@ TEA_ADD_SOURCES([generic/tclGeoPhy.c\
 
 TEA_ADD_HEADERS([])
 TEA_ADD_INCLUDES([-Igeneric])
-TEA_ADD_LIBS([-lc -L${TCL_BIN_DIR}/../.. -lTclGeoEER])
+TEA_ADD_LIBS([-lc -lgfortran -L${TCL_BIN_DIR}/../.. -lTclGeoEER])
 TEA_ADD_CFLAGS([])
 TEA_ADD_STUB_SOURCES([])
 TEA_ADD_TCL_SOURCES([])
