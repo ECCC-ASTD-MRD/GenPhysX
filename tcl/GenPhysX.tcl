@@ -30,7 +30,7 @@
 #
 #      [-topo]     ()                             : Topography method { USGS SRTM CDED250 CDED50 ASTERGDEM }
 #      [-mask]     ()                             : Mask method { USGS CANVEC }
-#      [-geomask]  ()                             : Mask method { USGS CANVEC }
+#      [-geomask]  ()                             : Mask method { CANADA }
 #      [-vege]     ()                             : Vegetation method { USGS EOSD CORINE }
 #      [-soil]     ()                             : Soil method { USDA }
 #      [-aspect]   ()                             : Calculates aspect and slope { SRTM CDED250 CDED50 ASTERGDEM }

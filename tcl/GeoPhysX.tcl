@@ -986,7 +986,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    set lon1 [lindex $limits 3]
 
    fstdfield copy GPXMASK $Grid
-   GenX::GridClear GPXMASK 0.0
+   GenX::GridClear GPXMASK -999.0
 
    #----- Loop over files
    foreach file [GenX::CANVECFindFiles $lat0 $lon0 $lat1 $lon1 { HD_1480009_2 } ] {
@@ -997,6 +997,10 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
       ogrfile close CANVECFILE
    }
 
+   #----- Save a geographic mask with a nodata value
+   fstdfield define GPXMASK -NOMVAR MGGO -IP1 0 -IP2 0
+   fstdfield write GPXMASK GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   
    #----- Use whatever we have for US
 #   ogrfile open USLAKESFILE read $GenX::Param(DBase)/$GenX::Path(Various)/mjwater.shp
 #   ogrlayer read USLAKES USLAKESFILE 0

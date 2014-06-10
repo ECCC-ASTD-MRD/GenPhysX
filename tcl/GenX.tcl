@@ -48,7 +48,7 @@ package require TclSystem
 package require MetData
 package require Logger
 
-set Log::Param(SPI)       7.6.2
+set Log::Param(SPI)       7.7.1
 set Log::Param(Level)     INFO
 
 namespace eval GenX { } {
@@ -175,6 +175,7 @@ namespace eval GenX { } {
    set Settings(TOPO_FILMX_L) True
 
    gdalfile error QUIET
+
 }
 
 #----------------------------------------------------------------------------
@@ -500,6 +501,7 @@ proc GenX::MetaData { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
+
 proc GenX::CommandLine { } {
    variable Param
    variable Path
@@ -511,47 +513,47 @@ proc GenX::CommandLine { } {
    Information parameters:
       \[-help\]     [format "%-30s : This information" ""]
       \[-version\]  [format "%-30s : GenPhysX version" ""]
-      \[-verbose\]  [format "%-30s : Trace level (0 ERROR, 1 WARNING, 2 INFO, 3 DEBUG)" ($Log::Param(Level))]
+      \[-verbose\]  [format "%-30s : Trace level (ERROR,WARNING,INFO,DEBUG,EXTRA,1-4)" (${::APP_COLOR_GREEN}$Log::Param(Level)${::APP_COLOR_RESET})]
 
    Input parameters:
-      \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" ($Param(GridFile))]
-      \[-result\]   [format "%-30s : Result filename" ($Param(OutFile))]
-      \[-target\]   [format "%-30s : Set necessary flags for target model {$Param(Targets)}" ($Param(Target))]
-      \[-dbase\]    [format "%-30s : Databases path" ($Param(DBase))]
-      \[-param\]    [format "%-30s : User parameter definition to include" ($Param(Script))]
+      \[-gridfile\] [format "%-30s : FSTD file to get the grid from if no GEM namelist" (${::APP_COLOR_GREEN}$Param(GridFile)${::APP_COLOR_RESET})]
+      \[-result\]   [format "%-30s : Result filename" (${::APP_COLOR_GREEN}$Param(OutFile)${::APP_COLOR_RESET})]
+      \[-target\]   [format "%-30s : Set necessary flags for target model {$Param(Targets)}" (${::APP_COLOR_GREEN}$Param(Target)${::APP_COLOR_RESET})]
+      \[-dbase\]    [format "%-30s : Databases path" (${::APP_COLOR_GREEN}$Param(DBase)${::APP_COLOR_RESET})]
+      \[-param\]    [format "%-30s : User parameter definition to include" (${::APP_COLOR_GREEN}$Param(Script)${::APP_COLOR_RESET})]
 
    Processing parameters:
       Specify databases in order of processing joined by + ex: STRM+USGS
 
-      \[-topo\]     [format "%-30s : Topography method(s) among {$Param(Topos)}" ([join $Param(Topo)])]
-      \[-mask\]     [format "%-30s : Mask method, one of {$Param(Masks)}" ([join $Param(Mask)])]
-      \[-geomask\]  [format "%-30s : Mask method, one of {$Param(GeoMasks)}" ([join $Param(GeoMask)])]
-      \[-vege\]     [format "%-30s : Vegetation method(s) among {$Param(Veges)}" ([join $Param(Vege)])]
-      \[-soil\]     [format "%-30s : Soil method(s) among {$Param(Soils)}" ([join $Param(Soil)])]
-      \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Param(Aspects)}" ([join $Param(Aspect)])]
-      \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Param(Biogenics)}" ([join $Param(Biogenic)])]
-      \[-hydro\]    [format "%-30s : Hydrographic method(s) among {$Param(Hydros)}" ([join $Param(Hydro)])]
-      \[-urban\]    [format "%-30s : Urban coverage {$Param(Urbans)}" ([join $Param(Urban)])]
-      \[-smoke\]    [format "%-30s : SMOKE emissions {$Param(SMOKE)}" ([join $Param(SMOKE)])]
-      \[-rindex\]   [format "%-30s : SMOKE restart index (default 1)" ($Param(SMOKEIndex))]
-      \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" ($Param(Check))]
-      \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Param(Subs)}" ($Param(Sub))]
+      \[-topo\]     [format "%-30s : Topography method(s) among {$Param(Topos)}" (${::APP_COLOR_GREEN}[join $Param(Topo)]${::APP_COLOR_RESET})]
+      \[-mask\]     [format "%-30s : Mask method, one of {$Param(Masks)}" (${::APP_COLOR_GREEN}[join $Param(Mask)]${::APP_COLOR_RESET})]
+      \[-geomask\]  [format "%-30s : Mask method, one of {$Param(GeoMasks)}" (${::APP_COLOR_GREEN}[join $Param(GeoMask)]${::APP_COLOR_RESET})]
+      \[-vege\]     [format "%-30s : Vegetation method(s) among {$Param(Veges)}" (${::APP_COLOR_GREEN}[join $Param(Vege)]${::APP_COLOR_RESET})]
+      \[-soil\]     [format "%-30s : Soil method(s) among {$Param(Soils)}" (${::APP_COLOR_GREEN}[join $Param(Soil)]${::APP_COLOR_RESET})]
+      \[-aspect\]   [format "%-30s : Slope and aspect method(s) among {$Param(Aspects)}" (${::APP_COLOR_GREEN}[join $Param(Aspect)]${::APP_COLOR_RESET})]
+      \[-biogenic\] [format "%-30s : Biogenic method(s) among {$Param(Biogenics)}" (${::APP_COLOR_GREEN}[join $Param(Biogenic)]${::APP_COLOR_RESET})]
+      \[-hydro\]    [format "%-30s : Hydrographic method(s) among {$Param(Hydros)}" (${::APP_COLOR_GREEN}[join $Param(Hydro)]${::APP_COLOR_RESET})]
+      \[-urban\]    [format "%-30s : Urban coverage {$Param(Urbans)}" (${::APP_COLOR_GREEN}[join $Param(Urban)]${::APP_COLOR_RESET})]
+      \[-smoke\]    [format "%-30s : SMOKE emissions {$Param(SMOKE)}" (${::APP_COLOR_GREEN}[join $Param(SMOKE)]${::APP_COLOR_RESET})]
+      \[-rindex\]   [format "%-30s : SMOKE restart index (default 1)" (${::APP_COLOR_GREEN}$Param(SMOKEIndex)${::APP_COLOR_RESET})]
+      \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" (${::APP_COLOR_GREEN}$Param(Check)${::APP_COLOR_RESET})]
+      \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Param(Subs)}" (${::APP_COLOR_GREEN}$Param(Sub)${::APP_COLOR_RESET})]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
 
    Specific processing parameters:
       \[-topostag\] [format "%-30s : Treat multiple grids as staggered topography grids" ""]
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
-      \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" ($Param(Cell))]
-      \[-compress\] [format "%-30s : Compress standard file output" ($Param(Compress))]
-      \[-nbits\]    [format "%-30s : Maximum number of bits to use to save RPN fields" ($Param(NBits))]
+      \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" (${::APP_COLOR_GREEN}$Param(Cell)${::APP_COLOR_RESET})]
+      \[-compress\] [format "%-30s : Compress standard file output" (${::APP_COLOR_GREEN}$Param(Compress)${::APP_COLOR_RESET})]
+      \[-nbits\]    [format "%-30s : Maximum number of bits to use to save RPN fields" (${::APP_COLOR_GREEN}$Param(NBits)${::APP_COLOR_RESET})]
 
    Batch mode parameters:
       \[-batch\]    [format "%-30s : Launch in batch mode" ""]
-      \[-path\]     [format "%-30s : Remote path if local not accessible" ($Batch(Path))]
-      \[-mail\]     [format "%-30s : EMail address to send completion mail" ($Batch(Mail))]
-      \[-mach\]     [format "%-30s : Machine to run on in batch mode" ($Batch(Host))]
-      \[-t\]        [format "%-30s : Reserved CPU time (s)" ($Batch(Time))]
-      \[-cm\]       [format "%-30s : Reserved RAM (MB)" ($Batch(Mem))]
+      \[-path\]     [format "%-30s : Remote path if local not accessible" (${::APP_COLOR_GREEN}$Batch(Path)${::APP_COLOR_RESET})]
+      \[-mail\]     [format "%-30s : EMail address to send completion mail" (${::APP_COLOR_GREEN}$Batch(Mail)${::APP_COLOR_RESET})]
+      \[-mach\]     [format "%-30s : Machine to run on in batch mode" (${::APP_COLOR_GREEN}$Batch(Host)${::APP_COLOR_RESET})]
+      \[-t\]        [format "%-30s : Reserved CPU time (s)" (${::APP_COLOR_GREEN}$Batch(Time)${::APP_COLOR_RESET})]
+      \[-cm\]       [format "%-30s : Reserved RAM (MB)" ${::APP_COLOR_GREEN}($Batch(Mem)${::APP_COLOR_RESET})]
 
    If you have questions, suggestions or problems, send them to:
 
