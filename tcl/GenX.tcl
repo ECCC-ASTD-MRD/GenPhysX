@@ -81,6 +81,7 @@ namespace eval GenX { } {
    set Param(Urban)      ""                    ;#Urban coverage
    set Param(SMOKE)      ""                    ;#SMOKE emissions
    set Param(SMOKEIndex) 1                     ;#SMOKE restart index
+   set Param(Hydraulic)  False                 ;#Soil Hydraulic parameters enabled
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
@@ -97,11 +98,11 @@ namespace eval GenX { } {
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE }
-   set Param(Soils)     { USDA AGRC FAO HWSD JPL }
+   set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS }
    set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
-   set Param(Hydros)    { NHN }
+   set Param(Hydros)    { NHN NHD }
    set Param(Urbans)    { True HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
@@ -154,8 +155,11 @@ namespace eval GenX { } {
    set Path(LCC2000V)   LCC2000V
    set Path(JPL)        JPL
    set Path(NHN)        NHN
+   set Path(NHD)        NHD
    set Path(GLAS)       SimardPinto
    set Path(CanadaProv) Various
+   set Path(BNU)        BNU
+   set Path(CANSIS)     CANSIS
 
    set Path(StatCan)   /cnfs/dev/cmdd/afsm/lib/geo/StatCan2006
 
@@ -231,6 +235,11 @@ proc GenX::Process { Grid } {
    #----- Soil type
    if { $Param(Soil)!="" } {
       GeoPhysX::AverageSoil $Grid
+   }
+
+   #----- Hydraulic
+   if { $Param(Hydraulic) } {
+      GeoPhysX::AverageSoilHydraulic $Grid
    }
 
    #----- Consistency checks
@@ -644,6 +653,7 @@ proc GenX::ParseCommandLine { } {
          "aspect"    { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Aspect)]; incr flags }
          "biogenic"  { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
          "hydro"     { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Hydro) $GenX::Param(Hydros)]; incr flags }
+         "hydraulic" { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Hydraulic)]; incr flags }
          "urban"     { set i [Args::Parse $gargv $gargc $i FLAG_OR_VALUE GenX::Param(Urban) $GenX::Param(Urbans) {???[A-Za-z]??}]; incr flags }
          "smoke"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(SMOKE) $GenX::Param(SMOKES)]; incr flags }
          "rindex"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(SMOKEIndex)] }
@@ -1406,6 +1416,43 @@ proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
       if { [llength [set path [glob -nocomplain $Param(DBase)/$Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*]]] } {
          lappend files $Param(DBase)/$Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}
       }
+   }
+   return $files
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::NHDFindFiles>
+# Creation : Februrary 2014 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Get the NHD data filenames covering an area.
+#
+# Parameters :
+#  <Lat0>    : Lower left corner latitude
+#  <Lon0>    : Lower left corner longitude
+#  <Lat1>    : Upper right corner latitude
+#  <Lon1>    : Upper right corner longitude
+#
+# Return:
+#   <Files>  : List of files with coverage intersecting with area
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::NHDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
+   variable Path
+   variable Param
+
+   set nhd_dir  $Param(DBase)/$Path(NHD)/flowlines
+
+   if { ![ogrlayer is NHDLAYER] } {
+      set nhd_layer [lindex [ogrfile open NHDINDEX read $nhd_dir/Index/NHD_LinearWater_Index.shp] 0]
+      eval ogrlayer read NHDLAYER $nhd_layer
+   }
+
+   set files { }
+   foreach id [ogrlayer pick NHDLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
+      set file [ogrlayer define NHDLAYER -feature $id IDX_PATH]
+      lappend files $nhd_dir/$file
    }
    return $files
 }

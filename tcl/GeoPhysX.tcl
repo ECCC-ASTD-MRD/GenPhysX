@@ -1683,6 +1683,10 @@ proc GeoPhysX::AverageSoil { Grid } {
       GeoPhysX::AverageSoilHWSD $Grid
    } elseif { [lindex $GenX::Param(Soil) 0]=="JPL" } {
       GeoPhysX::AverageSoilJPL $Grid
+   } elseif { [lindex $GenX::Param(Soil) 0]=="BNU" } {
+      GeoPhysX::AverageSoilBNU $Grid
+   } elseif { [lindex $GenX::Param(Soil) 0]=="CANSIS" } {
+      GeoPhysX::AverageSoilCANSIS $Grid
    } else {
       GeoPhysX::AverageSand $Grid
       GeoPhysX::AverageClay $Grid
@@ -1989,6 +1993,246 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
    vector free HWSDTABLE
    eval fstdfield free $fields
    eval gdalband free HWSDTILE $types
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageSoilBNU>
+# Creation : June 2014 - V.Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the soil percentage through averaging based on BNU/GSDE
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the sand percentage
+#
+# Return:
+#
+# Remarks : This database has 8 layers splitted in 2 files, 4 each.
+#      layer    depth(m)
+#        1      0     - 0.045, 
+#        2      0.045 - 0.091, 
+#        3      0.091 - 0.166, 
+#        4      0.166 - 0.289, 
+#        5      0.289 - 0.493, 
+#        6      0.493 - 0.829, 
+#        7      0.829 - 1.383 
+#        8      1.383 - 2.296
+#           
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageSoilBNU { Grid } {
+   variable Param
+
+   GenX::Procs BNU
+
+   fstdfield copy GPXJ $Grid
+
+   #----- Read mask
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+      fstdfield read GPXMG GPXOUTFILE $idx
+      set has_MG 1
+   } else {
+      Log::Print WARNING "Could not find mask field MG"
+      set has_MG 0
+   }
+#   fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
+
+   set files  {}
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/SAND1.nc
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/SAND2.nc
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J1 -100 $has_MG  "GENPHYSX" "Sand Percentage"
+
+   set files  {}
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/CLAY1.nc
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/CLAY2.nc
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J2 -100 $has_MG  "GENPHYSX" "Clay Percentage"
+
+   set files  {}
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/GRAV1.nc
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/GRAV2.nc
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J3 -100 $has_MG  "GENPHYSX" "Gravel Percentage"
+
+   set files  {}
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/BD1.nc
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/BD2.nc
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J4 -999 $has_MG  "GENPHYSX" "Bulk Density"
+
+   fstdfield free GPXMG GPXJ
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageSoilHydraulic>
+# Creation : June 2014 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : Average Soil Hydraulic Parameters using BNU database
+#              Beijing Normal University
+#              Global Dataset of Soil Hydraulic and Thermal Parameters 
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageSoilHydraulic { Grid } {
+
+   GenX::Procs BNU
+   Log::Print INFO "Averaging Soil Hydraulic parameters using BNU/GDSHTP database"
+
+   set Datasets   {k_s     psi_s  theta_s  lambda}
+   set VarNames   {K_S     PSIS   W_S      PSDI}
+   set Descs      {}
+   lappend Descs  {Saturated Hydraulic Conductivity}
+   lappend Descs  {Saturated Capillary Potential}
+   lappend Descs  {Saturated Water Content}
+   lappend Descs  {Pore Size distribution Index}
+
+   fstdfield copy GPXHFLD $Grid
+
+   #----- Read mask
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+      fstdfield read GPXMG GPXOUTFILE $idx
+      set has_MG 1
+   } else {
+      Log::Print WARNING "Could not find mask field MG"
+      set has_MG 0
+   }
+   # loop through all available levels
+
+   foreach  dataname $Datasets varname $VarNames desc $Descs {
+      set files  {}
+      foreach  level {1 2 3 4 5 6 7 8} {
+         lappend  files  $GenX::Param(DBase)/$GenX::Path(BNU)/GDSHTP/${dataname}_l${level}.nc
+      }
+      GeoPhysX::AverageRastersFiles2rpnGrid GPXHFLD $files $varname -9999 $has_MG  "GENPHYSX" "$desc"
+   }
+   fstdfield free GPXHFLD
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageSoilCANSIS>
+# Creation : June 2014 - V.Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the soil percentage through averaging based on CANSIS
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the sand percentage
+#
+# Return:
+#
+# Remarks : This database has 3 layers at 1km resolution 
+#           and is available for North America only
+
+#      layer    thickness(cm)
+#        1      10 
+#        2      25 
+#        3      375
+#
+# There are 2 types of files, randomly distributed or dominant. We use the dominant type.
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageSoilCANSIS { Grid } {
+   variable Param
+
+   GenX::Procs CANSIS
+
+   fstdfield copy GPXJ $Grid
+
+   #----- Read mask
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+      fstdfield read GPXMG GPXOUTFILE $idx
+      set has_MG 1
+   } else {
+      Log::Print WARNING "Could not find mask field MG"
+      set has_MG 0
+   }
+#   fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
+
+   set files  {}
+   lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_SAND1_1KM.tif
+   lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_SAND2_1KM.tif
+   lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_SAND3_1KM.tif
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J1 700 $has_MG  "GENPHYSX" "Sand Percentage"
+
+   set files  {}
+   lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_CLAY1_1KM.tif
+   lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_CLAY2_1KM.tif
+   lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_CLAY3_1KM.tif
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J2 700 $has_MG "GENPHYSX" "Clay Percentage"
+
+   set files {}
+   lappend files  $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_TEXTR_DEPTH_1KM.tif
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files BRD 700 $has_MG "GENPHYSX" "Bed Rock Depth"
+
+   fstdfield free GPXMG GPXJ
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageRastersFiles2rpnGrid>
+# Creation : June 2014 
+#
+# Goal     : Generate the fields using 
+#            rasterized bands from files
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the fields
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG etiket description } {
+
+   #----- Open the files
+   set fntype  1
+   foreach file $files {
+      Log::Print INFO "Averaging $varname ($description) using database: $file"
+      set type $fntype
+      set bands [gdalfile open BFRFILE read $file]
+      set nbands [llength $bands]
+      if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef BFRFILE]]]] } {
+         Log::Print WARNING "Specified grid does not intersect with database, $varname will not be calculated"
+      } else {
+         Log::Print INFO "Grid intersection with database is { $limits }"
+         set x0 [lindex $limits 0]
+         set x1 [lindex $limits 2]
+         set y0 [lindex $limits 1]
+         set y1 [lindex $limits 3]
+   
+         set   bno  1
+         foreach  band $bands {
+
+            GenX::GridClear  $Grid  0.0
+            #----- Loop over the data by tiles since it's too big to fit in memory
+            for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+               for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+                  Log::Print DEBUG "   Processing tile: $band $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+                  set lband [lrange $band 0 1]
+                  gdalband read BFRTILE "{ $lband }" $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+                  gdalband stats BFRTILE -nodata $nodata -celldim $GenX::Param(Cell)
+                  fstdfield gridinterp $Grid BFRTILE AVERAGE False
+               }
+            }
+   
+            fstdfield gridinterp $Grid - NOP True
+
+            if { $has_MG } {
+               vexpr  $Grid "ifelse(GPXMG>0.0, $Grid, 0.0)"
+            }
+   
+            #----- Save output (Same for all layers)
+            fstdfield define $Grid -NOMVAR $varname -IP1 [expr 1200-$type] -ETIKET "$etiket"
+            fstdfield write $Grid GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+            gdalband free BFRTILE
+            incr type
+            incr bno
+         }
+      }
+      gdalfile close BFRFILE
+      set fntype [expr $fntype + $nbands]
+   }
 }
 
 #----------------------------------------------------------------------------
