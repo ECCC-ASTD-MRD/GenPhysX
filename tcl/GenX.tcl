@@ -1206,6 +1206,7 @@ proc GenX::ASTERGDEMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #----------------------------------------------------------------------------
 # Name     : <GenX::CANVECFindFiles>
 # Creation : Novembre 2007 - Jean-Philippe Gauthier - CMC/CMOE
+#            June 2014 - Vanh Souvanlasy - CMC/CMDS
 #
 # Goal     : Get the CANVEC data filenames covering an area.
 #
@@ -1226,6 +1227,11 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
    variable Path
    variable Param
 
+   # obtain CanVec database version using regexp
+   set  file [file readlink  $Param(DBase)/$Path(CANVEC)]
+   regexp {([A-z]+)-([0-9]+\.[0-9]+)}  $file bidon dbname version
+   Log::Print INFO "CanVec database version: $version"
+
    if { ![ogrlayer is NTSLAYER50K] } {
       set nts_layer [lindex [ogrfile open SHAPE50K read $Param(DBase)/$Path(NTS)/decoupage50k_2.shp] 0]
       eval ogrlayer read NTSLAYER50K $nts_layer
@@ -1239,11 +1245,20 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
       set s250 [string range $feuillet 0 2]
       set sl   [string tolower [string range $feuillet 3 3]]
       set s50  [string range $feuillet 4 5]
-      # Path structure for CanVec-9.0:
-      set path $Param(DBase)/$Path(CANVEC)/$s250/$sl
+
+      # Path structure for CanVec-9.0 or later no longer grouped files in a directory $s250$sl$s50
+      # therefore, a filter is necessary when listing files in glob
+      if { $version >= 9.0 } {
+         set path $Param(DBase)/$Path(CANVEC)/$s250/$sl
+         set filter  "$s250$sl$s50"
+      } else {
+         set path $Param(DBase)/$Path(CANVEC)/$s250/$sl/$s250$sl$s50
+         set filter  ""
+      }
 
       foreach layer $Layers {
-         if { [llength [set lst [glob -nocomplain $path/*$layer*.shp]]] } {
+         if { [llength [set lst [glob -nocomplain $path/$filter*$layer*.shp]]] } {
+            Log::Print DEBUG "Found file: $lst"
             set files [concat $files $lst]
          }
       }
