@@ -109,6 +109,8 @@ namespace eval GenX { } {
    set Param(Subs)      { LEGACY STD }
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 }   ;#Model cible
 
+   set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
+
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     pollux                ;#Host onto which to submit the job
    set Batch(Queue)    ""                    ;#Queue to use for the job
@@ -162,6 +164,7 @@ namespace eval GenX { } {
    set Path(CANSIS)     CANSIS
 
    set Path(StatCan)   /cnfs/dev/cmdd/afsm/lib/geo/StatCan2006
+   set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
 
    #----- Metadata related variables
 
