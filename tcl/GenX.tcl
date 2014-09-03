@@ -97,9 +97,9 @@ namespace eval GenX { } {
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
-   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS }
-   set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC }
+   set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD }
@@ -162,6 +162,7 @@ namespace eval GenX { } {
    set Path(CanadaProv) Various
    set Path(BNU)        BNU
    set Path(CANSIS)     CANSIS
+   set Path(MODIS_IGBP) MODIS/MCD12Q1/2013/Land_Cover_Type_1
 
    set Path(StatCan)   /cnfs/dev/cmdd/afsm/lib/geo/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
@@ -1579,3 +1580,125 @@ proc GenX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } { Name "" } } {
 
    return $Name
 }
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::Create_GridGeometry>
+# Creation : Novembre 2012 - Vanh Souvanlasy
+#
+# Goal     : create a fine polygon that surround the grid extent,
+#            not just the 4 corners
+#
+# Parameters :
+#   <Grid>   : Grid
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::Create_GridGeometry { Grid poly } {
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   puts $limits
+   set lat0 [lindex $limits 0]
+   set lon0 [lindex $limits 1]
+   set lat1 [lindex $limits 2]
+   set lon1 [lindex $limits 3]
+
+   set ni  [fstdfield define $Grid -NI]
+   set nj  [fstdfield define $Grid -NJ]
+
+   set ni1  [expr $ni-0.5]
+   set nj1  [expr $nj-0.5]
+
+   set ring  $poly.ring
+   ogrgeometry free $ring
+   ogrgeometry free $poly
+   ogrgeometry create $poly "Polygon"
+   ogrgeometry create $ring "Linear Ring"
+   ogrgeometry define $ring -points {}
+
+   set j  0
+   for {set i 0} { $i <= $ni } { incr i } {
+      set pi [expr $i - 0.5]
+      set pj [expr $j - 0.5]
+      set ll  [fstdfield stats $Grid -project $pi $pj]
+      ogrgeometry define $ring -addpoint [lindex $ll 1] [lindex $ll 0]
+   }
+   set i  [expr $ni-1]
+   for {set j 1} { $j <= $nj } { incr j } {
+      set pi [expr $i + 0.5]
+      set pj [expr $j - 0.5]
+      set ll  [fstdfield stats $Grid -project $pi $pj]
+      ogrgeometry define $ring -addpoint [lindex $ll 1] [lindex $ll 0]
+   }
+   set j  [expr $nj-1]
+   for {set i [expr $ni-1]} { $i >= 0 } { incr i -1 } {
+      set pi [expr $i - 0.5]
+      set pj [expr $j + 0.5]
+      set ll  [fstdfield stats $Grid -project $pi $pj]
+      ogrgeometry define $ring -addpoint [lindex $ll 1] [lindex $ll 0]
+   }
+   set i  0
+   for {set j [expr $nj-1]} { $j >= 0 } { incr j -1 } {
+      set pi [expr $i - 0.5]
+      set pj [expr $j - 0.5]
+      set ll  [fstdfield stats $Grid -project $pi $pj]
+      ogrgeometry define $ring -addpoint [lindex $ll 1] [lindex $ll 0]
+   }
+   ogrgeometry define $poly -geometry False $ring
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::FindFiles>
+# Creation : July 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Find file intersecting the grid area
+#
+# Parameters :
+#  <Lat0>    : Lower left corner latitude
+#  <Lon0>    : Lower left corner longitude
+#  <Lat1>    : Upper right corner latitude
+#  <Lon1>    : Upper right corner longitude  
+#
+# Return:
+#   <files>  : List of files intersecting with the area
+#
+# Remarks :   
+#
+#----------------------------------------------------------------------------
+proc GenX::FindFiles { indexfile gridpoly Lat0 Lon0 Lat1 Lon1 } {
+   variable Param
+
+   set  udsv  "_v"
+   set  files {}
+   set  rejected {}
+   if { ![file exist $indexfile] } {
+      return $files
+   }
+
+   set layer [lindex [ogrfile open UTSINDEXFILE read $indexfile] 0]
+   eval ogrlayer read SHPINDEXLAYER $layer
+#   set ids [ogrlayer pick SHPINDEXLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True]
+   set ids [ogrlayer pick SHPINDEXLAYER $gridpoly True]
+   foreach id $ids {
+      set path [ogrlayer define SHPINDEXLAYER -feature $id IDX_PATH]
+
+      set geom1 [ogrlayer define SHPINDEXLAYER -geometry $id]
+      set intersect [ogrgeometry stats $geom1 -intersect $gridpoly]
+      if { $intersect } {
+         Log::Print INFO "Using file: $path"
+         lappend files $path
+      } else {
+         lappend rejected $path
+      }
+   }
+   ogrfile close UTSINDEXFILE
+
+   if { [llength $rejected] > 0 } {
+      Log::Print INFO "Avoided processing of outside file: $rejected"
+   }
+
+   return $files
+}
+

@@ -136,6 +136,11 @@ namespace eval GeoPhysX { } {
    #----- Correspondance de Sylvie Leroyer Decembre 2010 pour la conversion des classes LCC2000V vers les classes RPN
    set Const(LCC2000V2RPN) { {   0   10  11  12 20 30 31 32 33 34 35 36 37 40 50 51 52 53 80   81        82        83      100 101 102 103 104 110 121 122  123     200 210 211 212 213 220 221 222 223 230 231 232 233 }
                              { -99 -99  -99 -99  3 24  2 24 24 21 24 24 24 22 26 11 11 22 23 { 25 23 } { 26 23 } { 13 23 }  13  22  14  22  22  14  15  15 { 15 13 } 25   4   4   4   4  7    7   7   7  25  25  25  24 } }
+
+   #----- Correspondance de USGS MODIS MCD12Q1 IGBP Land Cover Type 1 vers les classes RPN
+   set Const(MODIS2RPN) { { 0 1 2 3 4  5  6  7  8  9 10 11 12 13 14 15 16 254 255 }
+                          { 3 4 5 6 7 25 10 26  9 25 13 23 15 21 15  2 24 -99 -99 } }
+
 }
 
 #----------------------------------------------------------------------------
@@ -795,6 +800,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "CANVEC"    { GeoPhysX::AverageMaskCANVEC    $Grid }
       "GLOBCOVER" { GeoPhysX::AverageMaskGLOBCOVER $Grid }
       "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
+      "MCD12Q1"   { GeoPhysX::AverageMaskMCD12Q1   $Grid }
    }
 }
 
@@ -1169,6 +1175,7 @@ proc GeoPhysX::AverageVege { Grid } {
          "EOSD"      { GeoPhysX::AverageVegeEOSD      GPXVF ;#----- EOSD over Canada only vege averaging method }
          "LCC2000V"  { GeoPhysX::AverageVegeLCC2000V  GPXVF ;#----- LCC2000V over Canada only vege averaging method }
          "CORINE"    { GeoPhysX::AverageVegeCORINE    GPXVF ;#----- CORINE over Europe only vege averaging method }
+         "MCD12Q1"   { GeoPhysX::AverageVegeMCD12Q1   GPXVF ;#----- MODIS MCD12Q1 IGBP global vegetation }
       }
    }
    fstdfield free GPXVSK
@@ -1648,6 +1655,163 @@ proc GeoPhysX::AverageVegeGLC2000 { Grid } {
    gdalfile close GLCFILE
 }
 
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageVegeMCD12Q1>
+# Creation : June 2014 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the 20 something vegetation types through averaging.
+#            using USGS MODIS MCD12Q1 IGBP global vegetation 
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageVegeMCD12Q1 { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs MODIS_MCD12Q1
+   Log::Print INFO "Averaging vegetation type using MODIS MCD12Q1 IGBP global vegetation database"
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   set la0 [lindex $limits 0]
+   set lo0 [lindex $limits 1]
+   set la1 [lindex $limits 2]
+   set lo1 [lindex $limits 3]
+   Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
+                  
+   GenX::Create_GridGeometry $Grid myGridPoly
+
+   set lcdir  $GenX::Param(DBase)/$GenX::Path(MODIS_IGBP)
+   set files [GenX::FindFiles $lcdir/Index/Index.shp myGridPoly $la0 $lo0 $la1 $lo1]
+
+   foreach file  $files {
+      Log::Print INFO "Processing file : $file"
+      gdalfile open MODISFILE read $lcdir$file
+   
+      if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef MODISFILE]]]] } {
+         Log::Print WARNING "Specified grid does not intersect with MCD12Q1 database, vegetation will not be calculated"
+      } else {
+         Log::Print INFO "Using correspondance table\n   From:[lindex $Const(MODIS2RPN) 0]\n   To  :[lindex $Const(MODIS2RPN) 1]"
+         vector create FROMMODIS  [lindex $Const(MODIS2RPN) 0]
+         vector create TORPN    [lindex $Const(MODIS2RPN) 1]
+   
+         Log::Print INFO "Grid intersection with MODIS MCD12Q1 database is { $limits }"
+         set x0 [lindex $limits 0]
+         set x1 [lindex $limits 2]
+         set y0 [lindex $limits 1]
+         set y1 [lindex $limits 3]
+   
+         #----- Loop over the data by tiles since it's too big to fit in memory
+         for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+            for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+               Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+               gdalband read LCTILE { { MODISFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+               gdalband stats LCTILE -nodata 255 -celldim $GenX::Param(Cell)
+   
+               vexpr LCTILE lut(LCTILE,FROMMODIS,TORPN)
+# the MODIS2RPN table change NoData value from 255 to -99
+               gdalband stats LCTILE -nodata -99
+               fstdfield gridinterp $Grid LCTILE NORMALIZED_COUNT $Param(VegeTypes) False
+            }
+         }
+   
+         #----- If there is other DB to process
+         if { [lsearch -exact $GenX::Param(Vege) MCD12Q1]<[expr [llength $GenX::Param(Vege)]-1] } {
+            #----- Use accumulator to figure out coverage in destination
+            #      But remove border of coverage since it will not be full
+            fstdfield gridinterp $Grid - ACCUM
+            vexpr GPXVSK !fpeel($Grid)
+            fstdfield stats $Grid -mask GPXVSK
+         }
+   
+         gdalband free LCTILE
+         vector free FROMMODIS TORPN
+      }
+      gdalfile close MODISFILE
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageMaskMCD12Q1>
+# Creation : June 2014 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the 20 something vegetation types through averaging.
+#            using USGS MODIS MCD12Q1 IGBP global vegetation 
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageMaskMCD12Q1 { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs MODIS_MCD12Q1
+   Log::Print INFO "Averaging mask type using MODIS MCD12Q1 IGBP global vegetation database"
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   set la0 [lindex $limits 0]
+   set lo0 [lindex $limits 1]
+   set la1 [lindex $limits 2]
+   set lo1 [lindex $limits 3]
+   Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
+                  
+   GenX::Create_GridGeometry $Grid myGridPoly
+   GenX::GridClear $Grid 0.0
+   fstdfield copy GPXMASK  $Grid
+   GenX::GridClear GPXMASK 0.0
+
+
+   set lcdir  $GenX::Param(DBase)/$GenX::Path(MODIS_IGBP)
+   set files [GenX::FindFiles $lcdir/Index/Index.shp myGridPoly $la0 $lo0 $la1 $lo1]
+
+   foreach file  $files {
+
+      Log::Print INFO "Processing file : $file"
+      gdalfile open MCDFILE read $lcdir$file
+   
+      if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef MCDFILE]]]] } {
+         Log::Print WARNING "Specified grid does not intersect with MODIS MCD12Q1 database, vegetation will not be calculated"
+      } else {
+         Log::Print INFO "Grid intersection with MODIS MCD12Q1 database is { $limits }"
+         set x0 [lindex $limits 0]
+         set x1 [lindex $limits 2]
+         set y0 [lindex $limits 1]
+         set y1 [lindex $limits 3]
+   
+         #----- Loop over the data by tiles since it's too big to fit in memory
+         for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+            for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+               Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+               gdalband read MODISTILE { { MCDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+   
+               vexpr MODISTILE ifelse(MODISTILE==255||MODISTILE==0,MODISTILE,1.0)
+               gdalband stats MODISTILE -nodata 255 -celldim $GenX::Param(Cell)
+               fstdfield gridinterp GPXMASK MODISTILE AVERAGE False
+            }
+         }
+   
+         gdalband free MODISTILE WKTILE
+      }
+      gdalfile close MCDFILE
+   }
+
+   #----- Save output
+   fstdfield gridinterp GPXMASK - NOP True
+   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
+   fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+
+   fstdfield free GPXMASK
+}
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageVegeCCRS>
 # Creation : Janvier 2009 - J.P. Gauthier - CMC/CMOE
