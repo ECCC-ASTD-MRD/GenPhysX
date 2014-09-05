@@ -1009,9 +1009,10 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
             set GenX::Param(Mask) $GenX::Param(FallbackMask)
             GeoPhysX::AverageMask $Grid
             if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
-            fstdfield read GPXMGFB GPXOUTFILE $idx
-            Log::Print INFO "Got a fallback mask field"
-            set has_fallback  1
+               fstdfield read GPXMGFB GPXOUTFILE $idx
+               Log::Print INFO "Got a fallback mask field"
+               set has_fallback  1
+            }
             set GenX::Param(Mask) $old_maskid
          }
       }
