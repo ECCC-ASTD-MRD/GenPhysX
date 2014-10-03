@@ -1404,6 +1404,7 @@ proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #----------------------------------------------------------------------------
 # Name     : <GenX::NHNFindFiles>
 # Creation : August 2011 - J.P. Gauthier - CMC/CMOE
+# Revision : October 2014 - Vanh Souvanlasy - CMC/CMDS
 #
 # Goal     : Get the NHN data filenames covering an area.
 #
@@ -1421,21 +1422,58 @@ proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #----------------------------------------------------------------------------
 proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
-   variable Param
 
    if { ![ogrlayer is NHNLAYER] } {
-      set nhn_layer [lindex [ogrfile open NHNINDEX read $Param(DBase)/$Path(NHN)/index/NHN_INDEX_07_INDEX_WORKUNIT_LIMIT_2.shp] 0]
+      set nhn_layer [lindex [ogrfile open NHNINDEX read $Path(NHN)/index/NHN_INDEX_07_INDEX_WORKUNIT_LIMIT_2.shp] 0]
       eval ogrlayer read NHNLAYER $nhn_layer
    }
 
+   array unset  Feuillets
+#
+# For NHN prior to 2013 update: 
+#    All datasetnam that have 000 ending, reject other dataset of same 
+#    wscssda because they are older partial overlapping duplicates.
+#    If 000 not present, keep all other dataset of same wscssda
+#
    set files { }
    foreach id [ogrlayer pick NHNLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
       set feuillet [ogrlayer define NHNLAYER -feature $id DATASETNAM]
       set wscmda [ogrlayer define NHNLAYER -feature $id WSCMDA]
-      if { [llength [set path [glob -nocomplain $Param(DBase)/$Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*]]] } {
-         lappend files $Param(DBase)/$Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}
+      set wscssda [ogrlayer define NHNLAYER -feature $id WSCSSDA]
+      if { [llength [set path [glob -nocomplain $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*.shp]]] == 0 } {
+         continue
+      }
+      if { [info exist Feuillets($wscssda)] } {
+         set  dset  [string range $Feuillets($wscssda) 4 6]
+         set  dset2 [string range $feuillet 4 6]
+         if { [string compare $dset2 000] == 0 } {
+            set  Feuillets($wscssda)  $feuillet
+         } else {
+            if { [llength $Feuillets($wscssda)] == 1 } {
+               if { [string compare $dset 000] == 0 } {
+               } else {
+                  lappend Feuillets($wscssda) $feuillet
+               }
+            } else {
+              if { [lsearch Feuillets($wscssda) $feuillet] < 0 } {
+                  lappend Feuillets($wscssda) $feuillet
+              }
+            }
+         }
+      } else {
+         set  Feuillets($wscssda)  $feuillet
       }
    }
+
+   foreach wscssda [array names Feuillets] {
+      foreach feuillet $Feuillets($wscssda) {
+         set wscmda  [string range $feuillet 0 1]
+         if { [llength [set path [glob -nocomplain $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*.shp]]] > 0 } {
+            lappend files $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}
+         }
+      }
+   }
+
    return $files
 }
 
