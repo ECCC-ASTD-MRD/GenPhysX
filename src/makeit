@@ -5,16 +5,15 @@ arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.0.3"
+VERSION="2.0.4"
 MAINTAINER="Jean-Philippe Gauthier"
 
 SSM_NAME=${NAME}_${VERSION}_${ORDENV_PLAT}
 
 MAKE=make
-SPI_VERSION=7.7.3
-TCL=/users/dor/afsr/005/Links/dev//Lib/${SPI_VERSION}/${ORDENV_PLAT}/SPI
-#TCL=/ssm/net/cmoe/apps/SPI_${SPI_VERSION}_all/lib/${ORDENV_PLAT}
-LIB=/users/dor/afsr/005/Links/dev/Lib/${SPI_VERSION}/${ORDENV_PLAT}
+SPI_VERSION=7.8.0
+LIB=/users/dor/afsr/005/Links/libfs${SPI_VERSION}/${ORDENV_PLAT}
+TCL=${LIB}/SPI
 
 unset LD_LIBRARY_PATH
 
@@ -53,8 +52,8 @@ echo ""
          --enable-64bit \
          --with-tcl=${TCL}/TclTk/lib \
          --with-tk=${TCL}/TclTk/lib \
-         --with-eer=${SSM_DEV}/workspace/eerUtils_1.8.0_${ORDENV_PLAT} \
-         --with-rmn=${LIB}/librmn-14 \
+         --with-eer=${SSM_DEV}/workspace/eerUtils_1.10.0_${ORDENV_PLAT} \
+         --with-rmn=${LIB}/librmn-15 \
          --with-gdal=${LIB}/gdal-1.11.0/bin/gdal-config
    fi
 
