@@ -59,7 +59,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.0.3               ;#Application version
+   set Param(Version)      2.0.4               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time
@@ -99,7 +99,7 @@ namespace eval GenX { } {
    set Param(Aspects)   { SRTM CDED250 CDED50 }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS }
-   set Param(Masks)     { USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 }
+   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD }
@@ -135,6 +135,7 @@ namespace eval GenX { } {
    set Path(ClayAGRC)   RPN/clay_argc
    set Path(TopoUSGS)   RPN/me_usgs2002
    set Path(MaskUSGS)   RPN/mg_usgs2002
+   set Path(MaskUSNavy) RPN/mg_usnavy
    set Path(VegeUSGS)   RPN/vg_usgs2002
    set Path(TopoLow)    RPN/data_lres
    set Path(Grad)       RPN/data_grad

@@ -27,6 +27,7 @@
 #   GeoPhysX::AverageTopoGMTED2010 { Grid { Res 30 } }
 #
 #   GeoPhysX::AverageMask          { Grid }
+#   GeoPhysX::AverageMaskUSNavy    { Grid } 
 #   GeoPhysX::AverageMaskUSGS      { Grid }
 #   GeoPhysX::AverageMaskCANVEC    { Grid }
 #   GeoPhysX::AverageMaskGLOBCOVER { Grid }
@@ -796,6 +797,7 @@ proc GeoPhysX::AverageMask { Grid } {
    GenX::Procs
 
    switch $GenX::Param(Mask) {
+      "USNAVY"    { GeoPhysX::AverageMaskUSNAVY    $Grid }
       "USGS"      { GeoPhysX::AverageMaskUSGS      $Grid }
       "CANVEC"    { GeoPhysX::AverageMaskCANVEC    $Grid }
       "GLOBCOVER" { GeoPhysX::AverageMaskGLOBCOVER $Grid }
@@ -827,7 +829,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
    GenX::GridClear GPXMASK 0.0
 
    #----- Loop over files
-   foreach file [glob $GenX::Param(DBase)/$GenX::Path(MaskUSGS)/*] {
+   foreach file [glob $GenX::Param(DBase)/$GenX::Path(MaskUSGS)/*] { 
       Log::Print DEBUG "   Processing file : $file"
       fstdfile open GPXMASKFILE read $file
 
@@ -842,6 +844,50 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
       }
       fstdfile close GPXMASKFILE
    }
+
+   #----- Save output
+   fstdfield gridinterp GPXMASK - NOP True
+   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
+   vexpr GPXMASK ifelse(GPXMASK==-99.0,0.0,GPXMASK/100.0)
+   fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield free MASKTILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageMaskUSNavy>
+# Creation : June 2006 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Generate the land/sea mask through averaging.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageMaskUSNavy { Grid } {
+
+   GenX::Procs MaskUSGS
+   Log::Print INFO "Averaging mask using USGS database"
+
+   fstdfield copy GPXMASK  $Grid
+   GenX::GridClear GPXMASK 0.0
+
+   Log::Print DEBUG "   Processing file : $file"
+   fstdfile open GPXMASKFILE read $GenX::Param(DBase)/$GenX::Path(MaskUSNavy)/masq_us.fst
+
+   #----- Loop over fields (tiles)
+   foreach field [fstdfield find GPXMASKFILE -1 "" -1 -1 -1 "" "MG"] {
+      Log::Print DEBUG "      Processing field : $field"
+      fstdfield read MASKTILE GPXMASKFILE $field
+      fstdfield stats MASKTILE -nodata -99.0 -celldim $GenX::Param(Cell)
+
+      #----- Average on output grid
+      fstdfield gridinterp GPXMASK MASKTILE AVERAGE False
+   }
+   fstdfile close GPXMASKFILE
 
    #----- Save output
    fstdfield gridinterp GPXMASK - NOP True
