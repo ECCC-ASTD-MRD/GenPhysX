@@ -797,7 +797,7 @@ proc GeoPhysX::AverageMask { Grid } {
    GenX::Procs
 
    switch $GenX::Param(Mask) {
-      "USNAVY"    { GeoPhysX::AverageMaskUSNAVY    $Grid }
+      "USNAVY"    { GeoPhysX::AverageMaskUSNavy    $Grid }
       "USGS"      { GeoPhysX::AverageMaskUSGS      $Grid }
       "CANVEC"    { GeoPhysX::AverageMaskCANVEC    $Grid }
       "GLOBCOVER" { GeoPhysX::AverageMaskGLOBCOVER $Grid }
@@ -875,7 +875,6 @@ proc GeoPhysX::AverageMaskUSNavy { Grid } {
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0
 
-   Log::Print DEBUG "   Processing file : $file"
    fstdfile open GPXMASKFILE read $GenX::Param(DBase)/$GenX::Path(MaskUSNavy)/masq_us.fst
 
    #----- Loop over fields (tiles)
