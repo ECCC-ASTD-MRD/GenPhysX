@@ -38,6 +38,7 @@ if [[ $arg = "ssm" ]]; then
    find ${SSM_DEV}/workspace/${SSM_NAME} -name .svn -exec rm -f -r {} \;
    sed -e "s/NAME/${NAME}/" -e "s/VERSION/${VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/DESC/${DESC}/" ../.ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
    cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
+   rm -f -r ${SSM_NAME}
 else
 
 echo ""

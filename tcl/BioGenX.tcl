@@ -29,7 +29,7 @@ namespace eval BioGenX { } {
    variable Param
    variable Const
 
-   set Param(Version)   0.9
+   set Param(Version)   0.10
 
    set Param(FieldList) [list ISOP MONO VOC  NO   ISOW MONW VOCW NOW  LAI AREA VCHK ]
    set Param(NameList)  [list ESIO ESMO ESVO ESNO EWIO EWMO EWVO EWNO LAI AREA VCHK ]
@@ -39,7 +39,16 @@ namespace eval BioGenX { } {
    set Param(DoNotUseBELD3) False
    set Param(Interp)        AVERAGE
 
+   set Param(TagBeld3) BIOG
+   set Param(TagVF)    GENPHYSX
+   set Param(TagMerge) MERGE
+
+   set Param(VegtypeNomVar) VB
+
    set Param(ToleranceVCHK) 0.0001
+   set Param(ecartmaxVCHK) [expr 1.0 + $Param(ToleranceVCHK)]
+   set Param(ecartminVCHK) [expr 1.0 - $Param(ToleranceVCHK)]
+
 
    #----- Type de LULC et fractions
    set Param(LuTypes)   { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }
@@ -525,7 +534,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
    }
 
    #----- Initialisation des champs
-   #----- Nettoyer à 0 le champ Grid pour eviter que les interpolations
+   #----- Nettoyer ï¿½ 0 le champ Grid pour eviter que les interpolations
    #----- AVERAGE et autres ne moyennent les champs d'une fois a l'autre
    GenX::GridClear $Grid 0.0
    foreach field $Param(FieldList) {
@@ -538,6 +547,18 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
 
    #----- Calcul des superficies des tuiles GEM-MACH (AREA) en m2
    vexpr BGXAREA darea($Grid)
+
+   #----- Si AURAMS, arranger le nom du VG selon que l'on fait
+   #----- le merge entre BELD et VF
+   if { [ string equal $GenX::Param(Target) "AURAMS" ] } {
+      if { [ llength $BioGenX::Param(datasets) ] > 1 } {
+         set nomvarVG "VG_B"
+         set fichier "AUX"
+      } else {
+         set nomvarVG "$BioGenX::Param(VegtypeNomVar)"
+         set fichier "OUT"
+      }
+   }
 
    #----- Loop over files
    set i 0
@@ -556,6 +577,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
       set i_out [format "%3i" $i]
       Log::Print DEBUG "   Reading layer $i_out of $nfiles: code [format "%3i" $k] -- $vegtyp($k)" False
       gdalfile open BELD3($file) read $file
+
       eval "gdalband read PC_VEG {{BELD3($file) 1}} $BioGenX::Param(X0) $BioGenX::Param(Y0) $BioGenX::Param(X1) $BioGenX::Param(Y1)"
       gdalband stats PC_VEG -celldim $GenX::Param(Cell)
 
@@ -566,44 +588,189 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
       gdalband free PC_VEG
       gdalfile close BELD3($file)
 
-      #----- Calcul des concentrations finales des emissions biogeniques...
+      if { [ string equal $GenX::Param(Target) "AURAMS" ] } {
+         #----- Calcul du champ de verification des index
+         #----- Le total du champ doit donner 1 partout.
+         vexpr BGXVCHK BGXVCHK+$Grid
 
-      #----- ...pour la saison d'ete
-      eval "vexpr BGXISOP BGXISOP+$ef1($k)*$Grid"
-      eval "vexpr BGXMONO BGXMONO+$ef2($k)*$Grid"
-      eval "vexpr BGXVOC   BGXVOC+$ef3($k)*$Grid"
-      eval "vexpr BGXNO     BGXNO+$ef4($k)*$Grid"
+         Log::Print DEBUG "On fait $file"
+         #----- Ecrire le champ VG
+         fstdfield define $Grid -ETIKET [format %04i $k] -NOMVAR $nomvarVG
+         fstdfield write $Grid GPX${fichier}FILE -32 True
+      } else {
 
-      #----- ...pour la saison d'hiver
-      eval "vexpr BGXISOW BGXISOW+$ef1($k)*$Grid*$winterfact($k)"
-      eval "vexpr BGXMONW BGXMONW+$ef2($k)*$Grid*$winterfact($k)"
-      eval "vexpr BGXVOCW BGXVOCW+$ef3($k)*$Grid*$winterfact($k)"
-      eval "vexpr BGXNOW   BGXNOW+$ef4($k)*$Grid*$winterfact($k)"
+         #----- Calcul des concentrations finales des emissions biogeniques...
 
-      #----- Calcul du Leaf Area Index
-      eval "vexpr BGXLAI   BGXLAI+$Grid*$leafarea($k)"
+         #----- ...pour la saison d'ete
+         eval "vexpr BGXISOP BGXISOP+$ef1($k)*$Grid"
+         eval "vexpr BGXMONO BGXMONO+$ef2($k)*$Grid"
+         eval "vexpr BGXVOC   BGXVOC+$ef3($k)*$Grid"
+         eval "vexpr BGXNO     BGXNO+$ef4($k)*$Grid"
 
-      #----- Calcul du champ de verification des index
-      #----- Le total du champ doit donner 1 partout.
-      vexpr BGXVCHK BGXVCHK+$Grid
+         #----- ...pour la saison d'hiver
+         eval "vexpr BGXISOW BGXISOW+$ef1($k)*$Grid*$winterfact($k)"
+         eval "vexpr BGXMONW BGXMONW+$ef2($k)*$Grid*$winterfact($k)"
+         eval "vexpr BGXVOCW BGXVOCW+$ef3($k)*$Grid*$winterfact($k)"
+         eval "vexpr BGXNOW   BGXNOW+$ef4($k)*$Grid*$winterfact($k)"
 
-      #----- Nettoyer à 0 le champ Grid pour eviter que les interpolations
+         #----- Calcul du Leaf Area Index
+         eval "vexpr BGXLAI   BGXLAI+$Grid*$leafarea($k)"
+
+         #----- Calcul du champ de verification des index
+         #----- Le total du champ doit donner 1 partout.
+         vexpr BGXVCHK BGXVCHK+$Grid
+      }
+      #----- Nettoyer ï¿½ 0 le champ Grid pour eviter que les interpolations
       #----- AVERAGE et autres ne moyennent les champs d'une fois a l'autre
       GenX::GridClear $Grid 0.0
-  }
+   }
 
-   #----- Fin du calcul des emissions biogeniques
-   eval "vexpr BGXISOP BGXISOP*$Const(C2io)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
-   eval "vexpr BGXMONO BGXMONO*$Const(C2mono)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
-   eval "vexpr BGXVOC   BGXVOC*$Const(C2ovoc)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
-   eval "vexpr BGXNO     BGXNO*$Const(C2no)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
-   eval "vexpr BGXISOW BGXISOW*$Const(C2io)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
-   eval "vexpr BGXMONW BGXMONW*$Const(C2mono)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
-   eval "vexpr BGXVOCW BGXVOCW*$Const(C2ovoc)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
-   eval "vexpr BGXNOW   BGXNOW*$Const(C2no)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
+   if { [ string equal $GenX::Param(Target) "AURAMS" ] } {
 
+      Log::Print DEBUG "On ecrit VCHK"
+      #----- Ecrire le champ VG
+      fstdfield define BGXVCHK -ETIKET "$Param(TagBeld3)" -NOMVAR "VCHK"
+      fstdfield write BGXVCHK GPXAUXFILE -32 True
+
+   } else {
+      #----- Fin du calcul des emissions biogeniques
+      eval "vexpr BGXISOP BGXISOP*$Const(C2io)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
+      eval "vexpr BGXMONO BGXMONO*$Const(C2mono)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
+      eval "vexpr BGXVOC   BGXVOC*$Const(C2ovoc)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
+      eval "vexpr BGXNO     BGXNO*$Const(C2no)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
+      eval "vexpr BGXISOW BGXISOW*$Const(C2io)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
+      eval "vexpr BGXMONW BGXMONW*$Const(C2mono)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
+      eval "vexpr BGXVOCW BGXVOCW*$Const(C2ovoc)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
+      eval "vexpr BGXNOW   BGXNOW*$Const(C2no)*$Const(Mug2g)*$Const(H2s)*BGXAREA"
+   }
    #----- Calculate mask for VF-based emissions
-   set ecartmax [expr 1.0 + $Param(ToleranceVCHK)]
-   set ecartmin [expr 1.0 - $Param(ToleranceVCHK)]
-   vexpr BGXRMS ifelse((BGXVCHK >= $ecartmin) && (BGXVCHK <= $ecartmax),1.0,0.0)
+   vexpr BGXRMS ifelse((BGXVCHK >= $Param(ecartminVCHK)) && (BGXVCHK <= $Param(ecartmaxVCHK)),1.0,0.0)
+
 }
+
+#-------------------------------------------------------------------------------
+# Nom      : BioGenX::AURAMSBiogFromVF
+# Creation : 8 mai 2007 - Louis-Philippe Crevier - AQMAS
+#
+# Description : Generate biogenic emission fields from VF fields
+#
+# Parametres :
+#              Grid : ID de la grille cible
+#
+# Retour : --
+#
+# Remarques : Priority is given to emissions generated using beld3 data
+#
+#-------------------------------------------------------------------------------
+proc BioGenX::AURAMSBiogFromVF { Grid } {
+   variable Path
+   variable Param
+
+   GenX::Procs
+   Log::Print INFO "BioGenX::AURAMSBiogFromVF Start"
+   Log::Print DEBUG "AURAMS utilise les Biogenic provenant de VF"
+
+   #----- Initialisation des champs
+   GenX::GridClear $Grid 0.0
+
+   #----- Arranger le nom du VG selon que l'on fait le merge
+   if { [ llength $BioGenX::Param(datasets) ] > 1 } {
+      set nomvarVG "VG_F"
+   } else {
+      set nomvarVG "$BioGenX::Param(VegtypeNomVar)"
+   }
+
+   #----- Creeer les champs vides pour les types de sols non-prï¿½sents dans la BD
+   for { set j 3 } { $j <= 233 } { incr j 1 } {
+      fstdfield define $Grid -ETIKET [format %04i $j] -NOMVAR $nomvarVG
+      fstdfield write $Grid GPXAUXFILE -32 True
+   }
+
+   #----- Mapping many-to-one VF fields to BELD3 categories
+   foreach { levels etik } { {21} 3 \
+                             {15 17 18} 4 \
+                             {20} 5 \
+                             {13} 6 \
+                             {14} 8 \
+                             {10 11 12 26} 9 \
+                             {6 7 8 9} 12 \
+                             {5} 13 \
+                             {4} 14 \
+                             {25} 15 \
+                             {1 3 24} 16 \
+                             {23} 17 \
+                             {22} 20 \
+                             {2} 21 \
+                             {19} 25 \
+                             {16} 33 } {
+
+      fstdfield copy SUM $Grid
+      GenX::GridClear SUM 0.0
+
+      foreach level $levels {
+         Log::Print DEBUG "   BioGenX::AURAMSBiogFromVF Mapping VF $level to BELD3 [format %04i $etik]"
+         set ip1 [ expr 1200 - $level ]
+         fstdfield read VGTEMP GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
+         vexpr SUM SUM + VGTEMP
+      }
+
+      fstdfield define SUM -ETIKET [format %04i $etik] -NOMVAR $nomvarVG -TYPVAR "C"
+      fstdfield write SUM GPXAUXFILE -32 True
+
+   }
+
+   if { [llength $Param(datasets)] > 1  } {
+      Log::Print DEBUG "Le merge entre BELD et VF sera fait (les donnes de BELD ont priorite), car la grille sort du domaine de BELD"
+      BioGenX::MergeAurams $Grid
+   }
+   
+   Log::Print DEBUG "BioGenX::AURAMSBiogFromVF Done"  
+}
+
+#-------------------------------------------------------------------------------
+# Nom      : BioGenX::MergeAurams
+# Creation : 8 mai 2007 - Louis-Philippe Crevier - AQMAS
+#
+# Description : Merge two AURAMS biogenic land-use fields
+#
+# Parametres :
+#              Grid : ID de la grille cible
+#
+# Retour : --
+#
+# Remarques : Priority is given to emissions generated using beld3 data
+#
+#-------------------------------------------------------------------------------
+proc BioGenX::MergeAurams { Grid } {
+   variable Path
+   variable Param
+
+   GenX::Procs
+   Log::Print INFO "BioGenX::MergeAurams Start"
+
+   #----- Initialisation des champs
+   GenX::GridClear $Grid 0.0
+   fstdfield copy VG_M $Grid
+
+   #----- Obtenir le champs VCHK
+   Log::Print DEBUG "   BioGenX::MergeAurams Read VCHK field"
+   fstdfield read BGXVCHK_B GPXAUXFILE -1 "$Param(TagBeld3)" -1 -1 -1 "" "VCHK"
+
+   #----- Boucler sur tous les champ VG
+   for { set j 3 } { $j <= 233 } { incr j 1 } {
+
+      set etik [format %04i $j]
+      fstdfield read BELD GPXAUXFILE -1 "$etik" -1 -1 -1 "" "VG_B"
+      fstdfield read VF   GPXAUXFILE -1 "$etik" -1 -1 -1 "" "VG_F"
+
+      vexpr VG_M ifelse((BGXVCHK_B >= $Param(ecartminVCHK)) && (BGXVCHK_B <= $Param(ecartmaxVCHK)), BELD, VF)
+
+      fstdfield define VG_M -ETIKET $etik -NOMVAR $BioGenX::Param(VegtypeNomVar) -TYPVAR C
+      fstdfield write VG_M GPXOUTFILE 0 True
+
+      fstdfield free VG_M
+   }
+   Log::Print DEBUG "BioGenX::MergeAurams Done"
+}
+
+

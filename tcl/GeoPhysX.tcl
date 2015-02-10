@@ -870,7 +870,7 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
 proc GeoPhysX::AverageMaskUSNavy { Grid } {
 
    GenX::Procs MaskUSGS
-   Log::Print INFO "Averaging mask using USGS database"
+   Log::Print INFO "Averaging mask using USNAVY database"
 
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0

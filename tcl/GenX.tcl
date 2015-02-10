@@ -107,7 +107,7 @@ namespace eval GenX { } {
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
    set Param(Subs)      { LEGACY STD }
-   set Param(Targets)   { LEGACY GEMMESO GEM4.4 }   ;#Model cible
+   set Param(Targets)   { LEGACY GEMMESO GEM4.4 AURAMS }   ;#Model cible
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
 
@@ -273,6 +273,10 @@ proc GenX::Process { Grid } {
    if { $Param(Biogenic)!="" } {
       BioGenX::CalcEmissions  $Grid
       BioGenX::TransportableFractions $Grid
+
+      if { [ string equal $Param(Target) "AURAMS" ] } {
+         BioGenX::AURAMSBiogFromVF $Grid
+      }
    }
 
    #-----Hydrologic parameters
@@ -770,6 +774,22 @@ proc GenX::ParseTarget { } {
    variable Settings
 
    switch $Param(Target) {
+      "AURAMS"  { set Param(Topo)     "USGS"
+                  set Param(Vege)     "USGS"
+                  set Param(Mask)     "USGS"
+                  set Param(Soil)     "USDA AGRC FAO"
+                  set Param(Check)    "STD"
+                  set Param(Sub)      ""
+                  set Param(Z0Filter) False
+                  set Param(Compress) False
+                  set Param(TopoStag) True
+                  set Param(Cell)     2
+
+                  set Settings(TOPO_DGFMS_L) True
+                  set Settings(TOPO_DGFMX_L) True
+                  set Settings(TOPO_FILMX_L) True
+                }
+
       "LEGACY"  { set Param(Topo)     "USGS"
                   set Param(Vege)     "USGS"
                   set Param(Mask)     "USGS"
