@@ -534,7 +534,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
    }
 
    #----- Initialisation des champs
-   #----- Nettoyer ï¿½ 0 le champ Grid pour eviter que les interpolations
+   #----- Nettoyer à 0 le champ Grid pour eviter que les interpolations
    #----- AVERAGE et autres ne moyennent les champs d'une fois a l'autre
    GenX::GridClear $Grid 0.0
    foreach field $Param(FieldList) {
@@ -620,7 +620,7 @@ proc BioGenX::CalcEmissionsBELD { Grid } {
          #----- Le total du champ doit donner 1 partout.
          vexpr BGXVCHK BGXVCHK+$Grid
       }
-      #----- Nettoyer ï¿½ 0 le champ Grid pour eviter que les interpolations
+      #----- Nettoyer à 0 le champ Grid pour eviter que les interpolations
       #----- AVERAGE et autres ne moyennent les champs d'une fois a l'autre
       GenX::GridClear $Grid 0.0
    }
