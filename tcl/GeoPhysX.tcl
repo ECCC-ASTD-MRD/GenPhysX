@@ -1729,11 +1729,9 @@ proc GeoPhysX::AverageVegeMCD12Q1 { Grid } {
    set la1 [lindex $limits 2]
    set lo1 [lindex $limits 3]
    Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
-                  
-   GenX::Create_GridGeometry $Grid myGridPoly
 
    set lcdir  $GenX::Param(DBase)/$GenX::Path(MODIS_IGBP)
-   set files [GenX::FindFiles $lcdir/Index/Index.shp myGridPoly $la0 $lo0 $la1 $lo1]
+   set files [GenX::FindFiles $lcdir/Index/Index.shp $Grid]
 
    foreach file  $files {
       Log::Print INFO "Processing file : $file"
@@ -1811,14 +1809,13 @@ proc GeoPhysX::AverageMaskMCD12Q1 { Grid } {
    set lo1 [lindex $limits 3]
    Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
                   
-   GenX::Create_GridGeometry $Grid myGridPoly
    GenX::GridClear $Grid 0.0
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0
 
 
    set lcdir  $GenX::Param(DBase)/$GenX::Path(MODIS_IGBP)
-   set files [GenX::FindFiles $lcdir/Index/Index.shp myGridPoly $la0 $lo0 $la1 $lo1]
+   set files [GenX::FindFiles $lcdir/Index/Index.shp $Grid]
 
    foreach file  $files {
 

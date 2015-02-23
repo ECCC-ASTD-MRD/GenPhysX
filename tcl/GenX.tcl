@@ -1710,15 +1710,12 @@ proc GenX::Create_GridGeometry { Grid poly } {
 
 #----------------------------------------------------------------------------
 # Name     : <GenX::FindFiles>
-# Creation : July 2012 - Vanh Souvanlasy - CMC/CMDS
+# Creation : February 2015 - Vanh Souvanlasy - CMC/CMDS
 #
 # Goal     : Find file intersecting the grid area
 #
 # Parameters :
-#  <Lat0>    : Lower left corner latitude
-#  <Lon0>    : Lower left corner longitude
-#  <Lat1>    : Upper right corner latitude
-#  <Lon1>    : Upper right corner longitude  
+#  <Grid>    : grid upon which to test
 #
 # Return:
 #   <files>  : List of files intersecting with the area
@@ -1726,38 +1723,83 @@ proc GenX::Create_GridGeometry { Grid poly } {
 # Remarks :   
 #
 #----------------------------------------------------------------------------
-proc GenX::FindFiles { indexfile gridpoly Lat0 Lon0 Lat1 Lon1 } {
+proc GenX::FindFiles { indexfile Grid } {
    variable Param
 
-   set  udsv  "_v"
    set  files {}
    set  rejected {}
    if { ![file exist $indexfile] } {
       return $files
    }
 
+   set poly  $Grid.poly
+   GenX::Create_GridGeometry $Grid $poly
+   set NI  [fstdfield define $Grid -NI]
+   set NJ  [fstdfield define $Grid -NJ]
    set layer [lindex [ogrfile open UTSINDEXFILE read $indexfile] 0]
    eval ogrlayer read SHPINDEXLAYER $layer
-#   set ids [ogrlayer pick SHPINDEXLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True]
-   set ids [ogrlayer pick SHPINDEXLAYER $gridpoly True]
-   foreach id $ids {
-      set path [ogrlayer define SHPINDEXLAYER -feature $id IDX_PATH]
 
-      set geom1 [ogrlayer define SHPINDEXLAYER -geometry $id]
-      set intersect [ogrgeometry stats $geom1 -intersect $gridpoly]
-      if { $intersect } {
+   set nb [ogrlayer define SHPINDEXLAYER -nb]
+
+   set cnt   0
+   for { set id 0 } { $id< $nb } { incr id } {
+      set path [ogrlayer define SHPINDEXLAYER -feature $id IDX_PATH]
+      set Geom [ogrlayer define SHPINDEXLAYER -geometry $id]
+      set  geom [ogrgeometry define $Geom -geometry]
+      if { [GeomIntersectGrid $Grid $geom] || 
+           [ogrgeometry stats $Geom -intersect $poly] } {
          Log::Print INFO "Using file: $path"
          lappend files $path
+         incr cnt
       } else {
+         Log::Print INFO "Rejecting file: $path"
          lappend rejected $path
       }
    }
    ogrfile close UTSINDEXFILE
 
-   if { [llength $rejected] > 0 } {
-      Log::Print INFO "Avoided processing of outside file: $rejected"
-   }
+   Log::Print INFO "Using $cnt of $nb files"
 
+   ogrgeometry free $poly
    return $files
 }
 
+#----------------------------------------------------------------------------
+# Name     : <GenX::GeomIntersectGrid>
+# Creation : February 2015 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Test if geometry intersect with grid
+#
+# Parameters :
+#  <geom>    : geometry containing latlon points
+#  <Grid>    : grid upon which to test
+#
+# Return:
+#   <files>  : List of files intersecting with the area
+#
+# Remarks :   
+#
+#----------------------------------------------------------------------------
+proc GenX::GeomIntersectGrid { Grid geom } {
+
+   set NI  [fstdfield define $Grid -NI]
+   set NJ  [fstdfield define $Grid -NJ]
+   set  i  0
+   foreach  ll [ogrgeometry define $geom -points] {
+       set LatLon($i) $ll
+       if {$i == 1} {
+          set xy0 [fstdfield stats $Grid -unproject $LatLon(1) $LatLon(0)]
+          set x [lindex $xy0 0]
+          set y [lindex $xy0 1]
+          if { ($x <= ($NI+1))&&($x >= 0) } {
+             if { ($y <= ($NJ+1))&&($y >= 0) } {
+                puts "$LatLon(1) $LatLon(0) : ($x $y) : $NI $NJ"
+                return 1
+             }
+          }
+       }
+       set i  [expr 1-$i]
+   }
+
+   return 0
+}
