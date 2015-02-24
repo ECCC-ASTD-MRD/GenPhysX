@@ -1589,9 +1589,9 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
 
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageVegeAAFC>
-# Creation : 
+# Creation : February 2015 - V. Souvanlasy - CMC/CMDS
 #
-# Goal     : 
+# Goal     : Generate the CCRN vegetation (26 classes)
 #            using AESB CROP Database
 #
 # Parameters :
@@ -1599,7 +1599,7 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
 #
 # Return:
 #
-# Remarks :
+# Remarks :  Only partial coverage on southern part of Canada
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageVegeAAFC { Grid } {
