@@ -97,7 +97,7 @@ namespace eval GenX { } {
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 }
    set Param(Aspects)   { SRTM CDED250 CDED50 }
-   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS }
    set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 }
    set Param(GeoMasks)  { CANADA }
@@ -146,6 +146,7 @@ namespace eval GenX { } {
    set Path(GTOPO30)    GTOPO30
    set Path(GMTED2010)  GMTED2010
    set Path(EOSD)       EOSD
+   set Path(AAFC_CROP)  AAFC/Crop
    set Path(BNDT)       BNDT
    set Path(NTS)        NTS
    set Path(CANVEC)     CanVec
@@ -1748,11 +1749,11 @@ proc GenX::FindFiles { indexfile Grid } {
       set  geom [ogrgeometry define $Geom -geometry]
       if { [GeomIntersectGrid $Grid $geom] || 
            [ogrgeometry stats $Geom -intersect $poly] } {
-         Log::Print INFO "Using file: $path"
+         Log::Print INFO "Will use file: $path"
          lappend files $path
          incr cnt
       } else {
-         Log::Print INFO "Rejecting file: $path"
+         Log::Print DEBUG "Reject file: $path"
          lappend rejected $path
       }
    }

@@ -108,6 +108,10 @@ namespace eval GeoPhysX { } {
    set Const(smallc0) 2.0         ;# Small scale resolution dependent correction factor
    set Const(smallc1) 15.0        ;# Small scale resolution dependent correction factor
 
+   #----- Correspondance de Camille Garnaud de Fevrier 2015 pour la conversion des classes AAFC CROP vers les classes RPN
+   set Const(AAFC2RPN) { {   0  10  20 30 34 50 80 110 120 122 130 131 132 133 135 136 137 138 139 140 147 150 151 152 153 154 155 156 157 158 162 167 174 175 180 193 194 195 196 197 198 199 200 210 220 230 }
+                         { -99 -99   3 24 21 10 23  14  15  13  23  14  15  15  18  15  15  15  15  15  18  15  15  15  15  15  15  15  15  15  20  20  20  20  20  20  15  15  15  15  15  15  25   4   7  25 } }
+
    #----- Correspondance de Stéphane Bélair de Novembre 2007 pour la conversion des classes EOSD vers les classes RPN
    set Const(EOSD2RPN) { {   0  11  12 20 21 31 32 33 40 51 52 81 82 83 100 211 212 213 221 222 223 231 232 233 }
                          { -99 -99 -99  3  1  2 24 24 22 10 10 25 10 13  14   4   4   4   7   7   7  25  25  25 } }
@@ -1222,6 +1226,7 @@ proc GeoPhysX::AverageVege { Grid } {
          "LCC2000V"  { GeoPhysX::AverageVegeLCC2000V  GPXVF ;#----- LCC2000V over Canada only vege averaging method }
          "CORINE"    { GeoPhysX::AverageVegeCORINE    GPXVF ;#----- CORINE over Europe only vege averaging method }
          "MCD12Q1"   { GeoPhysX::AverageVegeMCD12Q1   GPXVF ;#----- MODIS MCD12Q1 IGBP global vegetation }
+         "AAFC"      { GeoPhysX::AverageVegeAAFC      GPXVF ;#----- AAFC Crop over Canada only vege averaging method }
       }
    }
    fstdfield free GPXVSK
@@ -1580,6 +1585,92 @@ proc GeoPhysX::AverageVegeGLOBCOVER { Grid } {
       vector free FROMGLOB TORPN
    }
    gdalfile close GLOBFILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageVegeAAFC>
+# Creation : 
+#
+# Goal     : 
+#            using AESB CROP Database
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageVegeAAFC { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs AAFC
+   Log::Print INFO "Averaging vegetation type using AESB CROP database"
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   set lat0 [lindex $limits 0]
+   set lon0 [lindex $limits 1]
+   set lat1 [lindex $limits 2]
+   set lon1 [lindex $limits 3]
+   set n    0
+
+   set lcdir  $GenX::Param(DBase)/$GenX::Path(AAFC_CROP)
+   set files [GenX::FindFiles $lcdir/Index/Index.shp $Grid]
+
+   #----- Loop over files
+   if { [set nb [llength $files]] } {
+
+      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(AAFC2RPN) 0]\n   To  :[lindex $Const(AAFC2RPN) 1]"
+      vector create FROMAAFC [lindex $Const(AAFC2RPN) 0]
+      vector create TORPN    [lindex $Const(AAFC2RPN) 1]
+
+      foreach file $files {
+         Log::Print DEBUG "   Processing file ([incr n]/$nb) $file"
+
+         gdalfile open AAFCFILE read $lcdir/$file
+   
+         if { [llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef AAFCFILE]]]] } {
+   
+            Log::Print INFO "Grid intersection with AAFC Crop file is { $limits }"
+            set x0 [lindex $limits 0]
+            set x1 [lindex $limits 2]
+            set y0 [lindex $limits 1]
+            set y1 [lindex $limits 3]
+   
+         #----- Loop over the data by tiles since it's too big to fit in memory
+            for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+               for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+                  Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+                  gdalband read AAFCTILE { { AAFCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+                  gdalband stats AAFCTILE -celldim $GenX::Param(Cell)
+   
+                  #----- Apply Table conversion
+                  vexpr AAFCTILE lut(AAFCTILE,FROMAAFC,TORPN)
+                  gdalband stats AAFCTILE -nodata -99 -celldim $GenX::Param(Cell)
+
+                  fstdfield gridinterp $Grid AAFCTILE NORMALIZED_COUNT $Param(VegeTypes) False
+                  gdalband free AAFCTILE
+               }
+            }
+         gdalfile close AAFCFILE
+         }
+
+         #----- If there is other DB to process
+         if { [lsearch -exact $GenX::Param(Vege) AAFC]<[expr [llength $GenX::Param(Vege)]-1] } {
+
+            #----- Use accumulator to figure out coverage in destination
+            #      But remove border of coverage since it will not be full
+            fstdfield gridinterp $Grid - ACCUM
+            vexpr GPXVSK !fpeel($Grid)
+            fstdfield stats $Grid -mask GPXVSK
+         }
+      }
+      vector free FROMAAFC TORPN
+   } else {
+      Log::Print WARNING "The grid is not within AAFC limits"
+   }
 }
 
 #----------------------------------------------------------------------------
