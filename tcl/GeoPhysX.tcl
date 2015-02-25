@@ -142,9 +142,10 @@ namespace eval GeoPhysX { } {
    set Const(LCC2000V2RPN) { {   0   10  11  12 20 30 31 32 33 34 35 36 37 40 50 51 52 53 80   81        82        83      100 101 102 103 104 110 121 122  123     200 210 211 212 213 220 221 222 223 230 231 232 233 }
                              { -99 -99  -99 -99  3 24  2 24 24 21 24 24 24 22 26 11 11 22 23 { 25 23 } { 26 23 } { 13 23 }  13  22  14  22  22  14  15  15 { 15 13 } 25   4   4   4   4  7    7   7   7  25  25  25  24 } }
 
-   #----- Correspondance de USGS MODIS MCD12Q1 IGBP Land Cover Type 1 vers les classes RPN
+   #----- Correspondance de Shailesh Kharol fevrier 2015 pour la conversion de classes MCD12Q1 IGBP Land Cover Type 1 vers les classes RPN
+   #----- New MCD12Q1 correspondance table based on Shailesh recommendation
    set Const(MODIS2RPN) { { 0 1 2 3 4  5  6  7  8  9 10 11 12 13 14 15 16 254 255 }
-                          { 3 4 5 6 7 25 10 26  9 25 13 23 15 21 15  2 24 -99 -99 } }
+                          { 3 4 5 6 7 25 10 26  4 26 13 23 15 21 15  2 24 -99 -99 } }
 
 }
 
