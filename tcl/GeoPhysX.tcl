@@ -189,6 +189,7 @@ proc GeoPhysX::AverageTopo { Grid } {
          "GMTED30"   { GeoPhysX::AverageTopoGMTED2010 GPXME 30  ;#----- GMTED2010 topograhy averaging method (Global  900m) }
          "GMTED15"   { GeoPhysX::AverageTopoGMTED2010 GPXME 15  ;#----- GMTED2010 topograhy averaging method (Global  450m) }
          "GMTED75"   { GeoPhysX::AverageTopoGMTED2010 GPXME 75  ;#----- GMTED2010 topograhy averaging method (Global  225m) }
+         "CDEM"      { GeoPhysX::AverageTopoCDEM      GPXME     ;#----- CDEM topograhy averaging method (Canada 25m) }
       }
    }
 
@@ -472,6 +473,61 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageTopoCDEM>
+# Creation : March 2015 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the topography using CDEM.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the topography
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageTopoCDEM { Grid } {
+   variable Param
+
+   GenX::Procs CDEM
+   Log::Print INFO "Averaging topography using CDEM database"
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   set la0 [lindex $limits 0]
+   set lo0 [lindex $limits 1]
+   set la1 [lindex $limits 2]
+   set lo1 [lindex $limits 3]
+   Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
+
+   foreach file [GenX::CDEMFindFiles $la0 $lo0 $la1 $lo1] {
+      Log::Print DEBUG "   Processing CDEM file $file"
+      gdalband read CDEMTILE [gdalfile open CDEMFILE read $file]
+      gdalband stats CDEMTILE -nodata -32767 -celldim $GenX::Param(Cell)
+
+      fstdfield gridinterp $Grid CDEMTILE AVERAGE False
+      if { $GenX::Param(Sub)=="LEGACY" } {
+         fstdfield gridinterp $Grid CDEMTILE SUBLINEAR 11
+      }
+      
+      fstdfield gridinterp GPXRMS CDEMTILE AVERAGE_SQUARE False
+      gdalfile close CDEMFILE
+   }
+   gdalband free CDEMTILE
+
+   #----- Create source resolution used in destination
+   fstdfield gridinterp GPXRMS - ACCUM
+   vexpr GPXRES ifelse((GPXTSK && GPXRMS),25,GPXRES)
+
+   #----- Use accumulator to figure out coverage in destination
+   #----- But remove border of coverage since it will not be full
+   #----- Apply coverage mask for next resolution
+   fstdfield gridinterp $Grid - ACCUM
+   vexpr GPXTSK !fpeel($Grid)
+   fstdfield stats $Grid -mask GPXTSK
+   fstdfield stats GPXRMS -mask GPXTSK
+}
+
+#----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageTopoGMTED2010>
 # Creation : September 2013 - Vanh Souvanlasy - CMC/CMDS
 #
@@ -543,6 +599,7 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageAspect>
 # Creation : June 2006 - Alexandre Leroux, J.P. Gauthier - CMC/CMOE
+# Revision : March 2015 - Vanh Souvanlasy - CMC/CMDS
 #
 # Goal     : Generate the slope and aspect through averaging.
 #
@@ -568,17 +625,21 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
 proc GeoPhysX::AverageAspect { Grid } {
    variable Param
 
-   GenX::Procs SRTM CDED
+   GenX::Procs SRTM CDED CDEM
    Log::Print INFO "Computing slope and aspect"
 
    set SRTM [expr [lsearch -exact $GenX::Param(Aspect) SRTM]!=-1]
    set CDED 0
+   set CDEM 0
 
    if { [lsearch -exact $GenX::Param(Aspect) CDED250]!=-1 } {
       set CDED 250
    }
    if { [lsearch -exact $GenX::Param(Aspect) CDED50]!=-1 } {
       set CDED 50
+   }
+   if { [lsearch -exact $GenX::Param(Aspect) CDEM]!=-1 } {
+      set CDEM 1
    }
 
    fstdfield copy GPXFSA  $Grid
@@ -601,7 +662,9 @@ proc GeoPhysX::AverageAspect { Grid } {
    set lon1 [lindex $limits 3]
 
    #----- Work tile resolution
-   if { $CDED==50 && [llength [GenX::CDEDFindFiles $lat0 $lon0 $lat1 $lon1]] } {
+   if { $CDEM && [llength [GenX::CDEMFindFiles $lat0 $lon0 $lat1 $lon1]] } {
+      set res [expr (0.75/3600.0)]  ;# 0.75 arc-secondes CDED
+   } elseif { $CDED==50 && [llength [GenX::CDEDFindFiles $lat0 $lon0 $lat1 $lon1]] } {
       set res [expr (0.75/3600.0)]  ;# 0.75 arc-secondes CDED
    } elseif { $SRTM } {
       set res [expr (3.0/3600.0)]   ;# 3 arc-secondes SRTM
@@ -652,6 +715,16 @@ proc GeoPhysX::AverageAspect { Grid } {
             foreach file $dnecfiles {
                GenX::CacheGet $file [expr $CDED==50?-32767:0]
                Log::Print DEBUG "      Processing CDED DEM file $file"
+               gdalband gridinterp DEMTILE $file NEAREST
+            }
+            set data True
+         }
+
+         #----- Process CDEM, if asked for
+         if { $CDEM && [llength [set cdemfiles [GenX::CDEMFindFiles $la0 $lo0 $la1 $lo1]]] } {
+            foreach file $cdemfiles {
+               GenX::CacheGet $file -32767
+               Log::Print DEBUG "      Processing CDEM DEM file $file"
                gdalband gridinterp DEMTILE $file NEAREST
             }
             set data True
@@ -726,7 +799,7 @@ proc GeoPhysX::AverageAspect { Grid } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::AverageAspect>
+# Name     : <GeoPhysX::AverageAspectTile>
 # Creation : Septembre 2007 - J.P. Gauthier - CMC/CMOE
 #
 # Goal     : Generate the aspect ratio and mean slope.

@@ -95,8 +95,8 @@ namespace eval GenX { } {
    set Param(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
    set Param(NML)       ""                   ;#GEM namelist
 
-   set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 }
-   set Param(Aspects)   { SRTM CDED250 CDED50 }
+   set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
+   set Param(Aspects)   { SRTM CDED250 CDED50 CDEM }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS }
    set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 }
@@ -142,6 +142,7 @@ namespace eval GenX { } {
    set Path(HWSD)       HWSD
    set Path(SRTM)       SRTMv4
    set Path(CDED)       CDED
+   set Path(CDEM)       CDEM
    set Path(ASTERGDEM)  ASTGTM_V1.1
    set Path(GTOPO30)    GTOPO30
    set Path(GMTED2010)  GMTED2010
@@ -1379,6 +1380,53 @@ proc GenX::CDEDFindFiles { Lat0 Lon0 Lat1 Lon1 { Res 50 } } {
          lappend files $lst
       }
       if { [llength [set lst [glob -nocomplain $path/*demw*.tif]]] } {
+         lappend files $lst
+      }
+   }
+   return $files
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::CDEMFindFiles>
+# Creation : March 2015 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Get the CDEM data filenames covering an area.
+#
+# Parameters :
+#  <Lat0>    : Lower left corner latitude
+#  <Lon0>    : Lower left corner longitude
+#  <Lat1>    : Upper right corner latitude
+#  <Lon1>    : Upper right corner longitude
+#  <Res>     : Resolution desiree (50 ou 250)
+#
+# Return:
+#   <Files>  : List of files with coverage intersecting with area
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::CDEMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
+   variable Path
+   variable Param
+
+# CDEM tiles configuration are same as the NTS 250, se we will use that as search table
+   set Res  250
+
+   if { ![ogrlayer is NTSLAYER${Res}K] } {
+      set nts_layer [lindex [ogrfile open SHAPE${Res}K read $Param(DBase)/$Path(NTS)/decoupage${Res}k_2.shp] 0]
+      eval ogrlayer read NTSLAYER${Res}K $nts_layer
+   }
+
+   set files { }
+   foreach id [ogrlayer pick NTSLAYER${Res}K [list $Lat0 $Lon0 $Lat1 $Lon0 $Lat1 $Lon1 $Lat0 $Lon1 $Lat0 $Lon0] True] {
+      set feuillet [ogrlayer define NTSLAYER${Res}K -feature $id IDENTIFIAN]
+      set s250 [string range $feuillet 0 2]
+      set sl   [string tolower [string range $feuillet 3 3]]
+      set path $Param(DBase)/$Path(CDEM)/$s250
+
+      set  SL  [string toupper $sl]
+      set file  $path/cdem_dem_$s250$SL.tif
+      if { [llength [set lst [glob -nocomplain $file]]] } {
          lappend files $lst
       }
    }
