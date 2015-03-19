@@ -113,8 +113,12 @@ namespace eval GeoPhysX { } {
                          { -99 -99   3 24 21 10 23  14  15  13  23  14  15  15  18  15  15  15  15  15  18  15  15  15  15  15  15  15  15  15  20  20  20  20  20  20  15  15  15  15  15  15  25   4   7  25 } }
 
    #----- Correspondance de Stéphane Bélair de Novembre 2007 pour la conversion des classes EOSD vers les classes RPN
-   set Const(EOSD2RPN) { {   0  11  12 20 21 31 32 33 40 51 52 81 82 83 100 211 212 213 221 222 223 231 232 233 }
-                         { -99 -99 -99  3  1  2 24 24 22 10 10 25 10 13  14   4   4   4   7   7   7  25  25  25 } }
+#   set Const(EOSD2RPN) { {   0  11  12 20 21 31 32 33 40 51 52 81 82 83 100 211 212 213 221 222 223 231 232 233 }
+#                         { -99 -99 -99  3  1  2 24 24 22 10 10 25 10 13  14   4   4   4   7   7   7  25  25  25 } }
+
+   #----- Correspondance de Stéphane Bélair revisee Mars 2015 pour la conversion des classes EOSD vers les classes RPN
+   set Const(EOSD2RPN) { {   0   10  11  12 20 21 30 31 32 33 34 40 50 51 52 80 81 82 83 100 110 120 121 122 200 210 211 212 213 220 221 222 223 230 231 232 233 }
+                         { -99  -99 -99 -99  3  1 24  2 24 24 21 22 10 10 10 23 25 10 13  14  14  15  15  15  25   4   4   4   4   7   7   7   7  25  25  25  25 } }
 
    #----- Correspondance de Janna Lindenberg de Decembre 2007 pour la conversion des classes CORINE vers les classes RPN
    set Const(CORINE2RPN) { {  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 }
