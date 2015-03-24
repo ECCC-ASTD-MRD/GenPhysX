@@ -102,7 +102,7 @@ namespace eval GenX { } {
    set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
-   set Param(Hydros)    { NHN NHD }
+   set Param(Hydros)    { NHN NHD HSRN DCW }
    set Param(Urbans)    { True HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
@@ -161,6 +161,8 @@ namespace eval GenX { } {
    set Path(JPL)        JPL
    set Path(NHN)        NHN
    set Path(NHD)        NHD
+   set Path(DCW)        DCW
+   set Path(HSRN)       USGS_HydroSHEDS/River_Network
    set Path(GLAS)       SimardPinto
    set Path(CanadaProv) Various
    set Path(BNU)        BNU
