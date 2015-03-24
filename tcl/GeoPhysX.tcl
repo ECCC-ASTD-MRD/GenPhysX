@@ -109,8 +109,12 @@ namespace eval GeoPhysX { } {
    set Const(smallc1) 15.0        ;# Small scale resolution dependent correction factor
 
    #----- Correspondance de Camille Garnaud de Fevrier 2015 pour la conversion des classes AAFC CROP vers les classes RPN
-   set Const(AAFC2RPN) { {   0  10  20 30 34 50 80 110 120 122 130 131 132 133 135 136 137 138 139 140 147 150 151 152 153 154 155 156 157 158 162 167 174 175 180 193 194 195 196 197 198 199 200 210 220 230 }
-                         { -99 -99   3 24 21 10 23  14  15  13  23  14  15  15  18  15  15  15  15  15  18  15  15  15  15  15  15  15  15  15  20  20  20  20  20  20  15  15  15  15  15  15  25   4   7  25 } }
+#   set Const(AAFC2RPN) { {   0  10  20 30 34 50 80 110 120 122 130 131 132 133 135 136 137 138 139 140 147 150 151 152 153 154 155 156 157 158 162 167 174 175 180 193 194 195 196 197 198 199 200 210 220 230 }
+#                         { -99 -99   3 24 21 10 23  14  15  13  23  14  15  15  18  15  15  15  15  15  18  15  15  15  15  15  15  15  15  15  20  20  20  20  20  20  15  15  15  15  15  15  25   4   7  25 } }
+   #----- Correspondance de Camille Garnaud de Mars 2015 pour la conversion des classes AAFC CROP 2014 vers les classes RPN
+   set Const(AAFC2RPN) { {   0  10 20 30 34 35 50 80 110 120 121 122 130 131 132 133 134 135 136 137 138 139 140 141 145 146 147 148 149 150 151 152 153 154 155 156 157 158 160 161 162 167 174 175 176 177 178 179 180 181 183 188 189 190 191 192 193 194 196 197 198 199 200 210 220 230 }
+                         { -99 -99  3 24 21 21 10 23  14  15  15  13  23  14  15  15  15  15  15  15  15  15  15  14  15  15  15  15  15  15  15  15  15  15  15  15  15  15  15  15  20  20  15  20  20  20  20  20  20  20  20   7   20  11  15  15  20  20  20  15  15  15  25   4   7  25 } }
+
 
    #----- Correspondance de Stéphane Bélair de Novembre 2007 pour la conversion des classes EOSD vers les classes RPN
 #   set Const(EOSD2RPN) { {   0  11  12 20 21 31 32 33 40 51 52 81 82 83 100 211 212 213 221 222 223 231 232 233 }
@@ -151,6 +155,9 @@ namespace eval GeoPhysX { } {
    set Const(MODIS2RPN) { { 0 1 2 3 4  5  6  7  8  9 10 11 12 13 14 15 16 254 255 }
                           { 3 4 5 6 7 25 10 26  4 26 13 23 15 21 15  2 24 -99 -99 } }
 
+   #----- Allow overloading of user defined Table using a line per entry form which is easier to read
+   #----- For example, see:  /data/cmdd/afsm/lib/geo/AAFC/Crop_2014/TO_CCRN.txt 
+   set Path(AAFC2RPN)  ""
 }
 
 #----------------------------------------------------------------------------
@@ -1697,12 +1704,21 @@ proc GeoPhysX::AverageVegeAAFC { Grid } {
    set lcdir  $GenX::Param(DBase)/$GenX::Path(AAFC_CROP)
    set files [GenX::FindFiles $lcdir/Index/Index.shp $Grid]
 
+# first see if there is a override table set, if not, see if database contains a table, if not, use default
+   set  ctable  $Const(AAFC2RPN)
+   if { [file exist $GenX::Path(AAFC2RPN)] } {
+      set  ltable [GenX::Load_CCRN_Table $GenX::Path(AAFC2RPN)]
+      if { [llength $ltable] == 2 } {
+         Log::Print INFO "Overloading correspondance table with :$GenX::Path(AAFC2RPN)"
+         set  ctable  $ltable
+      } 
+   }
+
    #----- Loop over files
    if { [set nb [llength $files]] } {
-
-      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(AAFC2RPN) 0]\n   To  :[lindex $Const(AAFC2RPN) 1]"
-      vector create FROMAAFC [lindex $Const(AAFC2RPN) 0]
-      vector create TORPN    [lindex $Const(AAFC2RPN) 1]
+      Log::Print INFO "Using correspondance table\n   From:[lindex $ctable 0]\n   To  :[lindex $ctable 1]"
+      vector create FROMAAFC [lindex $ctable 0]
+      vector create TORPN    [lindex $ctable 1]
 
       foreach file $files {
          Log::Print DEBUG "   Processing file ([incr n]/$nb) $file"
