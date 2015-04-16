@@ -1780,6 +1780,7 @@ proc GenX::FindFiles { indexfile Grid } {
    set  files {}
    set  rejected {}
    if { ![file exist $indexfile] } {
+      Log::Print INFO "Index file not found: $indexfile"
       return $files
    }
 
@@ -1853,4 +1854,50 @@ proc GenX::GeomIntersectGrid { Grid geom } {
    }
 
    return 0
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::Load_CCRN_Table>
+# Creation : March 2015 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Load a Data Class to CCRN (RPN) Correspondance Table
+#
+# Parameters :
+#  <filename>    : file containing a table
+#
+# Return:
+#   <files>  : List of correspondance table
+#
+# Remarks :   
+#
+#----------------------------------------------------------------------------
+proc  GenX::Load_CCRN_Table { filename } {
+
+   if { ![file exist $filename] } {
+      return {}
+   }
+
+   Log::Print INFO "Loading correspondance file: $filename"
+   set  from {}
+   set  to   {}
+
+   set   n    0
+   set   f  [open $filename r]
+   while { ![eof $f] } {
+      gets $f  line
+      set head  [string range $line 0 0]
+      if { [string compare $head "#"] == 0 } {
+         continue
+      }
+      if { [scan $line  "%d %d %s"  class ccrn comment] >= 2 } {
+         lappend  from $class
+         lappend  to   $ccrn
+         incr  n
+      }
+   }
+
+   close $f
+
+   Log::Print INFO "Got: $from $to"
+   return [list $from $to]
 }
