@@ -167,7 +167,7 @@ namespace eval GenX { } {
    set Path(CanadaProv) Various
    set Path(BNU)        BNU
    set Path(CANSIS)     CANSIS
-   set Path(MODIS_IGBP) MODIS/MCD12Q1/2013/Land_Cover_Type_1
+   set Path(MODIS_IGBP) MODIS/MCD12Q1/IGBP
 
    set Path(StatCan)   /cnfs/dev/cmdd/afsm/lib/geo/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
