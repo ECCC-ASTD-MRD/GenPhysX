@@ -83,7 +83,7 @@ int Tclgeophy_Init(Tcl_Interp *Interp) {
 
 static int GeoPhy_Cmd(ClientData clientData,Tcl_Interp *Interp,int Objc,Tcl_Obj *CONST Objv[]){
 
-   int   idx,pid;
+   int   idx;
    TData  *topo,*vege,*zz,*lh,*dh,*hx2,*hy2,*hxy;
    
    static CONST char *sopt[] = { "zfilter","subgrid_legacy",NULL };

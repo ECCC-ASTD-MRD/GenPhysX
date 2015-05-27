@@ -680,7 +680,7 @@ proc BioGenX::AURAMSBiogFromVF { Grid } {
       set nomvarVG "$BioGenX::Param(VegtypeNomVar)"
    }
 
-   #----- Creeer les champs vides pour les types de sols non-prï¿½sents dans la BD
+   #----- Creeer les champs vides pour les types de sols non-présents dans la BD
    for { set j 3 } { $j <= 233 } { incr j 1 } {
       fstdfield define $Grid -ETIKET [format %04i $j] -NOMVAR $nomvarVG
       fstdfield write $Grid GPXAUXFILE -32 True

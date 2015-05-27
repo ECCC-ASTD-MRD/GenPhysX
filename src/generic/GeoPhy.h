@@ -35,6 +35,7 @@
 #define _GeoPhy_h
 
 #include "tcl.h"
+#include "RPN.h"
 #include "tclData.h"
 
 #define VK       0.4f         // ???

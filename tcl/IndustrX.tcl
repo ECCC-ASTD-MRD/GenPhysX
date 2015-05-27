@@ -74,7 +74,7 @@ proc IndustrX::FindNTSSheets { indexCouverture } {
    ogrlayer stats NTSLAYER50K -transform UTMREF$indexCouverture
 
    #Présélection des tuiles NTS à l'aide d'un convexhull
-   set hull [ogrgeometry stat $geom -convexhull]
+   set hull [ogrgeometry stats $geom -convexhull]
    set ntssheets_pre [ogrlayer pick NTSLAYER50K $hull True]
 
    #ramener NTSLAYER50K à la sélection des fichiers présélectionnés

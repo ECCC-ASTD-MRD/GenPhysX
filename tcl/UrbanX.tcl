@@ -2051,7 +2051,7 @@ proc UrbanX::BLDF_Top_Filter { Grid threshold } {
    set changed 0
    for { set j 0 } { $j < $nj } {incr j} {
       for { set i 0 } { $i < $ni } {incr i} {
-         set val  [fstdfield stat $Grid -gridvalue $i $j]
+         set val  [fstdfield stats $Grid -gridvalue $i $j]
          switch -regexp -- $val {
             .NaN {
                set val $threshold
@@ -2069,7 +2069,7 @@ proc UrbanX::BLDF_Top_Filter { Grid threshold } {
                incr range
             }
             if { $value < $threshold } {
-               fstdfield stat $Grid -gridvalue $i $j $value
+               fstdfield stats $Grid -gridvalue $i $j $value
 #               puts "Replaced $val by $value at ($i $j) range=$range"
                incr changed
             }
@@ -2122,8 +2122,8 @@ proc UrbanX::Balance_BLDFvsPAVF { } {
    for { set j 0 } { $j < $nj } {incr j} {
       for { set i 0 } { $i < $ni } {incr i} {
 
-         set pavf  [fstdfield stat PAVFFIELD -gridvalue $i $j]
-         set bldf  [fstdfield stat BLDFFIELD -gridvalue $i $j]
+         set pavf  [fstdfield stats PAVFFIELD -gridvalue $i $j]
+         set bldf  [fstdfield stats BLDFFIELD -gridvalue $i $j]
 
          if { ($pavf > 0.0)&&($bldf == 0) } {
             set range 0
@@ -2145,9 +2145,9 @@ proc UrbanX::Balance_BLDFvsPAVF { } {
             set sum [expr $pavf + $bldf]
             if  { $sum > 1.0 } {
                set pavf [expr 1.0 - $bldf]
-               fstdfield stat $GridPAVF -gridvalue $i $j $pavf
+               fstdfield stats $GridPAVF -gridvalue $i $j $pavf
             }
-            fstdfield stat $GridBLDF -gridvalue $i $j $bldf
+            fstdfield stats $GridBLDF -gridvalue $i $j $bldf
          } elseif { ($pavf == 0)&&($bldf > 0.0) } {
             set range 0
             while {($pavf == 0)&&($range < $maxrange)} {
@@ -2170,11 +2170,11 @@ proc UrbanX::Balance_BLDFvsPAVF { } {
                UrbanX::Assign_AverageParams $i $j $range $bldf $pavf
             }
 
-            fstdfield stat $GridPAVF -gridvalue $i $j $pavf
+            fstdfield stats $GridPAVF -gridvalue $i $j $pavf
             set sum [expr $pavf + $bldf]
             if  { $sum > 1.0 } {
                set bldf [expr 1.0 - $pavf]
-               fstdfield stat $GridBLDF -gridvalue $i $j $bldf
+               fstdfield stats $GridBLDF -gridvalue $i $j $bldf
             }
             # must set associated TEB params using Nearest Average also
             UrbanX::Assign_AverageParams $i $j $range $bldf $pavf
@@ -2182,7 +2182,7 @@ proc UrbanX::Balance_BLDFvsPAVF { } {
             set sum [expr $pavf + $bldf]
             if  { $sum > 1.0 } {
                set bldf [expr 1.0 - $pavf]
-               fstdfield stat $GridBLDF -gridvalue $i $j $bldf
+               fstdfield stats $GridBLDF -gridvalue $i $j $bldf
             }
             UrbanX::Check_HasPAVFBLDF $i $j $bldf $pavf
          }
@@ -2328,7 +2328,7 @@ proc UrbanX::Assign_DefaultPAVFBLDF { i j pavf } {
             set value 50.0
          }
       }
-      fstdfield stat $PLVAR -gridvalue $i $j $value
+      fstdfield stats $PLVAR -gridvalue $i $j $value
    }
 
    foreach  p $Param(PAVFvsLUT) {
@@ -2337,7 +2337,7 @@ proc UrbanX::Assign_DefaultPAVFBLDF { i j pavf } {
       set PLVAR  "PB_$nomvar$ip1"
 
       set value [lindex $p 2]
-      fstdfield stat $PLVAR -gridvalue $i $j $value
+      fstdfield stats $PLVAR -gridvalue $i $j $value
    }
 }
 
@@ -2367,10 +2367,10 @@ proc UrbanX::Check_HasPAVFBLDF { i j bldf pavf } {
       set ip1 [lindex $p 1]
       set PLVAR  "PB_$nomvar$ip1"
 
-      set value [fstdfield stat $PLVAR -gridvalue $i $j]
+      set value [fstdfield stats $PLVAR -gridvalue $i $j]
       if { $value == 0.0 } {
          set value [lindex $p 2]
-         fstdfield stat $PLVAR -gridvalue $i $j $value
+         fstdfield stats $PLVAR -gridvalue $i $j $value
       }
    }
 }
@@ -2403,7 +2403,7 @@ proc UrbanX::Assign_AverageParams { i j range bldf pavf } {
       if { $value <= 0 } {
          set value [lindex $p 2]
       }
-      fstdfield stat $PLVAR -gridvalue $i $j $value
+      fstdfield stats $PLVAR -gridvalue $i $j $value
    }
 
    foreach  p $Param(PAVFvsLUT) {
@@ -2415,7 +2415,7 @@ proc UrbanX::Assign_AverageParams { i j range bldf pavf } {
       if { $value <= 0 } {
          set value [lindex $p 2]
       }
-      fstdfield stat $PLVAR -gridvalue $i $j $value
+      fstdfield stats $PLVAR -gridvalue $i $j $value
    }
 }
 
@@ -2462,7 +2462,7 @@ proc UrbanX::Grid_NearestAverage { Grid  i0  j0  range } {
    set cnt  0
    for { set j $j1 } { $j <= $j2 } { incr j } {
       for { set i $i1 } { $i <= $i2 } { incr i } {
-         set val  [fstdfield stat $Grid -gridvalue $i $j]
+         set val  [fstdfield stats $Grid -gridvalue $i $j]
          switch -regexp -- $val {
             0 {
             }

@@ -48,7 +48,7 @@
  *  <...>     : 0:Fail 1:Ok  
  *
  * Remarques :
- *    - Uses TclGeoEER TDataDef structure
+ *    - Uses TclGeoEER TDef structure
  *----------------------------------------------------------------------------
 */
 int GeoPhy_SubTranspose(TData *Topo,int I,int J,float *Sub) {
@@ -99,7 +99,7 @@ int GeoPhy_SubTranspose(TData *Topo,int I,int J,float *Sub) {
  *      instead of usgin the average/max of each side
  *----------------------------------------------------------------------------
 */
-int GeoPhy_GridPointResolution(TGeoRef *Ref,TDataDef *Def,int I,int J,double *DX,double *DY) {
+int GeoPhy_GridPointResolution(TGeoRef *Ref,TDef *Def,int I,int J,double *DX,double *DY) {
    
    float  di[4],dj[4],dlat[4],dlon[4];
    double dx[4],dy[4];
@@ -156,7 +156,7 @@ int GeoPhy_GridPointResolution(TGeoRef *Ref,TDataDef *Def,int I,int J,double *DX
  *      et revisee en 2001
  *----------------------------------------------------------------------------
 */
-int GeoPhy_LegacyAsh(TDataDef *Topo,float *H,float DX,float DY,float *HTOT,float *ASTOT,float *VAR,float *HX2,float *HY2, float *HXY) {
+int GeoPhy_LegacyAsh(TDef *Topo,float *H,float DX,float DY,float *HTOT,float *ASTOT,float *VAR,float *HX2,float *HY2, float *HXY) {
 
    float dhdx,dhdx2,dhdy,dhdy2,dhdxdy,hy,hx,sasx,sasy,avgh,varh,sumh,hh,ll;
    float sdx,sdy,dx,dy,dm;
@@ -544,6 +544,9 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
    int    idx,i,j,nio,njo,dgfm,cliporo,norm;
    int    digfil=0,tdxfil=0,mapfac=0;
    char   grtyp[2]="GU",lagrd;
+
+   extern void f77name(smp_digt_flt)();
+   extern void f77name(smp_2del_flt)();
 
    if (!Field) {
       Tcl_AppendResult(Interp,"GeoPhy_ZFilterTopo: Invalid topography field",(char*)NULL);

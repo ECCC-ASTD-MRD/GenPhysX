@@ -5,17 +5,18 @@ arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.0.4"
+VERSION="2.0.5"
 MAINTAINER="Jean-Philippe Gauthier"
 
 SSM_NAME=${NAME}_${VERSION}_${ORDENV_PLAT}
 
 MAKE=make
-SPI_VERSION=7.8.0
-LIB=/users/dor/afsr/005/Links/libfs${SPI_VERSION}/${ORDENV_PLAT}
-TCL=${LIB}/SPI
+SPI_VERSION=7.9.0
+LIB_PATH=${SSM_DEV}/workspace/libSPI_${SPI_VERSION}_${ORDENV_PLAT}                              
 
-unset LD_LIBRARY_PATH
+#unset LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${LIB_PATH}/lib:$LD_LIBRARY_PATH
+export LIBRARY_PATH=${LIB_PATH}/lib:$LIBRARY_PATH
 
 export CC=c99
 
@@ -23,7 +24,7 @@ echo ""
 echo "----- Building platform : ${ORDENV_PLAT} -----"
 echo ""
 
-if [[ $arg = "ssm" ]]; then
+if [[ $arg = "-ssm" ]]; then
 
    echo ""
    echo "----- Building ssm package : ${SSM_DEV}/workspace/${SSM_NAME} -----"
@@ -42,20 +43,20 @@ if [[ $arg = "ssm" ]]; then
 else
 
 echo ""
-echo "----- Making TclGeoPhy Library Object -----"
+echo "----- Making TclGeoPhy Library -----"
 echo ""
-   if [[ $arg = "reconf" ]]; then
+   if [[ $arg = "-reconf" ]]; then
       make distclean
       autoconf2.50
       ./configure \
-         --exec-prefix=${TCL}/TclTk \
+         --exec-prefix=${LIB_PATH}/TCL \
          --enable-threads \
          --enable-64bit \
-         --with-tcl=${TCL}/TclTk/lib \
-         --with-tk=${TCL}/TclTk/lib \
-         --with-eer=${SSM_DEV}/workspace/eerUtils_1.10.0_${ORDENV_PLAT} \
-         --with-rmn=${LIB}/librmn-15.1 \
-         --with-gdal=${LIB}/gdal-1.11.0/bin/gdal-config
+         --with-tcl=${LIB_PATH}/TCL/lib \
+         --with-tk=${LIB_PATH}/TCL/lib \
+         --with-rmn=${LIB_PATH} \
+         --with-eer=${SSM_DEV}/workspace/eerUtils_2.0.0_${ORDENV_PLAT} \
+         --with-gdal=${LIB_PATH}/bin/gdal-config
    fi
 
    $MAKE install

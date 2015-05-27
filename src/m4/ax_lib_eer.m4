@@ -38,9 +38,13 @@ AC_DEFUN([AX_LIB_EER],
         elif test -d "$withval"; then
             eer_prefix="$withval"
             eer_requested="yes"
-        else
+        elif test "$withval" = "no"; then
             eer_prefix=""
             eer_requested="no"
+        else
+            eer_prefix=""
+            eer_requested="yes"
+            AC_MSG_ERROR([--with-eer option was used with an invalid value ($withval). It can either be 'yes', 'no' or a valid directory.])
         fi
         ],
         [
@@ -104,7 +108,7 @@ AC_DEFUN([AX_LIB_EER],
         CPPFLAGS="$CPPFLAGS -I$eer_include_dir"
 
         saved_LIBS="$LIBS"
-        LIBS="$LIBS $eer_lib_flags"
+        LIBS="$LIBS $eer_lib_flags -lm $RMN_LDFLAGS"
 
         #
         # Check headers
@@ -167,9 +171,9 @@ System_IsBigEndian();
 
     AC_MSG_CHECKING([for EER])
 
-EER_LDFLAGS="$eer_lib_flags"
-eer_header_found="yes"
-eer_lib_found="yes"
+#EER_LDFLAGS="$eer_lib_flags"
+#eer_header_found="yes"
+#eer_lib_found="yes"
 
     if test "$run_eer_test" = "yes"; then
         if test "$eer_header_found" = "yes" -a "$eer_lib_found" = "yes"; then
