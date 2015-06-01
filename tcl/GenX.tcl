@@ -121,7 +121,7 @@ namespace eval GenX { } {
    set Batch(Path)     "\$TMPDIR/GenPhysX\$\$"
 
    #----- Various database paths
-   set Param(DBase)    /cnfs/dev/cmdd/afsm/lib/geo
+   set Param(DBase)    /cnfs/dev/cmds/afsm/lib/geo
 
    if  { [info exists env(GENPHYSX_DBASE)] } {
       set Param(DBase) $env(GENPHYSX_DBASE)
