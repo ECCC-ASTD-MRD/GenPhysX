@@ -48,7 +48,7 @@ package require TclSystem
 package require MetData
 package require Logger
 
-set Log::Param(SPI)       7.7.1
+set Log::Param(SPI)       7.9.0
 set Log::Param(Level)     INFO
 
 namespace eval GenX { } {
@@ -59,7 +59,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.0.4               ;#Application version
+   set Param(Version)      2.0.5               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time
@@ -341,9 +341,12 @@ proc GenX::Submit { } {
    #----- Create job script
    set f [open [set job $env(TMPDIR)/GenPhysX[pid]] w 0755]
 
+   #----- Extract needed domain
+   set ld [split $env(LD_LIBRARY_PATH) :]
+   set domain [join [lrange [split [lindex $ld [lsearch -glob $ld "*/cmoe/base/*"]] /] 0 end-2] /]
+
    puts $f "#!/bin/ksh\nset -x\n"
-   puts $f ". ssmuse-sh -p [join [lrange [split $env(SPI_PATH) _] 0 end-1] _]"
-   puts $f ". ssmuse-sh -p /ssm/net/cmoe/apps/$Param(VersionState)/GenPhysX_$Param(Version)"
+   puts $f ". ssmuse-sh -d $domain"
    puts $f "\nexport GENPHYSX_DBASE=$Param(DBase)\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
    puts $f "tmpdir=$tmpdir"
