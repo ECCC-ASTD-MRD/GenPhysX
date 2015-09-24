@@ -116,10 +116,6 @@ namespace eval GeoPhysX { } {
                          { -99 -99  3 24 21 21 10 23  14  15  15  13  23  14  15  15  15  15  15  15  15  15  15  14  15  15  15  15  15  15  15  15  15  15  15  15  15  15  15  15  20  20  15  20  20  20  20  20  20  20  20   7   20  11  15  15  20  20  20  15  15  15  25   4   7  25 } }
 
 
-   #----- Aout 2015 : pour la conversion des classes ESA CCI vers les classes RPN
-   set Const(ESACCI2RPN) { {   0  10 11 12 20 30 40 50 60 61 62 70 71 72 80 81 82 90 100 110 120 121 122 130 140 150 152 153 160 170 180 190 200 201 202 210 220 } 
-                           { -99  15 14 26 20 15 25  5  7  7  7  4  4  4  6  6  6 25  26  26  10  10  11  14  22  26  13  13  23  23  23  21  24  24  24   1   2 } }
-
    #----- Correspondance de Stéphane Bélair de Novembre 2007 pour la conversion des classes EOSD vers les classes RPN
 #   set Const(EOSD2RPN) { {   0  11  12 20 21 31 32 33 40 51 52 81 82 83 100 211 212 213 221 222 223 231 232 233 }
 #                         { -99 -99 -99  3  1  2 24 24 22 10 10 25 10 13  14   4   4   4   7   7   7  25  25  25 } }
@@ -897,7 +893,6 @@ proc GeoPhysX::AverageMask { Grid } {
       "GLOBCOVER" { GeoPhysX::AverageMaskGLOBCOVER $Grid }
       "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
       "MCD12Q1"   { GeoPhysX::AverageMaskMCD12Q1   $Grid }
-      "ESACCI"    { GeoPhysX::AverageMaskESACCI    $Grid }
    }
 }
 
@@ -1225,63 +1220,6 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::AverageMaskESACCI>
-# Creation : August 2015 - V. Souvanlasy - CMC/CMDS
-#
-# Goal     : Generate the land/sea mask through averaging.
-#
-# Parameters :
-#   <Grid>   : Grid on which to generate the mask
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GeoPhysX::AverageMaskESACCI { Grid } {
-
-   GenX::Procs ESACCI
-   Log::Print INFO "Averaging mask using ESACCI water bodies database"
-
-   fstdfield copy GPXMASK  $Grid
-   GenX::GridClear GPXMASK 0.0
-
-   #----- Open the file
-   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(ESACCI)/CCI_WB.tif
-
-   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCIFILE]]]] } {
-      Log::Print WARNING "Specified grid does not intersect with ESACCI water bodies database, mask will not be calculated"
-   } else {
-      Log::Print INFO "Grid intersection with ESACCI water bodies database is { $limits }"
-      set x0 [lindex $limits 0]
-      set x1 [lindex $limits 2]
-      set y0 [lindex $limits 1]
-      set y1 [lindex $limits 3]
-
-      #----- Loop over the data by tiles since it's too big to fit in memory
-      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
-         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
-            gdalband read CCITILE { { CCIFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
-#            gdalband stats CCITILE -nodata 255 -celldim $GenX::Param(Cell)
-
-            vexpr CCITILE ifelse(CCITILE==2,0.0,1.0)
-            fstdfield gridinterp GPXMASK CCITILE AVERAGE False
-         }
-      }
-
-      #----- Save output
-      fstdfield gridinterp GPXMASK - NOP True
-      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
-      fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
-      fstdfield free MASKTILE
-
-      gdalband free CCITILE
-   }
-   gdalfile close CCIFILE
-}
-
-#----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageGeoMask>
 # Creation : June 2006 - J.P. Gauthier - CMC/CMOE
 #
@@ -1375,7 +1313,6 @@ proc GeoPhysX::AverageVege { Grid } {
          "CORINE"    { GeoPhysX::AverageVegeCORINE    GPXVF ;#----- CORINE over Europe only vege averaging method }
          "MCD12Q1"   { GeoPhysX::AverageVegeMCD12Q1   GPXVF ;#----- MODIS MCD12Q1 IGBP global vegetation }
          "AAFC"      { GeoPhysX::AverageVegeAAFC      GPXVF ;#----- AAFC Crop over Canada only vege averaging method }
-         "ESACCI"    { GeoPhysX::AverageVegeESACCI    GPXVF ;#----- ESA CCI Land cover }
       }
    }
    fstdfield free GPXVSK
@@ -1846,71 +1783,6 @@ proc GeoPhysX::AverageVegeAAFC { Grid } {
    } else {
       Log::Print WARNING "The grid is not within AAFC limits"
    }
-}
-
-#----------------------------------------------------------------------------
-# Name     : <GeoPhysX::AverageVegeESACCI>
-# Creation : August 2015 - V. Souvanlasy - CMC/CMDS
-#
-# Goal     : Generate the CCRN vegetation (26 classes)
-#            using ESA CCI Land cover
-#
-# Parameters :
-#   <Grid>   : Grid on which to generate the vegetation
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GeoPhysX::AverageVegeESACCI { Grid } {
-   variable Param
-   variable Const
-
-   GenX::Procs ESACCI
-   Log::Print INFO "Averaging vegetation type using ESA CCI Land cover"
-
-   #----- Open the file
-   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(ESACCI)/CCI_LC.tif
-
-   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCIFILE]]]] } {
-      Log::Print WARNING "Specified grid does not intersect with ESACCI database, vegetation will not be calculated"
-   } else {
-      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(ESACCI2RPN) 0]\n   To  :[lindex $Const(ESACCI2RPN) 1]"
-      vector create FROMCCI  [lindex $Const(ESACCI2RPN) 0]
-      vector create TORPN    [lindex $Const(ESACCI2RPN) 1]
-
-      Log::Print INFO "Grid intersection with ESACCI database is { $limits }"
-      set x0 [lindex $limits 0]
-      set x1 [lindex $limits 2]
-      set y0 [lindex $limits 1]
-      set y1 [lindex $limits 3]
-
-      #----- Loop over the data by tiles since it's too big to fit in memory
-      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
-         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
-            gdalband read CCITILE { { CCIFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
-#            gdalband stats CCITILE -nodata 0 -celldim $GenX::Param(Cell)
-
-            vexpr CCITILE lut(CCITILE,FROMCCI,TORPN)
-            fstdfield gridinterp $Grid CCITILE NORMALIZED_COUNT $Param(VegeTypes) False
-         }
-      }
-
-      #----- If there is other DB to process
-      if { [lsearch -exact $GenX::Param(Vege) ESACCI]<[expr [llength $GenX::Param(Vege)]-1] } {
-         #----- Use accumulator to figure out coverage in destination
-         #      But remove border of coverage since it will not be full
-         fstdfield gridinterp $Grid - ACCUM
-         vexpr GPXVSK !fpeel($Grid)
-         fstdfield stats $Grid -mask GPXVSK
-      }
-
-      gdalband free CCITILE
-      vector free FROMCCI TORPN
-   }
-   gdalfile close CCIFILE
 }
 
 #----------------------------------------------------------------------------
