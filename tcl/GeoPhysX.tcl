@@ -1226,7 +1226,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageMaskESACCI>
-# Creation : June 2006 - J.P. Gauthier - CMC/CMOE
+# Creation : August 2015 - V. Souvanlasy - CMC/CMDS
 #
 # Goal     : Generate the land/sea mask through averaging.
 #
@@ -1241,7 +1241,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 proc GeoPhysX::AverageMaskESACCI { Grid } {
 
    GenX::Procs ESACCI
-   Log::Print INFO "Averaging mask using ESACCI Land cover database"
+   Log::Print INFO "Averaging mask using ESACCI water bodies database"
 
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0
@@ -1250,9 +1250,9 @@ proc GeoPhysX::AverageMaskESACCI { Grid } {
    gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(ESACCI)/CCI_WB.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCIFILE]]]] } {
-      Log::Print WARNING "Specified grid does not intersect with ESACCI Land Cover database, mask will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with ESACCI water bodies database, mask will not be calculated"
    } else {
-      Log::Print INFO "Grid intersection with CCICOVER database is { $limits }"
+      Log::Print INFO "Grid intersection with ESACCI water bodies database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
