@@ -97,9 +97,9 @@ namespace eval GenX { } {
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
    set Param(Aspects)   { SRTM CDED250 CDED50 CDEM }
-   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC ESACCI }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS }
-   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 }
+   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 ESACCI }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD HSRN DCW }
@@ -168,6 +168,7 @@ namespace eval GenX { } {
    set Path(BNU)        BNU
    set Path(CANSIS)     CANSIS
    set Path(MODIS_IGBP) MODIS/MCD12Q1/IGBP
+   set Path(ESACCI)     ESACCI_LC
 
    set Path(StatCan)   /cnfs/dev/cmdd/afsm/lib/geo/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
