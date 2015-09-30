@@ -1265,6 +1265,9 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid } {
             Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read CCITILE { { CCIFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
 
+            # the CCI_LC raster no_data value is 0, but because we are remapping everything to 1 or 0 for water
+            # we have to change it to something else, otherwise, the averaging that follows will not be correct
+            gdalband stats CCITILE -nodata 255 -celldim $GenX::Param(Cell)
             vexpr CCITILE ifelse(CCITILE==210,0.0,1.0)
             fstdfield gridinterp GPXMASK CCITILE AVERAGE False
          }
@@ -1891,6 +1894,7 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
             Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read CCITILE { { CCIFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats CCITILE -nodata 0 -celldim $GenX::Param(Cell)
 
             vexpr CCITILE lut(CCITILE,FROMCCI,TORPN)
             fstdfield gridinterp $Grid CCITILE NORMALIZED_COUNT $Param(VegeTypes) False
