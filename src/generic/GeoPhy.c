@@ -69,7 +69,7 @@ int GeoPhy_SubTranspose(TData *Topo,int I,int J,float *Sub) {
          if (di<=-0.5) di=-0.499;
          if (di>=(double)Topo->Def->NI-0.501) di=Topo->Def->NI-0.501;
          
-         Topo->Ref->Value(Topo->Ref,Topo->Def,'L',0,di,dj,0,&val,&val1);
+         Topo->GRef->Value(Topo->GRef,Topo->Def,'L',0,di,dj,0,&val,&val1);
          Sub[idx] = val;         
      }
    }
@@ -484,7 +484,7 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
          GeoPhy_SubTranspose(Topo,i,j,topo);
          
          // Get gridpoint resolution (meters)
-         GeoPhy_GridPointResolution(Topo->Ref,Topo->Def,i,j,&dx,&dy);
+         GeoPhy_GridPointResolution(Topo->GRef,Topo->Def,i,j,&dx,&dy);
          
          // Calculate height difference 
          sum = 0.0f;
@@ -552,7 +552,7 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
       Tcl_AppendResult(Interp,"GeoPhy_ZFilterTopo: Invalid topography field",(char*)NULL);
       return(TCL_ERROR);
    }
-   GeoRef_Expand(Field->Ref);
+   GeoRef_Expand(Field->GRef);
 
    dgfm=5;
    lcfac=2.0;
@@ -596,7 +596,7 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
             if (fld[i]<0.0) fld[i]=0.0;
          }
       }
-      f77name(smp_digt_flt)(fld,Field->Ref->AX,Field->Ref->AY,&nio,&njo,&lagrd,grtyp,&dgfm,&lcfac,&mlr,&mapfac,&norm);
+      f77name(smp_digt_flt)(fld,Field->GRef->AX,Field->GRef->AY,&nio,&njo,&lagrd,grtyp,&dgfm,&lcfac,&mlr,&mapfac,&norm);
    }
 
    /*Apply 2-delta-xy filter*/
@@ -606,7 +606,7 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
             if (fld[i]<0.0) fld[i]=0.0;
          }
       }
-      f77name(smp_2del_flt)(fld,Field->Ref->AX,Field->Ref->AY,&nio,&njo,&lagrd,grtyp,&frco);
+      f77name(smp_2del_flt)(fld,Field->GRef->AX,Field->GRef->AY,&nio,&njo,&lagrd,grtyp,&frco);
    }
 
    for(j=0;j<Field->Def->NJ;j++) {
