@@ -173,6 +173,12 @@ namespace eval GenX { } {
    set Path(StatCan)   /cnfs/dev/cmds/afsm/lib/geo/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
 
+   #----- Allow overloading of user defined Table using a line per entry form which is easier to read
+   #----- For example, see:  /data/cmdd/afsm/lib/geo/AAFC/Crop_2014/TO_CCRN.txt 
+   set Path(AAFC2RPN)    ""
+   set Path(AAFC_FILES)  ""
+
+
    #----- Metadata related variables
 
    set Meta(Procs)     {}                     ;#Metadata procedure registration list

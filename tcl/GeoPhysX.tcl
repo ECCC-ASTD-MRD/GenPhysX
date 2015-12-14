@@ -1773,7 +1773,7 @@ proc GeoPhysX::AverageVegeAAFC { Grid } {
 #
    set files  {}
    set  lcdir  $GenX::Path(AAFC_FILES)
-   set  lfiles [glob $lcdir/*.tif]
+   catch "glob $lcdir/*.tif" lfiles
    foreach  file $lfiles {
       Log::Print INFO "$file"
       if { [file exist $file] } {
