@@ -193,7 +193,13 @@ proc HydroX::DrainDensityNHN { Grid la0 lo0 la1 lo1 } {
       Log::Print DEBUG "   Processing NHN path $path ([incr n]/[llength $files])"
 
       #----- Lire la donnee des rivieres
-      foreach file [glob ${path}_?_?_HD_COURSDEAU_1.shp] {
+      if { [catch "glob ${path}_?_?_HD_COURSDEAU_1.shp" rivers] } {
+         if { [catch "glob ${path}_?_?_RH_FILAMENT_1.shp" rivers] } {
+            set rivers {}
+            Log::Print DEBUG "  Cannot find river file for path $path"
+         }
+      }
+      foreach file $rivers {
          set layers [ogrfile open FILERIVER read ${file}]
          ogrlayer read LINES FILERIVER 0
 
@@ -203,7 +209,11 @@ proc HydroX::DrainDensityNHN { Grid la0 lo0 la1 lo1 } {
       }
 
       #----- Lire la donnee des lacs
-      foreach file [glob ${path}_?_?_HD_REGIONHYDRO_2.shp] {
+      if { [catch "glob ${path}_?_?_HD_REGIONHYDRO_2.shp" lakes] } {
+         set lakes {}
+         Log::Print DEBUG "  Cannot find lakes file for path $path"
+      }
+      foreach file $lakes {
          set layers [ogrfile open FILELAKE read ${file}]
          ogrlayer read AREAS FILELAKE 0
 

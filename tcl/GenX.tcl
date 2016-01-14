@@ -172,6 +172,7 @@ namespace eval GenX { } {
 
    set Path(StatCan)   /cnfs/dev/cmds/afsm/lib/geo/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
+   set Path(SkipList)        ""
 
    #----- Allow overloading of user defined Table using a line per entry form which is easier to read
    #----- For example, see:  /data/cmdd/afsm/lib/geo/AAFC/Crop_2014/TO_CCRN.txt 
@@ -1504,9 +1505,10 @@ proc GenX::EOSDFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 #----------------------------------------------------------------------------
 proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
+   variable Param
 
    if { ![ogrlayer is NHNLAYER] } {
-      set nhn_layer [lindex [ogrfile open NHNINDEX read $Path(NHN)/index/NHN_INDEX_07_INDEX_WORKUNIT_LIMIT_2.shp] 0]
+      set nhn_layer [lindex [ogrfile open NHNINDEX read $Param(DBase)/$Path(NHN)/index/NHN_INDEX_07_INDEX_WORKUNIT_LIMIT_2.shp] 0]
       eval ogrlayer read NHNLAYER $nhn_layer
    }
 
@@ -1522,7 +1524,7 @@ proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
       set feuillet [ogrlayer define NHNLAYER -feature $id DATASETNAM]
       set wscmda [ogrlayer define NHNLAYER -feature $id WSCMDA]
       set wscssda [ogrlayer define NHNLAYER -feature $id WSCSSDA]
-      if { [llength [set path [glob -nocomplain $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*.shp]]] == 0 } {
+      if { [llength [set path [glob -nocomplain $Param(DBase)/$Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*.shp]]] == 0 } {
          continue
       }
       if { [info exist Feuillets($wscssda)] } {
@@ -1550,8 +1552,8 @@ proc GenX::NHNFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    foreach wscssda [array names Feuillets] {
       foreach feuillet $Feuillets($wscssda) {
          set wscmda  [string range $feuillet 0 1]
-         if { [llength [set path [glob -nocomplain $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*.shp]]] > 0 } {
-            lappend files $Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}
+         if { [llength [set path [glob -nocomplain $Param(DBase)/$Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}_*.shp]]] > 0 } {
+            lappend files $Param(DBase)/$Path(NHN)/shp_fr/$wscmda/RHN_${feuillet}
          }
       }
    }
