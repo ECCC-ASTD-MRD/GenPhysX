@@ -140,10 +140,10 @@ namespace eval GenX { } {
    set Path(TopoLow)    RPN/data_lres
    set Path(Grad)       RPN/data_grad
    set Path(HWSD)       HWSD
-   set Path(SRTM)       SRTMv4
+   set Path(SRTM)       SRTM
    set Path(CDED)       CDED
    set Path(CDEM)       CDEM
-   set Path(ASTERGDEM)  ASTGTM_V1.1
+   set Path(ASTERGDEM)  ASTER-GDEM
    set Path(GTOPO30)    GTOPO30
    set Path(GMTED2010)  GMTED2010
    set Path(EOSD)       EOSD
@@ -1309,6 +1309,7 @@ proc GenX::CANVECFindFiles { Lat0 Lon0 Lat1 Lon1 Layers } {
 #----------------------------------------------------------------------------
 # Name     : <GenX::SRTMFindFiles>
 # Creation : Novembre 2007 - Alexandre Leroux - CMC/CMOE
+#            Feb 2016 - Vanh Souvanlasy - CMC/CMDS
 #
 # Goal     : Get the SRTM data filenames covering an area.
 #
@@ -1328,17 +1329,55 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
    variable Param
 
-   set files { }
-   set lonmax [expr int(ceil((180.0 + $Lon1)/5))]
-   set latmax [expr int(ceil(24-((60.0 + $Lat0)/5)))]
+# see if we are using new granules subdirectories or old SRTMv4 directory
+   set  file [file readlink  $Param(DBase)/$Path(SRTM)]
+   if { [string compare [file tail $file] "granules"] != 0 } {
+      Log::Print DEBUG "Using SRTM database: $file"
 
-   for { set lat [expr int(ceil(24-((60.0 + $Lat1)/5)))]} { $lat<=$latmax } { incr lat } {
-      for { set lon [expr int(ceil((180.0 + $Lon0)/5))] } { $lon<=$lonmax } { incr lon } {
-         if { [file exists [set path [format "$Param(DBase)/$Path(SRTM)/srtm_%02i_%02i.TIF" $lon $lat]]] } {
-            lappend files $path
+      set files { }
+      set lonmax [expr int(ceil((180.0 + $Lon1)/5))]
+      set latmax [expr int(ceil(24-((60.0 + $Lat0)/5)))]
+
+      for { set lat [expr int(ceil(24-((60.0 + $Lat1)/5)))]} { $lat<=$latmax } { incr lat } {
+         for { set lon [expr int(ceil((180.0 + $Lon0)/5))] } { $lon<=$lonmax } { incr lon } {
+            if { [file exists [set path [format "$Param(DBase)/$Path(SRTM)/srtm_%02i_%02i.TIF" $lon $lat]]] } {
+               lappend files $path
+            }
+         }
+      }
+   } else {
+      Log::Print DEBUG "Using SRTM granules : $file"
+      set files { }
+      set lon0 [expr int(floor($Lon0/5))*5]
+      set lon1 [expr int(ceil($Lon1/5))*5]
+      set lat0 [expr int(floor($Lat0/5))*5]
+      set lat1 [expr int(ceil($Lat1/5))*5]
+
+      for { set lat $lat0 } { $lat<=$lat1 } { incr lat 5 } {
+         for { set lon $lon0 } { $lon<=$lon1 } { incr lon 5 } {
+   
+            if { $lat<0 } {
+               set y S
+            } else {
+               set y N
+            }
+            set la [expr abs($lat)]
+   
+            if { $lon<0 } {
+               set x W
+               set lo [expr abs($lon)]
+            } else {
+               set x E
+               set lo $lon
+            }
+   
+            if { [llength [set lst [glob -nocomplain [format "$Param(DBase)/$Path(SRTM)/UNIT_%s%02i%s%03i/*.TIF" $y $la $x $lo]]]] } {
+               set files [concat $files $lst]
+            }
          }
       }
    }
+
    return $files
 }
 
