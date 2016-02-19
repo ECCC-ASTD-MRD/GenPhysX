@@ -1391,9 +1391,10 @@ proc GeoPhysX::AverageVege { Grid } {
 
    fstdfield free GPXVF
 
-   #----- Vegetation canopy height
+   #----- Vegetation canopy height and Permeable Soil thickness
    if { $GenX::Param(Sub)!="LEGACY" } {
       GeoPhysX::AverageGLAS $Grid
+      GeoPhysX::AverageGSRS_DPERM $Grid
    }
 }
 
@@ -1968,6 +1969,64 @@ proc GeoPhysX::AverageGLAS { Grid } {
    fstdfield gridinterp $Grid - NOP True
    fstdfield define $Grid -NOMVAR VCH -ETIKET GENPHYSX -IP1 0
    fstdfield write $Grid GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageGSRS_DPERM>
+# Creation : Feb 2016 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Average Permeable Soil Thickness using GSRS database
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate DPER
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageGSRS_DPERM { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs GSRS_DPERM
+   Log::Print INFO "Averaging Global Soil Regolith Sediment database for Permeable Soil Thickness DPER"
+
+   fstdfield copy GPXDPER  $Grid
+   GenX::GridClear GPXDPER 0.0
+
+   #----- Open the file
+   gdalfile open GSRSFILE read $GenX::Param(DBase)/$GenX::Path(GSRS)/average_soil_and_sedimentary-deposit_thickness.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GSRSFILE]]]] } {
+      Log::Print WARNING "Specified grid does not intersect with GSRS database, DPER will not be calculated"
+   } else {
+      Log::Print INFO "Grid intersection with GSRS database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+            gdalband read GSRSTILE { { GSRSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats GSRSTILE -nodata 255 -celldim $GenX::Param(Cell)
+
+            fstdfield gridinterp GPXDPER GSRSTILE AVERAGE False
+         }
+      }
+
+      gdalband free GSRSTILE
+   }
+   gdalfile close GSRSFILE
+
+   #----- Save output
+   fstdfield gridinterp GPXDPER - NOP True
+   fstdfield define GPXDPER -NOMVAR DPER -ETIKET GENPHYSX -IP1 0
+   fstdfield write GPXDPER GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield free GPXDPER
 }
 
 #----------------------------------------------------------------------------

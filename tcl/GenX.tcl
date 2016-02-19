@@ -164,6 +164,7 @@ namespace eval GenX { } {
    set Path(DCW)        DCW
    set Path(HSRN)       USGS_HydroSHEDS/River_Network
    set Path(GLAS)       SimardPinto
+   set Path(GSRS)       GSRS
    set Path(CanadaProv) Various
    set Path(BNU)        BNU
    set Path(CANSIS)     CANSIS
