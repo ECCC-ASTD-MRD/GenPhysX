@@ -158,11 +158,6 @@ namespace eval GeoPhysX { } {
    #----- New MCD12Q1 correspondance table based on Shailesh recommendation
    set Const(MODIS2RPN) { { 0 1 2 3 4  5  6  7  8  9 10 11 12 13 14 15 16 254 255 }
                           { 3 4 5 6 7 25 10 26  4 26 13 23 15 21 15  2 24 -99 -99 } }
-
-   #----- Allow overloading of user defined Table using a line per entry form which is easier to read
-   #----- For example, see:  /data/cmdd/afsm/lib/geo/AAFC/Crop_2014/TO_CCRN.txt 
-   set Path(AAFC2RPN)    ""
-   set Path(AAFC_FILES)  ""
 }
 
 #----------------------------------------------------------------------------
