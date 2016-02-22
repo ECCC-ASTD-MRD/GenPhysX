@@ -1120,42 +1120,11 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    GenX::Procs CANVEC
    Log::Print INFO "Averaging mask using CANVEC database"
 
-# if the fallback mask is not a file, check if it there is a valid id for mask to be generate
-   set has_fallback  0
-   if { [file exist $GenX::Path(FallbackMask)] } {
-      Log::Print INFO "Has a mask fallback file : $GenX::Path(FallbackMask)"
-      fstdfile open GPXMSKFILE  read $GenX::Path(FallbackMask)
-      if { [llength [set idx [fstdfield find GPXMSKFILE -1 "" -1 -1 -1 "" "MG"]]] } {
-         fstdfield read GPXMGFB GPXMSKFILE $idx
-         Log::Print INFO "Got a fallback mask field"
-         set has_fallback  1
-      } else {
-         Log::Print WARNING "Unable to load MG from mask fallback file"
-      }
-      fstdfile close GPXMSKFILE
-   } else {
-      if { [lsearch -exact $GenX::Param(Masks) $GenX::Param(FallbackMask)]>=0 } {
-         if { [string compare $GenX::Param(FallbackMask) CANVEC] == 0 } {
-            Log::Print WARNING "$GenX::Param(FallbackMask) cannot be used for fallback mask"
-            return
-         } else {
-            Log::Print INFO "Generating fallback mask : $GenX::Param(FallbackMask)"
-            set old_maskid $GenX::Param(Mask)
-            set GenX::Param(Mask) $GenX::Param(FallbackMask)
-            GeoPhysX::AverageMask $Grid
-            if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
-               fstdfield read GPXMGFB GPXOUTFILE $idx
-               Log::Print INFO "Got a fallback mask field"
-               set has_fallback  1
-            }
-            set GenX::Param(Mask) $old_maskid
-         }
-      }
-   }
-
-#   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" 1200 -1 -1 "" "ME"]]] } {
-#      fstdfield read GPXME GPXOUTFILE $idx
-#   }
+#  complete CANVEC mask with a precomputed mask given by $Path(FallbackMask) 
+#  or a mask to be computed as defined by $Param(FallbackMask) if available
+#  use fallback mask where no value available == -999.0
+#
+   set has_fallback [GetFallbackMask $Grid GPXMGFB]
 
    if { [llength [set idx [fstdfield find GPXAUXFILE -1 "" -1 -1 -1 "" "MGGO"]]] } {
       Log::Print INFO "Found previous MGGO field, will use it."
@@ -1193,11 +1162,6 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 #   fstdfield gridinterp GPXMASK USLAKES ALIASED 1.0
 #   ogrfile close USLAKESFILE
 
-#
-#  complete CANVEC mask with a precomputed mask given by $Path(FallbackMask) 
-#  or a mask to be computed as defined by $Param(FallbackMask) if available
-#  use fallback mask where no value available == -999.0
-#
    if { $has_fallback } {
       vexpr GPXMASK ifelse(GPXMASK>=0.0,1.0-clamp(GPXMASK,0.0,1.0),GPXMGFB)
       fstdfield free GPXMGFB
@@ -1338,6 +1302,59 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
    fstdfield write GPXMASK GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
 
    ogrlayer free CANPROV
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::GetFallbackMask>
+# Creation : August 2015 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : Read a mask from existing file or generate the land/sea mask through averaging.
+#            of a specified mask identifier
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#   <MGFB>   : id of fallback mask
+#
+# Return:  1  if success
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::GetFallbackMask { Grid MGFB } {
+
+# if the fallback mask is not a file, check if it there is a valid id for mask to be generate
+   set has_fallback  0
+   if { [file exist $GenX::Path(FallbackMask)] } {
+      Log::Print INFO "Has a mask fallback file : $GenX::Path(FallbackMask)"
+      fstdfile open GPXMSKFILE  read $GenX::Path(FallbackMask)
+      if { [llength [set idx [fstdfield find GPXMSKFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+         fstdfield read $MGFB GPXMSKFILE $idx
+         Log::Print INFO "Got a fallback mask field"
+         set has_fallback  1
+      } else {
+         Log::Print WARNING "Unable to load MG from mask fallback file"
+      }
+      fstdfile close GPXMSKFILE
+   } else {
+      if { [lsearch -exact $GenX::Param(Masks) $GenX::Param(FallbackMask)]>=0 } {
+         if { [string compare $GenX::Param(FallbackMask) CANVEC] == 0 } {
+            Log::Print WARNING "$GenX::Param(FallbackMask) cannot be used for fallback mask"
+            return
+         } else {
+            Log::Print INFO "Generating fallback mask : $GenX::Param(FallbackMask)"
+            set old_maskid $GenX::Param(Mask)
+            set GenX::Param(Mask) $GenX::Param(FallbackMask)
+            GeoPhysX::AverageMask $Grid
+            if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+               fstdfield read $MGFB GPXOUTFILE $idx
+               Log::Print INFO "Got a fallback mask field"
+               set has_fallback  1
+            }
+            set GenX::Param(Mask) $old_maskid
+         }
+      }
+   }
+   return $has_fallback
 }
 
 #----------------------------------------------------------------------------
