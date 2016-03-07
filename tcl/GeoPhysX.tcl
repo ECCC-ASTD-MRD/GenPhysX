@@ -1995,6 +1995,8 @@ proc GeoPhysX::AverageGLAS { Grid } {
 # Return:
 #
 # Remarks :
+#       it is better to use upland hill slope soil thickness for values below 5, its value is in float and range from 0 to 4.2
+#       average soil are for value above 4 and is only available as integer
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageGSRS_DPERM { Grid } {
@@ -2008,9 +2010,10 @@ proc GeoPhysX::AverageGSRS_DPERM { Grid } {
    GenX::GridClear GPXDPER 0.0
 
    #----- Open the file
-   gdalfile open GSRSFILE read $GenX::Param(DBase)/$GenX::Path(GSRS)/average_soil_and_sedimentary-deposit_thickness.tif
+   gdalfile open ASSDFILE read $GenX::Param(DBase)/$GenX::Path(GSRS)/average_soil_and_sedimentary-deposit_thickness.tif
+   gdalfile open UHSSFILE read $GenX::Param(DBase)/$GenX::Path(GSRS)/upland_hill-slope_soil_thickness.tif
 
-   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GSRSFILE]]]] } {
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef ASSDFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with GSRS database, DPER will not be calculated"
    } else {
       Log::Print INFO "Grid intersection with GSRS database is { $limits }"
@@ -2023,16 +2026,19 @@ proc GeoPhysX::AverageGSRS_DPERM { Grid } {
       for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
          for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
             Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
-            gdalband read GSRSTILE { { GSRSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
-            gdalband stats GSRSTILE -nodata 255 -celldim $GenX::Param(Cell)
-
+            gdalband read ASSDTILE { { ASSDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats ASSDTILE -nodata 255 -celldim $GenX::Param(Cell)
+            gdalband read UHSSTILE { { UHSSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats UHSSTILE -nodata 255 -celldim $GenX::Param(Cell)
+            vexpr GSRSTILE  ifelse(ASSDTILE<5 && UHSSTILE>0.0,UHSSTILE,ASSDTILE)
             fstdfield gridinterp GPXDPER GSRSTILE AVERAGE False
          }
       }
 
-      gdalband free GSRSTILE
+      gdalband free GSRSTILE  UHSSTILE ASSDTILE
    }
-   gdalfile close GSRSFILE
+   gdalfile close ASSDFILE
+   gdalfile close UHSSFILE
 
    #----- Save output
    fstdfield gridinterp GPXDPER - NOP True
