@@ -678,7 +678,11 @@ proc GeoPhysX::AverageAspect { Grid } {
    } elseif { $CDED==50 && [llength [GenX::CDEDFindFiles $lat0 $lon0 $lat1 $lon1]] } {
       set res [expr (0.75/3600.0)]  ;# 0.75 arc-secondes CDED
    } elseif { $SRTM } {
-      set res [expr (3.0/3600.0)]   ;# 3 arc-secondes SRTM
+      if { [GenX::SRTMuseVersion3] } {
+         set res [expr (1.0/3600.0)]   ;# 1 arc-secondes SRTM
+      } else {
+         set res [expr (3.0/3600.0)]   ;# 3 arc-secondes SRTM
+      }
    } else {
       set res [expr (3.75/3600.0)]  ;# 0.75 arc-secondes CDED
    }

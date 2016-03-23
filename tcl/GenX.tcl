@@ -110,6 +110,7 @@ namespace eval GenX { } {
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 AURAMS }   ;#Model cible
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
+   set Param(SRTM3)     False
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     pollux                ;#Host onto which to submit the job
@@ -140,7 +141,7 @@ namespace eval GenX { } {
    set Path(TopoLow)    RPN/data_lres
    set Path(Grad)       RPN/data_grad
    set Path(HWSD)       HWSD
-   set Path(SRTM)       SRTM
+   set Path(SRTM)       SRTM3
    set Path(CDED)       CDED
    set Path(CDEM)       CDEM
    set Path(ASTERGDEM)  ASTER-GDEM
@@ -1330,10 +1331,8 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
    variable Param
 
-# see if we are using new granules subdirectories or old SRTMv4 directory
-   set  file [file readlink  $Param(DBase)/$Path(SRTM)]
-   if { [string compare [file tail $file] "granules"] != 0 } {
-      Log::Print DEBUG "Using SRTM database: $file"
+   if { [GenX::SRTMuseVersion3] == 0 } {
+      Log::Print DEBUG "Using Old SRTM 3 arcsec database"
 
       set files { }
       set lonmax [expr int(ceil((180.0 + $Lon1)/5))]
@@ -1347,7 +1346,7 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
          }
       }
    } else {
-      Log::Print DEBUG "Using SRTM granules : $file"
+      Log::Print DEBUG "Using new SRTM 1 arcsec database"
       set files { }
       set lon0 [expr int(floor($Lon0/5))*5]
       set lon1 [expr int(ceil($Lon1/5))*5]
@@ -1380,6 +1379,42 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    }
 
    return $files
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::SRTMuseVersion3>
+# Creation : Mar 2016 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Determine if we are using version 3 of SRTM
+#
+# Parameters :
+#
+# Return:
+#   <Bool>  : T
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::SRTMuseVersion3 {} {
+   variable Path
+   variable Param
+
+   if { $GenX::Param(SRTM3) } {
+      return True
+   }
+
+# see if we are using new granules subdirectories or old SRTMv4 directory
+   if { [string compare [file type $Param(DBase)/$Path(SRTM)] "link"] == 0 } {
+      set  file [file readlink  $Param(DBase)/$Path(SRTM)]
+   } else {
+      set file $Path(SRTM)
+   }
+   if { [string compare [file tail $file] "granules"] == 0 } {
+      set  GenX::Param(SRTM3)   True
+      Log::Print DEBUG "Using SRTM version 3"
+   } else {
+      return False
+   }
 }
 
 #----------------------------------------------------------------------------
