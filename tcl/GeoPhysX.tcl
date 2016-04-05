@@ -1410,7 +1410,7 @@ proc GeoPhysX::AverageVege { Grid } {
    #----- Vegetation canopy height and Permeable Soil thickness
    if { $GenX::Param(Sub)!="LEGACY" } {
       GeoPhysX::AverageGLAS $Grid
-      GeoPhysX::AverageGSRS_DPERM $Grid
+      GeoPhysX::AverageGSRS_DBRK $Grid
    }
 }
 
@@ -1988,13 +1988,13 @@ proc GeoPhysX::AverageGLAS { Grid } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::AverageGSRS_DPERM>
+# Name     : <GeoPhysX::AverageGSRS_DBRK>
 # Creation : Feb 2016 - Vanh Souvanlasy - CMC/CMDS
 #
-# Goal     : Average Permeable Soil Thickness using GSRS database
+# Goal     : Average Depth to bedrock Soil Thickness using GSRS database
 #
 # Parameters :
-#   <Grid>   : Grid on which to generate DPER
+#   <Grid>   : Grid on which to generate DBRK
 #
 # Return:
 #
@@ -2003,22 +2003,22 @@ proc GeoPhysX::AverageGLAS { Grid } {
 #       average soil are for value above 4 and is only available as integer
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageGSRS_DPERM { Grid } {
+proc GeoPhysX::AverageGSRS_DBRK { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs GSRS_DPERM
-   Log::Print INFO "Averaging Global Soil Regolith Sediment database for Permeable Soil Thickness DPER"
+   GenX::Procs GSRS_DBRK
+   Log::Print INFO "Averaging Global Soil Regolith Sediment database for Depth to bedrock Soil Thickness DBRK"
 
-   fstdfield copy GPXDPER  $Grid
-   GenX::GridClear GPXDPER 0.0
+   fstdfield copy GPXDBRK  $Grid
+   GenX::GridClear GPXDBRK 0.0
 
    #----- Open the file
    gdalfile open ASSDFILE read $GenX::Param(DBase)/$GenX::Path(GSRS)/average_soil_and_sedimentary-deposit_thickness.tif
    gdalfile open UHSSFILE read $GenX::Param(DBase)/$GenX::Path(GSRS)/upland_hill-slope_soil_thickness.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef ASSDFILE]]]] } {
-      Log::Print WARNING "Specified grid does not intersect with GSRS database, DPER will not be calculated"
+      Log::Print WARNING "Specified grid does not intersect with GSRS database, DBRK will not be calculated"
    } else {
       Log::Print INFO "Grid intersection with GSRS database is { $limits }"
       set x0 [lindex $limits 0]
@@ -2035,7 +2035,7 @@ proc GeoPhysX::AverageGSRS_DPERM { Grid } {
             gdalband read UHSSTILE { { UHSSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats UHSSTILE -nodata 255 -celldim $GenX::Param(Cell)
             vexpr GSRSTILE  ifelse(ASSDTILE<5 && UHSSTILE>0.0,UHSSTILE,ASSDTILE)
-            fstdfield gridinterp GPXDPER GSRSTILE AVERAGE False
+            fstdfield gridinterp GPXDBRK GSRSTILE AVERAGE False
          }
       }
 
@@ -2045,10 +2045,10 @@ proc GeoPhysX::AverageGSRS_DPERM { Grid } {
    gdalfile close UHSSFILE
 
    #----- Save output
-   fstdfield gridinterp GPXDPER - NOP True
-   fstdfield define GPXDPER -NOMVAR DPER -ETIKET GENPHYSX -IP1 0
-   fstdfield write GPXDPER GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
-   fstdfield free GPXDPER
+   fstdfield gridinterp GPXDBRK - NOP True
+   fstdfield define GPXDBRK -NOMVAR DBRK -ETIKET GENPHYSX -IP1 0
+   fstdfield write GPXDBRK GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield free GPXDBRK
 }
 
 #----------------------------------------------------------------------------
