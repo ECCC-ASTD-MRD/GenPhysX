@@ -1407,7 +1407,7 @@ proc GeoPhysX::AverageVege { Grid } {
 
    fstdfield free GPXVF
 
-   #----- Vegetation canopy height and Permeable Soil thickness
+   #----- Vegetation canopy height and depth to bedrock
    if { $GenX::Param(Sub)!="LEGACY" } {
       GeoPhysX::AverageGLAS $Grid
       GeoPhysX::AverageGSRS_DBRK $Grid
