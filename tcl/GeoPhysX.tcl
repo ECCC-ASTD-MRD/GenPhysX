@@ -398,6 +398,12 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
    set la1 [lindex $limits 2]
    set lo1 [lindex $limits 3]
 
+   if { [GenX::SRTMuseVersion3] } {
+      set d 30
+   } else {
+      set d 90
+   }
+
    foreach file [GenX::SRTMFindFiles $la0 $lo0 $la1 $lo1] {
       Log::Print DEBUG "   Processing SRTM file $file"
       gdalband read SRTMTILE [gdalfile open SRTMFILE read $file]
@@ -417,7 +423,7 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
 
    #----- Create source resolution used in destination
    fstdfield gridinterp GPXRMS - ACCUM
-   vexpr GPXRES ifelse((GPXTSK && GPXRMS),90,GPXRES)
+   vexpr GPXRES ifelse((GPXTSK && GPXRMS),$d,GPXRES)
 
    #----- Use accumulator to figure out coverage in destination
    #----- But remove border of coverage since it will not be full
