@@ -1331,7 +1331,7 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
    variable Path
    variable Param
 
-   if { [GenX::SRTMuseVersion3] == 0 } {
+   if { [GenX::SRTMuseVersion3] == False } {
       Log::Print DEBUG "Using Old SRTM 3 arcsec database"
 
       set files { }
