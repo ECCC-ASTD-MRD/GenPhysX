@@ -45,6 +45,7 @@
 #      [-z0filter]                                : Apply GEM filter to roughness length
 #      [-celldim]                                 : Grid cell dimension (1=point, 2=area)
 #      [-compress]                                : Compress standard file output
+#      [-z0notopo]                                : Z0 with no topographic contribution, local roughness only
 #
 #   Batch mode parameters:
 #      [-batch]                                   : Launch in batch mode
