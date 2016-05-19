@@ -88,6 +88,7 @@ namespace eval GeoPhysX { } {
    set Const(z0min)   0.0001      ;# Threshold value of roughness length in meters, used to identify
                                    #   some "gaps" in the roughness length field
    set Const(gaz0)    0.0003      ;# Roughness length for glacier-type surfaces
+   set Const(waz0)    0.001       ;# Roughness length for water
    set Const(lres)    5000.0      ;# Horizontal reference scale (5000 m) for topography features,
                                    #   used to separate subgrid scales among the fields:
                                    #     - LH,Y7,Y8,Y9 (which should use scales > 5000 m)
@@ -3549,18 +3550,33 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield define GPXZ0 -NOMVAR Z00 -ETIKET GENPHYSX -IP1 0 -IP2 0
    fstdfield write GPXZ0 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   #------ Filter roughness length
-   if { $GenX::Param(Z0Filter) } {
-      Log::Print INFO "Filtering Z0"
-      geophy zfilter GPXZ0 GenX::Settings
-   }
-   vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
-   fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   
+   if { $GenX::Param(Z0NoTopo) } {
+   #------ roughness length without topographic contribution and Z0VG
+      Log::Print INFO "Generating Z0 without topographic contribution"
+      vexpr GPXZ0  "max(GPXZ0VG,$Const(waz0))"
+      fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
-   fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      vexpr GPXZP  ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+      fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   } else {
+   #------ roughness length with topographic contribution and lookup table
+   #------ Filter roughness length
+      Log::Print INFO "Generating Z0 with topographic contribution"
+      if { $GenX::Param(Z0Filter) } {
+         Log::Print INFO "Filtering Z0"
+         geophy zfilter GPXZ0 GenX::Settings
+      }
+      vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
+      fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   
+      vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+      fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
 
    fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S GPXZ0W GPXZPW \
        GPXZ0V2 GPXZ0VG GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF GPXVCH

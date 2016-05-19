@@ -85,6 +85,7 @@ namespace eval GenX { } {
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
+   set Param(Z0NoTopo)  False                 ;#No topography + z0vg  for roughness length
    set Param(Compress)  False                 ;#Compress standard file output
    set Param(TopoStag)  False                 ;#Treat mulitple grids as staggered topography
    set Param(NBits)     32                    ;#Compress standard file output
@@ -578,6 +579,7 @@ proc GenX::CommandLine { } {
    Specific processing parameters:
       \[-topostag\] [format "%-30s : Treat multiple grids as staggered topography grids" ""]
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
+      \[-z0notopo\] [format "%-30s : Roughness length Z0 with no topographic contribution, local roughness only" ""]
       \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" (${::APP_COLOR_GREEN}$Param(Cell)${::APP_COLOR_RESET})]
       \[-compress\] [format "%-30s : Compress standard file output" (${::APP_COLOR_GREEN}$Param(Compress)${::APP_COLOR_RESET})]
       \[-nbits\]    [format "%-30s : Maximum number of bits to use to save RPN fields" (${::APP_COLOR_GREEN}$Param(NBits)${::APP_COLOR_RESET})]
@@ -687,6 +689,7 @@ proc GenX::ParseCommandLine { } {
          "diag"      { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Diag)] }
          "topostag"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(TopoStag)] }
          "z0filter"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0Filter)]; incr flags }
+         "z0notopo"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0NoTopo)]; incr flags }
          "celldim"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Cell)] }
          "compress"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Compress)] }
          "nbits"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(NBits)] }
