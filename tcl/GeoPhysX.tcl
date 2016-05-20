@@ -704,7 +704,12 @@ proc GeoPhysX::AverageAspect { Grid } {
    #----- Create work tile with border included
    gdalband create DEMTILE [expr $GenX::Param(TileSize)+2] [expr $GenX::Param(TileSize)+2] 1 Int16
    gdalband define DEMTILE -georef LLREF
-   gdalband stats DEMTILE -nodata 0.0 -celldim $GenX::Param(Cell)
+   gdalband stats DEMTILE -nodata 0 -celldim $GenX::Param(Cell)
+
+   #----- Create buffer tile for reading
+   gdalband create DEMTILE2 [expr $GenX::Param(TileSize)+2] [expr $GenX::Param(TileSize)+2] 1 Int16
+   gdalband define DEMTILE2 -georef LLREF
+   gdalband stats  DEMTILE2 -nodata 0 -celldim $GenX::Param(Cell)
 
    #----- Loop en grid data at tile resolution
    set xlo 0
@@ -722,6 +727,9 @@ proc GeoPhysX::AverageAspect { Grid } {
          gdalband define DEMTILE -transform [list $lo0 $res 0.0 $la0 0.0 $res]
          Log::Print DEBUG "   Processing area from $la0,$lo0 to $la1,$lo1"
 
+         gdalband clear DEMTILE2
+         gdalband define DEMTILE2 -transform [list $lo0 $res 0.0 $la0 0.0 $res]
+
          #----- Process STRM first, if asked for
          if { $SRTM && [llength [set srtmfiles [GenX::SRTMFindFiles $la0 $lo0 $la1 $lo1]]] } {
             foreach file $srtmfiles {
@@ -734,12 +742,14 @@ proc GeoPhysX::AverageAspect { Grid } {
 
          #----- Process CDED, if asked for
          if { $CDED && [llength [set dnecfiles [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $CDED]]] } {
+            set nodata [expr $CDED==50?-32767:0]
             foreach file $dnecfiles {
-               GenX::CacheGet $file [expr $CDED==50?-32767:0]
+               GenX::CacheGet $file $nodata
                Log::Print DEBUG "      Processing CDED DEM file $file"
-               gdalband gridinterp DEMTILE $file NEAREST
+               gdalband gridinterp DEMTILE2 $file NEAREST
             }
             set data True
+            vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata,DEMTILE2,DEMTILE)"
          }
 
          #----- Process CDEM, if asked for
@@ -747,15 +757,18 @@ proc GeoPhysX::AverageAspect { Grid } {
             foreach file $cdemfiles {
                GenX::CacheGet $file -32767
                Log::Print DEBUG "      Processing CDEM DEM file $file"
-               gdalband gridinterp DEMTILE $file NEAREST
+               gdalband gridinterp DEMTILE2 $file NEAREST
             }
             set data True
+            vexpr DEMTILE  "ifelse(DEMTILE2>0,DEMTILE2,DEMTILE)"
          }
 
          #----- If the tile has data, process on destination grid
          if { $data } {
-#file delete -force  gdal.$xla.$xlo.tif
-#gdalfile open FILEOUT write gdal.$xla.$xlo.tif "GeoTIFF"
+#set outfile gdal.$xla.$xlo.tif
+#Log::Print DEBUG "      Saving DEMTILE: $outfile"
+#file delete -force  $outfile
+#gdalfile open FILEOUT write $outfile "GeoTIFF"
 #gdalband write { DEMTILE } FILEOUT
 #gdalfile close FILEOUT
             Log::Print DEBUG "   Computing slope and aspect per quadrant"
@@ -790,6 +803,14 @@ proc GeoPhysX::AverageAspect { Grid } {
    vexpr GPXFSAE max(GPXFSAE,0);
    vexpr GPXFSAS max(GPXFSAS,0);
    vexpr GPXFSAW max(GPXFSAW,0);
+
+# filters out border artifact on lakes and Ocean, when other Topo are mixed with CDED or CDEM
+#
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+      fstdfield read GPXMG GPXOUTFILE $idx
+      vexpr  GPXFSA  "ifelse(GPXMG==0,-1.0,GPXFSA)"
+      fstdfield free GPXMG
+   }
 
    #----- Save everything
    fstdfield define GPXFSA  -NOMVAR FSA0 -ETIKET GENPHYSX -IP2 0
