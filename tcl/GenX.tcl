@@ -222,6 +222,11 @@ proc GenX::Process { Grid } {
    set Param(TMPDIR) $Param(OutFile)_tmp$Param(Process)
    set Log::Param(Process) $Param(Process)
 
+   #----- Land-water mask
+   if { $Param(Mask)!="" } {
+      GeoPhysX::AverageMask $Grid
+   }
+
    #----- Topography
    if { $Param(Topo)!="" } {
       GeoPhysX::AverageTopo $Grid
@@ -235,11 +240,6 @@ proc GenX::Process { Grid } {
    #----- Slope and Aspect
    if { $Param(Aspect)!="" } {
       GeoPhysX::AverageAspect $Grid
-   }
-
-   #----- Land-water mask
-   if { $Param(Mask)!="" } {
-      GeoPhysX::AverageMask $Grid
    }
 
    #----- Land-water mask
