@@ -48,7 +48,7 @@ package require TclSystem
 package require MetData
 package require Logger
 
-set Log::Param(SPI)       7.9.0
+set Log::Param(SPI)       7.10.2
 set Log::Param(Level)     INFO
 
 namespace eval GenX { } {
@@ -760,6 +760,8 @@ proc GenX::ParseCommandLine { } {
    if { [file isdirectory $Param(OutFile)] } {
       append Param(OutFile) genphysx
    }
+   
+   set Param(GridFile) [file normalize $Param(GridFile)]
 
    #----- If batch mode enabled, submit the job and exit otherwise, go to result directory
    if { $Batch(On) } {

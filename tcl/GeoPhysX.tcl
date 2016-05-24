@@ -65,7 +65,7 @@ namespace eval GeoPhysX { } {
    variable Const
    global env
 
-   set Param(Version)   1.3
+   set Param(Version)   1.4
 
    #----- Specific data information
 
