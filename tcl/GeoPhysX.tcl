@@ -838,7 +838,7 @@ proc GeoPhysX::AverageAspect { Grid } {
    fstdfield write GPXSLAW GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    fstdfield free GPXSLA GPXSLAN GPXSLAE GPXSLAS GPXSLAW GPXFSA GPXFSAN GPXFSAE GPXFSAS GPXFSAW
-   gdalband free DEMTILE
+   gdalband free DEMTILE DEMTILE2
 }
 
 #----------------------------------------------------------------------------
