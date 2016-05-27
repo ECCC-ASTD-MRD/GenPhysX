@@ -1417,6 +1417,7 @@ proc GenX::SRTMuseVersion3 {} {
    if { [string compare [file tail $file] "granules"] == 0 } {
       set  GenX::Param(SRTM3)   True
       Log::Print DEBUG "Using SRTM version 3"
+      return True
    } else {
       return False
    }
