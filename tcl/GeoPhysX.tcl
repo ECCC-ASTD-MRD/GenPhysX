@@ -809,6 +809,15 @@ proc GeoPhysX::AverageAspect { Grid } {
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
       fstdfield read GPXMG GPXOUTFILE $idx
       vexpr  GPXFSA  "ifelse(GPXMG==0,-1.0,GPXFSA)"
+      vexpr  GPXFSAN "ifelse(GPXMG==0,0.0,GPXFSAN)"
+      vexpr  GPXFSAE "ifelse(GPXMG==0,0.0,GPXFSAE)"
+      vexpr  GPXFSAS "ifelse(GPXMG==0,0.0,GPXFSAS)"
+      vexpr  GPXFSAW "ifelse(GPXMG==0,0.0,GPXFSAW)"
+      vexpr  GPXSLA  "ifelse(GPXMG==0,0.0,GPXSLA)"
+      vexpr  GPXSLAN "ifelse(GPXMG==0,0.0,GPXSLAN)"
+      vexpr  GPXSLAE "ifelse(GPXMG==0,0.0,GPXSLAE)"
+      vexpr  GPXSLAS "ifelse(GPXMG==0,0.0,GPXSLAS)"
+      vexpr  GPXSLAW "ifelse(GPXMG==0,0.0,GPXSLAW)"
       fstdfield free GPXMG
    }
 
