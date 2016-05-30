@@ -98,9 +98,9 @@ namespace eval GenX { } {
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
    set Param(Aspects)   { SRTM CDED250 CDED50 CDEM }
-   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC USGS_R }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS }
-   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC }
+   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC USGS_R }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD HSRN DCW }
@@ -165,6 +165,7 @@ namespace eval GenX { } {
    set Path(NHD)        NHD
    set Path(DCW)        DCW
    set Path(HSRN)       USGS_HydroSHEDS/River_Network
+   set Path(USGS_R)     USGS_GLCC
    set Path(GLAS)       SimardPinto
    set Path(GSRS)       GSRS
    set Path(CanadaProv) Various

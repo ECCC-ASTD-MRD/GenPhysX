@@ -29,6 +29,7 @@
 #   GeoPhysX::AverageMask          { Grid }
 #   GeoPhysX::AverageMaskUSNavy    { Grid } 
 #   GeoPhysX::AverageMaskUSGS      { Grid }
+#   GeoPhysX::AverageMaskUSGS_R    { Grid }
 #   GeoPhysX::AverageMaskCANVEC    { Grid }
 #   GeoPhysX::AverageMaskGLOBCOVER { Grid }
 #
@@ -159,6 +160,11 @@ namespace eval GeoPhysX { } {
    #----- New MCD12Q1 correspondance table based on Shailesh recommendation
    set Const(MODIS2RPN) { { 0 1 2 3 4  5  6  7  8  9 10 11 12 13 14 15 16 254 255 }
                           { 3 4 5 6 7 25 10 26  4 26 13 23 15 21 15  2 24 -99 -99 } }
+
+   #----- Juin 2016 : en se basant sur la meme correspondance utilise pour creer USGS en format RPN par Judith St-James
+   set Const(USGS_BATS2RPN) { {  1  2  3  4  5  6  7  8   9  10  11  12  13  14  15  16  17  18  19  20  21  99 100 }
+                              { 15 13  4  6  7  5 14  24 22  20  24   2  23   3   1  10  11  25  26  23  21 -99 -99 } }
+
 }
 
 #----------------------------------------------------------------------------
@@ -934,6 +940,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
       "MCD12Q1"   { GeoPhysX::AverageMaskMCD12Q1   $Grid }
       "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid }
+      "USGS_R"    { GeoPhysX::AverageMaskUSGS_R    $Grid }
    }
 }
 
@@ -1285,6 +1292,63 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageMaskUSGS_R>
+# Creation : 
+#
+# Goal     : Generate the land/sea mask through averaging.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageMaskUSGS_R { Grid } {
+
+   GenX::Procs USGS_R
+   Log::Print INFO "Averaging mask using USGS GLCC BATS database"
+
+   fstdfield copy GPXMASK  $Grid
+   GenX::GridClear GPXMASK 0.0
+
+   #----- Open the file
+   gdalfile open USGSFILE read $GenX::Param(DBase)/$GenX::Path(USGS_R)/gbats2_0ll.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef USGSFILE]]]] } {
+      Log::Print WARNING "Specified grid does not intersect with USGS GLCC BATS database, mask will not be calculated"
+   } else {
+      Log::Print INFO "Grid intersection with USGS GLCC BATS database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+            gdalband read USGSTILE { { USGSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats USGSTILE -nodata 255 -celldim $GenX::Param(Cell)
+
+            vexpr USGSTILE ifelse(USGSTILE==14||USGSTILE==15,0.0,1.0)
+            fstdfield gridinterp GPXMASK USGSTILE AVERAGE False
+         }
+      }
+
+      #----- Save output
+      fstdfield gridinterp GPXMASK - NOP True
+      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
+      fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield free MASKTILE
+
+      gdalband free USGSTILE
+   }
+   gdalfile close USGSFILE
+}
+
+#----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageGeoMask>
 # Creation : June 2006 - J.P. Gauthier - CMC/CMOE
 #
@@ -1432,6 +1496,7 @@ proc GeoPhysX::AverageVege { Grid } {
          "MCD12Q1"   { GeoPhysX::AverageVegeMCD12Q1   GPXVF ;#----- MODIS MCD12Q1 IGBP global vegetation }
          "AAFC"      { GeoPhysX::AverageVegeAAFC      GPXVF ;#----- AAFC Crop over Canada only vege averaging method }
          "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF ;#----- ESA CCI CRDP Land cover }
+         "USGS_R"    { GeoPhysX::AverageVegeUSGS_R    GPXVF ;#----- USGS global vege raster averaging method }
       }
    }
    fstdfield free GPXVSK
@@ -1968,6 +2033,71 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid } {
       vector free FROMCCI TORPN
    }
    gdalfile close CCIFILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageVegeUSGS_R>
+# Creation : June 2016 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the CCRN vegetation (26 classes)
+#            using hybrid raster of USGS BATS + USGS GOGE + CCI_LC as filler for nodata islands
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageVegeUSGS_R { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs USGS_R
+   Log::Print INFO "Averaging vegetation type using USGS BATS (raster) Land cover"
+
+   #----- Open the file
+   gdalfile open USGSFILE read $GenX::Param(DBase)/$GenX::Path(USGS_R)/gbats2_0ll.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef USGSFILE]]]] } {
+      Log::Print WARNING "Specified grid does not intersect with USGS_R database, vegetation will not be calculated"
+   } else {
+      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(USGS_BATS2RPN) 0]\n   To  :[lindex $Const(USGS_BATS2RPN) 1]"
+      vector create FROMUSGS  [lindex $Const(USGS_BATS2RPN) 0]
+      vector create TORPN    [lindex $Const(USGS_BATS2RPN) 1]
+
+      Log::Print INFO "Grid intersection with USGS_R database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+            gdalband read USGSTILE { { USGSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats USGSTILE -nodata 0 -celldim $GenX::Param(Cell)
+
+            vexpr USGSTILE lut(USGSTILE,FROMUSGS,TORPN)
+            fstdfield gridinterp $Grid USGSTILE NORMALIZED_COUNT $Param(VegeTypes) False
+         }
+      }
+
+      #----- If there is other DB to process
+      if { [lsearch -exact $GenX::Param(Vege) USGS_R]<[expr [llength $GenX::Param(Vege)]-1] } {
+         #----- Use accumulator to figure out coverage in destination
+         #      But remove border of coverage since it will not be full
+         fstdfield gridinterp $Grid - ACCUM
+         vexpr GPXVSK !fpeel($Grid)
+         fstdfield stats $Grid -mask GPXVSK
+      }
+
+      gdalband free USGSTILE
+      vector free FROMUSGS TORPN
+   }
+   gdalfile close USGSFILE
 }
 
 #----------------------------------------------------------------------------
