@@ -760,7 +760,7 @@ proc GeoPhysX::AverageAspect { Grid } {
                gdalband gridinterp DEMTILE2 $file NEAREST
             }
             set data True
-            vexpr DEMTILE  "ifelse(DEMTILE2>0,DEMTILE2,DEMTILE)"
+            vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata,DEMTILE2,DEMTILE)"
          }
 
          #----- If the tile has data, process on destination grid
