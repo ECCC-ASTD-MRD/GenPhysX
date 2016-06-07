@@ -985,9 +985,9 @@ proc GeoPhysX::AverageMaskUSGS { Grid } {
 
    #----- Save output
    fstdfield gridinterp GPXMASK - NOP True
-   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
    vexpr GPXMASK ifelse(GPXMASK==-99.0,0.0,GPXMASK/100.0)
-   fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
    fstdfield free MASKTILE
 }
 
@@ -1028,9 +1028,9 @@ proc GeoPhysX::AverageMaskUSNavy { Grid } {
 
    #----- Save output
    fstdfield gridinterp GPXMASK - NOP True
-   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
    vexpr GPXMASK ifelse(GPXMASK==-99.0,0.0,GPXMASK/100.0)
-   fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
    fstdfield free MASKTILE
 }
 
@@ -1082,8 +1082,8 @@ proc GeoPhysX::AverageMaskGLOBCOVER { Grid } {
 
       #----- Save output
       fstdfield gridinterp GPXMASK - NOP True
-      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
-      fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
       fstdfield free MASKTILE
 
       gdalband free GLOBTILE
@@ -1139,8 +1139,8 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
 
       #----- Save output
       fstdfield gridinterp GPXMASK - NOP True
-      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
-      fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
       gdalband free GCLTILE
    }
@@ -1199,8 +1199,8 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
    }
 
    #----- Save a geographic mask with a nodata value
-   fstdfield define GPXMASK -NOMVAR MGGO -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXMASK GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXMASK -NOMVAR MGGO -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXMASK GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    }
    
@@ -1225,8 +1225,8 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
       fstdfield free GPXME
    }
 
-   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    ogrlayer free USLAKES CANVECTILE
 }
@@ -1282,8 +1282,8 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid } {
 
       #----- Save output
       fstdfield gridinterp GPXMASK - NOP True
-      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
-      fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
       fstdfield free MASKTILE
 
       gdalband free CCITILE
@@ -1339,8 +1339,8 @@ proc GeoPhysX::AverageMaskUSGS_R { Grid } {
 
       #----- Save output
       fstdfield gridinterp GPXMASK - NOP True
-      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
-      fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
       fstdfield free MASKTILE
 
       gdalband free USGSTILE
@@ -1403,8 +1403,8 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
    fstdfield gridinterp GPXMASK CANPROV INTERSECT
    ogrfile close CANPROVFILE
 
-   fstdfield define GPXMASK -NOMVAR MGGO -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXMASK GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXMASK -NOMVAR MGGO -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXMASK GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    ogrlayer free CANPROV
 }
@@ -1503,9 +1503,9 @@ proc GeoPhysX::AverageVege { Grid } {
    fstdfield gridinterp GPXVF - NOP True
 
    #----- Save the 26 Vege types
-   fstdfield define GPXVF -NOMVAR VF -ETIKET GENPHYSX -IP2 0
+   fstdfield define GPXVF -NOMVAR VF -ETIKET GENPHYSX -IP2 0 -DATYP $GenX::Param(Datyp)
    fstdfield stats GPXVF -levels $Param(VegeTypes) -leveltype UNDEFINED
-   fstdfield write GPXVF GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield write GPXVF GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    fstdfield free GPXVF
 
@@ -2151,7 +2151,7 @@ proc GeoPhysX::AverageGLAS { Grid } {
    #----- Save output
    fstdfield gridinterp $Grid - NOP True
    fstdfield define $Grid -NOMVAR VCH -ETIKET GENPHYSX -IP1 0
-   fstdfield write $Grid GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield write $Grid GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 }
 
 #----------------------------------------------------------------------------
@@ -2214,7 +2214,7 @@ proc GeoPhysX::AverageGSRS_DBRK { Grid } {
    #----- Save output
    fstdfield gridinterp GPXDBRK - NOP True
    fstdfield define GPXDBRK -NOMVAR DBRK -ETIKET GENPHYSX -IP1 0
-   fstdfield write GPXDBRK GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield write GPXDBRK GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
    fstdfield free GPXDBRK
 }
 
@@ -2432,8 +2432,8 @@ proc GeoPhysX::AverageMaskMCD12Q1 { Grid } {
 
    #----- Save output
    fstdfield gridinterp GPXMASK - NOP True
-   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0
-   fstdfield write GPXMASK GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    fstdfield free GPXMASK
 }
@@ -2590,8 +2590,8 @@ proc GeoPhysX::AverageSand { Grid } {
       fstdfield gridinterp GPXJ1 - NOP True
 
       #----- Save output
-      fstdfield define GPXJ1 -NOMVAR J1 -ETIKET GENPHYSX -IP1 [expr 1200-$type]
-      fstdfield write GPXJ1 GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield define GPXJ1 -NOMVAR J1 -ETIKET GENPHYSX -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXJ1 GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
    }
    fstdfield free SANDTILE GPXJ1 GPXJ1SK
 }
@@ -2647,8 +2647,8 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
 
       #----- Save output (Same for all layers)
       foreach type $Param(SandTypes) {
-         fstdfield define GPXJ1 -NOMVAR J1 -ETIKET GENPHYSX -IP1 [expr 1200-$type]
-         fstdfield write GPXJ1 GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+         fstdfield define GPXJ1 -NOMVAR J1 -ETIKET GENPHYSX -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
+         fstdfield write GPXJ1 GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
       }
       gdalband free JPLTILE
    }
@@ -2681,8 +2681,8 @@ proc GeoPhysX::AverageSoilJPL { Grid } {
 
       #----- Save output (Same for all layers)
       foreach type $Param(SandTypes) {
-         fstdfield define GPXJ2 -NOMVAR J2 -ETIKET GENPHYSX -IP1 [expr 1200-$type]
-         fstdfield write GPXJ2 GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+         fstdfield define GPXJ2 -NOMVAR J2 -ETIKET GENPHYSX -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
+         fstdfield write GPXJ2 GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
       }
       gdalband free JPLTILE
    }
@@ -2806,11 +2806,11 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
    }
 
    #----- Save output
-   fstdfield define GPXSANDT -NOMVAR J1 -ETIKET GENPHYSX -IP1 1199
-   fstdfield define GPXCLAYT -NOMVAR J2 -ETIKET GENPHYSX -IP1 1199
-   fstdfield define GPXGRAVT -NOMVAR J3 -ETIKET GENPHYSX -IP1 1199
-   fstdfield define GPXBULKT -NOMVAR J4 -ETIKET GENPHYSX -IP1 1199
-   fstdfield define GPXOCT   -NOMVAR J5 -ETIKET GENPHYSX -IP1 1199
+   fstdfield define GPXSANDT -NOMVAR J1 -ETIKET GENPHYSX -IP1 1199 -DATYP $GenX::Param(Datyp)
+   fstdfield define GPXCLAYT -NOMVAR J2 -ETIKET GENPHYSX -IP1 1199 -DATYP $GenX::Param(Datyp)
+   fstdfield define GPXGRAVT -NOMVAR J3 -ETIKET GENPHYSX -IP1 1199 -DATYP $GenX::Param(Datyp)
+   fstdfield define GPXBULKT -NOMVAR J4 -ETIKET GENPHYSX -IP1 1199 -DATYP $GenX::Param(Datyp)
+   fstdfield define GPXOCT   -NOMVAR J5 -ETIKET GENPHYSX -IP1 1199 -DATYP $GenX::Param(Datyp)
 
    fstdfield write GPXSANDT GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXCLAYT GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
@@ -2820,11 +2820,11 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
 
    #----- Copy sub-surface data into 4 layers (needed by GEM)
    foreach ip1 { 1198 1197 1196 1195 } {
-      fstdfield define GPXSANDS -NOMVAR J1 -ETIKET GENPHYSX -IP1 $ip1
-      fstdfield define GPXCLAYS -NOMVAR J2 -ETIKET GENPHYSX -IP1 $ip1
-      fstdfield define GPXGRAVS -NOMVAR J3 -ETIKET GENPHYSX -IP1 $ip1
-      fstdfield define GPXBULKS -NOMVAR J4 -ETIKET GENPHYSX -IP1 $ip1
-      fstdfield define GPXOCS   -NOMVAR J5 -ETIKET GENPHYSX -IP1 $ip1
+      fstdfield define GPXSANDS -NOMVAR J1 -ETIKET GENPHYSX -IP1 $ip1 -DATYP $GenX::Param(Datyp)
+      fstdfield define GPXCLAYS -NOMVAR J2 -ETIKET GENPHYSX -IP1 $ip1 -DATYP $GenX::Param(Datyp)
+      fstdfield define GPXGRAVS -NOMVAR J3 -ETIKET GENPHYSX -IP1 $ip1 -DATYP $GenX::Param(Datyp)
+      fstdfield define GPXBULKS -NOMVAR J4 -ETIKET GENPHYSX -IP1 $ip1 -DATYP $GenX::Param(Datyp)
+      fstdfield define GPXOCS   -NOMVAR J5 -ETIKET GENPHYSX -IP1 $ip1 -DATYP $GenX::Param(Datyp)
 
       fstdfield write GPXSANDS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
       fstdfield write GPXCLAYS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
@@ -3001,8 +3001,8 @@ proc GeoPhysX::AverageSoilCANSIS { Grid } {
    set nst [llength $Param(SandTypes)]
    set n   [expr [llength $types] + 1]
    for { set type $n } { $type <= $nst } { incr type }  {
-      fstdfield define GPXJ -NOMVAR J1 -ETIKET GENPHYSX -IP1 [expr 1200-$type]
-      fstdfield write GPXJ GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield define GPXJ -NOMVAR J1 -ETIKET GENPHYSX -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXJ GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
    }
 
    set files  {}
@@ -3014,8 +3014,8 @@ proc GeoPhysX::AverageSoilCANSIS { Grid } {
    set nct [llength $Param(ClayTypes)]
    set n   [expr [llength $types] + 1]
    for { set type $n } { $type <= $nct } {incr type } {
-      fstdfield define GPXJ -NOMVAR J2 -ETIKET GENPHYSX -IP1 [expr 1200-$type]
-      fstdfield write GPXJ GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield define GPXJ -NOMVAR J2 -ETIKET GENPHYSX -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXJ GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
    }
 
    set files {}
@@ -3083,7 +3083,7 @@ proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG et
             #----- Save output (Same for all layers)
             lappend types $type
             fstdfield define $Grid -NOMVAR $varname -IP1 [expr 1200-$type] -ETIKET "$etiket"
-            fstdfield write $Grid GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
             gdalband free BFRTILE
             incr type
             incr bno
@@ -3150,8 +3150,8 @@ proc GeoPhysX::AverageClay { Grid } {
       fstdfield gridinterp GPXJ2 - NOP True
 
       #----- Save output
-      fstdfield define GPXJ2 -NOMVAR J2 -ETIKET GENPHYSX -IP1 [expr 1200-$type]
-      fstdfield write GPXJ2 GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield define GPXJ2 -NOMVAR J2 -ETIKET GENPHYSX -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXJ2 GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
    }
    fstdfield free CLAYTILE GPXJ2 GPXJ2SK
 }
@@ -3201,14 +3201,14 @@ proc GeoPhysX::AverageTopoLow { Grid } {
    #----- Save output
    fstdfield gridinterp GPXLOW - NOP True
    vexpr GPXLOW ifelse(GPXLOW==-99.0,0.0,GPXLOW)
-   fstdfield define GPXLOW -NOMVAR MEL -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXLOW GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXLOW -NOMVAR MEL -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXLOW GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    #----- save <Hhr^2>ij
    fstdfield gridinterp GPXLRMS - NOP True
    vexpr GPXLRMS ifelse(GPXLRMS>0.0,GPXLRMS^0.5,0.0)
-   fstdfield define GPXLRMS -NOMVAR LRMS -ETIKET GENPHYSX -IP1 0
-   fstdfield write GPXLRMS GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXLRMS -NOMVAR LRMS -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXLRMS GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    fstdfield free LOWTILE LOWTILE2 GPXLRMS
 }
@@ -3340,10 +3340,10 @@ proc GeoPhysX::SubCorrectionFactor { } {
    GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) $Const(largec0) $Const(largec1)
    GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc0) $Const(smallc1)
 
-   fstdfield define GPXFLR -NOMVAR FLR -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXFLR GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
-   fstdfield define GPXFHR -NOMVAR FHR -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXFHR GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXFLR -NOMVAR FLR -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXFLR GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+   fstdfield define GPXFHR -NOMVAR FHR -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXFHR GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    #----- For low-res and hi-res (over land only)
    Log::Print INFO "Computing low and high res fields over land only"
@@ -3354,10 +3354,10 @@ proc GeoPhysX::SubCorrectionFactor { } {
    GeoPhysX::SubCorrectionFilter GPXFLR GPXDX GPXDY $Const(lres) $Const(largec0) $Const(largec1)
    GeoPhysX::SubCorrectionFilter GPXFHR GPXDX GPXDY GPXMRES $Const(smallc0) $Const(smallc1)
 
-   fstdfield define GPXFLR -NOMVAR FLRP -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXFLR GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
-   fstdfield define GPXFHR -NOMVAR FHRP -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXFHR GPXAUXFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXFLR -NOMVAR FLRP -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXFLR GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+   fstdfield define GPXFHR -NOMVAR FHRP -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXFHR GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    fstdfield free GPXMG GPXDX GPXDY GPXFLR GPXFHR
 }
@@ -3795,8 +3795,8 @@ proc GeoPhysX::CheckConsistencyStandard { } {
             Log::Print WARNING "Could not find VF(3) and/or MG field(s), will not do the consistency check on VF($type)"
             break
          }
-         fstdfield define GPXVF -NOMVAR VF -ETIKET GENPHYSX -IP1 [expr 1200-$type]
-         fstdfield write GPXVF GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+         fstdfield define GPXVF -NOMVAR VF -ETIKET GENPHYSX -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
+         fstdfield write GPXVF GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
       } else {
          Log::Print WARNING "Could not find VF($type) field while checking VF"
          break
@@ -3805,8 +3805,8 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 
    if { [fstdfield is GPXVF2] } {
       GeoPhysX::Compute_GA GPXGA GPXVF2
-      fstdfield define GPXGA -NOMVAR GA -ETIKET GENPHYSX -IP1 0
-      fstdfield write GPXGA GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+      fstdfield define GPXGA -NOMVAR GA -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXGA GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
       #----- Calculate Dominant type and save
       GeoPhysX::DominantVege GPXVF2
@@ -3828,8 +3828,8 @@ proc GeoPhysX::CheckConsistencyStandard { } {
          } else {
             Log::Print WARNING "Could not find MG field, will not do the consistency check between MG and J1"
          }
-         fstdfield define GPXJ1 -NOMVAR J1 -ETIKET GENPHYSX -IP1 [expr 1200-$type]
-         fstdfield write GPXJ1 GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+         fstdfield define GPXJ1 -NOMVAR J1 -ETIKET GENPHYSX -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
+         fstdfield write GPXJ1 GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
       } else {
          Log::Print WARNING "Could not find J1($type) field, will not do the consistency check on J1($type)"
       }
@@ -3849,8 +3849,8 @@ proc GeoPhysX::CheckConsistencyStandard { } {
             Log::Print WARNING "Could not find MG field, will not do the consistency check between MG and J2"
             break
          }
-         fstdfield define GPXJ2 -NOMVAR J2 -ETIKET GENPHYSX -IP1 [expr 1200-$type]
-         fstdfield write GPXJ2 GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+         fstdfield define GPXJ2 -NOMVAR J2 -ETIKET GENPHYSX -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
+         fstdfield write GPXJ2 GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
       } else {
          Log::Print WARNING "Could not find J2($type) field, will not do the consistency check on J2($type)"
       }
@@ -3928,8 +3928,8 @@ proc GeoPhysX::DominantVege { Grid } {
          Log::Print WARNING "Could not find VF($type) field while processing VG"
       }
    }
-   fstdfield define GPXVG -NOMVAR VG -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXVG GPXOUTFILE -[expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24] True $GenX::Param(Compress)
+   fstdfield define GPXVG -NOMVAR VG -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXVG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    fstdfield free GPXVF GPXVG GPXTP
 }

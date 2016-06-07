@@ -94,7 +94,9 @@ namespace eval GenX { } {
    set Param(Process)   ""                    ;#Current processing id
    set Param(OutFile)   genphysx              ;#Output file prefix
    set Param(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
-   set Param(NML)       ""                   ;#GEM namelist
+   set Param(NML)       ""                    ;#GEM namelist
+   set Param(Datyp)     5                     ;#Default DATYP to use for output fields
+   set Param(CappedNBits)  24                ;# Legacy limited nbits used for MG, VF and soil
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
    set Param(Aspects)   { SRTM CDED250 CDED50 CDEM }
@@ -719,6 +721,19 @@ proc GenX::ParseCommandLine { } {
    if { $GenX::Param(Script)!="" } {
       source $Param(Script)
    }
+
+   #----- check for user CappedNBits, if equal 24(default), reset it as min(NBits,24)
+   if { $Param(CappedNBits)==24 } {
+      set $Param(CappedNBits)  [expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24]
+   } else {
+   #----- CappedNBits limited to 24 if DATYP==1
+      if { $Param(Datyp)==1 && $Param(CappedNBits) > 24 } {
+         Log::Print WARNING "DATYP=1 cannot have CappedNBits>24, may use DATYP=5 instead"
+      }
+   }
+   Log::Print DEBUG "NBits=$Param(NBits)"
+   Log::Print DEBUG "Datyp=$Param(Datyp)"
+   Log::Print DEBUG "Capped NBits=$Param(CappedNBits)"
 
    #----- Check dependencies
    if { $Param(Vege)!="" } {
