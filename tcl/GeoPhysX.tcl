@@ -468,10 +468,19 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
    set lo1 [lindex $limits 3]
    Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
 
+   set  nodata [expr $Res==50?-32767:0]
    foreach file [GenX::CDEDFindFiles $la0 $lo0 $la1 $lo1 $Res] {
       Log::Print DEBUG "   Processing CDED file $file"
       gdalband read CDEDTILE [gdalfile open CDEDFILE read $file]
-      gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim $GenX::Param(Cell)
+      #gdalband stats CDEDTILE -nodata [expr $Res==50?-32767:0] -celldim $GenX::Param(Cell)
+      gdalband stats CDEDTILE -nodata $nodata -celldim $GenX::Param(Cell)
+      # for 250k, nodata are not always 0, many tiles are also -32767, and file's meta info on nodata
+      # is unreliable, which makes it unusable. 
+      # And we know there could be some topo height that could be up to hundreds meters below sea level
+      # So we have no choice but to filter out all values below some threshold (-32000)
+      if { $nodata == 0 } {
+         vexpr CDEDTILE  "ifelse(CDEDTILE<-32000,0,CDEDTILE)"
+      }
 
       fstdfield gridinterp $Grid CDEDTILE AVERAGE False
       if { $GenX::Param(Sub)=="LEGACY" } {
