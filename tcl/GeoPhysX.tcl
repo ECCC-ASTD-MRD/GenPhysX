@@ -716,15 +716,16 @@ proc GeoPhysX::AverageAspect { Grid } {
    georef create LLREF
    eval georef define LLREF -projection \{GEOGCS\[\"WGS 84\",DATUM\[\"WGS_1984\",SPHEROID\[\"WGS 84\",6378137,298.2572235629972,AUTHORITY\[\"EPSG\",\"7030\"\]\],AUTHORITY\[\"EPSG\",\"6326\"\]\],PRIMEM\[\"Greenwich\",0\],UNIT\[\"degree\",0.0174532925199433\],AUTHORITY\[\"EPSG\",\"4326\"\]\]\}
 
+   set  nodata0  0
    #----- Create work tile with border included
    gdalband create DEMTILE [expr $GenX::Param(TileSize)+2] [expr $GenX::Param(TileSize)+2] 1 Int16
    gdalband define DEMTILE -georef LLREF
-   gdalband stats DEMTILE -nodata 0 -celldim $GenX::Param(Cell)
+   gdalband stats DEMTILE -nodata $nodata0 -celldim $GenX::Param(Cell)
 
    #----- Create buffer tile for reading
    gdalband create DEMTILE2 [expr $GenX::Param(TileSize)+2] [expr $GenX::Param(TileSize)+2] 1 Int16
    gdalband define DEMTILE2 -georef LLREF
-   gdalband stats  DEMTILE2 -nodata 0 -celldim $GenX::Param(Cell)
+   gdalband stats  DEMTILE2 -nodata $nodata0 -celldim $GenX::Param(Cell)
 
    #----- Loop en grid data at tile resolution
    set xlo 0
@@ -764,7 +765,12 @@ proc GeoPhysX::AverageAspect { Grid } {
                gdalband gridinterp DEMTILE2 $file NEAREST
             }
             set data True
-            vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata,DEMTILE2,DEMTILE)"
+            # for 250k, nodata are not always 0, many tiles are also -32767, so need to filter them out
+            if { $nodata == 0 } {
+               vexpr DEMTILE2  "ifelse(DEMTILE2<-32000,0,DEMTILE2)"
+            }
+            vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata0,DEMTILE2,DEMTILE)"
+            gdalband clear DEMTILE2
          }
 
          #----- Process CDEM, if asked for
@@ -775,7 +781,8 @@ proc GeoPhysX::AverageAspect { Grid } {
                gdalband gridinterp DEMTILE2 $file NEAREST
             }
             set data True
-            vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata,DEMTILE2,DEMTILE)"
+            vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata0,DEMTILE2,DEMTILE)"
+            gdalband clear DEMTILE2
          }
 
          #----- If the tile has data, process on destination grid
