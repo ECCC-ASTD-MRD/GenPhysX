@@ -2912,7 +2912,6 @@ proc GeoPhysX::AverageSoilBNU { Grid } {
       Log::Print WARNING "Could not find mask field MG"
       set has_MG 0
    }
-#   fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
 
    set files  {}
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/SAND1.nc
