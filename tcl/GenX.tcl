@@ -99,7 +99,7 @@ namespace eval GenX { } {
    set Param(CappedNBits)  24                ;# Legacy limited nbits used for MG, VF and soil
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
-   set Param(Aspects)   { SRTM CDED250 CDED50 CDEM }
+   set Param(Aspects)   { SRTM CDED250 CDED50 CDEM GTOPO30 }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC USGS_R }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS }
    set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC USGS_R }

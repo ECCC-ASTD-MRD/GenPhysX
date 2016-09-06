@@ -664,6 +664,7 @@ proc GeoPhysX::AverageAspect { Grid } {
    set SRTM [expr [lsearch -exact $GenX::Param(Aspect) SRTM]!=-1]
    set CDED 0
    set CDEM 0
+   set GTOPO30 0
 
    if { [lsearch -exact $GenX::Param(Aspect) CDED250]!=-1 } {
       set CDED 250
@@ -673,6 +674,9 @@ proc GeoPhysX::AverageAspect { Grid } {
    }
    if { [lsearch -exact $GenX::Param(Aspect) CDEM]!=-1 } {
       set CDEM 1
+   }
+   if { [lsearch -exact $GenX::Param(Aspect) GTOPO30]!=-1 } {
+      set GTOPO30 1
    }
 
    fstdfield copy GPXFSA  $Grid
@@ -705,8 +709,10 @@ proc GeoPhysX::AverageAspect { Grid } {
       } else {
          set res [expr (3.0/3600.0)]   ;# 3 arc-secondes SRTM
       }
-   } else {
+   } elseif { $CDED==250 } {
       set res [expr (3.75/3600.0)]  ;# 0.75 arc-secondes CDED
+   } elseif { $GTOPO30 } {
+      set res [expr (30.0/3600.0)]  ;# 30 arc-secondes GTOPO30
    }
 
    set dpix [expr $GenX::Param(TileSize)*$res]
@@ -778,6 +784,19 @@ proc GeoPhysX::AverageAspect { Grid } {
             foreach file $cdemfiles {
                GenX::CacheGet $file -32767
                Log::Print DEBUG "      Processing CDEM DEM file $file"
+               gdalband gridinterp DEMTILE2 $file NEAREST
+            }
+            set data True
+            vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata0,DEMTILE2,DEMTILE)"
+            gdalband clear DEMTILE2
+         }
+
+         #----- Process GTOPO30, if asked for
+         if { $GTOPO30 } {
+            set nodata -9999
+            foreach file [glob $GenX::Param(DBase)/$GenX::Path(GTOPO30)/*.DEM] {
+               GenX::CacheGet $file $nodata
+               Log::Print DEBUG "   Processing GTOPO30 file : $file"
                gdalband gridinterp DEMTILE2 $file NEAREST
             }
             set data True
