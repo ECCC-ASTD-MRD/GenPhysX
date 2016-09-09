@@ -165,6 +165,9 @@ namespace eval GeoPhysX { } {
    set Const(USGS_BATS2RPN) { {  1  2  3  4  5  6  7  8   9  10  11  12  13  14  15  16  17  18  19  20  21  99 100 }
                               { 15 13  4  6  7  5 14  24 22  20  24   2  23   3   1  10  11  25  26  23  21 -99 -99 } }
 
+   #----- New NALC correspondance table, very similar to MODIS
+   set Const(NALC2RPN) { {   0 1  2 3 4 5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 }
+                         { -99 4 26 5 7 7 25 26 11 14 13 22 22 22 23 15 24 21  3  2 } }
 }
 
 #----------------------------------------------------------------------------
@@ -1532,6 +1535,7 @@ proc GeoPhysX::AverageVege { Grid } {
          "AAFC"      { GeoPhysX::AverageVegeAAFC      GPXVF ;#----- AAFC Crop over Canada only vege averaging method }
          "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF ;#----- ESA CCI CRDP Land cover }
          "USGS_R"    { GeoPhysX::AverageVegeUSGS_R    GPXVF ;#----- USGS global vege raster averaging method }
+         "NALC"      { GeoPhysX::AverageVegeNALC      GPXVF ;#----- NALC North America Land Cover vege raster averaging method }
       }
    }
    fstdfield free GPXVSK
@@ -2133,6 +2137,85 @@ proc GeoPhysX::AverageVegeUSGS_R { Grid } {
       vector free FROMUSGS TORPN
    }
    gdalfile close USGSFILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageVegeNALC>
+# Creation : Sept 2016 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the 20 something vegetation types through averaging.
+#            using North American Land Cover data (NALC) as vegetation 
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageVegeNALC { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs CEC_NALC
+   Log::Print INFO "Averaging vegetation type using NALC vegetation database"
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   set la0 [lindex $limits 0]
+   set lo0 [lindex $limits 1]
+   set la1 [lindex $limits 2]
+   set lo1 [lindex $limits 3]
+   Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
+
+   set lcdir  $GenX::Param(DBase)/$GenX::Path(NALC)
+   set files  [glob -nocomplain $lcdir/*.tif]
+
+   foreach file  $files {
+      Log::Print INFO "Processing file : $file"
+      gdalfile open NALCFILE read $lcdir$file
+   
+      if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef NALCFILE]]]] } {
+         Log::Print INFO "Specified grid does not intersect with NALC file: $file"
+      } else {
+         Log::Print INFO "Using correspondance table\n   From:[lindex $Const(NALC2RPN) 0]\n   To  :[lindex $Const(NALC2RPN) 1]"
+         vector create FROMNALC  [lindex $Const(NALC2RPN) 0]
+         vector create TORPN    [lindex $Const(NALC2RPN) 1]
+   
+         Log::Print INFO "Grid intersection with NALC database is { $limits }"
+         set x0 [lindex $limits 0]
+         set x1 [lindex $limits 2]
+         set y0 [lindex $limits 1]
+         set y1 [lindex $limits 3]
+   
+         #----- Loop over the data by tiles since it's too big to fit in memory
+         for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+            for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+               Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+               gdalband read LCTILE { { NALCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+               gdalband stats LCTILE -nodata 0 -celldim $GenX::Param(Cell)
+   
+               vexpr LCTILE lut(LCTILE,FROMNALC,TORPN)
+               # the NALC2RPN table change NoData value from 255 to -99
+               gdalband stats LCTILE -nodata -99
+               fstdfield gridinterp $Grid LCTILE NORMALIZED_COUNT $Param(VegeTypes) False
+            }
+         }
+   
+         #----- If there is other DB to process
+         if { [lsearch -exact $GenX::Param(Vege) NEAE]<[expr [llength $GenX::Param(Vege)]-1] } {
+            #----- Use accumulator to figure out coverage in destination
+            #      But remove border of coverage since it will not be full
+            fstdfield gridinterp $Grid - ACCUM
+            vexpr GPXVSK !fpeel($Grid)
+            fstdfield stats $Grid -mask GPXVSK
+         }
+   
+         gdalband free LCTILE
+         vector free FROMNALC TORPN
+      }
+      gdalfile close NALCFILE
+   }
 }
 
 #----------------------------------------------------------------------------
