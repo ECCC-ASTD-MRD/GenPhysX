@@ -73,6 +73,7 @@ namespace eval GeoPhysX { } {
    set Param(SandTypes)    { 1 2 3 4 5 }
    set Param(ClayTypes)    { 1 2 3 4 5 }
    set Param(VegeTypes)    { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 }
+   set Param(VegeCrops)    { 15 16 17 18 19 20 }
    set Param(VegeZ0vTypes) { 0.001 0.0003 0.001 1.5 3.5 1.0 2.0 3.0 0.8 0.05 0.15 0.15 0.02
                             0.08 0.08 0.08 0.35 0.25 0.1 0.08 1.35 0.01 0.05 0.05 1.5 0.05 }
 
@@ -3731,11 +3732,17 @@ proc GeoPhysX::SubRoughnessLength { } {
    #----- Local (vegetation) roughness length
    fstdfield read GPXZ0V1 GPXOUTFILE -1 "" 1199 -1 -1 "" "VF"
    fstdfield copy GPXZ0V2 GPXZ0V1
-   GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
+   fstdfield copy GPXZ0CROP GPXZ0V1
+   fstdfield copy GPXVFCROP GPXZ0V1
+   GenX::GridClear { GPXZ0V1 GPXZ0V2 GPXZ0CROP GPXVFCROP } 0.0
 
    foreach element $Param(VegeTypes) zzov $Param(VegeZ0vTypes) {
       set ip1 [expr 1200-$element]
       fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
+      if { [lsearch $Param(VegeCrops) $element]!=-1 } {
+         vexpr GPXZ0CROP (GPXZ0CROP+GPXVF*$zzov)
+         vexpr GPXVFCROP (GPXVFCROP+GPXVF)
+      }
       vexpr GPXZ0V1 (GPXZ0V1+GPXVF*$zzov)
       vexpr GPXZ0V2 (GPXZ0V2+GPXVF)
    }
@@ -3830,8 +3837,11 @@ proc GeoPhysX::SubRoughnessLength { } {
    
    if { $GenX::Param(Z0NoTopo) } {
    #------ roughness length without topographic contribution and Z0VG
+   #------ because vegetation height where crop are dominant are too low (zero)
+   #------ compensate with crop's Z0 using lookup table
       Log::Print INFO "Generating Z0 without topographic contribution"
-      vexpr GPXZ0  "max(GPXZ0VG,$Const(waz0))"
+      vexpr GPXZ0  "ifelse(GPXVFCROP>0.5,GPXZ0CROP,GPXZ0VG)"
+      vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
       fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
       fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
@@ -3856,7 +3866,8 @@ proc GeoPhysX::SubRoughnessLength { } {
    }
 
    fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S GPXZ0W GPXZPW \
-       GPXZ0V2 GPXZ0VG GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF GPXVCH
+       GPXZ0V2 GPXZ0VG GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF GPXVCH \
+       GPXZ0CROP GPXVFCROP
 }
 
 #----------------------------------------------------------------------------
