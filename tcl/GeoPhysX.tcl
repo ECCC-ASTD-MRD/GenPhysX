@@ -2173,7 +2173,7 @@ proc GeoPhysX::AverageVegeNALC { Grid } {
 
    foreach file  $files {
       Log::Print INFO "Processing file : $file"
-      gdalfile open NALCFILE read $lcdir$file
+      gdalfile open NALCFILE read $file
    
       if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef NALCFILE]]]] } {
          Log::Print INFO "Specified grid does not intersect with NALC file: $file"
