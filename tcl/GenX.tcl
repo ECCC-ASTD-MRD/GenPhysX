@@ -144,7 +144,7 @@ namespace eval GenX { } {
    set Path(TopoLow)    RPN/data_lres
    set Path(Grad)       RPN/data_grad
    set Path(HWSD)       HWSD
-   set Path(SRTM)       SRTM3
+   set Path(SRTM)       SRTM
    set Path(CDED)       CDED
    set Path(CDEM)       CDEM
    set Path(ASTERGDEM)  ASTER-GDEM
