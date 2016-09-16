@@ -139,8 +139,8 @@ namespace eval GeoPhysX { } {
                               {   2   3  4  5  4  7  7 14  14  14  24 15 15 20  21  24  23  23  23  24  25  26  26 } }
 
    #----- Sept 2015 : en se basant sur GlobCover, pour la conversion des classes ESA CCI LC 2010 vers les classes RPN (released 2014-10-01)
-   set Const(CCI_LC2RPN) { {  0 220 210 70 71 50 72 80 81 82 60 61 62 40 130 140 10 11 12 30 20 190 140 150 152 153 160 170 180 200 201 202 90 100 110 120 121 122 } 
-                           {-99   2   3  4  4  5  6  6  6  6  7  7  7 14  14  14 15 13 15 15 20  21  22  22  22  22  23  23  23  24  24  24 25  26  26  26  26  26 } }
+   set Const(CCI_LC2RPN) { {  0 220 210 70 71 50 72 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 152 153 160 170 180 200 201 202 90 100 110 120 121 122 } 
+                           {-99   2   3  4  4  5  6  6  6  6  7  7  7 14  14 15 13 15 15 20  21  22  22  22  22  23  23  23  24  24  24 25  26  26  26  26  26 } }
 
    #----- Correspondance de Douglas Chan Mai 2010 pour la conversion des classes GCL2000 vers les classes RPN
    set Const(GLC20002RPN) { { 1 2 3 4 5 6   7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22  23 200}
