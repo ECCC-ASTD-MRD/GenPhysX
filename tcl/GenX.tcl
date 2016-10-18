@@ -85,7 +85,7 @@ namespace eval GenX { } {
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
-   set Param(Z0NoTopo)  False                 ;#No topography + z0vg  for roughness length
+   set Param(Z0NoTopo)  ""                    ;#No topography + z0vg  for roughness length
    set Param(Compress)  False                 ;#Compress standard file output
    set Param(TopoStag)  False                 ;#Treat mulitple grids as staggered topography
    set Param(NBits)     32                    ;#Compress standard file output
@@ -109,7 +109,8 @@ namespace eval GenX { } {
    set Param(Urbans)    { True HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
-   set Param(Subs)      { LEGACY STD }
+   set Param(Subs)      { LEGACY STD SPLIT }
+   set Param(Z0NoTopos) { STD CANOPY }
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 AURAMS }   ;#Model cible
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
@@ -222,9 +223,11 @@ namespace eval GenX { } {
 #----------------------------------------------------------------------------
 proc GenX::Process { Grid } {
    variable Param
+	variable Opt
 
    set Param(TMPDIR) $Param(OutFile)_tmp$Param(Process)
    set Log::Param(Process) $Param(Process)
+	if { $Param(Sub)=="SPLIT" } { set GeoPhysX::Opt(SubSplit) True }
 
    #----- Land-water mask
    if { $Param(Mask)!="" } {
@@ -282,6 +285,11 @@ proc GenX::Process { Grid } {
          GeoPhysX::SubY789
          GeoPhysX::SubRoughnessLength
       }
+		"SPLIT" {
+		   GeoPhysX::SubLaunchingHeightSplit
+			GeoPhysX::SubY789Split
+         GeoPhysX::SubRoughnessLength
+		}
       "LEGACY" {
          GeoPhysX::SubTopoFilter
          GeoPhysX::LegacySub $Grid
@@ -578,12 +586,12 @@ proc GenX::CommandLine { } {
       \[-rindex\]   [format "%-30s : SMOKE restart index (default 1)" (${::APP_COLOR_GREEN}$Param(SMOKEIndex)${::APP_COLOR_RESET})]
       \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" (${::APP_COLOR_GREEN}$Param(Check)${::APP_COLOR_RESET})]
       \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Param(Subs)}" (${::APP_COLOR_GREEN}$Param(Sub)${::APP_COLOR_RESET})]
+      \[-z0notopo\] [format "%-30s : Roughness length Z0 with no topographic contribution {$Param(Z0NoTopos)}" (${::APP_COLOR_GREEN}[join $Param(Z0NoTopos)]${::APP_COLOR_RESET})]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
 
    Specific processing parameters:
       \[-topostag\] [format "%-30s : Treat multiple grids as staggered topography grids" ""]
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
-      \[-z0notopo\] [format "%-30s : Roughness length Z0 with no topographic contribution, local roughness only" ""]
       \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" (${::APP_COLOR_GREEN}$Param(Cell)${::APP_COLOR_RESET})]
       \[-compress\] [format "%-30s : Compress standard file output" (${::APP_COLOR_GREEN}$Param(Compress)${::APP_COLOR_RESET})]
       \[-nbits\]    [format "%-30s : Maximum number of bits to use to save RPN fields" (${::APP_COLOR_GREEN}$Param(NBits)${::APP_COLOR_RESET})]
@@ -693,7 +701,7 @@ proc GenX::ParseCommandLine { } {
          "diag"      { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Diag)] }
          "topostag"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(TopoStag)] }
          "z0filter"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0Filter)]; incr flags }
-         "z0notopo"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0NoTopo)]; incr flags }
+         "z0notopo"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0NoTopo)] }
          "celldim"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Cell)] }
          "compress"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Compress)] }
          "nbits"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(NBits)] }
