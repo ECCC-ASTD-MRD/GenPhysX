@@ -3761,7 +3761,7 @@ proc GeoPhysX::SubLaunchingHeightSplit { } {
    Log::Print INFO "Launching height using separated scales of subgrid variance"
 
 	#----- Compute subgrid varaiance of database
-	vexpr GPXVAR (GPXMRMS^2 - GPXME^2)
+	vexpr GPXVAR abs(GPXMRMS^2 - GPXME^2)
 
 	#----- Compute scaling terms based on resolution ratios
    vexpr GPXDX ddx(GPXMG)
@@ -3771,12 +3771,13 @@ proc GeoPhysX::SubLaunchingHeightSplit { } {
 	vexpr GPXWMS (min($GeoPhysX::Const(lres)/GPXDD,1.)^($GeoPhysX::Const(beta)-1))
 
 	#----- Compute small-scale variance as a "launching height"
-	vexpr GPXVARS ((GPXWMS) / (1.-GPXWMB))*GPXVAR
-	vexpr GPXSSS GPXMG*sqrt(GPXVARS)
+	vexpr GPX1_WMB  "1.-GPXWMB"
+	vexpr GPXVARS ifelse(GPX1_WMB!=0.0,((GPXWMS) / (1.-GPXWMB))*GPXVAR,0.0)
+	vexpr GPXSSS ifelse(GPXVARS>0.0,GPXMG*sqrt(GPXVARS),0.0)
 
 	#----- Compute large-scale variance as a "launching height"
-	vexpr GPXVARL ((1-GPXWMS) / (1.-GPXWMB))*GPXVAR
-	vexpr GPXLHL 2.*GPXMG*sqrt(GPXVARL)
+	vexpr GPXVARL ifelse(GPX1_WMB!=0.0,((1-GPXWMS) / (1.-GPXWMB))*GPXVAR,0.0)
+	vexpr GPXLHL ifelse(GPXVARL>0.0,2.*GPXMG*sqrt(GPXVARL),0.0)
 
 	#----- Write results to output files
 	fstdfield define GPXSSS -NOMVAR SSS -ETIKET GENPHYSX -IP1 0 -IP2 0
@@ -3785,6 +3786,7 @@ proc GeoPhysX::SubLaunchingHeightSplit { } {
 	fstdfield write GPXLHL GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
 	#----- Garbage collection
+   fstdfield free GPX1_WMB GPXVARL GPXVARS GPXWMS GPXWMB GPXDD GPXDX GPXDY
 	fstdfield free GPXME GPXMRMS GPXMRES GPXMG GPXSSS GPXLHL
 
 }
