@@ -3761,7 +3761,7 @@ proc GeoPhysX::SubLaunchingHeightSplit { } {
    Log::Print INFO "Launching height using separated scales of subgrid variance"
 
 	#----- Compute subgrid varaiance of database
-	vexpr GPXVAR abs(GPXMRMS^2 - GPXME^2)
+	vexpr GPXVAR  max(GPXMRMS^2 - GPXME^2,0.0)
 
 	#----- Compute scaling terms based on resolution ratios
    vexpr GPXDX ddx(GPXMG)
