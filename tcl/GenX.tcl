@@ -1827,7 +1827,6 @@ proc GenX::UTMZoneDefine { Lat0 Lon0 Lat1 Lon1 { Res 5 } { Name "" } } {
 proc GenX::Create_GridGeometry { Grid poly } {
 
    set limits [georef limit [fstdfield define $Grid -georef]]
-   puts $limits
    set lat0 [lindex $limits 0]
    set lon0 [lindex $limits 1]
    set lat1 [lindex $limits 2]
