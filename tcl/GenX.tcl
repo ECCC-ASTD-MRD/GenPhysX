@@ -226,6 +226,7 @@ proc GenX::Process { Grid } {
    set Param(TMPDIR) $Param(OutFile)_tmp$Param(Process)
    set Log::Param(Process) $Param(Process)
 	if { $Param(Sub)=="SPLIT" } { set GeoPhysX::Opt(SubSplit) True }
+	if { $Param(Sub)=="LEGACY" } { set GeoPhysX::Opt(LegacyMode) True }
 
    #----- Land-water mask
    if { $Param(Mask)!="" } {
@@ -270,6 +271,11 @@ proc GenX::Process { Grid } {
    #----- Consistency checks
    switch $Param(Check) {
       "STD" { GeoPhysX::CheckConsistencyStandard }
+   }
+
+   #----- Consistency checks similar to Genesis
+   if { $GeoPhysX::Opt(LegacyMode) } {
+      GeoPhysX::LegacyChecks
    }
 
    #----- Sub grid calculations

@@ -114,6 +114,9 @@ namespace eval GeoPhysX { } {
    set Const(smallc0) 2.0         ;# Small scale resolution dependent correction factor
    set Const(smallc1) 15.0        ;# Small scale resolution dependent correction factor
 
+   set Const(ResoUSGS) [expr 1./120]
+   set Const(Deg2Rad)  [expr atan(1)*8/360.0]
+
    #----- Correspondance de Camille Garnaud de Fevrier 2015 pour la conversion des classes AAFC CROP vers les classes RPN
 #   set Const(AAFC2RPN) { {   0  10  20 30 34 50 80 110 120 122 130 131 132 133 135 136 137 138 139 140 147 150 151 152 153 154 155 156 157 158 162 167 174 175 180 193 194 195 196 197 198 199 200 210 220 230 }
 #                         { -99 -99   3 24 21 10 23  14  15  13  23  14  15  15  18  15  15  15  15  15  18  15  15  15  15  15  15  15  15  15  20  20  20  20  20  20  15  15  15  15  15  15  25   4   7  25 } }
@@ -173,7 +176,8 @@ namespace eval GeoPhysX { } {
    set Const(NALC2RPN) { {   0 1  2 3 4 5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 }
                          { -99 4 26 5 7 7 25 11 11 14 13 11 22 22 23 15 24 21  3  2 } }
    #----- Options
-   set Opt(SubSplit) False
+   set Opt(SubSplit)     False
+   set Opt(LegacyMode)   False
 	
 }
 
@@ -216,6 +220,12 @@ proc GeoPhysX::AverageTopo { Grid } {
 		 GenX::GridClear GPXGXY  0.0
 	}
 
+   # we need accuracy of real*8 as what's found in Genesis 
+   if { $Opt(LegacyMode) } {
+      vexpr (Float64)GPXMESUM $Grid*0.0
+      vexpr (Float64)GPXWESUM $Grid*0.0
+   }
+
    foreach topo $GenX::Param(Topo) {
       switch $topo {
          "USGS"      { GeoPhysX::AverageTopoUSGS      GPXME     ;#----- USGS topograhy averaging method (Global 900m) }
@@ -231,8 +241,22 @@ proc GeoPhysX::AverageTopo { Grid } {
       }
    }
 
-   #----- Save output
    fstdfield gridinterp GPXME - NOP True
+
+   if { $Opt(LegacyMode) } {
+      vexpr (Float64)GPXMEWE  "ifelse(GPXWESUM>0.0,GPXMESUM/GPXWESUM,0.0)"
+      set ni [fstdfield define $Grid -NI]
+      set nj [fstdfield define $Grid -NJ]
+      for { set j 0 } { $j < $nj } {incr j} {
+         for { set i 0 } { $i < $ni } {incr i} {
+            set  pval [fstdfield stats GPXMEWE -gridvalue $i $j]
+            fstdfield stats GPXME -gridvalue $i $j $pval
+         }
+      }
+      fstdfield free GPXMEWE  GPXMESUM GPXWESUM
+   }
+
+   #----- Save output
    fstdfield define GPXME -NOMVAR ME -ETIKET GENPHYSX -IP2 0
    fstdfield write GPXME GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
@@ -285,6 +309,8 @@ proc GeoPhysX::AverageTopo { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoUSGS { Grid } {
 	variable Opt
+   variable Param
+   variable Const
 
    GenX::Procs TopoUSGS
    Log::Print INFO "Averaging topography using USGS database"
@@ -300,7 +326,17 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
          fstdfield read USGSTILE GPXTOPOFILE $field
          fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Param(Cell)
 
-         fstdfield gridinterp $Grid USGSTILE AVERAGE False         
+         if { $Opt(LegacyMode) } {
+            vexpr  (Float64)WEIGHTTILE  "cos(dlat(USGSTILE)*$Const(Deg2Rad))*$Const(ResoUSGS)*$Const(ResoUSGS)"
+            # avoid missing values -99 found in the data
+            vexpr  (Float64)WTOPOTILE   "ifelse(USGSTILE>0.0,USGSTILE*WEIGHTTILE,0.0)"
+            fstdfield gridinterp GPXMESUM WTOPOTILE  SUM
+            fstdfield gridinterp GPXWESUM WEIGHTTILE SUM
+            fstdfield free WTOPOTILE WEIGHTTILE
+         } else {
+            fstdfield gridinterp $Grid USGSTILE AVERAGE False         
+         }
+
          if { $GenX::Param(Sub)=="LEGACY" } {
             fstdfield gridinterp $Grid USGSTILE SUBLINEAR 11
          }
@@ -315,8 +351,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
       }
       fstdfile close GPXTOPOFILE
    }
-   fstdfield free USGSTILE
-
+   fstdfield free USGSTILE 
    #----- Create source resolution used in destination
    fstdfield gridinterp GPXRMS - ACCUM
    vexpr GPXRES ifelse((GPXTSK && GPXRMS),900.0,GPXRES)
@@ -4256,7 +4291,154 @@ proc GeoPhysX::CheckConsistencyStandard { } {
          Log::Print WARNING "Could not find J2($type) field, will not do the consistency check on J2($type)"
       }
    }
+
    fstdfield free GPXJ1 GPXJ2 GPXMG GPXVF GPXVF2 GPXVF3 GPXGA
+}
+
+#----------------------------------------------------------------------------
+# Name     : LegacyChecks
+# Creation : January 2016 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : ASSURE LA CONSISTANCE
+#            ENTRE LA TOPOGRAPHIE ET LE MASQUE TERRE-MER
+#            EN MODIFIANT VG
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#    extrait de conseq.f de genesis. 
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::LegacyChecks { } {
+   GenX::Procs
+   Log::Print INFO "Applying Legacy consistency checks on ME, MG and VG "
+   #----- Check consistency for ME
+   #----- Read ME
+   if { [catch {
+		fstdfield read GPXME   GPXOUTFILE -1 "" -1 -1 -1 "" "ME"
+		fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
+		fstdfield read GPXVG   GPXOUTFILE -1 "" -1 -1 -1 "" "VG" } ] } {
+      Log::Print WARNING "Missing fields, will not check ME consistency with MG"
+      return
+   }
+
+   # VG is better compared as Integer
+   #
+   vexpr (Byte)GPXVGI  "round(GPXVG)"
+   set  ni  [fstdfield define GPXVG -NI]
+   set  nj  [fstdfield define GPXVG -NJ]
+   set  thresm  0.001
+
+   for { set j 0 } { $j < $nj } { incr j } {
+      for { set i 0 } { $i < $ni } { incr i } {
+         set val_me  [fstdfield stats GPXME -gridvalue $i $j]
+         set val_mg  [fstdfield stats GPXMG -gridvalue $i $j]
+         set val_vg  [fstdfield stats GPXVGI -gridvalue $i $j]
+         if { ($val_me > 0.0)&&($val_mg >= $thresm) } {
+            if { $val_vg == 1 || $val_vg == 3 } { # is Water
+               set val_vg [Fetch_Grid_Nearest GPXVGI $i $j]
+               if { $val_vg > 0 } {
+                  fstdfield stats GPXVG -gridvalue $i $j $val_vg
+               }
+            }
+         }
+         if { ($val_me == 0.0)&&($val_mg < $thresm) } {
+           if { $val_vg != 1 && $val_vg != 2 } { # is Not Sea or Not Ice
+               fstdfield stats GPXVG -gridvalue $i $j 1
+           }
+         }
+         if { ($val_me == 0.0)&&($val_mg >= $thresm) } {
+            if { $val_vg == 1 || $val_vg == 3 } { # is Water
+               set val_vg [Fetch_Grid_Nearest GPXVGI $i $j]
+               if { $val_vg > 0 } {
+                  fstdfield stats GPXVG -gridvalue $i $j $val_vg
+               }
+            }
+         }
+      }
+   }
+
+#   rewrite VG
+   fstdfield write GPXVG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+
+   fstdfield free GPXME GPXVG GPXMG
+}
+
+#----------------------------------------------------------------------------
+# Name     : Fetch_Grid_Nearest
+# Creation : January 2016 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : chercher dans le voisinage d'un PG la vegetation
+#            la plus pres 
+#
+# Parameters :
+#   <Grid>  : la tuile source
+#   <i, j>  : position initiale
+#
+# Return:
+#
+# Remarks :
+#    L'algorithme de la recherche de vegetation dans le voisinage 
+#    est extrait de conseq.f de genesis. 
+#
+#----------------------------------------------------------------------------
+proc  GeoPhysX::Fetch_Grid_Nearest { Grid i j } {
+
+   set  ni  [fstdfield define $Grid -NI]
+   set  nj  [fstdfield define $Grid -NJ]
+
+   set ninj [expr $ni + $nj]
+
+   for { set k 1 } { $k < $ninj } { incr k } {
+      set n0 [expr $j-$k]
+      if { $n0 < 0 } { set n0 0 }
+      set n1 [expr $j+$k]
+      if { $n1 >= $nj } { set n1 [expr $nj-1] }
+      set  i1 [expr $i-$k]
+      set  i2 [expr $i+$k]
+      if { $i1 >= 0 } {
+         for { set n $n0 } { $n <= $n1 } {incr n } {
+            set val  [fstdfield stats $Grid -gridvalue $i1 $n]
+            if { $val != 1 && $val != 3 } {
+               return $val
+            }
+         }
+      }
+      if { $i2 < $ni } {
+         for { set n $n0 } { $n <= $n1 } {incr n } {
+            set val  [fstdfield stats $Grid -gridvalue $i2 $n]
+            if { $val != 1 && $val != 3 } {
+               return $val
+            }
+         }
+      }
+
+      set m0 [expr $i-$k]
+      if { $m0 < 0 } { set m0 0 }
+      set m1 [expr $i+$k]
+      if { $m1 >= $ni } { set m1 [expr $ni-1] }
+      set  j1 [expr $j-$k]
+      set  j2 [expr $j+$k]
+      if { $j1 >= 0 } {
+         for { set m $m0 } { $m <= $m1 } {incr m } {
+            set val  [fstdfield stats $Grid -gridvalue $m $j1]
+            if { $val != 1 && $val != 3 } {
+               return $val
+            }
+         }
+      } 
+      if { $j2 < $nj } {
+         for { set m $m0 } { $m <= $m1 } {incr m } {
+            set val  [fstdfield stats $Grid -gridvalue $m $j2]
+            if { $val != 1 && $val != 3 } {
+               return $val
+            }
+         }
+      }
+   }
+   return -1
 }
 
 #----------------------------------------------------------------------------
