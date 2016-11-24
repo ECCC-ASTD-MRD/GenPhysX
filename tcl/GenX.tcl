@@ -59,7 +59,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.3.0               ;#Application version
+   set Param(Version)      2.3.2               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time
@@ -189,7 +189,6 @@ namespace eval GenX { } {
 
 
    #----- Metadata related variables
-
    set Meta(Procs)     {}                     ;#Metadata procedure registration list
    set Meta(Databases) {}                     ;#Databases used
    set Meta(Header)    ""                     ;#Metadata header
@@ -197,12 +196,11 @@ namespace eval GenX { } {
    set Meta(Command)   ""                     ;#Launch command
 
    #----- GEM related variables
-
-   set Settings(GRD_TYP_S)    GU
-   set Settings(TOPO_DGFMS_L) True
-   set Settings(TOPO_DGFMX_L) True
-   set Settings(TOPO_FILMX_L) True
-
+   set Settings(GRD_TYP_S)       GU
+   set Settings(TOPO_DGFMS_L)    True
+   set Settings(TOPO_DGFMX_L)    True
+   set Settings(TOPO_FILMX_L)    True
+   set Settings(TOPO_CLIP_ORO_L) False
    gdalfile error QUIET
 
 }

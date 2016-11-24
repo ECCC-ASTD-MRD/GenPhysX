@@ -560,7 +560,7 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
    norm=TRUE;
    frco=0.5;
    lagrd=FALSE;
-   cliporo=TRUE;
+   cliporo=FALSE;
 
    if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"GRD_TYP_S",0x0)))       { grtyp[0]=Tcl_GetString(obj)[0];grtyp[1]=Tcl_GetString(obj)[1]; }
    if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_DGFMS_L",0x0)))    { Tcl_GetBooleanFromObj(Interp,obj,&mapfac); }
