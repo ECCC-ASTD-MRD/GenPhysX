@@ -5,7 +5,7 @@ arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.3.1"
+VERSION="2.3.2"
 MAINTAINER="Jean-Philippe Gauthier"
 
 if [[ -n $COMP_ARCH ]]; then
@@ -15,7 +15,7 @@ fi
 SSM_NAME=${NAME}_${VERSION}${COMP}_${ORDENV_PLAT}
 
 MAKE=make
-SPI_VERSION=7.11.1
+SPI_VERSION=7.11.2
 LIB_PATH=${SSM_DEV}/workspace/libSPI_${SPI_VERSION}${COMP}_${ORDENV_PLAT}                              
 
 #unset LD_LIBRARY_PATH
@@ -59,7 +59,7 @@ echo ""
          --with-tcl=${LIB_PATH}/TCL/lib \
          --with-tk=${LIB_PATH}/TCL/lib \
          --with-rmn=${LIB_PATH} \
-         --with-eer=${SSM_DEV}/workspace/eerUtils_3.1.0${COMP}_${ORDENV_PLAT} \
+         --with-eer=${SSM_DEV}/workspace/eerUtils_3.1.1${COMP}_${ORDENV_PLAT} \
          --with-gdal=${LIB_PATH}/bin/gdal-config
    fi
 
