@@ -178,7 +178,7 @@ namespace eval GeoPhysX { } {
    #----- Options
    set Opt(SubSplit)     False
    set Opt(LegacyMode)   False
-	
+   
 }
 
 #----------------------------------------------------------------------------
@@ -197,7 +197,7 @@ namespace eval GeoPhysX { } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopo { Grid } {
    variable Param
-	variable Opt
+   variable Opt
 
    GenX::Procs
 
@@ -211,14 +211,14 @@ proc GeoPhysX::AverageTopo { Grid } {
    GenX::GridClear GPXRMS 0.0
    GenX::GridClear GPXTSK 1.0
 
-	if { $Opt(SubSplit) } {
-		 fstdfield copy GPXGXX  $Grid
-		 fstdfield copy GPXGYY  $Grid
-		 fstdfield copy GPXGXY  $Grid
-		 GenX::GridClear GPXGXX  0.0
-		 GenX::GridClear GPXGYY  0.0
-		 GenX::GridClear GPXGXY  0.0
-	}
+   if { $Opt(SubSplit) } {
+      fstdfield copy GPXGXX  $Grid
+      fstdfield copy GPXGYY  $Grid
+      fstdfield copy GPXGXY  $Grid
+      GenX::GridClear GPXGXX  0.0
+      GenX::GridClear GPXGYY  0.0
+      GenX::GridClear GPXGXY  0.0
+   }
 
    # we need accuracy of real*8 as what's found in Genesis 
    if { $Opt(LegacyMode) } {
@@ -274,23 +274,23 @@ proc GeoPhysX::AverageTopo { Grid } {
       fstdfield write GPXRES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    }
 
-	#----- Finalize derivatives if applicable
-	if { $Opt(SubSplit) } {
-		 fstdfield gridinterp GPXGXX - NOP True
-		 fstdfield gridinterp GPXGYY - NOP True
-		 fstdfield gridinterp GPXGXY - NOP True
-		 fstdfield define GPXGXX -NOMVAR GXX -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield define GPXGYY -NOMVAR GYY -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield define GPXGXY -NOMVAR GXY -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXGXX GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-		 fstdfield write GPXGYY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-		 fstdfield write GPXGXY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-	}
+   #----- Finalize derivatives if applicable
+   if { $Opt(SubSplit) } {
+      fstdfield gridinterp GPXGXX - NOP True
+      fstdfield gridinterp GPXGYY - NOP True
+      fstdfield gridinterp GPXGXY - NOP True
+      fstdfield define GPXGXX -NOMVAR GXX -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield define GPXGYY -NOMVAR GYY -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield define GPXGXY -NOMVAR GXY -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXGXX GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield write GPXGYY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield write GPXGXY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
 
    fstdfield free GPXRMS GPXRES GPXTSK
-	if { $Opt(SubSplit) } {
-		 fstdfield free GPXGXX GPXGYY GPXGXY
-	}
+   if { $Opt(SubSplit) } {
+      fstdfield free GPXGXX GPXGYY GPXGXY
+   }
 }
 
 #----------------------------------------------------------------------------
@@ -308,7 +308,7 @@ proc GeoPhysX::AverageTopo { Grid } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoUSGS { Grid } {
-	variable Opt
+   variable Opt
    variable Param
    variable Const
 
@@ -343,10 +343,10 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
          
          fstdfield gridinterp GPXRMS USGSTILE AVERAGE_SQUARE False
 
-			 # Compute tile derivatives on request
-			 if { $Opt(SubSplit) } {
-				  GeoPhysX::AverageDerivTile $Grid USGSTILE
-			 }
+         # Compute tile derivatives on request
+         if { $Opt(SubSplit) } {
+            GeoPhysX::AverageDerivTile $Grid USGSTILE
+         }
 
       }
       fstdfile close GPXTOPOFILE
@@ -395,10 +395,10 @@ proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
          
          fstdfield gridinterp GPXRMS GTOPO30TILE AVERAGE_SQUARE False
 
-  		   # Compute tile derivatives on request
-		   if { $Opt(SubSplit) } {
-				 GeoPhysX::AverageDerivTile $Grid GTOPO30TILE
-			}
+           # Compute tile derivatives on request
+         if { $Opt(SubSplit) } {
+             GeoPhysX::AverageDerivTile $Grid GTOPO30TILE
+         }
 
       }
       gdalfile close GTOPO30FILE
@@ -426,7 +426,7 @@ proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
    variable Param
-	variable Opt
+   variable Opt
 
    GenX::Procs ASTERGDEM
    Log::Print INFO "Averaging topography using ATSERGDEM database"
@@ -449,10 +449,10 @@ proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
       
       fstdfield gridinterp GPXRMS ATSERGDEMTILE AVERAGE_SQUARE False
  
-	   # Compute tile derivatives on request
-		if { $Opt(SubSplit) } {
-			 GeoPhysX::AverageDerivTile $Grid ASTERGDEMTILE
-	   }
+      # Compute tile derivatives on request
+      if { $Opt(SubSplit) } {
+          GeoPhysX::AverageDerivTile $Grid ASTERGDEMTILE
+      }
 
       gdalfile close ATSERGDEMFILE
    }
@@ -517,10 +517,10 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
       
       fstdfield gridinterp GPXRMS SRTMTILE AVERAGE_SQUARE False
 
-		# Compute tile derivatives on request
-		if { $Opt(SubSplit) } {
-			 GeoPhysX::AverageDerivTile $Grid SRTMTILE
-		}
+      # Compute tile derivatives on request
+      if { $Opt(SubSplit) } {
+          GeoPhysX::AverageDerivTile $Grid SRTMTILE
+      }
 
       gdalfile close SRTMFILE
    }
@@ -588,10 +588,10 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
       
       fstdfield gridinterp GPXRMS CDEDTILE AVERAGE_SQUARE False
 
-  	   # Compute tile derivatives on request
-		if { $Opt(SubSplit) } {
-			 GeoPhysX::AverageDerivTile $Grid CDEDTILE
-		}
+        # Compute tile derivatives on request
+      if { $Opt(SubSplit) } {
+          GeoPhysX::AverageDerivTile $Grid CDEDTILE
+      }
 
 
       gdalfile close CDEDFILE
@@ -651,10 +651,10 @@ proc GeoPhysX::AverageTopoCDEM { Grid } {
       
       fstdfield gridinterp GPXRMS CDEMTILE AVERAGE_SQUARE False
 
-		# Compute tile derivatives on request
-		if { $Opt(SubSplit) } {
-			 GeoPhysX::AverageDerivTile $Grid CDEMTILE
-	   }
+      # Compute tile derivatives on request
+      if { $Opt(SubSplit) } {
+          GeoPhysX::AverageDerivTile $Grid CDEMTILE
+      }
 
       gdalfile close CDEMFILE
    }
@@ -720,11 +720,11 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
             }
             
             fstdfield gridinterp GPXRMS GMTEDTILE AVERAGE_SQUARE False
-				 
-				# Compute tile derivatives on request
-				if { $Opt(SubSplit) } {
-					 GeoPhysX::AverageDerivTile $Grid GMTEDTILE
-			   }
+             
+            # Compute tile derivatives on request
+            if { $Opt(SubSplit) } {
+                GeoPhysX::AverageDerivTile $Grid GMTEDTILE
+            }
 
          }
       }
@@ -1028,22 +1028,22 @@ proc GeoPhysX::AverageAspect { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageDerivTile { Grid Band } {
 
-	#----- Set constants
-	set dgtord 3.14159265/180.
+   #----- Set constants
+   set dgtord 3.14159265/180.
 
    #----- Calculate slope and aspect for the tile
    vexpr SLOPE tan(dslopedeg($Band)*$dgtord)
    vexpr ASP daspect($Band)*$dgtord
 
-	#----- Calculate the derivatives in each geographic direction
-	vexpr DHDNS SLOPE*cos(ASP)
-	vexpr DHDEW SLOPE*sin(ASP)
-	vexpr DHCROSS DHDNS*DHDEW
+   #----- Calculate the derivatives in each geographic direction
+   vexpr DHDNS SLOPE*cos(ASP)
+   vexpr DHDEW SLOPE*sin(ASP)
+   vexpr DHCROSS DHDNS*DHDEW
 
-	#----- Average onto destination grid
-	fstdfield gridinterp GPXGXX DHDEW AVERAGE_SQUARE False
-	fstdfield gridinterp GPXGYY DHDNS AVERAGE_SQUARE False
-	fstdfield gridinterp GPXGXY DHCROSS AVERAGE False
+   #----- Average onto destination grid
+   fstdfield gridinterp GPXGXX DHDEW AVERAGE_SQUARE False
+   fstdfield gridinterp GPXGYY DHDNS AVERAGE_SQUARE False
+   fstdfield gridinterp GPXGXY DHCROSS AVERAGE False
 }
 
 #----------------------------------------------------------------------------
@@ -1407,12 +1407,10 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
       vexpr GPXMASK 1.0-clamp(GPXMASK,0.0,1.0)
    }
 
-   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" 1200 -1 -1 "" "ME"]]] } {
-      fstdfield read GPXME GPXOUTFILE $idx
+   if { [fstdfield is GPXME] } {
       if { [lindex [fstdfield stats GPXME -max] 0]>0.0 } {
          vexpr GPXMASK ifelse(GPXMASK>0.0 && GPXME==0.0,0.0,GPXMASK)
       }
-      fstdfield free GPXME
    }
 
    fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -IP2 0 -DATYP $GenX::Param(Datyp)
@@ -3679,13 +3677,11 @@ proc GeoPhysX::LegacySub { Grid } {
    GenX::Procs
    
    #----- check for needed fields
-   if { [catch {
-      fstdfield read GPXVG GPXOUTFILE -1 "" -1 -1 -1 "" "VG" } ] } {
-    
+   if { [catch { fstdfield read GPXVG GPXOUTFILE -1 "" -1 -1 -1 "" "VG" } ] } {
       Log::Print WARNING "Missing fields, will not calculate legacy sub grid fields"
       return
    }
-   
+  
    fstdfield copy GPXZ0 $Grid
    fstdfield copy GPXLH $Grid
    fstdfield copy GPXDH $Grid
@@ -3703,7 +3699,7 @@ proc GeoPhysX::LegacySub { Grid } {
 
    #------ Filter roughness length
    if { $GenX::Param(Z0Filter) } {
-      Log::Print INFO "Filtering Z0"
+      puts stderr [fstdfield is GPXZ0]
       geophy zfilter GPXZ0 GenX::Settings
    }
 
@@ -3780,49 +3776,48 @@ proc GeoPhysX::SubLaunchingHeight { } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::SubLaunchingHeightSplit { } {
-	variable Const
+   variable Const
 
    GenX::Procs
 
    if { [catch {
-		fstdfield read GPXME   GPXOUTFILE -1 "" -1 -1 -1 "" "ME"
-		fstdfield read GPXMRMS GPXAUXFILE -1 "" -1 -1 -1 "" "MRMS"
-		fstdfield read GPXMRES GPXAUXFILE -1 "" -1 -1 -1 "" "MRES"
-		fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG" } ] } {
+      fstdfield read GPXMRMS GPXAUXFILE -1 "" -1 -1 -1 "" "MRMS"
+      fstdfield read GPXMRES GPXAUXFILE -1 "" -1 -1 -1 "" "MRES"
+      fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG" } ] } {
     
       Log::Print WARNING "Missing fields, will not separate subgrid variance"
       return
    }
    Log::Print INFO "Launching height using separated scales of subgrid variance"
 
-	#----- Compute subgrid varaiance of database
-	vexpr GPXVAR  max(GPXMRMS^2 - GPXME^2,0.0)
+   #----- Compute subgrid varaiance of database
+   vexpr GPXVAR  max(GPXMRMS^2 - GPXME^2,0.0)
 
-	#----- Compute scaling terms based on resolution ratios
+   #----- Compute scaling terms based on resolution ratios
    vexpr GPXDX ddx(GPXMG)
    vexpr GPXDY ddy(GPXMG)
    vexpr GPXDD sqrt(GPXDX*GPXDY)
-	vexpr GPXWMB ((GPXMRES/GPXDD)^($GeoPhysX::Const(beta)-1))
-	vexpr GPXWMS (min($GeoPhysX::Const(lres)/GPXDD,1.)^($GeoPhysX::Const(beta)-1))
+   vexpr GPXWMB ((GPXMRES/GPXDD)^($GeoPhysX::Const(beta)-1))
+   vexpr GPXWMS (min($GeoPhysX::Const(lres)/GPXDD,1.)^($GeoPhysX::Const(beta)-1))
 
-	#----- Compute small-scale variance as a "launching height"
-	vexpr GPX1_WMB  "1.-GPXWMB"
-	vexpr GPXVARS ifelse(GPX1_WMB!=0.0,((GPXWMS) / (1.-GPXWMB))*GPXVAR,0.0)
-	vexpr GPXSSS ifelse(GPXVARS>0.0,GPXMG*sqrt(GPXVARS),0.0)
+   #----- Compute small-scale variance as a "launching height"
+   vexpr GPX1_WMB  "1.-GPXWMB"
+   vexpr GPXVARS ifelse(GPX1_WMB!=0.0,((GPXWMS) / (1.-GPXWMB))*GPXVAR,0.0)
+   vexpr GPXSSS ifelse(GPXVARS>0.0,GPXMG*sqrt(GPXVARS),0.0)
 
-	#----- Compute large-scale variance as a "launching height"
-	vexpr GPXVARL ifelse(GPX1_WMB!=0.0,((1-GPXWMS) / (1.-GPXWMB))*GPXVAR,0.0)
-	vexpr GPXLHL ifelse(GPXVARL>0.0,2.*GPXMG*sqrt(GPXVARL),0.0)
+   #----- Compute large-scale variance as a "launching height"
+   vexpr GPXVARL ifelse(GPX1_WMB!=0.0,((1-GPXWMS) / (1.-GPXWMB))*GPXVAR,0.0)
+   vexpr GPXLHL ifelse(GPXVARL>0.0,2.*GPXMG*sqrt(GPXVARL),0.0)
 
-	#----- Write results to output files
-	fstdfield define GPXSSS -NOMVAR SSS -ETIKET GENPHYSX -IP1 0 -IP2 0
-	fstdfield write GPXSSS GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-	fstdfield define GPXLHL -NOMVAR LH -ETIKET GENPHYSX -IP1 0 -IP2 0
-	fstdfield write GPXLHL GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   #----- Write results to output files
+   fstdfield define GPXSSS -NOMVAR SSS -ETIKET GENPHYSX -IP1 0 -IP2 0
+   fstdfield write GPXSSS GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield define GPXLHL -NOMVAR LH -ETIKET GENPHYSX -IP1 0 -IP2 0
+   fstdfield write GPXLHL GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-	#----- Garbage collection
+   #----- Garbage collection
    fstdfield free GPX1_WMB GPXVARL GPXVARS GPXWMS GPXWMB GPXDD GPXDX GPXDY
-	fstdfield free GPXME GPXMRMS GPXMRES GPXMG GPXSSS GPXLHL
+   fstdfield free GPXMRMS GPXMRES GPXMG GPXSSS GPXLHL
 
 }
 
@@ -3912,7 +3907,7 @@ proc GeoPhysX::SubY789Split { } {
       fstdfield read GPXGYY  GPXAUXFILE -1 "" -1 -1 -1 "" "GYY"
       fstdfield read GPXGXY  GPXAUXFILE -1 "" -1 -1 -1 "" "GXY"
       fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
-		fstdfield read GPXMRES GPXAUXFILE -1 "" -1 -1 -1 "" "MRES"
+      fstdfield read GPXMRES GPXAUXFILE -1 "" -1 -1 -1 "" "MRES"
       fstdfield read GPXLH   GPXOUTFILE -1 "" -1 -1 -1 "" "LH" } ] } {
     
       Log::Print WARNING "Missing fields, will not calculate Y789 fields"
@@ -3924,13 +3919,13 @@ proc GeoPhysX::SubY789Split { } {
    vexpr GPXCOSA cos(GPXALP)
    vexpr GPXSINA sin(GPXALP)
 
-	#----- Compute rescaling factor for length scale separation
-	vexpr GPXDX ddx(GPXMG)
+   #----- Compute rescaling factor for length scale separation
+   vexpr GPXDX ddx(GPXMG)
    vexpr GPXDY ddy(GPXMG)
    vexpr GPXDD sqrt(GPXDX*GPXDY)
-	vexpr GPXRNUM (GPXDD/$GeoPhysX::Const(lres))^(3.-$GeoPhysX::Const(beta))-1.
-	vexpr GPXRDENOM (GPXDD/max(GPXMRES,1.))^(3.-$GeoPhysX::Const(beta))-1.
-	vexpr GPXR GPXRNUM / GPXRDENOM
+   vexpr GPXRNUM (GPXDD/$GeoPhysX::Const(lres))^(3.-$GeoPhysX::Const(beta))-1.
+   vexpr GPXRDENOM (GPXDD/max(GPXMRES,1.))^(3.-$GeoPhysX::Const(beta))-1.
+   vexpr GPXR GPXRNUM / GPXRDENOM
 
    fstdfield define GPXR -NOMVAR R -ETIKET GENPHYSX -IP1 0 -IP2 0
    fstdfield write GPXR GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
@@ -3972,23 +3967,22 @@ proc GeoPhysX::SubY789Split { } {
 proc GeoPhysX::SubRoughnessLength { } {
    variable Param
    variable Const
-	variable Opt
+   variable Opt
 
    GenX::Procs
 
    #----- check for needed fields
    if { [catch {
-      fstdfield read GPXME   GPXOUTFILE -1 "" -1   -1 -1 "" "ME"
       fstdfield read GPXMG   GPXOUTFILE -1 "" -1   -1 -1 "" "MG"
       fstdfield read GPXMRMS GPXAUXFILE -1 "" -1   -1 -1 "" "MRMS"
-  	   if { $Opt(SubSplit) } {
-			 fstdfield read GPXSSS GPXOUTFILE -1 "" -1   -1 -1 "" "SSS"
-		} else {
-			 fstdfield read GPXMEL  GPXAUXFILE -1 "" -1   -1 -1 "" "MEL"
-			 fstdfield read GPXLRMS GPXAUXFILE -1 "" -1   -1 -1 "" "LRMS"
-			 fstdfield read GPXFHR  GPXAUXFILE -1 "" -1   -1 -1 "" "FHR"
-			 fstdfield read GPXFLR  GPXAUXFILE -1 "" -1   -1 -1 "" "FLR"
-		}
+        if { $Opt(SubSplit) } {
+          fstdfield read GPXSSS GPXOUTFILE -1 "" -1   -1 -1 "" "SSS"
+      } else {
+          fstdfield read GPXMEL  GPXAUXFILE -1 "" -1   -1 -1 "" "MEL"
+          fstdfield read GPXLRMS GPXAUXFILE -1 "" -1   -1 -1 "" "LRMS"
+          fstdfield read GPXFHR  GPXAUXFILE -1 "" -1   -1 -1 "" "FHR"
+          fstdfield read GPXFLR  GPXAUXFILE -1 "" -1   -1 -1 "" "FLR"
+      }
       fstdfield read GPXZ0V1 GPXOUTFILE -1 "" 1199 -1 -1 "" "VF" } ] } {
     
       Log::Print WARNING "Missing fields, will not calculate roughness length"
@@ -3996,35 +3990,35 @@ proc GeoPhysX::SubRoughnessLength { } {
    }
    
    if { !$Opt(SubSplit) } {
-		 Log::Print INFO "Computing subgrid-scale variance"
-		 vexpr GPXME   GPXME  *GPXFHR
-		 vexpr GPXMRMS GPXMRMS*GPXFHR
-		 vexpr GPXMEL  GPXMEL *GPXFLR
-		 vexpr GPXLRMS GPXLRMS*GPXFLR
-		 vexpr GPXSSS (GPXMRMS^2 - GPXME^2)-(GPXLRMS^2 - GPXMEL^2)
-		 vexpr GPXSSS ifelse(GPXSSS>0.0,GPXSSS^0.5,0.0)
-		 vexpr GPXSSS ifelse(GPXMG>$Const(mgmin),GPXSSS,0.0)
-		 fstdfield define GPXSSS -NOMVAR SSS -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXSSS GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-	}
+       Log::Print INFO "Computing subgrid-scale variance"
+       vexpr GPXME   GPXME  *GPXFHR
+       vexpr GPXMRMS GPXMRMS*GPXFHR
+       vexpr GPXMEL  GPXMEL *GPXFLR
+       vexpr GPXLRMS GPXLRMS*GPXFLR
+       vexpr GPXSSS (GPXMRMS^2 - GPXME^2)-(GPXLRMS^2 - GPXMEL^2)
+       vexpr GPXSSS ifelse(GPXSSS>0.0,GPXSSS^0.5,0.0)
+       vexpr GPXSSS ifelse(GPXMG>$Const(mgmin),GPXSSS,0.0)
+       fstdfield define GPXSSS -NOMVAR SSS -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXSSS GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
 
-	vexpr GPXHCOEF (1.5 - 0.5*(GPXSSS-20.0)/680.0)
-	vexpr GPXHCOEF ifelse(GPXSSS>700.0,1.0,GPXHCOEF)
-	 
-	vexpr GPXZREF (GPXHCOEF*GPXSSS)
-	vexpr GPXZREF ifelse(GPXZREF<$Const(zrefmin),$Const(zrefmin),GPXZREF)
-	vexpr GPXZREF ifelse(GPXZREF>1500.0,1500.0,GPXZREF)
-	 
-	fstdfield define GPXZREF -NOMVAR ZREF -ETIKET GENPHYSX -IP1 0 -IP2 0
-	fstdfield write GPXZREF GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-	 
-	vexpr GPXSLP (GPXHCOEF*GPXHCOEF*GPXSSS/$Const(lres))
-	 
-	Log::Print INFO "Computing Z0_topo"
-	vexpr GPXZTP ifelse(GPXSLP>$Const(slpmin) || GPXZREF>$Const(zrefmin),1.0+GPXZREF*exp(-$Const(karman)/sqrt(0.5*$Const(drgcoef)*GPXSLP)),0.0)
-	vexpr GPXZTP ifelse(GPXSSS<=$Const(sssmin),0.1*GPXSSS,GPXZTP)
-	fstdfield define GPXZTP -NOMVAR ZTOP -ETIKET GENPHYSX -IP1 0 -IP2 0
-	fstdfield write GPXZTP GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   vexpr GPXHCOEF (1.5 - 0.5*(GPXSSS-20.0)/680.0)
+   vexpr GPXHCOEF ifelse(GPXSSS>700.0,1.0,GPXHCOEF)
+    
+   vexpr GPXZREF (GPXHCOEF*GPXSSS)
+   vexpr GPXZREF ifelse(GPXZREF<$Const(zrefmin),$Const(zrefmin),GPXZREF)
+   vexpr GPXZREF ifelse(GPXZREF>1500.0,1500.0,GPXZREF)
+    
+   fstdfield define GPXZREF -NOMVAR ZREF -ETIKET GENPHYSX -IP1 0 -IP2 0
+   fstdfield write GPXZREF GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+    
+   vexpr GPXSLP (GPXHCOEF*GPXHCOEF*GPXSSS/$Const(lres))
+    
+   Log::Print INFO "Computing Z0_topo"
+   vexpr GPXZTP ifelse(GPXSLP>$Const(slpmin) || GPXZREF>$Const(zrefmin),1.0+GPXZREF*exp(-$Const(karman)/sqrt(0.5*$Const(drgcoef)*GPXSLP)),0.0)
+   vexpr GPXZTP ifelse(GPXSSS<=$Const(sssmin),0.1*GPXSSS,GPXZTP)
+   fstdfield define GPXZTP -NOMVAR ZTOP -ETIKET GENPHYSX -IP1 0 -IP2 0
+   fstdfield write GPXZTP GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Local (vegetation) roughness length
    fstdfield read GPXZ0V1 GPXOUTFILE -1 "" 1199 -1 -1 "" "VF"
@@ -4059,119 +4053,119 @@ proc GeoPhysX::SubRoughnessLength { } {
    fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Local (vegetation) roughness length from canopy height  
-	if { $GenX::Param(Z0NoTopo) == "CANOPY" } {
-		 if { [catch { fstdfield read GPXVCH  GPXAUXFILE -1 "" -1 -1 -1 "" "VCH" }] } {
-			  Log::Print WARNING "Missing fields, will not calculate roughness length from canopy height"
-			  return
-		 }
-		 vexpr GPXZ0VG ifelse(GPXMG>0.0,max(GPXVCH*0.1,0.01),0.0)
-		 fstdfield define GPXZ0VG -NOMVAR Z0VG -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-			  
-		 #------ roughness length without topographic contribution and Z0VG
-		 Log::Print INFO "Generating Z0 without topographic contribution from canopy height"
-		 #------ because vegetation height where crop are dominant are too low (zero)
-		 #------ compensate with crop's Z0 using lookup table
-		 vexpr GPXZ0  "ifelse(GPXVFCROP>0.5,GPXZ0CROP,GPXZ0VG)"
-		 vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
-		 fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-		 
-		 vexpr GPXZP  ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
-		 fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-	} elseif { $GenX::Param(Z0NoTopo) == "STD" } {
-		 Log::Print INFO "Generating Z0 without topographic contribution from vegetation type"
-		 vexpr GPXZ0  "max(GPXZ0V1,$Const(waz0))"
-		 fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-			  
-		 vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
-		 fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-	} elseif { $GenX::Param(Z0NoTopo) == "" } {
-		 #------ roughness length with topographic contribution and lookup table
-		 #------ Filter roughness length
+   if { $GenX::Param(Z0NoTopo) == "CANOPY" } {
+       if { [catch { fstdfield read GPXVCH  GPXAUXFILE -1 "" -1 -1 -1 "" "VCH" }] } {
+           Log::Print WARNING "Missing fields, will not calculate roughness length from canopy height"
+           return
+       }
+       vexpr GPXZ0VG ifelse(GPXMG>0.0,max(GPXVCH*0.1,0.01),0.0)
+       fstdfield define GPXZ0VG -NOMVAR Z0VG -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+           
+       #------ roughness length without topographic contribution and Z0VG
+       Log::Print INFO "Generating Z0 without topographic contribution from canopy height"
+       #------ because vegetation height where crop are dominant are too low (zero)
+       #------ compensate with crop's Z0 using lookup table
+       vexpr GPXZ0  "ifelse(GPXVFCROP>0.5,GPXZ0CROP,GPXZ0VG)"
+       vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
+       fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       
+       vexpr GPXZP  ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+       fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   } elseif { $GenX::Param(Z0NoTopo) == "STD" } {
+       Log::Print INFO "Generating Z0 without topographic contribution from vegetation type"
+       vexpr GPXZ0  "max(GPXZ0V1,$Const(waz0))"
+       fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+           
+       vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+       fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   } elseif { $GenX::Param(Z0NoTopo) == "" } {
+       #------ roughness length with topographic contribution and lookup table
+       #------ Filter roughness length
 
-		 #----- Roughness length over soil
-		 fstdfield read GPXGA GPXOUTFILE -1 "" 1198 -1 -1 "" "VF"
-		 
-		 vexpr GPXW1  ifelse(GPXZTP >0.0 && GPXZREF>GPXZTP     , (1.0/ln(GPXZREF/GPXZTP ))^2.0        , 0.0)
-		 vexpr GPXW2  ifelse(GPXZ0V1>0.0 && GPXZREF>GPXZ0V1    , (1.0/ln(GPXZREF/GPXZ0V1))^2.0        , 0.0)
-		 vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0                 , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2)) , 0.0)
-		 vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)          , GPXZ0V1                              , GPXZ0S)
-		 vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)              , $Const(z0def)                        , GPXZ0S)
-		 vexpr GPXZ0S ifelse(GPXGA>=(1.0-$Const(gamin))        , $Const(z0def)                        , GPXZ0S)
-		 fstdfield define GPXZ0S -NOMVAR Z0S -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZ0S GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-		 
-		 vexpr GPXZPS ifelse(GPXZ0S>0.0,ln(GPXZ0S),$Const(zpdef))
-		 fstdfield define GPXZPS -NOMVAR ZPS -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZPS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-		 
-		 #----- Roughness length over glaciers
-		 vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (1.0/ln(GPXZREF/GPXZTP      ))^2.0 , 0.0)
-		 vexpr GPXW2  ifelse(GPXZREF>$Const(gaz0)        , (1.0/ln(GPXZREF/$Const(gaz0)))^2.0 , 0.0)
-		 vexpr GPXZ0G ifelse((GPXW1+GPXW2)>0.0           , GPXZREF*exp(-1.0/sqrt(GPXW1+GPXW2)), 0.0)
-		 vexpr GPXZ0G ifelse(GPXZREF<=$Const(zrefmin)    , $Const(gaz0)                       , GPXZ0G)
-		 vexpr GPXZ0G ifelse(GPXZ0G<$Const(z0def)        , $Const(z0def)                      , GPXZ0G)
-		 vexpr GPXZ0G ifelse(GPXGA<=$Const(gamin)        , $Const(z0def)                      , GPXZ0G)
-		 fstdfield define GPXZ0G -NOMVAR Z0G -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZ0G GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       #----- Roughness length over soil
+       fstdfield read GPXGA GPXOUTFILE -1 "" 1198 -1 -1 "" "VF"
+       
+       vexpr GPXW1  ifelse(GPXZTP >0.0 && GPXZREF>GPXZTP     , (1.0/ln(GPXZREF/GPXZTP ))^2.0        , 0.0)
+       vexpr GPXW2  ifelse(GPXZ0V1>0.0 && GPXZREF>GPXZ0V1    , (1.0/ln(GPXZREF/GPXZ0V1))^2.0        , 0.0)
+       vexpr GPXZ0S ifelse((GPXW1+GPXW2)>0.0                 , GPXZREF*exp( -1.0/sqrt(GPXW1+GPXW2)) , 0.0)
+       vexpr GPXZ0S ifelse(GPXZREF<=$Const(zrefmin)          , GPXZ0V1                              , GPXZ0S)
+       vexpr GPXZ0S ifelse(GPXZ0S<$Const(z0def)              , $Const(z0def)                        , GPXZ0S)
+       vexpr GPXZ0S ifelse(GPXGA>=(1.0-$Const(gamin))        , $Const(z0def)                        , GPXZ0S)
+       fstdfield define GPXZ0S -NOMVAR Z0S -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZ0S GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       
+       vexpr GPXZPS ifelse(GPXZ0S>0.0,ln(GPXZ0S),$Const(zpdef))
+       fstdfield define GPXZPS -NOMVAR ZPS -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZPS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       
+       #----- Roughness length over glaciers
+       vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (1.0/ln(GPXZREF/GPXZTP      ))^2.0 , 0.0)
+       vexpr GPXW2  ifelse(GPXZREF>$Const(gaz0)        , (1.0/ln(GPXZREF/$Const(gaz0)))^2.0 , 0.0)
+       vexpr GPXZ0G ifelse((GPXW1+GPXW2)>0.0           , GPXZREF*exp(-1.0/sqrt(GPXW1+GPXW2)), 0.0)
+       vexpr GPXZ0G ifelse(GPXZREF<=$Const(zrefmin)    , $Const(gaz0)                       , GPXZ0G)
+       vexpr GPXZ0G ifelse(GPXZ0G<$Const(z0def)        , $Const(z0def)                      , GPXZ0G)
+       vexpr GPXZ0G ifelse(GPXGA<=$Const(gamin)        , $Const(z0def)                      , GPXZ0G)
+       fstdfield define GPXZ0G -NOMVAR Z0G -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZ0G GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-		 vexpr GPXZPG ifelse(GPXZ0G>0.0,ln(GPXZ0G),$Const(zpdef) )
-		 fstdfield define GPXZPG -NOMVAR ZPG -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZPG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       vexpr GPXZPG ifelse(GPXZ0G>0.0,ln(GPXZ0G),$Const(zpdef) )
+       fstdfield define GPXZPG -NOMVAR ZPG -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZPG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-		 #----- Roughness length over water
-		 vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (1.0/ln(GPXZREF/GPXZTP      ))^2.0 , 0.0)
-		 vexpr GPXW2  ifelse(GPXZREF>0.001               , (1.0/ln(GPXZREF/0.001))^2.0        , 0.0)
-		 vexpr GPXZ0W ifelse((GPXW1+GPXW2)>0.0           , GPXZREF*exp(-1.0/sqrt(GPXW1+GPXW2)), 0.0)
-		 vexpr GPXZ0W ifelse(GPXZREF<=$Const(zrefmin)    , 0.001                              , GPXZ0W)
-		 vexpr GPXZ0W ifelse(GPXZ0W<$Const(z0def)        , $Const(z0def)                      , GPXZ0W)
-		 vexpr GPXZ0W ifelse((1.0-GPXMG)<=$Const(mgmin)  , $Const(z0def)                      , GPXZ0W)
-		 fstdfield define GPXZ0W -NOMVAR Z0W -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZ0W GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       #----- Roughness length over water
+       vexpr GPXW1  ifelse(GPXZTP>0.0 && GPXZREF>GPXZTP, (1.0/ln(GPXZREF/GPXZTP      ))^2.0 , 0.0)
+       vexpr GPXW2  ifelse(GPXZREF>0.001               , (1.0/ln(GPXZREF/0.001))^2.0        , 0.0)
+       vexpr GPXZ0W ifelse((GPXW1+GPXW2)>0.0           , GPXZREF*exp(-1.0/sqrt(GPXW1+GPXW2)), 0.0)
+       vexpr GPXZ0W ifelse(GPXZREF<=$Const(zrefmin)    , 0.001                              , GPXZ0W)
+       vexpr GPXZ0W ifelse(GPXZ0W<$Const(z0def)        , $Const(z0def)                      , GPXZ0W)
+       vexpr GPXZ0W ifelse((1.0-GPXMG)<=$Const(mgmin)  , $Const(z0def)                      , GPXZ0W)
+       fstdfield define GPXZ0W -NOMVAR Z0W -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZ0W GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-		 vexpr GPXZPW ifelse(GPXZ0W>0.0,ln(GPXZ0W),$Const(zpdef) )
-		 fstdfield define GPXZPW -NOMVAR ZPW -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZPW GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       vexpr GPXZPW ifelse(GPXZ0W>0.0,ln(GPXZ0W),$Const(zpdef) )
+       fstdfield define GPXZPW -NOMVAR ZPW -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZPW GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-		 #----- Fill some gaps
-		 vexpr GPXZ0S ifelse(GPXMG>$Const(mgmin) && GPXZTP<$Const(z0min) && GPXZ0V1<$Const(z0min) && GPXZ0G<$Const(z0min),$Const(z0def),GPXZ0S)
-		 fstdfield define GPXZ0S -NOMVAR Z0S -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZ0S GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-		 vexpr GPXZPS ifelse(GPXZ0S>0.0,ln(GPXZ0S),$Const(zpdef) )
-		 fstdfield define GPXZPS -NOMVAR ZPS -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZPS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       #----- Fill some gaps
+       vexpr GPXZ0S ifelse(GPXMG>$Const(mgmin) && GPXZTP<$Const(z0min) && GPXZ0V1<$Const(z0min) && GPXZ0G<$Const(z0min),$Const(z0def),GPXZ0S)
+       fstdfield define GPXZ0S -NOMVAR Z0S -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZ0S GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       vexpr GPXZPS ifelse(GPXZ0S>0.0,ln(GPXZ0S),$Const(zpdef) )
+       fstdfield define GPXZPS -NOMVAR ZPS -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZPS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-		 #----- Total roughness length
-		 GeoPhysX::Compute_GA GPXGA GPXGA
-		 vexpr GPXZP GPXMG*((1.0-GPXGA)*GPXZPS+GPXGA*GPXZPG)+(1.0-GPXMG)*GPXZPW
+       #----- Total roughness length
+       GeoPhysX::Compute_GA GPXGA GPXGA
+       vexpr GPXZP GPXMG*((1.0-GPXGA)*GPXZPS+GPXGA*GPXZPG)+(1.0-GPXMG)*GPXZPW
 
-		 fstdfield define GPXZP -NOMVAR ZP0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZP GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       fstdfield define GPXZP -NOMVAR ZP0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZP GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-		 vexpr GPXZ0 exp(GPXZP)
-		 fstdfield define GPXZ0 -NOMVAR Z00 -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZ0 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       vexpr GPXZ0 exp(GPXZP)
+       fstdfield define GPXZ0 -NOMVAR Z00 -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZ0 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-		 Log::Print INFO "Generating Z0 with topographic contribution"
-		 if { $GenX::Param(Z0Filter) } {
-			  Log::Print INFO "Filtering Z0"
-			  geophy zfilter GPXZ0 GenX::Settings
-		 }
-		 vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
-		 fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       Log::Print INFO "Generating Z0 with topographic contribution"
+       if { $GenX::Param(Z0Filter) } {
+           Log::Print INFO "Filtering Z0"
+           geophy zfilter GPXZ0 GenX::Settings
+       }
+       vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
+       fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    
-		 vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
-		 fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
-		 fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+       vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+       fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+       fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    } else {
-		 Log::Print WARNING "Invalid option $GenX::Param(Z0NoTopo) provided"
-		 return
-	}
+       Log::Print WARNING "Invalid option $GenX::Param(Z0NoTopo) provided"
+       return
+   }
 
    fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S GPXZ0W GPXZPW \
        GPXZ0V2 GPXZ0VG GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF GPXVCH \
@@ -4317,9 +4311,8 @@ proc GeoPhysX::LegacyChecks { } {
    #----- Check consistency for ME
    #----- Read ME
    if { [catch {
-		fstdfield read GPXME   GPXOUTFILE -1 "" -1 -1 -1 "" "ME"
-		fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
-		fstdfield read GPXVG   GPXOUTFILE -1 "" -1 -1 -1 "" "VG" } ] } {
+      fstdfield read GPXMG   GPXOUTFILE -1 "" -1 -1 -1 "" "MG"
+      fstdfield read GPXVG   GPXOUTFILE -1 "" -1 -1 -1 "" "VG" } ] } {
       Log::Print WARNING "Missing fields, will not check ME consistency with MG"
       return
    }
@@ -4363,7 +4356,7 @@ proc GeoPhysX::LegacyChecks { } {
 #   rewrite VG
    fstdfield write GPXVG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
-   fstdfield free GPXME GPXVG GPXMG
+   fstdfield free GPXVG GPXMG
 }
 
 #----------------------------------------------------------------------------

@@ -59,7 +59,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.3.2               ;#Application version
+   set Param(Version)      2.3.3               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time
@@ -289,11 +289,11 @@ proc GenX::Process { Grid } {
          GeoPhysX::SubY789
          GeoPhysX::SubRoughnessLength
       }
-		"SPLIT" {
-		   GeoPhysX::SubLaunchingHeightSplit
-			GeoPhysX::SubY789Split
+      "SPLIT" {
+         GeoPhysX::SubLaunchingHeightSplit
+         GeoPhysX::SubY789Split
          GeoPhysX::SubRoughnessLength
-		}
+      }
       "LEGACY" {
          GeoPhysX::SubTopoFilter
          GeoPhysX::LegacySub $Grid
