@@ -5,7 +5,7 @@ arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.3.2"
+VERSION="2.3.3"
 MAINTAINER="Jean-Philippe Gauthier"
 
 if [[ -n $COMP_ARCH ]]; then

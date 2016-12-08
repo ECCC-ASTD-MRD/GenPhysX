@@ -111,7 +111,7 @@ namespace eval GenX { } {
    set Param(Checks)    { STD }
    set Param(Subs)      { LEGACY STD SPLIT }
    set Param(Z0NoTopos) { STD CANOPY }
-   set Param(Targets)   { LEGACY GEMMESO GEM4.4 AURAMS }   ;#Model cible
+   set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS_5.1 AURAMS }   ;#Model cible
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
    set Param(SRTM3)     False
@@ -881,6 +881,21 @@ proc GenX::ParseTarget { } {
                   set Settings(TOPO_DGFMS_L) True
                   set Settings(TOPO_DGFMX_L) True
                   set Settings(TOPO_FILMX_L) True
+                }
+      "GDPS_5.1" { set Param(Topo)     "USGS"
+                   set Param(Vege)     "USGS_R"
+                   set Param(Mask)     "USGS_R"
+                   set Param(Soil)     "USDA AGRC FAO"
+                   set Param(Check)    "STD"
+                   set Param(Sub)      "LEGACY"
+                   set Param(Z0Filter) False
+                   set Param() False
+                   set Param(Cell)     1
+
+                   set Settings(TOPO_DGFMS_L) True
+                   set Settings(TOPO_DGFMX_L) True
+                   set Settings(TOPO_FILMX_L) True
+                   set Settings(TOPO_CLIP_ORO_L) False
                 }
    }
 }

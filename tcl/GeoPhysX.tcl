@@ -257,7 +257,7 @@ proc GeoPhysX::AverageTopo { Grid } {
    }
 
    #----- Save output
-   fstdfield define GPXME -NOMVAR ME -ETIKET GENPHYSX -IP2 0
+   fstdfield define GPXME -NOMVAR MENF -ETIKET GENPHYSX -IP2 0
    fstdfield write GPXME GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Process RMS and resolution only for unstaggered grids
@@ -3646,12 +3646,12 @@ proc GeoPhysX::SubTopoFilter { } {
 
    GenX::Procs
    
-   fstdfield read GPXMF GPXOUTFILE -1 "" -1 -1 -1 "" "ME"
+   fstdfield read GPXMF GPXOUTFILE -1 "" -1 -1 -1 "" "MENF"
 
    Log::Print INFO "Filtering ME"
 
    geophy zfilter GPXMF GenX::Settings
-   fstdfield define GPXMF -NOMVAR MF -ETIKET GENPHYSX -IP1 0 -IP2 0
+   fstdfield define GPXMF -NOMVAR ME -ETIKET GENPHYSX -IP1 0 -IP2 0
    fstdfield write GPXMF GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    fstdfield free GPXMF
