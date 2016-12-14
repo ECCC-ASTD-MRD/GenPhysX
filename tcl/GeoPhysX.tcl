@@ -92,6 +92,7 @@ namespace eval GeoPhysX { } {
                                    #   calculation of the roughness length over soil and glacier
    set Const(z0min)   0.0001      ;# Threshold value of roughness length in meters, used to identify
                                    #   some "gaps" in the roughness length field
+   set Const(z0minUr) 0.75      ;# minimal urban value of roughness length in meters, when VCH is nil
    set Const(gaz0)    0.0003      ;# Roughness length for glacier-type surfaces
    set Const(waz0)    0.001       ;# Roughness length for water
    set Const(lres)    5000.0      ;# Horizontal reference scale (5000 m) for topography features,
@@ -145,8 +146,11 @@ namespace eval GeoPhysX { } {
                               {   2   3  4  5  4  7  7 14  14  14  24 15 15 20  21  24  23  23  23  24  25  26  26 } }
 
    #----- Sept 2015 : en se basant sur GlobCover, pour la conversion des classes ESA CCI LC 2010 vers les classes RPN (released 2014-10-01)
+#   set Const(CCI_LC2RPN) { {  0 220 210 70 71 50 72 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 152 153 160 170 180 200 201 202 90 100 110 120 121 122 } 
+#                           {-99   2   3  4  4  5  6  6  6  6  7  7  7 14  13 15 13 15 15 20  21  22  22  22  22  23  23  23  24  24  24 25  26  26  26  10  11 } }
+   #------ Dec 2016 : Correspondance revue par Sylvie Leroyer
    set Const(CCI_LC2RPN) { {  0 220 210 70 71 50 72 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 152 153 160 170 180 200 201 202 90 100 110 120 121 122 } 
-                           {-99   2   3  4  4  5  6  6  6  6  7  7  7 14  13 15 13 15 15 20  21  22  22  22  22  23  23  23  24  24  24 25  26  26  26  10  11 } }
+                           {-99   2   3  4  4  5  4  6  6  6  7  7  7 14  13 15 15 15 15 20  21  22  22  22  22  23  23  23  24  24  24 25  26  26  11  10  11 } }
 
    #----- Correspondance de Douglas Chan Mai 2010 pour la conversion des classes GCL2000 vers les classes RPN
    set Const(GLC20002RPN) { { 1 2 3 4 5 6   7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22  23 200}
@@ -1061,7 +1065,7 @@ proc GeoPhysX::AverageDerivTile { Grid Band } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageAspectTile2 { Grid Band } {
+proc GeoPhysX::AverageAspectTile { Grid Band } {
 
    #----- Calculate slope and aspect for the tile
    vexpr SLATILE dslopedeg($Band)
@@ -1309,7 +1313,7 @@ proc GeoPhysX::AverageMaskGLC2000 { Grid } {
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLCFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with GLC2000 database, mask will not be calculated"
    } else {
-      Log::Print INFO "Grid intersection with GLOBCOVER database is { $limits }"
+      Log::Print INFO "Grid intersection with GLC2000 database is { $limits }"
       set x0 [lindex $limits 0]
       set x1 [lindex $limits 2]
       set y0 [lindex $limits 1]
@@ -4054,35 +4058,35 @@ proc GeoPhysX::SubRoughnessLength { } {
 
    #----- Local (vegetation) roughness length from canopy height  
    if { $GenX::Param(Z0NoTopo) == "CANOPY" } {
-       if { [catch { fstdfield read GPXVCH  GPXAUXFILE -1 "" -1 -1 -1 "" "VCH" }] } {
-           Log::Print WARNING "Missing fields, will not calculate roughness length from canopy height"
-           return
-       }
-       vexpr GPXZ0VG ifelse(GPXMG>0.0,max(GPXVCH*0.1,0.01),0.0)
-       fstdfield define GPXZ0VG -NOMVAR Z0VG -ETIKET GENPHYSX -IP1 0 -IP2 0
-       fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-           
-       #------ roughness length without topographic contribution and Z0VG
-       Log::Print INFO "Generating Z0 without topographic contribution from canopy height"
-       #------ because vegetation height where crop are dominant are too low (zero)
-       #------ compensate with crop's Z0 using lookup table
-       vexpr GPXZ0  "ifelse(GPXVFCROP>0.5,GPXZ0CROP,GPXZ0VG)"
-       vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
-       fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-       fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-       
-       vexpr GPXZP  ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
-       fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
-       fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      if { [catch { fstdfield read GPXVCH  GPXAUXFILE -1 "" -1 -1 -1 "" "VCH" }] } {
+   	    Log::Print WARNING "Missing fields, will not calculate roughness length from canopy height"
+   	    return
+   	}
+   	vexpr GPXZ0VG ifelse(GPXMG>0.0,max(GPXVCH*0.1,$Const(z0minUr)),0.0)
+   	fstdfield define GPXZ0VG -NOMVAR Z0VG -ETIKET GENPHYSX -IP1 0 -IP2 0
+   	fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   		  
+   	#------ roughness length without topographic contribution and Z0VG
+   	Log::Print INFO "Generating Z0 without topographic contribution from canopy height"
+   	#------ because vegetation height where crop are dominant are too low (zero)
+   	#------ compensate with crop's Z0 using lookup table
+   	vexpr GPXZ0  "ifelse(GPXVFCROP>0.5,GPXZ0CROP,GPXZ0VG)"
+   	vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
+   	fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+   	fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   	 
+   	vexpr GPXZP  ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+   	fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+   	fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    } elseif { $GenX::Param(Z0NoTopo) == "STD" } {
-       Log::Print INFO "Generating Z0 without topographic contribution from vegetation type"
-       vexpr GPXZ0  "max(GPXZ0V1,$Const(waz0))"
-       fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-       fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-           
-       vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
-       fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
-       fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   	Log::Print INFO "Generating Z0 without topographic contribution from vegetation type"
+   	vexpr GPXZ0  "max(GPXZ0V1,$Const(waz0))"
+   	fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+   	fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   	vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+   	fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+  	   fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    } elseif { $GenX::Param(Z0NoTopo) == "" } {
        #------ roughness length with topographic contribution and lookup table
        #------ Filter roughness length
