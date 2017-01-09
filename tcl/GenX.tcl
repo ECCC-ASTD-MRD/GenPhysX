@@ -111,6 +111,7 @@ namespace eval GenX { } {
    set Param(Checks)    { STD }
    set Param(Subs)      { LEGACY STD SPLIT }
    set Param(Z0NoTopos) { STD CANOPY }
+   set Param(CropZ0)    0.0                  ;# if set to non-zero, Crop Z0 should be used when crop fraction higher
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS_5.1 AURAMS }   ;#Model cible
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
@@ -591,6 +592,7 @@ proc GenX::CommandLine { } {
       \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" (${::APP_COLOR_GREEN}$Param(Check)${::APP_COLOR_RESET})]
       \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Param(Subs)}" (${::APP_COLOR_GREEN}$Param(Sub)${::APP_COLOR_RESET})]
       \[-z0notopo\] [format "%-30s : Roughness length Z0 with no topographic contribution {$Param(Z0NoTopos)}" (${::APP_COLOR_GREEN}[join $Param(Z0NoTopos)]${::APP_COLOR_RESET})]
+      \[-z0crop\]   [format "%-30s : if set to non-zero, Crop Z0 should be used when crop fraction higher than this value" (${::APP_COLOR_GREEN}$Param(CropZ0)${::APP_COLOR_RESET})]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
 
    Specific processing parameters:
@@ -706,6 +708,7 @@ proc GenX::ParseCommandLine { } {
          "topostag"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(TopoStag)] }
          "z0filter"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0Filter)]; incr flags }
          "z0notopo"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0NoTopo)] }
+         "z0crop"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(CropZ0)] }
          "celldim"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Cell)] }
          "compress"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Compress)] }
          "nbits"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(NBits)] }

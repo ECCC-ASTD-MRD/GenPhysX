@@ -4070,8 +4070,12 @@ proc GeoPhysX::SubRoughnessLength { } {
    	Log::Print INFO "Generating Z0 without topographic contribution from canopy height"
    	#------ because vegetation height where crop are dominant are too low (zero)
    	#------ compensate with crop's Z0 using lookup table
-   	vexpr GPXZ0  "ifelse(GPXVFCROP>0.5,GPXZ0CROP,GPXZ0VG)"
-   	vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
+      if { $GenX::Param(CropZ0) > 0.0 } {
+         vexpr GPXZ0  "ifelse(GPXVFCROP > $GenX::Param(CropZ0),GPXZ0CROP,GPXZ0VG)"
+         vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
+      } else {
+         vexpr GPXZ0  "max(GPXZ0VG,$Const(waz0))"
+      }
    	fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
    	fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    	 
