@@ -22,7 +22,12 @@ LIB_PATH=${SSM_DEV}/workspace/libSPI_${SPI_VERSION}${COMP}_${ORDENV_PLAT}
 export LD_LIBRARY_PATH=${LIB_PATH}/lib:$LD_LIBRARY_PATH
 export LIBRARY_PATH=${LIB_PATH}/lib:$LIBRARY_PATH
 
-export CC=c99
+if [[ -n $INTELCOMP_HOME ]]; then
+   export CC=icc
+   export CXX=icpc
+fi
+
+export CFLAGS="-std=c99"
 
 echo ""
 echo "----- Building platform : ${ORDENV_PLAT} -----"
