@@ -7,7 +7,6 @@
 # Project    : Geophysical field generator.
 # File       : UrbanPhysX.tcl
 # Creation   : October 2010 - J.P. Gauthier - CMC/CMOE
-# Revision   : $Id$
 # Description: Definitions of functions related to urban geo-physical fields
 #
 # Remarks  :

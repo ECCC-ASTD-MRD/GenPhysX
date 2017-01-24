@@ -11,7 +11,6 @@ exec nice ${GENPHYSX_PRIORITY:=-19} ${SPI_PATH:=/users/dor/afsr/ops/eer_SPI-7.5.
 # Project    : CULUC product generator
 # File       : GenCULUC.tcl
 # Creation   : April 2012 - Alexandre Leroux - CMC/CMOE
-# Revision   : $Id: UrbanX.tcl 668 2012-02-08 19:40:58Z afsmvan $
 # Description: Generates the missing CULUC GeoTIFFs by launching several UrbanX.tcl instances
 #
 #

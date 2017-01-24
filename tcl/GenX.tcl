@@ -7,7 +7,6 @@
 # Project    : Geophysical field generator.
 # File       : GenX.tcl
 # Creation   : Septembre 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
-# Revision   : $Id$
 # Description: Definitions of global fonctions needed by the generator
 #
 # Remarks  :
@@ -59,7 +58,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.3.3               ;#Application version
+   set Param(Version)      2.3.4               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time
@@ -202,6 +201,7 @@ namespace eval GenX { } {
    set Settings(TOPO_DGFMX_L)    True
    set Settings(TOPO_FILMX_L)    True
    set Settings(TOPO_CLIP_ORO_L) False
+   
    gdalfile error QUIET
 
 }
@@ -226,8 +226,8 @@ proc GenX::Process { Grid } {
 
    set Param(TMPDIR) $Param(OutFile)_tmp$Param(Process)
    set Log::Param(Process) $Param(Process)
-	if { $Param(Sub)=="SPLIT" } { set GeoPhysX::Opt(SubSplit) True }
-	if { $Param(Sub)=="LEGACY" } { set GeoPhysX::Opt(LegacyMode) True }
+   if { $Param(Sub)=="SPLIT" }  { set GeoPhysX::Opt(SubSplit) True }
+   if { $Param(Sub)=="LEGACY" } { set GeoPhysX::Opt(LegacyMode) True }
 
    #----- Land-water mask
    if { $Param(Mask)!="" } {
@@ -892,7 +892,7 @@ proc GenX::ParseTarget { } {
                    set Param(Check)    "STD"
                    set Param(Sub)      "LEGACY"
                    set Param(Z0Filter) False
-                   set Param() False
+                   set Param(Compress) False
                    set Param(Cell)     1
 
                    set Settings(TOPO_DGFMS_L) True

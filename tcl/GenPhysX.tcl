@@ -7,7 +7,6 @@
 # Project    : Generateur de champs geophysiques.
 # File       : GenPhysX.tcl
 # Creation   : September 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
-# Revision   : $Id$
 # Description: Generer les champs geophysiques necessaires au modeles meteo (GEM)
 #
 #

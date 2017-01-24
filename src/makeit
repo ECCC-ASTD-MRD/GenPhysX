@@ -5,13 +5,15 @@ arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.3.3"
+VERSION="2.3.4"
 MAINTAINER="Jean-Philippe Gauthier"
+BUILDINFO=`git describe --always`
 
 if [[ -n $COMP_ARCH ]]; then
    COMP=-${COMP_ARCH}
 fi
 
+SSM_VERSION=${VERSION}${COMP}
 SSM_NAME=${NAME}_${VERSION}${COMP}_${ORDENV_PLAT}
 
 MAKE=make
@@ -46,7 +48,7 @@ if [[ $arg = "-ssm" ]]; then
    cp -r ../doc ${SSM_DEV}/workspace/${SSM_NAME}
    cp ../.ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
    find ${SSM_DEV}/workspace/${SSM_NAME} -name .svn -exec rm -f -r {} \;
-   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/DESC/${DESC}/" ../.ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
+   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESC/${DESC}/" ../.ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
    cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
    rm -f -r ${SSM_NAME}
 else

@@ -7,7 +7,6 @@
 # Project    : Urban geophysical field generator
 # File       : UrbanX.tcl
 # Creation   : Janvier 2006- Alexandre Leroux / J.P. Gauthier - CMC/CMOE
-# Revision   : $Id$
 # Description: Classification urbaine automatisée, principalement à partir de
 #              données CanVec 1:50000, StatCan (population) LCC2000-V (vegetation)
 #              et bâtiments 3D pour alimenter le modèle TEB

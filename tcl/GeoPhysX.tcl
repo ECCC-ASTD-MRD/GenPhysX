@@ -7,7 +7,6 @@
 # Project    : Geophysical field generator.
 # File       : GeoPhysX.tcl
 # Creation   : September 2006 - J.P. Gauthier / Ayrton Zadra - CMC/CMOE
-# Revision   : $Id$
 # Description: Definitions of functions related to geo-physical fields
 #
 # Remarks  :
@@ -257,7 +256,7 @@ proc GeoPhysX::AverageTopo { Grid } {
             fstdfield stats GPXME -gridvalue $i $j $pval
          }
       }
-      fstdfield free GPXMEWE  GPXMESUM GPXWESUM
+      fstdfield free GPXMEWE GPXMESUM GPXWESUM
    }
 
    #----- Save output
@@ -333,7 +332,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
          if { $Opt(LegacyMode) } {
             vexpr  (Float64)WEIGHTTILE  "cos(dlat(USGSTILE)*$Const(Deg2Rad))*$Const(ResoUSGS)*$Const(ResoUSGS)"
             # avoid missing values -99 found in the data
-            vexpr  (Float64)WTOPOTILE   "ifelse(USGSTILE>0.0,USGSTILE*WEIGHTTILE,0.0)"
+            vexpr  (Float64)WTOPOTILE   "ifelse(USGSTILE!=-99.0,USGSTILE*WEIGHTTILE,0.0)"
             fstdfield gridinterp GPXMESUM WTOPOTILE  SUM
             fstdfield gridinterp GPXWESUM WEIGHTTILE SUM
             fstdfield free WTOPOTILE WEIGHTTILE

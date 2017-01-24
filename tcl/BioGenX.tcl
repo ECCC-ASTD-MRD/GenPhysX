@@ -7,7 +7,6 @@
 # Project     : Geophysical field generator for GEM-MACH et AURAMS
 # File        : BioGenX.tcl
 # Creation    : 19 decembre 2008 Louis-Philippe Crevier - AQMAS
-# Revision    : $Id$
 # Description : Code generant les champs geophysiques et les emissions biogeniques
 #               pour GEM-MACH et AURAMS
 #

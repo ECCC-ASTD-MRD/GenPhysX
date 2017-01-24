@@ -7,7 +7,6 @@
 # Project    : Geophysical field generator.
 # File       : IndustrX.tcl
 # Creation   : Octobre 2010- Lucie Boucher / Alexandre Leroux / J.P. Gauthier - CMC/AQMAS & CMC/CMOE
-# Revision   : $Id$
 # Description: Classification automatisée, principalement à partir de
 #              données CanVec 1:50000, StatCan (population) et LCC2000V
 #              pour alimenter le modèle SMOKE
