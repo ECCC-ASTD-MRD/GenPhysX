@@ -256,7 +256,7 @@ proc GeoPhysX::AverageTopo { Grid } {
             fstdfield stats GPXME -gridvalue $i $j $pval
          }
       }
-      fstdfield free GPXMEWE GPXMESUM GPXWESUM
+      fstdfield free GPXMEWE  GPXMESUM GPXWESUM
    }
 
    #----- Save output
@@ -1133,6 +1133,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
       "MCD12Q1"   { GeoPhysX::AverageMaskMCD12Q1   $Grid }
       "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid }
+      "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
       "USGS_R"    { GeoPhysX::AverageMaskUSGS_R    $Grid }
    }
 }
@@ -1537,6 +1538,94 @@ proc GeoPhysX::AverageMaskUSGS_R { Grid } {
       gdalband free USGSTILE
    }
    gdalfile close USGSFILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageMaskAAFC>
+# Creation : Jan 2017 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the land/sea mask through averaging.
+#            using AAFC Crop data
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageMaskAAFC { Grid } {
+
+   GenX::Procs AAFC
+   Log::Print INFO "Averaging mask using AAFC"
+
+   fstdfield copy GPXMASK  $Grid
+   GenX::GridClear GPXMASK 0.0
+
+#
+# Use user's Geotiff files if provided by specifying  GenX::Path(AAFC_FILES)
+#
+   set files  {}
+   set  lcdir  $GenX::Path(AAFC_FILES)
+   Log::Print INFO "AAFC_FILES: $lcdir"
+   catch "glob $lcdir/*.tif" lfiles
+   foreach  file $lfiles {
+      Log::Print INFO "$file"
+      if { [file exist $file] } {
+         lappend files [file tail $file]
+      }
+   }
+#
+# otherwise use default AAFC db files
+#
+   if { [llength $files] == 0 } {
+      set lcdir  $GenX::Param(DBase)/$GenX::Path(AAFC_CROP)
+      set files [GenX::FindFiles $lcdir/Index/Index.shp $Grid]
+   }
+
+   #----- Loop over files
+   if { [set nb [llength $files]] } {
+
+      foreach file $files {
+         Log::Print DEBUG "   Processing file ([incr n]/$nb) $file"
+
+         gdalfile open AAFCFILE read $lcdir/$file
+   
+         if { [llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef AAFCFILE]]]] } {
+   
+            Log::Print INFO "Grid intersection with AAFC Crop file is { $limits }"
+            set x0 [lindex $limits 0]
+            set x1 [lindex $limits 2]
+            set y0 [lindex $limits 1]
+            set y1 [lindex $limits 3]
+   
+         #----- Loop over the data by tiles since it's too big to fit in memory
+            for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+               for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+                  Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+                  gdalband read AAFCTILE { { AAFCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+                  gdalband stats AAFCTILE -celldim $GenX::Param(Cell)
+   
+                  # the AAFC raster no_data value is 0, but because we are remapping everything to 1 or 0 for water
+                  # we have to change it to something else, otherwise, the averaging that follows will not be correct
+                  gdalband stats AAFCTILE -nodata 255 -celldim $GenX::Param(Cell)
+                  vexpr AAFCTILE ifelse(AAFCTILE==20,0.0,1.0)
+                  fstdfield gridinterp GPXMASK AAFCTILE AVERAGE False
+                  gdalband free AAFCTILE
+               }
+            }
+         }
+         gdalfile close AAFCFILE
+      }
+      #----- Save output
+      fstdfield gridinterp GPXMASK - NOP True
+      fstdfield define GPXMASK -NOMVAR MG -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+      fstdfield free MASKTILE
+   } else {
+      Log::Print WARNING "The grid is not within AAFC limits"
+   }
 }
 
 #----------------------------------------------------------------------------
@@ -2801,6 +2890,8 @@ proc GeoPhysX::AverageSoil { Grid } {
       GeoPhysX::AverageSoilBNU $Grid
    } elseif { [lindex $GenX::Param(Soil) 0]=="CANSIS" } {
       GeoPhysX::AverageSoilCANSIS $Grid
+   } elseif { [lindex $GenX::Param(Soil) 0]=="SLC" } {
+      GeoPhysX::AverageSoilGriddedSLC $Grid
    } else {
       GeoPhysX::AverageSand $Grid
       GeoPhysX::AverageClay $Grid
@@ -3293,6 +3384,145 @@ proc GeoPhysX::AverageSoilCANSIS { Grid } {
    GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files BRD 700 $has_MG "GENPHYSX" "Bed Rock Depth"
 
    fstdfield free GPXMG GPXJ
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageSoilGriddedSLC>
+# Creation : Jan 2017 - V.Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the soil percentage through averaging based on gridded SLC 90M
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the sand percentage
+#
+# Return:
+#
+# Remarks : This database has 3 layers at 1km resolution 
+#           and is available for North America only
+
+#      layer    thickness(cm)
+#        1      0-5
+#        2      15-30
+#        3      30-60
+#        4      60-100
+#        5      100-200
+#        -      5-15        this layer is ignored for now, or it could be merge with layer 1?
+#
+# There are 2 types of files, randomly distributed or dominant. We use the dominant type.
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageSoilGriddedSLC { Grid } {
+   variable Param
+
+   GenX::Procs SLCG
+   Log::Print INFO "Averaging Soil Texture using Gridded SLC 90M database"
+
+   #----- Read mask
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+      fstdfield read GPXMG GPXOUTFILE $idx
+      set has_MG 1
+   } else {
+      Log::Print WARNING "Could not find mask field MG"
+      set has_MG 0
+   }
+
+   #-----  create LUT from SLC pyramid database
+   set  slcshp   "$GenX::Param(DBase)/$GenX::Path(SLC)/Gridded/gridded_slc_90m.tif.vat.dbf"
+   set  sands    {SAND5 SAND30 SAND60 SAND100 SAND200}
+   set  clays    {CLAY5 CLAY30 CLAY60 CLAY100 CLAY200}
+   set  soils    "$sands $clays"
+   set  attribs  "POLY_ID $soils"
+   
+   foreach  attrib $attribs {
+      set  LUT($attrib) {}
+   }
+   set layers  [ogrfile open SLCINDEXFILE read $slcshp]
+   set slctablename [lindex [lindex $layers 0] 2]
+   eval ogrlayer read SLCINDEX [lindex $layers 0]
+   set nb [ogrlayer define SLCINDEX -nb]
+   for { set n 0 } { $n< $nb } { incr n } {
+      set polyid [ogrlayer define SLCINDEX -feature $n POLY_ID]
+      foreach  attrib $attribs {
+         set  val  [ogrlayer define SLCINDEX -feature $n $attrib]
+         lappend LUT($attrib)  $val
+      }
+   }
+   ogrfile close SLCINDEXFILE
+
+   vector create FROMPID  $LUT(POLY_ID)
+   foreach  attrib $sands {
+      vector create TOSOIL${attrib} $LUT($attrib)
+      fstdfield copy GPXJ1${attrib} $Grid
+      GenX::GridClear GPXJ1${attrib} 0.0
+   }
+   foreach  attrib $clays {
+      vector create TOSOIL${attrib} $LUT($attrib)
+      fstdfield copy GPXJ2${attrib} $Grid
+      GenX::GridClear GPXJ2${attrib} 0.0
+   }
+
+   #----- Open the file
+   gdalfile open SLCFILE read $GenX::Param(DBase)/$GenX::Path(SLC)/Gridded/gridded_slc_90m.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef SLCFILE]]]] } {
+      Log::Print WARNING "Specified grid does not intersect with Gridded SLC 90M database, J1 and J2 not be calculated"
+   } else {
+      Log::Print INFO "Grid intersection with gridded SLC 90M database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+            gdalband read SLCTILE { { SLCFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats SLCTILE -celldim $GenX::Param(Cell)
+
+            foreach attrib $sands {
+               set  tosoil  TOSOIL${attrib}
+               vexpr SOILTILE lut(SLCTILE,FROMPID,$tosoil)
+               fstdfield gridinterp GPXJ1${attrib} SOILTILE AVERAGE False
+            }
+            foreach attrib $clays {
+               set  tosoil  TOSOIL${attrib}
+               vexpr SOILTILE lut(SLCTILE,FROMPID,$tosoil)
+               fstdfield gridinterp GPXJ2${attrib} SOILTILE AVERAGE False
+            }
+         }
+      }
+      gdalband free SLCTILE
+      gdalfile close SLCFILE
+
+      set etiket  "GENPHYSX"
+      set type  1
+      foreach attrib $sands {
+         fstdfield gridinterp GPXJ1${attrib} - NOP True
+         fstdfield define GPXJ1${attrib} -NOMVAR J1 -IP1 [expr 1200-$type] -ETIKET "$etiket"
+         fstdfield write GPXJ1${attrib} GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         fstdfield free GPXJ1${attrib}
+         incr type
+      }
+      set type  1
+      foreach attrib $clays {
+         fstdfield gridinterp GPXJ2${attrib} - NOP True
+         fstdfield define GPXJ2${attrib} -NOMVAR J2 -IP1 [expr 1200-$type] -ETIKET "$etiket"
+         fstdfield write GPXJ2${attrib} GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         fstdfield free GPXJ1${attrib}
+         incr type
+      }
+
+      if { $has_MG } {
+         vexpr  $Grid "ifelse(GPXMG>0.0, $Grid, 0.0)"
+      }
+   }
+
+   vector free FROMPID
+   foreach  attrib $soils {
+      vector free TOSOIL${attrib}
+   }
+   fstdfield free GPXMG
 }
 
 #----------------------------------------------------------------------------
@@ -4069,12 +4299,12 @@ proc GeoPhysX::SubRoughnessLength { } {
    	Log::Print INFO "Generating Z0 without topographic contribution from canopy height"
    	#------ because vegetation height where crop are dominant are too low (zero)
    	#------ compensate with crop's Z0 using lookup table
-      if { $GenX::Param(CropZ0) > 0.0 } {
-         vexpr GPXZ0  "ifelse(GPXVFCROP > $GenX::Param(CropZ0),GPXZ0CROP,GPXZ0VG)"
-         vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
-      } else {
-         vexpr GPXZ0  "max(GPXZ0VG,$Const(waz0))"
-      }
+   	if { $GenX::Param(CropZ0) > 0.0 } {
+           vexpr GPXZ0  "ifelse(GPXVFCROP > $GenX::Param(CropZ0),GPXZ0CROP,GPXZ0VG)"
+           vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
+   	} else {
+           vexpr GPXZ0  "max(GPXZ0VG,$Const(waz0))"
+   	}
    	fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
    	fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    	 
