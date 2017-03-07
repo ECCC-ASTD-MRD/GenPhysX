@@ -3303,6 +3303,10 @@ proc GeoPhysX::AverageSoilBNU { Grid } {
 
    fstdfield copy GPXJ $Grid
 
+   #----- Force sand and clay type to 8 layers 
+   set Param(SandTypes)    { 1 2 3 4 5 6 7 8 }
+   set Param(ClayTypes)    { 1 2 3 4 5 6 7 8 }
+
    #----- Read mask
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
       fstdfield read GPXMG GPXOUTFILE $idx
