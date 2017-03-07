@@ -4286,13 +4286,13 @@ proc GeoPhysX::SubRoughnessLength { } {
    if { [catch {
       fstdfield read GPXMG   GPXOUTFILE -1 "" -1   -1 -1 "" "MG"
       fstdfield read GPXMRMS GPXAUXFILE -1 "" -1   -1 -1 "" "MRMS"
-        if { $Opt(SubSplit) } {
-          fstdfield read GPXSSS GPXOUTFILE -1 "" -1   -1 -1 "" "SSS"
+      if { $Opt(SubSplit) } {
+         fstdfield read GPXSSS GPXOUTFILE -1 "" -1   -1 -1 "" "SSS"
       } else {
-          fstdfield read GPXMEL  GPXAUXFILE -1 "" -1   -1 -1 "" "MEL"
-          fstdfield read GPXLRMS GPXAUXFILE -1 "" -1   -1 -1 "" "LRMS"
-          fstdfield read GPXFHR  GPXAUXFILE -1 "" -1   -1 -1 "" "FHR"
-          fstdfield read GPXFLR  GPXAUXFILE -1 "" -1   -1 -1 "" "FLR"
+         fstdfield read GPXMEL  GPXAUXFILE -1 "" -1   -1 -1 "" "MEL"
+         fstdfield read GPXLRMS GPXAUXFILE -1 "" -1   -1 -1 "" "LRMS"
+         fstdfield read GPXFHR  GPXAUXFILE -1 "" -1   -1 -1 "" "FHR"
+         fstdfield read GPXFLR  GPXAUXFILE -1 "" -1   -1 -1 "" "FLR"
       }
       fstdfield read GPXZ0V1 GPXOUTFILE -1 "" 1199 -1 -1 "" "VF" } ] } {
     
@@ -4301,16 +4301,16 @@ proc GeoPhysX::SubRoughnessLength { } {
    }
    
    if { !$Opt(SubSplit) } {
-       Log::Print INFO "Computing subgrid-scale variance"
-       vexpr GPXME   GPXME  *GPXFHR
-       vexpr GPXMRMS GPXMRMS*GPXFHR
-       vexpr GPXMEL  GPXMEL *GPXFLR
-       vexpr GPXLRMS GPXLRMS*GPXFLR
-       vexpr GPXSSS (GPXMRMS^2 - GPXME^2)-(GPXLRMS^2 - GPXMEL^2)
-       vexpr GPXSSS ifelse(GPXSSS>0.0,GPXSSS^0.5,0.0)
-       vexpr GPXSSS ifelse(GPXMG>$Const(mgmin),GPXSSS,0.0)
-       fstdfield define GPXSSS -NOMVAR SSS -ETIKET GENPHYSX -IP1 0 -IP2 0
-       fstdfield write GPXSSS GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      Log::Print INFO "Computing subgrid-scale variance"
+      vexpr GPXME   GPXME  *GPXFHR
+      vexpr GPXMRMS GPXMRMS*GPXFHR
+      vexpr GPXMEL  GPXMEL *GPXFLR
+      vexpr GPXLRMS GPXLRMS*GPXFLR
+      vexpr GPXSSS (GPXMRMS^2 - GPXME^2)-(GPXLRMS^2 - GPXMEL^2)
+      vexpr GPXSSS ifelse(GPXSSS>0.0,GPXSSS^0.5,0.0)
+      vexpr GPXSSS ifelse(GPXMG>$Const(mgmin),GPXSSS,0.0)
+      fstdfield define GPXSSS -NOMVAR SSS -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXSSS GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    }
 
    vexpr GPXHCOEF (1.5 - 0.5*(GPXSSS-20.0)/680.0)
@@ -4361,47 +4361,47 @@ proc GeoPhysX::SubRoughnessLength { } {
    #----- Local (vegetation) roughness length from canopy height  
    if { $GenX::Param(Z0NoTopo) == "CANOPY" } {
       if { [catch { fstdfield read GPXVCH  GPXAUXFILE -1 "" -1 -1 -1 "" "VCH" }] } {
-   	    Log::Print WARNING "Missing fields, will not calculate roughness length from canopy height"
-   	    return
-   	}
-        vexpr GPXZ0VG ifelse(GPXMG>0.0,GPXVCH*0.1,0.0)
-   	fstdfield define GPXZ0VG -NOMVAR Z0VG -ETIKET GENPHYSX -IP1 0 -IP2 0
-   	fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   		  
-   	#------ roughness length without topographic contribution and Z0VG
-   	Log::Print INFO "Generating Z0 without topographic contribution from canopy height"
-   	#------ because vegetation height where crop are dominant are too low (zero)
-   	#------ compensate with crop's Z0 using lookup table
-   	if { $GenX::Param(CropZ0) > 0.0 } {
-           fstdfield copy GPXZ0CROP GPXZ0V1
-           fstdfield copy GPXVFCROP GPXZ0V1
-           GenX::GridClear { GPXZ0CROP GPXVFCROP } 0.0
-           foreach element $Param(VegeTypes) zzov $Param(VegeZ0vTypes)  {
-              set ip1 [expr 1200-$element]
-              if { [lsearch $Param(VegeCrops) $element]!=-1 } {
-                 fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
-                 vexpr GPXZ0CROP (GPXZ0CROP+GPXVF*$zzov)
-                 vexpr GPXVFCROP (GPXVFCROP+GPXVF)
-              }
-           }
-           vexpr GPXZ0  "ifelse(GPXVFCROP > $GenX::Param(CropZ0),GPXZ0CROP,GPXZ0VG)"
-           vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
-           fstdfield free GPXZ0CROP GPXVFCROP
-   	} else {
-           vexpr GPXZ0  "max(GPXZ0VG,$Const(waz0))"
-   	}
-   	fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-   	fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         Log::Print WARNING "Missing fields, will not calculate roughness length from canopy height"
+         return
+      }
+      vexpr GPXZ0VG ifelse(GPXMG>0.0,GPXVCH*0.1,0.0)
+      fstdfield define GPXZ0VG -NOMVAR Z0VG -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+      #------ roughness length without topographic contribution and Z0VG
+      Log::Print INFO "Generating Z0 without topographic contribution from canopy height"
+      #------ because vegetation height where crop are dominant are too low (zero)
+      #------ compensate with crop's Z0 using lookup table
+      if { $GenX::Param(CropZ0) > 0.0 } {
+         fstdfield copy GPXZ0CROP GPXZ0V1
+         fstdfield copy GPXVFCROP GPXZ0V1
+         GenX::GridClear { GPXZ0CROP GPXVFCROP } 0.0
+         foreach element $Param(VegeTypes) zzov $Param(VegeZ0vTypes)  {
+            set ip1 [expr 1200-$element]
+            if { [lsearch $Param(VegeCrops) $element]!=-1 } {
+               fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
+               vexpr GPXZ0CROP (GPXZ0CROP+GPXVF*$zzov)
+               vexpr GPXVFCROP (GPXVFCROP+GPXVF)
+            }
+         }
+         vexpr GPXZ0  "ifelse(GPXVFCROP > $GenX::Param(CropZ0),GPXZ0CROP,GPXZ0VG)"
+         vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
+         fstdfield free GPXZ0CROP GPXVFCROP
+      } else {
+         vexpr GPXZ0  "max(GPXZ0VG,$Const(waz0))"
+      }
+      fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    	 
-   	vexpr GPXZP  ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
-   	fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
-   	fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      vexpr GPXZP  ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+      fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    } elseif { $GenX::Param(Z0NoTopo) == "CANOPY_LT" } {
       Log::Print INFO "Computing Local Vegetation Roughness"
       if { [catch { fstdfield read GPXZ0VH  GPXAUXFILE -1 "" -1 -1 -1 "" "Z0VH" }] } {
-            Log::Print WARNING "Missing fields, will not calculate local roughness length from canopy height"
-            return
-        }
+         Log::Print WARNING "Missing fields, will not calculate local roughness length from canopy height"
+         return
+      }
 
       fstdfield copy GPXZ0V3 GPXZ0VH
       fstdfield copy GPXVFT GPXZ0VH
@@ -4411,15 +4411,15 @@ proc GeoPhysX::SubRoughnessLength { } {
          set ip1 [expr 1200-$element]
          fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
          if { [lsearch $Param(VegeTree) $element]!=-1 } {
-                 # remplace LN(Z0) from VF and LUT with Z0VH if available
+            # remplace LN(Z0) from VF and LUT with Z0VH if available
             Log::Print DEBUG "Using Tree Height for VF=$element"
-                 vexpr GPXZ0V1 ifelse(GPXZ0VH>0.0,GPXZ0V1+GPXVF*ln(GPXZ0VH),GPXZ0V1+GPXVF*ln($zomv))
-                 vexpr GPXVFT (GPXVFT+GPXVF)
+            vexpr GPXZ0V1 ifelse(GPXZ0VH>0.0,GPXZ0V1+GPXVF*ln(GPXZ0VH),GPXZ0V1+GPXVF*ln($zomv))
+            vexpr GPXVFT (GPXVFT+GPXVF)
          } else {
             if { $element >= 4 } {
                Log::Print DEBUG "Using LUT only for VF=$element"
-                         vexpr GPXZ0V1 (GPXZ0V1+GPXVF*ln($zomv))
-                         vexpr GPXVFT (GPXVFT+GPXVF)
+               vexpr GPXZ0V1 (GPXZ0V1+GPXVF*ln($zomv))
+               vexpr GPXVFT (GPXVFT+GPXVF)
             } else {
                vexpr GPXZ0V2 (GPXZ0V1+GPXVF*ln($zomv))
             }
