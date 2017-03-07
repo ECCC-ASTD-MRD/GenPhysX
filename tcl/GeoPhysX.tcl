@@ -343,7 +343,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
             fstdfield gridinterp $Grid USGSTILE AVERAGE False         
          }
 
-         if { $GenX::Param(Sub)=="LEGACY" } {
+         if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
             fstdfield gridinterp $Grid USGSTILE SUBLINEAR 11
          }
          
@@ -395,7 +395,7 @@ proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
          vexpr GTOPO30TILE ifelse(GTOPO30TILE==-9999,0,GTOPO30TILE)
 
          fstdfield gridinterp $Grid GTOPO30TILE AVERAGE False         
-         if { $GenX::Param(Sub)=="LEGACY" } {
+         if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
             fstdfield gridinterp $Grid GTOPO30TILE SUBLINEAR 11
          }
          
@@ -449,7 +449,7 @@ proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
       gdalband stats ATSERGDEMTILE -nodata -9999 -celldim $GenX::Param(Cell)
 
       fstdfield gridinterp $Grid ATSERGDEMTILE AVERAGE False
-      if { $GenX::Param(Sub)=="LEGACY" } {
+      if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
          fstdfield gridinterp $Grid ATSERGDEMTILE SUBLINEAR 11
       }
       
@@ -517,7 +517,7 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
       gdalband stats SRTMTILE -celldim $GenX::Param(Cell)
 
       fstdfield gridinterp $Grid SRTMTILE AVERAGE False
-      if { $GenX::Param(Sub)=="LEGACY" } {
+      if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
          fstdfield gridinterp $Grid SRTMTILE SUBLINEAR 11
       }
       
@@ -588,7 +588,7 @@ proc GeoPhysX::AverageTopoCDED { Grid { Res 250 } } {
       }
 
       fstdfield gridinterp $Grid CDEDTILE AVERAGE False
-      if { $GenX::Param(Sub)=="LEGACY" } {
+      if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
          fstdfield gridinterp $Grid CDEDTILE SUBLINEAR 11
       }
       
@@ -651,7 +651,7 @@ proc GeoPhysX::AverageTopoCDEM { Grid } {
       gdalband stats CDEMTILE -nodata -32767 -celldim $GenX::Param(Cell)
 
       fstdfield gridinterp $Grid CDEMTILE AVERAGE False
-      if { $GenX::Param(Sub)=="LEGACY" } {
+      if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
          fstdfield gridinterp $Grid CDEMTILE SUBLINEAR 11
       }
       
@@ -721,7 +721,7 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
             gdalband stats GMTEDTILE -celldim $GenX::Param(Cell)
 
             fstdfield gridinterp $Grid GMTEDTILE AVERAGE False
-            if { $GenX::Param(Sub)=="LEGACY" } {
+            if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
                fstdfield gridinterp $Grid GMTEDTILE SUBLINEAR 11
             }
             
@@ -4000,30 +4000,36 @@ proc GeoPhysX::LegacySub { Grid } {
    geophy zfilter GPXME GenX::Settings
    geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9
    
-   vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
-   vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+   if { $GenX::Param(Z0Topo)=="LEGACY" } {
+      Log::Print INFO "Saving legacy sub grid fields Z0 ZP"
+      vexpr GPXZ0 ifelse(GPXZ0>$Const(z0def),GPXZ0,$Const(z0def) )
+      vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
 
-   #------ Filter roughness length
-   if { $GenX::Param(Z0Filter) } {
-      puts stderr [fstdfield is GPXZ0]
-      geophy zfilter GPXZ0 GenX::Settings
+      #------ Filter roughness length
+      if { $GenX::Param(Z0Filter) } {
+         puts stderr [fstdfield is GPXZ0]
+         geophy zfilter GPXZ0 GenX::Settings
+      }
+
+      fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    }
+   if { $GenX::Param(Sub)=="LEGACY" } {
+      Log::Print INFO "Saving legacy sub grid fields LH DH Y7 Y8 Y9"
+      fstdfield define GPXLH -NOMVAR LH -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield define GPXDH -NOMVAR DH -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield define GPXY7 -NOMVAR Y7 -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield define GPXY8 -NOMVAR Y8 -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield define GPXY9 -NOMVAR Y9 -ETIKET GENPHYSX -IP1 0 -IP2 0
 
-   fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield define GPXLH -NOMVAR LH -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield define GPXDH -NOMVAR DH -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield define GPXY7 -NOMVAR Y7 -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield define GPXY8 -NOMVAR Y8 -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield define GPXY9 -NOMVAR Y9 -ETIKET GENPHYSX -IP1 0 -IP2 0
-
-   fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield write GPXLH GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield write GPXDH GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield write GPXY7 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield write GPXY8 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield write GPXY9 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield write GPXLH GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield write GPXDH GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield write GPXY7 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield write GPXY8 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield write GPXY9 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
 
    fstdfield free GPXVG GPXZ0 GPXZP GPXLH GPXDH GPXY7 GPXY8 GPXY9
 }
@@ -4527,7 +4533,9 @@ proc GeoPhysX::SubRoughnessLength { } {
        fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
        fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    } else {
-       Log::Print WARNING "Invalid option $GenX::Param(Z0NoTopo) provided"
+       Log::Print WARNING "Invalid Z0 option(s) provided"
+       Log::Print WARNING "   GenX::Param(Z0NoTopo)=$GenX::Param(Z0NoTopo)"
+       Log::Print WARNING "   GenX::Param(Z0Topo)  =$GenX::Param(Z0Topo)"
        return
    }
 

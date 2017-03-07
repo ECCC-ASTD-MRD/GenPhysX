@@ -85,6 +85,7 @@ namespace eval GenX { } {
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
    set Param(Z0NoTopo)  ""                    ;#No topography + z0vg  for roughness length
+   set Param(Z0Topo)    ""                    ;#With topography for roughness length
    set Param(Compress)  False                 ;#Compress standard file output
    set Param(TopoStag)  False                 ;#Treat mulitple grids as staggered topography
    set Param(NBits)     32                    ;#Compress standard file output
@@ -110,6 +111,7 @@ namespace eval GenX { } {
    set Param(Checks)    { STD }
    set Param(Subs)      { LEGACY STD SPLIT }
    set Param(Z0NoTopos) { STD CANOPY CANOPY_LT }
+   set Param(Z0Topos)   { STD LEGACY }
    set Param(CropZ0)    0.0                  ;# if set to non-zero, Crop Z0 should be used when crop fraction higher
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS_5.1 AURAMS }   ;#Model cible
 
@@ -298,9 +300,15 @@ proc GenX::Process { Grid } {
          GeoPhysX::SubTopoFilter
       }
       "LEGACY" {
+         if { $Param(Z0Topo) == "STD" } {
+            GeoPhysX::SubRoughnessLength
+         }
          GeoPhysX::SubTopoFilter
-         GeoPhysX::LegacySub $Grid
       }
+   }
+
+   if { ($Param(Z0Topo) == "LEGACY")||($Param(Sub) == "LEGACY") } {
+      GeoPhysX::LegacySub $Grid
    }
 
    #----- Biogenic emissions calculations
@@ -594,6 +602,7 @@ proc GenX::CommandLine { } {
       \[-check\]    [format "%-30s : Do consistency checks {$Param(Checks)}" (${::APP_COLOR_GREEN}$Param(Check)${::APP_COLOR_RESET})]
       \[-subgrid\]  [format "%-30s : Calculates sub grid fields {$Param(Subs)}" (${::APP_COLOR_GREEN}$Param(Sub)${::APP_COLOR_RESET})]
       \[-z0notopo\] [format "%-30s : Roughness length Z0 with no topographic contribution {$Param(Z0NoTopos)}" (${::APP_COLOR_GREEN}[join $Param(Z0NoTopos)]${::APP_COLOR_RESET})]
+      \[-z0topo\]   [format "%-30s : Roughness length Z0 with no topographic contribution {$Param(Z0Topos)}" (${::APP_COLOR_GREEN}[join $Param(Z0Topos)]${::APP_COLOR_RESET})]
       \[-z0crop\]   [format "%-30s : if set to non-zero, Crop Z0 should be used when crop fraction higher than this value" (${::APP_COLOR_GREEN}$Param(CropZ0)${::APP_COLOR_RESET})]
       \[-diag\]     [format "%-30s : Do diagnostics (Not implemented yet)" ""]
 
@@ -710,6 +719,7 @@ proc GenX::ParseCommandLine { } {
          "topostag"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(TopoStag)] }
          "z0filter"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0Filter)]; incr flags }
          "z0notopo"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0NoTopo) $GenX::Param(Z0NoTopos)]; incr flags }
+         "z0topo"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0Topo)   $GenX::Param(Z0Topos)];   incr flags }
          "z0crop"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(CropZ0)] }
          "celldim"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Cell)] }
          "compress"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Compress)] }
@@ -733,6 +743,25 @@ proc GenX::ParseCommandLine { } {
       GenX::ParseTarget
       Log::Print WARNING "No data processing were specified, will use default target $Param(Target)"
       GenX::Continue
+   }
+
+   #----- Validate Param(Z0NoTopo) vs Param(Z0Topo)
+   if { $GenX::Param(Z0NoTopo)!="" } {
+      if { $GenX::Param(Z0Topo)!="" } {
+         Log::Print WARNING "Cannot set both Param(Z0NoTopo) and Param(Z0Topo), will use Param(Z0NoTopo) only"
+         set $GenX::Param(Z0Topo)  ""
+      }
+   } else {
+      if { $GenX::Param(Z0Topo)=="" } {
+         switch $Param(Sub) {
+            "LEGACY" {
+               set $GenX::Param(Z0Topo)  "LEGACY"
+            }
+            default {
+               set $GenX::Param(Z0Topo)  "STD"
+            }
+         }
+      }
    }
 
    #----- Check for user definitiond
