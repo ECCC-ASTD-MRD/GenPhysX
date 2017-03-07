@@ -4452,7 +4452,7 @@ proc GeoPhysX::SubRoughnessLength { } {
       vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
       fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
       fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   } elseif { $GenX::Param(Z0NoTopo) == "" } {
+   } elseif { ($GenX::Param(Z0NoTopo) == "") && ($GenX::Param(Z0Topo) == "STD") } {
        #------ roughness length with topographic contribution and lookup table
        #------ Filter roughness length
 
