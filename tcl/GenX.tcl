@@ -295,6 +295,7 @@ proc GenX::Process { Grid } {
          GeoPhysX::SubLaunchingHeightSplit
          GeoPhysX::SubY789Split
          GeoPhysX::SubRoughnessLength
+         GeoPhysX::SubTopoFilter
       }
       "LEGACY" {
          GeoPhysX::SubTopoFilter
