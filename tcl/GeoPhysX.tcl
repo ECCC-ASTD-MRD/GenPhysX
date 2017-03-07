@@ -3493,6 +3493,10 @@ proc GeoPhysX::AverageSoilGriddedSLC { Grid } {
    GenX::Procs SLCG
    Log::Print INFO "Averaging Soil Texture using Gridded SLC 90M database"
 
+   #----- Force sand and clay type to 6 layers 
+   set  Param(SandTypes)    { 1 2 3 4 5 6 }
+   set  Param(ClayTypes)    { 1 2 3 4 5 6 }
+
    #----- Read mask
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
       fstdfield read GPXMG GPXOUTFILE $idx
@@ -3504,8 +3508,8 @@ proc GeoPhysX::AverageSoilGriddedSLC { Grid } {
 
    #-----  create LUT from SLC pyramid database
    set  slcshp   "$GenX::Param(DBase)/$GenX::Path(SLC)/Gridded/gridded_slc_90m.tif.vat.dbf"
-   set  sands    {SAND5 SAND30 SAND60 SAND100 SAND200}
-   set  clays    {CLAY5 CLAY30 CLAY60 CLAY100 CLAY200}
+   set  sands    {SAND5 SAND15 SAND30 SAND60 SAND100 SAND200}
+   set  clays    {CLAY5 CLAY15 CLAY30 CLAY60 CLAY100 CLAY200}
    set  soils    "$sands $clays"
    set  attribs  "POLY_ID $soils"
    
@@ -3571,10 +3575,22 @@ proc GeoPhysX::AverageSoilGriddedSLC { Grid } {
       gdalband free SLCTILE
       gdalfile close SLCFILE
 
+      foreach attrib $sands {
+         fstdfield gridinterp GPXJ1${attrib} - NOP True
+         if { $has_MG } {
+            vexpr  GPXJ1${attrib} "ifelse(GPXMG>0.0, GPXJ1${attrib}, 0.0)"
+         }
+      }
+      foreach attrib $clays {
+         fstdfield gridinterp GPXJ2${attrib} - NOP True
+         if { $has_MG } {
+            vexpr  GPXJ2${attrib} "ifelse(GPXMG>0.0, GPXJ2${attrib}, 0.0)"
+         }
+      }
+
       set etiket  "GENPHYSX"
       set type  1
       foreach attrib $sands {
-         fstdfield gridinterp GPXJ1${attrib} - NOP True
          fstdfield define GPXJ1${attrib} -NOMVAR J1 -IP1 [expr 1200-$type] -ETIKET "$etiket"
          fstdfield write GPXJ1${attrib} GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
          fstdfield free GPXJ1${attrib}
@@ -3582,15 +3598,10 @@ proc GeoPhysX::AverageSoilGriddedSLC { Grid } {
       }
       set type  1
       foreach attrib $clays {
-         fstdfield gridinterp GPXJ2${attrib} - NOP True
          fstdfield define GPXJ2${attrib} -NOMVAR J2 -IP1 [expr 1200-$type] -ETIKET "$etiket"
          fstdfield write GPXJ2${attrib} GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-         fstdfield free GPXJ1${attrib}
+         fstdfield free GPXJ2${attrib}
          incr type
-      }
-
-      if { $has_MG } {
-         vexpr  $Grid "ifelse(GPXMG>0.0, $Grid, 0.0)"
       }
    }
 
