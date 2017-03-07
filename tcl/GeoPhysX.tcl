@@ -75,8 +75,11 @@ namespace eval GeoPhysX { } {
    set Param(ClayTypes)    { 1 2 3 4 5 }
    set Param(VegeTypes)    { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 }
    set Param(VegeCrops)    { 15 16 17 18 19 20 }
+   set Param(VegeTree)     { 4 5 6 7 8 9 25 26 }
    set Param(VegeZ0vTypes) { 0.001 0.0003 0.001 1.5 3.5 1.0 2.0 3.0 0.8 0.05 0.15 0.15 0.02
                             0.08 0.08 0.08 0.35 0.25 0.1 0.08 1.35 0.01 0.05 0.05 1.5 0.05 }
+   # values decided by Stephane Belair for local Z0 computation using GLAS tree height   27/03/2015
+   set Param(Z0M_VegeZ0)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.1  0.15 0.15 0.35 0.25 0.10 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
 
    #----- Constants definitions
 
@@ -91,7 +94,7 @@ namespace eval GeoPhysX { } {
                                    #   calculation of the roughness length over soil and glacier
    set Const(z0min)   0.0001      ;# Threshold value of roughness length in meters, used to identify
                                    #   some "gaps" in the roughness length field
-   set Const(z0minUr) 0.75      ;# minimal urban value of roughness length in meters, when VCH is nil
+   set Const(z0minUr) 0.75        ;# minimal urban value of roughness length in meters, when VCH is nil
    set Const(gaz0)    0.0003      ;# Roughness length for glacier-type surfaces
    set Const(waz0)    0.001       ;# Roughness length for water
    set Const(lres)    5000.0      ;# Horizontal reference scale (5000 m) for topography features,
@@ -1792,7 +1795,10 @@ proc GeoPhysX::AverageVege { Grid } {
 
    #----- Vegetation canopy height and depth to bedrock
    if { $GenX::Param(Sub)!="LEGACY" } {
-      GeoPhysX::AverageGLAS $Grid
+      switch $GenX::Param(Z0NoTopo) {
+       "CANOPY"  { GeoPhysX::AverageGLAS $Grid }
+       "CANOPY_LT" { GeoPhysX::AverageGLAS_Z0 $Grid }
+      }
       GeoPhysX::AverageGSRS_DBRK $Grid
    }
 }
@@ -2512,6 +2518,73 @@ proc GeoPhysX::AverageGLAS { Grid } {
    fstdfield gridinterp $Grid - NOP True
    fstdfield define $Grid -NOMVAR VCH -ETIKET GENPHYSX -IP1 0
    fstdfield write $Grid GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageGLAS_Z0>
+# Creation : Fevrier 2017 - Maria A. & Vanh S.
+#
+# Goal     : Average vegetation canopy height (> 0 only) using GLAS database
+#            and  Z0 of High Vegetation
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageGLAS_Z0 { Grid } {
+   variable Param
+   variable Const
+
+   GenX::Procs GLAS
+   Log::Print INFO "Averaging ln of vegetation height Z0 usiing GLAS database"
+
+   fstdfield copy GPXLNZ0 $Grid
+   GenX::GridClear GPXLNZ0 -99.0
+
+   #----- Open the file
+   gdalfile open GLASFILE read $GenX::Param(DBase)/$GenX::Path(GLAS)/Simard_Pinto_3DGlobalVeg_JGR-original.tif
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLASFILE]]]] } {
+      Log::Print WARNING "Specified grid does not intersect with GLAS database, vegetation will not be calculated"
+   } else {
+      Log::Print INFO "Grid intersection with GLAS database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+
+      #----- Loop over the data by tiles since it's too big to fit in memory
+      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+            gdalband read GLASTILE { { GLASFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+            gdalband stats GLASTILE -nodata 0 -celldim $GenX::Param(Cell)
+            vexpr LOGTILE "ifelse(GLASTILE>0,ln(GLASTILE/10.0),-99)"
+            gdalband stats LOGTILE -nodata -99 -celldim $GenX::Param(Cell)
+            fstdfield gridinterp $Grid GLASTILE AVERAGE False
+            fstdfield gridinterp GPXLNZ0 LOGTILE AVERAGE False
+         }
+      }
+
+      gdalband free LOGTILE
+      gdalband free GLASTILE
+   }
+   gdalfile close GLASFILE
+
+   #----- Save output
+   fstdfield gridinterp $Grid - NOP True
+   fstdfield define $Grid -NOMVAR VCH -ETIKET GENPHYSX -IP1 0
+   fstdfield write $Grid GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+
+   Log::Print INFO "Saving Z0VH to GPXAUXFILE"
+   fstdfield gridinterp GPXLNZ0 - NOP True
+   vexpr GPXZ0VH ifelse(GPXLNZ0>-99.0,exp(GPXLNZ0),0.0)
+   fstdfield define GPXZ0VH -NOMVAR Z0VH -ETIKET GENPHYSX -IP1 0 -IP2 0
+   fstdfield write GPXZ0VH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 }
 
 #----------------------------------------------------------------------------
@@ -4256,17 +4329,12 @@ proc GeoPhysX::SubRoughnessLength { } {
    #----- Local (vegetation) roughness length
    fstdfield read GPXZ0V1 GPXOUTFILE -1 "" 1199 -1 -1 "" "VF"
    fstdfield copy GPXZ0V2 GPXZ0V1
-   fstdfield copy GPXZ0CROP GPXZ0V1
-   fstdfield copy GPXVFCROP GPXZ0V1
-   GenX::GridClear { GPXZ0V1 GPXZ0V2 GPXZ0CROP GPXVFCROP } 0.0
+   GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
 
    foreach element $Param(VegeTypes) zzov $Param(VegeZ0vTypes) {
       set ip1 [expr 1200-$element]
       fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
-      if { [lsearch $Param(VegeCrops) $element]!=-1 } {
-         vexpr GPXZ0CROP (GPXZ0CROP+GPXVF*$zzov)
-         vexpr GPXVFCROP (GPXVFCROP+GPXVF)
-      }
+
       vexpr GPXZ0V1 (GPXZ0V1+GPXVF*$zzov)
       vexpr GPXZ0V2 (GPXZ0V2+GPXVF)
    }
@@ -4300,8 +4368,20 @@ proc GeoPhysX::SubRoughnessLength { } {
    	#------ because vegetation height where crop are dominant are too low (zero)
    	#------ compensate with crop's Z0 using lookup table
    	if { $GenX::Param(CropZ0) > 0.0 } {
+           fstdfield copy GPXZ0CROP GPXZ0V1
+           fstdfield copy GPXVFCROP GPXZ0V1
+           GenX::GridClear { GPXZ0CROP GPXVFCROP } 0.0
+           foreach element $Param(VegeTypes) zzov $Param(VegeZ0vTypes)  {
+              set ip1 [expr 1200-$element]
+              if { [lsearch $Param(VegeCrops) $element]!=-1 } {
+                 fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
+                 vexpr GPXZ0CROP (GPXZ0CROP+GPXVF*$zzov)
+                 vexpr GPXVFCROP (GPXVFCROP+GPXVF)
+              }
+           }
            vexpr GPXZ0  "ifelse(GPXVFCROP > $GenX::Param(CropZ0),GPXZ0CROP,GPXZ0VG)"
            vexpr GPXZ0  "max(GPXZ0,$Const(waz0))"
+           fstdfield free GPXZ0CROP GPXVFCROP
    	} else {
            vexpr GPXZ0  "max(GPXZ0VG,$Const(waz0))"
    	}
@@ -4311,15 +4391,62 @@ proc GeoPhysX::SubRoughnessLength { } {
    	vexpr GPXZP  ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
    	fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
    	fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   } elseif { $GenX::Param(Z0NoTopo) == "STD" } {
-   	Log::Print INFO "Generating Z0 without topographic contribution from vegetation type"
-   	vexpr GPXZ0  "max(GPXZ0V1,$Const(waz0))"
-   	fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
-   	fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   } elseif { $GenX::Param(Z0NoTopo) == "CANOPY_LT" } {
+      Log::Print INFO "Computing Local Vegetation Roughness"
+      if { [catch { fstdfield read GPXZ0VH  GPXAUXFILE -1 "" -1 -1 -1 "" "Z0VH" }] } {
+            Log::Print WARNING "Missing fields, will not calculate local roughness length from canopy height"
+            return
+        }
 
-   	vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
-   	fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
-  	   fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield copy GPXZ0V3 GPXZ0VH
+      fstdfield copy GPXVFT GPXZ0VH
+      GenX::GridClear { GPXZ0V1 GPXZ0V2 GPXZ0V3 GPXVFT } 0.0
+      foreach element $Param(VegeTypes) zomv $Param(Z0M_VegeZ0)  {
+         Log::Print DEBUG "  Processing LN(Z0) with VF $element"
+         set ip1 [expr 1200-$element]
+         fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
+         if { [lsearch $Param(VegeTree) $element]!=-1 } {
+                 # remplace LN(Z0) from VF and LUT with Z0VH if available
+            Log::Print DEBUG "Using Tree Height for VF=$element"
+                 vexpr GPXZ0V1 ifelse(GPXZ0VH>0.0,GPXZ0V1+GPXVF*ln(GPXZ0VH),GPXZ0V1+GPXVF*ln($zomv))
+                 vexpr GPXVFT (GPXVFT+GPXVF)
+         } else {
+            if { $element >= 4 } {
+               Log::Print DEBUG "Using LUT only for VF=$element"
+                         vexpr GPXZ0V1 (GPXZ0V1+GPXVF*ln($zomv))
+                         vexpr GPXVFT (GPXVFT+GPXVF)
+            } else {
+               vexpr GPXZ0V2 (GPXZ0V1+GPXVF*ln($zomv))
+            }
+         }
+      }
+      vexpr GPXZ0V3 (GPXZ0V1+GPXZ0V2)
+      # z0v1 is used for Z0 for land/vegetation+glacier only (VF=4,26)
+      vexpr GPXZ0V1 ifelse(GPXVFT>0.0,GPXZ0V1/GPXVFT,ln($Const(waz0)))
+
+      fstdfield define GPXZ0V1 -NOMVAR ZPVG -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      vexpr GPXZ0V1   exp(GPXZ0V1)
+      fstdfield define GPXZ0V1 -NOMVAR Z0VG -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+      # z0v3 is used for Z0 for all surface types ... VF=1,26 -- No need to divide by Vfs as sum=1.0
+
+      fstdfield define GPXZ0V3 -NOMVAR ZPLC -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0V3 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      vexpr GPXZ0V3   exp(GPXZ0V3)
+      fstdfield define GPXZ0V3 -NOMVAR Z0LC -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0V3 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   } elseif { $GenX::Param(Z0NoTopo) == "STD" } {
+      Log::Print INFO "Generating Z0 without topographic contribution from vegetation type"
+      vexpr GPXZ0  "max(GPXZ0V1,$Const(waz0))"
+      fstdfield define GPXZ0 -NOMVAR Z0 -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZ0 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+      vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
+      fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
+      fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    } elseif { $GenX::Param(Z0NoTopo) == "" } {
        #------ roughness length with topographic contribution and lookup table
        #------ Filter roughness length
@@ -4405,8 +4532,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    }
 
    fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S GPXZ0W GPXZPW \
-       GPXZ0V2 GPXZ0VG GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF GPXVCH \
-       GPXZ0CROP GPXVFCROP
+       GPXZ0V2 GPXZ0VG GPXZPS GPXGA GPXZ0G GPXZPG GPXZ0 GPXZ0V1 GPXZ0V2 GPXZP GPXMG GPXVF GPXVCH
 }
 
 #----------------------------------------------------------------------------

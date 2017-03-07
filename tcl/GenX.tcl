@@ -109,7 +109,7 @@ namespace eval GenX { } {
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
    set Param(Subs)      { LEGACY STD SPLIT }
-   set Param(Z0NoTopos) { STD CANOPY }
+   set Param(Z0NoTopos) { STD CANOPY CANOPY_LT }
    set Param(CropZ0)    0.0                  ;# if set to non-zero, Crop Z0 should be used when crop fraction higher
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS_5.1 AURAMS }   ;#Model cible
 
@@ -708,7 +708,7 @@ proc GenX::ParseCommandLine { } {
          "diag"      { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Diag)] }
          "topostag"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(TopoStag)] }
          "z0filter"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0Filter)]; incr flags }
-         "z0notopo"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0NoTopo)] }
+         "z0notopo"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0NoTopo) $GenX::Param(Z0NoTopos)]; incr flags }
          "z0crop"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(CropZ0)] }
          "celldim"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Cell)] }
          "compress"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Compress)] }
