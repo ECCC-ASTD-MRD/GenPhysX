@@ -2238,6 +2238,8 @@ proc GeoPhysX::AverageVegeAAFC { Grid } {
                }
             }
          gdalfile close AAFCFILE
+         } else {
+            Log::Print WARNING "The grid is not within AAFC limits"
          }
 
          #----- If there is other DB to process
@@ -4301,6 +4303,9 @@ proc GeoPhysX::SubRoughnessLength { } {
    if { [catch {
       fstdfield read GPXMG   GPXOUTFILE -1 "" -1   -1 -1 "" "MG"
       fstdfield read GPXMRMS GPXAUXFILE -1 "" -1   -1 -1 "" "MRMS"
+      if { ! [fstdfield is GPXME] } {
+         fstdfield read GPXME   GPXOUTFILE -1 "" -1   -1 -1 "" "MENF"
+      }
       if { $Opt(SubSplit) } {
          fstdfield read GPXSSS GPXOUTFILE -1 "" -1   -1 -1 "" "SSS"
       } else {
