@@ -117,6 +117,7 @@ namespace eval GeoPhysX { } {
    set Const(smallc1) 15.0        ;# Small scale resolution dependent correction factor
 
    set Const(ResoUSGS) [expr 1./120]
+   set Const(ResoGTOPO30) [expr 30.0/3600]
    set Const(Deg2Rad)  [expr atan(1)*8/360.0]
 
    #----- Correspondance de Camille Garnaud de Fevrier 2015 pour la conversion des classes AAFC CROP vers les classes RPN
@@ -227,6 +228,7 @@ proc GeoPhysX::AverageTopo { Grid } {
 
    # we need accuracy of real*8 as what's found in Genesis 
    if { $Opt(LegacyMode) } {
+      Log::Print INFO "Averaging topography using Legacy weighted averaging (Genesis)"
       vexpr (Float64)GPXMESUM $Grid*0.0
       vexpr (Float64)GPXWESUM $Grid*0.0
    }
@@ -378,6 +380,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
    variable Opt
+   variable Const
 
    GenX::Procs GTOPO30
    Log::Print INFO "Averaging topography using GTOPO30 database"
@@ -393,7 +396,16 @@ proc GeoPhysX::AverageTopoGTOPO30 { Grid } {
          #----- Replace nodata value with 0 meters
          vexpr GTOPO30TILE ifelse(GTOPO30TILE==-9999,0,GTOPO30TILE)
 
-         fstdfield gridinterp $Grid GTOPO30TILE AVERAGE False         
+         if { $Opt(LegacyMode) } {
+            vexpr  (Float64)WEIGHTTILE  "cos(dlat(GTOPO30TILE)*$Const(Deg2Rad))*$Const(ResoGTOPO30)*$Const(ResoGTOPO30)"
+            # avoid missing values -9999 found in the data
+            vexpr  (Float64)WTOPOTILE   "ifelse(GTOPO30TILE!=-9999,GTOPO30TILE*WEIGHTTILE,0.0)"
+            fstdfield gridinterp GPXMESUM WTOPOTILE  SUM
+            fstdfield gridinterp GPXWESUM WEIGHTTILE SUM
+            fstdfield free WTOPOTILE WEIGHTTILE
+         } else {
+            fstdfield gridinterp $Grid GTOPO30TILE AVERAGE False         
+         }
          if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
             fstdfield gridinterp $Grid GTOPO30TILE SUBLINEAR 11
          }
