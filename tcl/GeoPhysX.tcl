@@ -4365,7 +4365,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    }
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
    fstdfield define GPXZ0V1 -NOMVAR ZVG1 -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield write GPXZ0V1 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    GenX::GridClear { GPXZ0V1 GPXZ0V2 } 0.0
    foreach element [lrange $Param(VegeTypes) 3 end] zzov [lrange $Param(VegeZ0vTypes) 3 end] {
@@ -4376,7 +4376,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    }
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
    fstdfield define GPXZ0V1 -NOMVAR ZVG2 -ETIKET GENPHYSX -IP1 0 -IP2 0
-   fstdfield write GPXZ0V1 GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield write GPXZ0V1 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Local (vegetation) roughness length from canopy height  
    if { $GenX::Param(Z0NoTopo) == "CANOPY" } {
