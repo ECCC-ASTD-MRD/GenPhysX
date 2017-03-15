@@ -5,7 +5,7 @@ arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.3.4"
+VERSION="2.3.5"
 MAINTAINER="Jean-Philippe Gauthier"
 BUILDINFO=`git describe --always`
 
