@@ -177,7 +177,7 @@ namespace eval GenX { } {
    set Path(BNU)        BNU
    set Path(CANSIS)     CANSIS
    set Path(MODIS_IGBP) MODIS/MCD12Q1/IGBP
-   set Path(CCI_LC)     ESA_CCI_LC
+   set Path(CCI_LC)     ESA_CCI_LC/SeaWater
    set Path(NALC)       NALC
    set Path(SLC)        SLC
 
