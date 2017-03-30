@@ -4315,9 +4315,7 @@ proc GeoPhysX::SubRoughnessLength { } {
    if { [catch {
       fstdfield read GPXMG   GPXOUTFILE -1 "" -1   -1 -1 "" "MG"
       fstdfield read GPXMRMS GPXAUXFILE -1 "" -1   -1 -1 "" "MRMS"
-      if { ! [fstdfield is GPXME] } {
-         fstdfield read GPXME   GPXOUTFILE -1 "" -1   -1 -1 "" "MENF"
-      }
+      fstdfield read GPXMF   GPXOUTFILE -1 "" -1   -1 -1 "" "MENF"
       if { $Opt(SubSplit) } {
          fstdfield read GPXSSS GPXOUTFILE -1 "" -1   -1 -1 "" "SSS"
       } else {
@@ -4334,11 +4332,11 @@ proc GeoPhysX::SubRoughnessLength { } {
    
    if { !$Opt(SubSplit) } {
       Log::Print INFO "Computing subgrid-scale variance"
-      vexpr GPXME   GPXME  *GPXFHR
+      vexpr GPXMF   GPXMF  *GPXFHR
       vexpr GPXMRMS GPXMRMS*GPXFHR
       vexpr GPXMEL  GPXMEL *GPXFLR
       vexpr GPXLRMS GPXLRMS*GPXFLR
-      vexpr GPXSSS (GPXMRMS^2 - GPXME^2)-(GPXLRMS^2 - GPXMEL^2)
+      vexpr GPXSSS (GPXMRMS^2 - GPXMF^2)-(GPXLRMS^2 - GPXMEL^2)
       vexpr GPXSSS ifelse(GPXSSS>0.0,GPXSSS^0.5,0.0)
       vexpr GPXSSS ifelse(GPXMG>$Const(mgmin),GPXSSS,0.0)
       fstdfield define GPXSSS -NOMVAR SSS -ETIKET GENPHYSX -IP1 0 -IP2 0
