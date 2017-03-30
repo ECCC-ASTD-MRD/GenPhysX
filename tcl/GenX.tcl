@@ -301,6 +301,8 @@ proc GenX::Process { Grid } {
       }
       "LEGACY" {
          if { $Param(Z0Topo) == "STD" } {
+            GeoPhysX::AverageTopoLow  $Grid
+            GeoPhysX::SubCorrectionFactor
             GeoPhysX::SubRoughnessLength
          }
          GeoPhysX::SubTopoFilter
