@@ -206,6 +206,12 @@ namespace eval GenX { } {
    set Settings(TOPO_DGFMX_L)    True
    set Settings(TOPO_FILMX_L)    True
    set Settings(TOPO_CLIP_ORO_L) False
+
+   set Settings(LPASSFLT_RC_DELTAX)         3.0
+   set Settings(LPASSFLT_P)                 20
+   set Settings(LPASSFLT_MASK_OPERATOR)     0
+   set Settings(LPASSFLT_MASK_THRESHOLD)    100.0
+   set Settings(LPASSFLT_APPLY_MINMAX)      True
    
    gdalfile error QUIET
 
