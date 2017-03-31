@@ -81,6 +81,7 @@ namespace eval GenX { } {
    set Param(SMOKE)      ""                    ;#SMOKE emissions
    set Param(SMOKEIndex) 1                     ;#SMOKE restart index
    set Param(Hydraulic)  False                 ;#Soil Hydraulic parameters enabled
+   set Param(MEFilter)   "STD"                 ;#Topo filter selected
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
@@ -110,6 +111,7 @@ namespace eval GenX { } {
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
    set Param(Subs)      { LEGACY STD SPLIT }
+   set Param(MEFilters) { STD LPASS }
    set Param(Z0NoTopos) { STD CANOPY CANOPY_LT }
    set Param(Z0Topos)   { STD LEGACY }
    set Param(CropZ0)    0.0                  ;# if set to non-zero, Crop Z0 should be used when crop fraction higher
@@ -611,6 +613,7 @@ proc GenX::CommandLine { } {
    Specific processing parameters:
       \[-topostag\] [format "%-30s : Treat multiple grids as staggered topography grids" ""]
       \[-z0filter\] [format "%-30s : Apply GEM filter to roughness length" ""]
+      \[-mefilter\] [format "%-30s : Select filter for topography field ME" ""]
       \[-celldim\]  [format "%-30s : Grid cell dimension (1=point, 2=area)" (${::APP_COLOR_GREEN}$Param(Cell)${::APP_COLOR_RESET})]
       \[-compress\] [format "%-30s : Compress standard file output" (${::APP_COLOR_GREEN}$Param(Compress)${::APP_COLOR_RESET})]
       \[-nbits\]    [format "%-30s : Maximum number of bits to use to save RPN fields" (${::APP_COLOR_GREEN}$Param(NBits)${::APP_COLOR_RESET})]
@@ -719,6 +722,7 @@ proc GenX::ParseCommandLine { } {
          "check"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Check)]; incr flags }
          "diag"      { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Diag)] }
          "topostag"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(TopoStag)] }
+         "mefilter"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(MEFilter)] $GenX::Param(MEFilters)]; incr flags }
          "z0filter"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0Filter)]; incr flags }
          "z0notopo"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0NoTopo) $GenX::Param(Z0NoTopos)]; incr flags }
          "z0topo"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0Topo)   $GenX::Param(Z0Topos)];   incr flags }

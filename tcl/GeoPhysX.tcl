@@ -3967,7 +3967,7 @@ proc GeoPhysX::SubCorrectionFactor { } {
 # Name     : <GeoPhysX::SubTopoFilter>
 # Creation : Septembre 2007 - J.P. Gauthier - CMC/CMOE
 #
-# Goal     : Apply the GEM topo filter to the previously generated topo.
+# Goal     : Apply the GEM or LPass topo filter to previously generated topo.
 #
 # Parameters   :
 #
@@ -3984,7 +3984,27 @@ proc GeoPhysX::SubTopoFilter { } {
 
    Log::Print INFO "Filtering ME"
 
-   geophy zfilter GPXMF GenX::Settings
+   switch $GenX::Param(MEFilter) {
+      "LPASS" {
+         if { $GenX::Settings(LPASSFLT_MASK_OPERATOR) != 0 } {
+            if { [catch { fstdfield read GPXSSS GPXOUTFILE -1 "" -1 -1 -1 "" "SSS" } ] } {
+               Log::Print WARNING "   Missing SSS field, using LPass filter without mask"
+               geophy lpass_filter GPXMF GenX::Settings
+            } else {
+               Log::Print INFO "   using LPass filter with SSS mask"
+               geophy lpass_filter GPXMF GenX::Settings GPXSSS
+            }
+         } else {
+            Log::Print INFO "   using LPass filter"
+            geophy lpass_filter GPXMF GenX::Settings
+         }
+      }
+      default {
+         Log::Print INFO "   using default GEM filter"
+         geophy zfilter GPXMF GenX::Settings 
+      }
+   }
+
    fstdfield define GPXMF -NOMVAR ME -ETIKET GENPHYSX -IP1 0 -IP2 0
    fstdfield write GPXMF GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
