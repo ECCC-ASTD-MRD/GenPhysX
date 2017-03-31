@@ -625,3 +625,71 @@ int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set) {
    free(fld);
    return(TCL_OK);
 }
+
+
+/*----------------------------------------------------------------------------
+ * Nom      : <GeoPhy_LPassFilter>
+ * Creation : Fevrier 2017 - V. Souvanlasy - CMC/CMDS
+ *
+ * But      : Appliquer le filtre Low Pass
+ *
+ * Parametres :
+ *  <Interp>  : Interpreteur TCL.
+ *  <Field>   : Champ a filtrer
+ *  <Mask>    : Champ pour masquer
+ *  <Set>     : Array Tcl du contenue de namelist (gem_settings.nml)
+ *
+ * Retour:
+ *  <TCL_...> : Code d'erreur de TCL.
+ *
+ * Remarques :
+ *----------------------------------------------------------------------------
+*/
+int GeoPhy_LPassFilter(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set,TData *Mask) {
+
+   Tcl_Obj *obj;
+   double   rcD;
+   float    rc=3.0;
+   double   mask_thresD;
+   float    mask_thres=0.01;
+   int      mask_op=1;
+   int      p=20;
+   int      apply_minmaxI;
+   char     apply_minmax;
+   int      ni, nj;
+   float    *fld, *mask=NULL;
+
+   extern   void f77name(lpass_filter) ( void *, void *, int *, int *, float *, int *, int *, float *, char * );
+
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"LPASSFLT_RC_DELTAX",0x0)))       { Tcl_GetDoubleFromObj(Interp,obj,&rcD); }
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"LPASSFLT_P",0x0)))               { Tcl_GetIntFromObj(Interp,obj,&p); }
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"LPASSFLT_MASK_OPERATOR",0x0)))   { Tcl_GetIntFromObj(Interp,obj,&mask_op); }
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"LPASSFLT_MASK_THRESHOLD",0x0)))  { Tcl_GetDoubleFromObj(Interp,obj,&mask_thresD); }
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"LPASSFLT_APPLY_MINMAX",0x0)))    { Tcl_GetBooleanFromObj(Interp,obj,&apply_minmaxI); }
+
+
+
+   ni = Field->Def->NI;
+   nj = Field->Def->NJ;
+
+
+   apply_minmax = (char)apply_minmaxI;
+   mask_thres = mask_thresD;
+   rc = rcD;
+
+   Def_Pointer(Field->Def,0,0,fld);
+   if (Mask != NULL)
+      {
+      Def_Pointer(Mask->Def,0,0,mask);
+      }
+    
+   /* disable mask operator if mask field not available */ 
+   if (mask == NULL)
+      {
+      mask_op = 0;
+      }
+
+   f77name(lpass_filter) ( fld, mask, &ni, &nj, &rc, &p, &mask_op, &mask_thres, &apply_minmax );
+
+   return TCL_OK;
+   }

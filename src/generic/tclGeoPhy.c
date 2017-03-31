@@ -86,8 +86,8 @@ static int GeoPhy_Cmd(ClientData clientData,Tcl_Interp *Interp,int Objc,Tcl_Obj 
    int   idx;
    TData  *topo,*vege,*zz,*lh,*dh,*hx2,*hy2,*hxy;
    
-   static CONST char *sopt[] = { "zfilter","subgrid_legacy",NULL };
-   enum               opt { ZFILTER,SUBGRID_LEGACY };
+   static CONST char *sopt[] = { "zfilter","subgrid_legacy","lpass_filter", NULL };
+   enum               opt { ZFILTER,SUBGRID_LEGACY,LPASS_FILTER };
 
    Tcl_ResetResult(Interp);
 
@@ -126,6 +126,19 @@ static int GeoPhy_Cmd(ClientData clientData,Tcl_Interp *Interp,int Objc,Tcl_Obj 
          hxy=Data_Get(Tcl_GetString(Objv[9]));
          
          return(GeoPhy_SubGridLegacy(Interp,topo,vege,zz,lh,dh,hx2,hy2,hxy));
+         break;
+
+      case LPASS_FILTER:
+         if((Objc!=4)&&(Objc!=5)) {
+            Tcl_WrongNumArgs(Interp,2,Objv,"me_field settings ?mask_field?");
+            return(TCL_ERROR);
+         } else {
+            TData *mask=NULL;
+            topo=Data_Get(Tcl_GetString(Objv[2]));
+            if (Objc == 5)
+               mask=Data_Get(Tcl_GetString(Objv[4]));
+            return(GeoPhy_LPassFilter(Interp,topo,Objv[3],mask));
+         }
          break;
    }
    return(TCL_OK);
