@@ -107,6 +107,7 @@ TEA_SETUP_COMPILER
 
 TEA_ADD_SOURCES([generic/tclGeoPhy.c\
                  generic/GeoPhy.c\ 
+                 lpass_minmax_flt.f\ 
                  smp_2del_flt.f smp_coef_dgt.f smp_digt_flt.f smp_fltp_gem.f smp_grid_spc.f])
 
 TEA_ADD_HEADERS([])
