@@ -728,7 +728,7 @@ proc GenX::ParseCommandLine { } {
          "check"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Check)]; incr flags }
          "diag"      { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Diag)] }
          "topostag"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(TopoStag)] }
-         "mefilter"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(MEFilter)] $GenX::Param(MEFilters)]; incr flags }
+         "mefilter"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(MEFilter) $GenX::Param(MEFilters)]; incr flags }
          "z0filter"  { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Z0Filter)]; incr flags }
          "z0notopo"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0NoTopo) $GenX::Param(Z0NoTopos)]; incr flags }
          "z0topo"    { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Z0Topo)   $GenX::Param(Z0Topos)];   incr flags }
