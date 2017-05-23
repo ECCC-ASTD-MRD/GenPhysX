@@ -296,10 +296,10 @@ proc GenX::Process { Grid } {
          GeoPhysX::AverageTopoLow  $Grid
          GeoPhysX::AverageGradient $Grid
          GeoPhysX::SubCorrectionFactor
-         GeoPhysX::SubTopoFilter
          GeoPhysX::SubLaunchingHeight
          GeoPhysX::SubY789
          GeoPhysX::SubRoughnessLength
+         GeoPhysX::SubTopoFilter
       }
       "SPLIT" {
          GeoPhysX::SubLaunchingHeightSplit
