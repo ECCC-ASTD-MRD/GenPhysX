@@ -2978,6 +2978,8 @@ proc GeoPhysX::AverageSoil { Grid } {
       GeoPhysX::AverageSoilCANSIS $Grid
    } elseif { [lindex $GenX::Param(Soil) 0]=="SLC" } {
       GeoPhysX::AverageSoilGriddedSLC $Grid
+   } elseif { [lindex $GenX::Param(Soil) 0]=="SOILGRIDS" } {
+      GeoPhysX::AverageSoil_SoilGrids $Grid
    } else {
       GeoPhysX::AverageSand $Grid
       GeoPhysX::AverageClay $Grid
@@ -3471,7 +3473,7 @@ proc GeoPhysX::AverageSoilCANSIS { Grid } {
 
    set files {}
    lappend files  $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_TEXTR_DEPTH_1KM.tif
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files BRD 700 $has_MG "GENPHYSX" "Bed Rock Depth"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files DBR 700 $has_MG "GENPHYSX" "Bed Rock Depth"
 
    fstdfield free GPXMG GPXJ
 }
@@ -3487,16 +3489,15 @@ proc GeoPhysX::AverageSoilCANSIS { Grid } {
 #
 # Return:
 #
-# Remarks : This database has 3 layers at 1km resolution 
-#           and is available for North America only
-
+# Remarks : This database has 6 layers at 90m resolution 
+#
 #      layer    thickness(cm)
 #        1      0-5
-#        2      15-30
-#        3      30-60
-#        4      60-100
-#        5      100-200
-#        -      5-15        this layer is ignored for now, or it could be merge with layer 1?
+#        2      5-15      
+#        3      15-30
+#        4      30-60
+#        5      60-100
+#        6      100-200
 #
 # There are 2 types of files, randomly distributed or dominant. We use the dominant type.
 #
@@ -3624,6 +3625,62 @@ proc GeoPhysX::AverageSoilGriddedSLC { Grid } {
       vector free TOSOIL${attrib}
    }
    fstdfield free GPXMG
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageSoil_SoilGrids>
+# Creation : May 2017 - V.Souvanlasy - CMC/CMDD
+#
+# Goal     : Generate the soil percentage through averaging based on SoilsGrid
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the sand percentage
+#
+# Return:
+#
+# Remarks : This database has 7 layers 
+#      layer    depth(m)
+#        1      0    - 0.04, 
+#        2      0.05 - 0.14, 
+#        3      0.15 - 0.29, 
+#        4      0.30 - 0.59, 
+#        5      0.60 - 0.99, 
+#        6      1.00 - 1.99, 
+#        7      2.00
+#           
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageSoil_SoilGrids { Grid } {
+   variable Param
+
+   GenX::Procs SoilGrids
+   Log::Print INFO "Averaging Soil Texture using SoilGrids database"
+
+   fstdfield copy GPXJ $Grid
+
+   #----- Force sand and clay type to 7 layers 
+   set Param(SandTypes)    { 1 2 3 4 5 6 7 }
+   set Param(ClayTypes)    { 1 2 3 4 5 6 7 }
+
+   #----- Read mask
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+      fstdfield read GPXMG GPXOUTFILE $idx
+      set has_MG 1
+   } else {
+      Log::Print WARNING "Could not find mask field MG"
+      set has_MG 0
+   }
+
+   set files [glob  $GenX::Param(DBase)/$GenX::Path(SOILGRIDS)/SNDPPT_M_sl*_250m_ll.tif]
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J1 255 $has_MG  "GENPHYSX" "Sand Percentage"
+
+   set files [glob  $GenX::Param(DBase)/$GenX::Path(SOILGRIDS)/CLYPPT_M_sl*_250m_ll.tif]
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J2 255 $has_MG  "GENPHYSX" "Clay Percentage"
+
+   set files $GenX::Param(DBase)/$GenX::Path(SOILGRIDS)/BDRICM_M_250m_ll.tif
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files DBR 255 $has_MG "GENPHYSX" "Bed Rock Depth"
+
+   fstdfield free GPXMG GPXJ
 }
 
 #----------------------------------------------------------------------------
