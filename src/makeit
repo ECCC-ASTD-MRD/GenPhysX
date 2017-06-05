@@ -5,7 +5,7 @@ arg=$1
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.3.4"
+VERSION="2.4.0"
 MAINTAINER="Jean-Philippe Gauthier"
 BUILDINFO=`git describe --always`
 
@@ -17,7 +17,7 @@ SSM_VERSION=${VERSION}${COMP}
 SSM_NAME=${NAME}_${VERSION}${COMP}_${ORDENV_PLAT}
 
 MAKE=make
-SPI_VERSION=7.11.2
+SPI_VERSION=7.11.3
 LIB_PATH=${SSM_DEV}/workspace/libSPI_${SPI_VERSION}${COMP}_${ORDENV_PLAT}                              
 
 #unset LD_LIBRARY_PATH
