@@ -66,7 +66,7 @@ echo ""
          --with-tcl=${LIB_PATH}/TCL/lib \
          --with-tk=${LIB_PATH}/TCL/lib \
          --with-rmn=${LIB_PATH} \
-         --with-eer=${SSM_DEV}/workspace/eerUtils_3.2.1${COMP}_${ORDENV_PLAT} \
+         --with-eer=${SSM_DEV}/workspace/eerUtils_3.3.0${COMP}_${ORDENV_PLAT} \
          --with-gdal=${LIB_PATH}/bin/gdal-config
    fi
 
