@@ -263,6 +263,8 @@ proc GeoPhysX::AverageTopo { Grid } {
       fstdfield free GPXMEWE  GPXMESUM GPXWESUM
    }
 
+   #----- avoid saving the mask, that would appears as 2nd MENF field
+   fstdfield stats GPXME -mask ""
    #----- Save output
    fstdfield define GPXME -NOMVAR MENF -ETIKET GENPHYSX -IP2 0
    fstdfield write GPXME GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
