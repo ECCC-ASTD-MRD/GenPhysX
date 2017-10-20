@@ -3686,6 +3686,115 @@ proc GeoPhysX::AverageSoil_SoilGrids { Grid } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageGeoidHeight>
+# Creation : Aug 2017 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the Geoid Height through averaging.
+#            using NGA EGM96 or EGM2008 datafiles
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageGeoidHeight { Grid } {
+
+   variable  Param
+
+#
+# make sure EGMGH is valid, if not, set it to default EGM96
+#
+   switch $GenX::Param(EGMGH) {
+      "EGM96" { }
+      "EGM2008" { }
+      default {
+         set  GenX::Param(EGMGH)  "EGM96"
+      }
+   }
+
+   GenX::Procs $GenX::Param(EGMGH)
+
+   Log::Print INFO "Averaging Geoid Height using $GenX::Param(EGMGH)"
+   fstdfield copy GPXGH  $Grid
+   GenX::GridClear GPXGH 0.0
+
+   set grid_reso [GenX::Get_Grid_Reso $Grid]
+   Log::Print INFO "   Estimated target grid resolution=$grid_reso"
+
+   set  mode  "$GenX::Param(Interpolation)"
+   if { $mode != "" } {
+      Log::Print INFO "   Using interpolation mode $mode"
+   }
+#
+# use EGM db files
+#
+   set lcdir  $GenX::Param(DBase)/$GenX::Path($GenX::Param(EGMGH))
+   set files [GenX::FindFiles $lcdir/data/Index/Index.shp $Grid]
+
+   #----- Loop over files
+   if { [set nb [llength $files]] } {
+
+      foreach file $files {
+         set  filename $lcdir/data/$file
+         Log::Print INFO "   Processing file ([incr n]/$nb) $filename"
+
+         gdalfile open GHFILE read $lcdir/data/$file
+   
+         set georef [gdalfile  georef GHFILE]
+
+
+         if { $mode == "" } {
+            set file_reso [GenX::Get_GDFile_Reso GHFILE]
+            Log::Print INFO "   GDAL File Reso=$file_reso"
+            if { $grid_reso <= $file_reso } {
+               set mode "LINEAR"
+            } else {
+               set mode "AVERAGE"
+            }
+            Log::Print INFO "   Using interpolation mode $mode"
+         }
+
+         if { [llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GHFILE]]]] } {
+            Log::Print INFO "   Grid intersection with GH file is { $limits }"
+            set x0 [lindex $limits 0]
+            set x1 [lindex $limits 2]
+            set y0 [lindex $limits 1]
+            set y1 [lindex $limits 3]
+   
+         #----- Loop over the data by tiles since it's too big to fit in memory
+            for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+               for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+                  Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+                  gdalband read GHTILE { { GHFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+                  gdalband stats GHTILE -celldim $GenX::Param(Cell)
+   
+                  if { [string compare $mode "AVERAGE"] == 0 } {
+                     fstdfield gridinterp GPXGH GHTILE AVERAGE False
+                  } else {
+                     fstdfield gridinterp GPXGH GHTILE $mode
+                  }
+                  gdalband free GHTILE
+               }
+            }
+         }
+         gdalfile close GHFILE
+      }
+      #----- Save output
+      if { [string compare $mode "AVERAGE"] == 0 } {
+         fstdfield gridinterp GPXGH - NOP True
+      }
+      fstdfield define GPXGH -NOMVAR GH -ETIKET GENPHYSX -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXGH GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield free GHTILE
+   } else {
+      Log::Print WARNING "The grid is not within $GenX::Param(EGMGH) limits"
+   }
+}
+
+#----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageRastersFiles2rpnGrid>
 # Creation : June 2014 
 #

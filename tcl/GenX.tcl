@@ -82,6 +82,7 @@ namespace eval GenX { } {
    set Param(SMOKEIndex) 1                     ;#SMOKE restart index
    set Param(Hydraulic)  False                 ;#Soil Hydraulic parameters enabled
    set Param(MEFilter)   "STD"                 ;#Topo filter selected
+   set Param(EGMGH)      ""                    ;#Earth Gravitational Model Geoid Height
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
@@ -97,7 +98,8 @@ namespace eval GenX { } {
    set Param(GridFile)  ""                    ;#Grid definition file to use (standard file with >> ^^)
    set Param(NML)       ""                    ;#GEM namelist
    set Param(Datyp)     5                     ;#Default DATYP to use for output fields
-   set Param(CappedNBits)  24                ;# Legacy limited nbits used for MG, VF and soil
+   set Param(CappedNBits)  24                 ;# Legacy limited nbits used for MG, VF and soil
+   set Param(Interpolation)  ""               ;#Interpolation mode to use by default
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
    set Param(Aspects)   { SRTM CDED250 CDED50 CDEM GTOPO30 }
@@ -116,6 +118,8 @@ namespace eval GenX { } {
    set Param(Z0Topos)   { STD LEGACY }
    set Param(CropZ0)    0.0                  ;# if set to non-zero, Crop Z0 should be used when crop fraction higher
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS_5.1 AURAMS }   ;#Model cible
+   set Param(EGMGHs)    { EGM96 EGM2008 }
+   set Param(Interpolations) { LINEAR NEAREST CUBIC AVERAGE }
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
    set Param(SRTM3)     False
@@ -183,6 +187,8 @@ namespace eval GenX { } {
    set Path(NALCMS)     NALCMS
    set Path(SLC)        SLC
    set Path(SOILGRIDS)  SoilGrids
+   set Path(EGM2008)    NGA/EGM2008
+   set Path(EGM96)      NGA/EGM96
 
    set Path(StatCan)   /cnfs/dev/cmds/afsm/lib/geo/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
@@ -351,6 +357,11 @@ proc GenX::Process { Grid } {
    #----- Diagnostics of output fields
    if { $Param(Diag) } {
       GeoPhysX::Diag
+   }
+
+   #----- Earth Gravitional Model
+   if { $Param(EGMGH)!="" } {
+      GeoPhysX::AverageGeoidHeight $Grid
    }
 }
 
@@ -616,6 +627,7 @@ proc GenX::CommandLine { } {
       -z0topo   [format "%-34s : Roughness length Z0 with topographic contribution {$Param(Z0Topos)}" (${::APP_COLOR_GREEN}[join $Param(Z0Topos)]${::APP_COLOR_RESET})]
       -z0crop   [format "%-34s : if set to non-zero, Crop Z0 should be used when crop fraction higher than this value" (${::APP_COLOR_GREEN}$Param(CropZ0)${::APP_COLOR_RESET})]
       -diag     [format "%-25s : Do diagnostics (Not implemented yet)" ""]
+      -egmgh    [format "%-34s : Earth Gravitational Model database to use among {$Param(EGMGHs)}" (${::APP_COLOR_GREEN}[join $Param(EGMGH)]${::APP_COLOR_RESET})]
 
    Specific processing parameters:
       -topostag [format "%-25s : Treat multiple grids as staggered topography grids" ""]
@@ -624,6 +636,7 @@ proc GenX::CommandLine { } {
       -celldim  [format "%-34s : Grid cell dimension (1=point, 2=area)" (${::APP_COLOR_GREEN}$Param(Cell)${::APP_COLOR_RESET})]
       -compress [format "%-34s : Compress standard file output" (${::APP_COLOR_GREEN}$Param(Compress)${::APP_COLOR_RESET})]
       -nbits    [format "%-34s : Maximum number of bits to use to save RPN fields" (${::APP_COLOR_GREEN}$Param(NBits)${::APP_COLOR_RESET})]
+      -interpol [format "%-25s : Select interpolation mode to use {$Param(Interpolations)}" ""]
 
    Batch mode parameters:
       -batch    [format "%-25s : Launch in batch mode" ""]
@@ -718,6 +731,7 @@ proc GenX::ParseCommandLine { } {
          "geomask"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
          "vege"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
          "soil"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
+         "egmgh"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(EGMGH) $GenX::Param(EGMGHs)]; incr flags }
          "subgrid"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Sub)]; incr flags }
          "aspect"    { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Aspect)]; incr flags }
          "biogenic"  { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
@@ -739,6 +753,7 @@ proc GenX::ParseCommandLine { } {
          "nbits"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(NBits)] }
          "param"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Script)] }
          "process"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Process)] }
+         "interpol"  { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Interpolation) $GenX::Param(Interpolations)]; incr flags }
          "help"      { GenX::CommandLine ; Log:::End 0 }
          default     { Log::Print ERROR "Invalid argument [lindex $gargv $i]"; GenX::CommandLine ; Log::End 1 }
       }
@@ -1983,17 +1998,17 @@ proc GenX::FindFiles { indexfile Grid } {
       set  geom [ogrgeometry define $Geom -geometry]
       if { [GeomIntersectGrid $Grid $geom] || 
            [ogrgeometry stats $Geom -intersect $poly] } {
-         Log::Print INFO "Will use file: $path"
+         Log::Print DEBUG "Will use file: $path"
          lappend files $path
          incr cnt
       } else {
-         Log::Print DEBUG "Reject file: $path"
+         Log::Print DEBUG "Skip file: $path"
          lappend rejected $path
       }
    }
    ogrfile close UTSINDEXFILE
 
-   Log::Print INFO "Using $cnt of $nb files"
+   Log::Print DEBUG "Using $cnt of $nb files"
 
    ogrgeometry free $poly
    return $files
@@ -2028,7 +2043,7 @@ proc GenX::GeomIntersectGrid { Grid geom } {
           set y [lindex $xy0 1]
           if { ($x <= ($NI+1))&&($x >= 0) } {
              if { ($y <= ($NJ+1))&&($y >= 0) } {
-                puts "$LatLon(1) $LatLon(0) : ($x $y) : $NI $NJ"
+                Log::Print DEBUG "$LatLon(1) $LatLon(0) : ($x $y) : $NI $NJ"
                 return 1
              }
           }
@@ -2084,3 +2099,81 @@ proc  GenX::Load_CCRN_Table { filename } {
    Log::Print INFO "Got: $from $to"
    return [list $from $to]
 }
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::Get_GDFile_Reso>
+# Creation : October 2017 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Estimate a GDAL File resolution
+#
+# Parameters :
+#  <gdfile>    : GDAL File handle
+#
+# Return:
+#   <reso>  : resolution in degree
+#
+# Remarks :   
+#
+#----------------------------------------------------------------------------
+proc GenX::Get_GDFile_Reso { gdfile } {
+
+# use center of tile to calculate latitude and longitude difference between 2 points
+   set i   [expr int([gdalfile width $gdfile]/2)]
+   set j   [expr int([gdalfile height $gdfile]/2)]
+   set ll1  [gdalfile project $gdfile $i $j]
+   set ll2  [gdalfile project $gdfile [expr $i+1] [expr $j+1]]
+   set la0 [lindex $ll1 0]
+   set la1 [lindex $ll2 0]
+   set lo0 [lindex $ll1 1]
+   set lo1 [lindex $ll2 1]
+
+   set dlat  [expr abs($la0 - $la1)]
+   set dlon  [expr abs($lo0 - $lo1)]
+   if { $dlat > $dlon } {
+      set reso $dlat
+   } else {
+      set reso $dlon
+   }
+   return $reso
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::Get_Grid_Reso>
+# Creation : October 2017 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Estimate a Grid resolution
+#
+# Parameters :
+#  <Grid>    : grid upon which to test
+#
+# Return:
+#   <reso>  : resolution in degree
+#
+# Remarks :   
+#
+#----------------------------------------------------------------------------
+proc GenX::Get_Grid_Reso { Grid } {
+
+# use center of grid to calculate latitude and longitude difference between 2 grid points
+   set i   [expr int([fstdfield define $Grid -NI]/2)]
+   set j   [expr int([fstdfield define $Grid -NJ]/2)]
+   set ll1  [fstdfield stats $Grid -project $i $j]
+   set ll2  [fstdfield stats $Grid -project [expr $i+1] [expr $j+1]]
+
+   set la0  [lindex $ll1 0]
+   set la1  [lindex $ll2 0]
+   set lo0  [lindex $ll1 1]
+   set lo1  [lindex $ll2 1]
+
+   set dlat  [expr abs($la0 - $la1)]
+   set dlon  [expr abs($lo0 - $lo1)]
+
+# return the coarser one
+   if { $dlat > $dlon } {
+      set reso $dlat
+   } else {
+      set reso $dlon
+   }
+   return $reso
+}
+
