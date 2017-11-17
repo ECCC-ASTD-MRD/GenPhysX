@@ -19,7 +19,7 @@ dnl	to configure the system for the local environment.
 # this case) so that we create the export library with the dll.
 #-----------------------------------------------------------------------
 
-AC_INIT([TclGeoPhy], [0.1])
+AC_INIT([TclGeoPhy], [1.0])
 
 PKG_CFLAGS="-D_GNU_SOURCE -D_BSD_SOURCE"
 
@@ -107,6 +107,7 @@ TEA_SETUP_COMPILER
 
 TEA_ADD_SOURCES([generic/tclGeoPhy.c\
                  generic/GeoPhy.c\ 
+                 lpass_minmax_flt.f\ 
                  smp_2del_flt.f smp_coef_dgt.f smp_digt_flt.f smp_fltp_gem.f smp_grid_spc.f])
 
 TEA_ADD_HEADERS([])

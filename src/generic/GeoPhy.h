@@ -45,5 +45,6 @@
 
 int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TData *VAR,TData *HMH,TData *HX2,TData *HY2,TData *HXY);
 int GeoPhy_ZFilterTopo(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set);
+int GeoPhy_LPassFilter(Tcl_Interp *Interp,TData *Field,Tcl_Obj *Set,TData *Mask);
 
 #endif
