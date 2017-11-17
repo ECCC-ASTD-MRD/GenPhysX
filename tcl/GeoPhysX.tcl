@@ -4215,8 +4215,17 @@ proc GeoPhysX::LegacySub { Grid } {
    fstdfield copy GPXY9 $Grid
   
    Log::Print INFO "Computing legacy sub grid fields Z0 ZP LH DH Y7 Y8 Y9"
-   
-   geophy zfilter GPXME GenX::Settings
+
+   switch $GenX::Param(MEFilterForZ0) {
+      "LPASS" {
+         GeoPhysX::LowPassFilter GPXMF
+      }
+      "STD" {
+         geophy zfilter GPXME GenX::Settings
+      }
+      default {
+      }
+   }
    geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9
    
    if { $GenX::Param(Z0Topo)=="LEGACY" } {

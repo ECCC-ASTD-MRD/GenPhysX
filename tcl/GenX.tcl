@@ -83,6 +83,7 @@ namespace eval GenX { } {
    set Param(Hydraulic)  False                 ;#Soil Hydraulic parameters enabled
    set Param(MEFilter)   "STD"                 ;#Topo filter selected
    set Param(EGMGH)      ""                    ;#Earth Gravitational Model Geoid Height
+   set Param(MEFilterForZ0) "STD"              ;#Topo filter selected for Z0
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
