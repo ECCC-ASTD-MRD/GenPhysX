@@ -4157,18 +4157,7 @@ proc GeoPhysX::SubTopoFilter { } {
 
    switch $GenX::Param(MEFilter) {
       "LPASS" {
-         if { $GenX::Settings(LPASSFLT_MASK_OPERATOR) != 0 } {
-            if { [catch { fstdfield read GPXSSS GPXOUTFILE -1 "" -1 -1 -1 "" "SSS" } ] } {
-               Log::Print WARNING "   Missing SSS field, using LPass filter without mask"
-               geophy lpass_filter GPXMF GenX::Settings
-            } else {
-               Log::Print INFO "   using LPass filter with SSS mask"
-               geophy lpass_filter GPXMF GenX::Settings GPXSSS
-            }
-         } else {
-            Log::Print INFO "   using LPass filter"
-            geophy lpass_filter GPXMF GenX::Settings
-         }
+         GeoPhysX::LowPassFilter GPXMF
       }
       default {
          Log::Print INFO "   using default GEM filter"
@@ -4180,6 +4169,36 @@ proc GeoPhysX::SubTopoFilter { } {
    fstdfield write GPXMF GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    fstdfield free GPXMF
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::LowPassFilter>
+# Creation : Septembre 2007 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : Apply the GEM or LPass topo filter to previously generated topo.
+#
+# Parameters   :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::LowPassFilter { Grid } {
+
+   if { $GenX::Settings(LPASSFLT_MASK_OPERATOR) != 0 } {
+      if { [catch { fstdfield read GPXSSS GPXOUTFILE -1 "" -1 -1 -1 "" "SSS" } ] } {
+         Log::Print WARNING "   Missing SSS field, using LPass filter without mask"
+         mygeophy lpass_filter $Grid GenX::Settings
+      } else {
+         Log::Print INFO "   using LPass filter with SSS mask"
+         mygeophy lpass_filter $Grid GenX::Settings GPXSSS
+      }
+      fstdfield free GPXSSS
+   } else {
+      Log::Print INFO "   using LPass filter"
+      mygeophy lpass_filter $Grid GenX::Settings
+   }
 }
 
 #----------------------------------------------------------------------------
@@ -4218,7 +4237,7 @@ proc GeoPhysX::LegacySub { Grid } {
 
    switch $GenX::Param(MEFilterForZ0) {
       "LPASS" {
-         GeoPhysX::LowPassFilter GPXMF
+         GeoPhysX::LowPassFilter GPXME
       }
       "STD" {
          geophy zfilter GPXME GenX::Settings
