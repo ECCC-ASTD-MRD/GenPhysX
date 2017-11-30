@@ -778,16 +778,16 @@ proc GenX::ParseCommandLine { } {
    if { $GenX::Param(Z0NoTopo)!="" } {
       if { $GenX::Param(Z0Topo)!="" } {
          Log::Print WARNING "Cannot set both Param(Z0NoTopo) and Param(Z0Topo), will use Param(Z0NoTopo) only"
-         set $GenX::Param(Z0Topo)  ""
+         set GenX::Param(Z0Topo)  ""
       }
    } else {
       if { $GenX::Param(Z0Topo)=="" } {
          switch $Param(Sub) {
             "LEGACY" {
-               set $GenX::Param(Z0Topo)  "LEGACY"
+               set GenX::Param(Z0Topo)  "LEGACY"
             }
             default {
-               set $GenX::Param(Z0Topo)  "STD"
+               set GenX::Param(Z0Topo)  "STD"
             }
          }
       }
@@ -800,7 +800,7 @@ proc GenX::ParseCommandLine { } {
 
    #----- check for user CappedNBits, if equal 24(default), reset it as min(NBits,24)
    if { $Param(CappedNBits)==24 } {
-      set $Param(CappedNBits)  [expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24]
+      set Param(CappedNBits)  [expr $GenX::Param(NBits)<24?$GenX::Param(NBits):24]
    } else {
    #----- CappedNBits limited to 24 if DATYP==1
       if { $Param(Datyp)==1 && $Param(CappedNBits) > 24 } {
