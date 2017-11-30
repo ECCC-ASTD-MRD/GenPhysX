@@ -734,7 +734,7 @@ proc GenX::ParseCommandLine { } {
          "soil"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
          "egmgh"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(EGMGH) $GenX::Param(EGMGHs)]; incr flags }
          "subgrid"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Sub)]; incr flags }
-         "aspect"    { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Aspect)]; incr flags }
+         "aspect"    { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Aspect) $GenX::Param(Aspects)]; incr flags }
          "biogenic"  { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Biogenic) $GenX::Param(Biogenics)]; incr flags }
          "hydro"     { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Hydro) $GenX::Param(Hydros)]; incr flags }
          "hydraulic" { set i [Args::Parse $gargv $gargc $i FLAG          GenX::Param(Hydraulic)]; incr flags }
