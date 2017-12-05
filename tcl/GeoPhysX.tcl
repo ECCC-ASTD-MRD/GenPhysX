@@ -4189,15 +4189,15 @@ proc GeoPhysX::LowPassFilter { Grid } {
    if { $GenX::Settings(LPASSFLT_MASK_OPERATOR) != 0 } {
       if { [catch { fstdfield read GPXSSS GPXOUTFILE -1 "" -1 -1 -1 "" "SSS" } ] } {
          Log::Print WARNING "   Missing SSS field, using LPass filter without mask"
-         mygeophy lpass_filter $Grid GenX::Settings
+         geophy lpass_filter $Grid GenX::Settings
       } else {
          Log::Print INFO "   using LPass filter with SSS mask"
-         mygeophy lpass_filter $Grid GenX::Settings GPXSSS
+         geophy lpass_filter $Grid GenX::Settings GPXSSS
       }
       fstdfield free GPXSSS
    } else {
       Log::Print INFO "   using LPass filter"
-      mygeophy lpass_filter $Grid GenX::Settings
+      geophy lpass_filter $Grid GenX::Settings
    }
 }
 
@@ -4245,7 +4245,7 @@ proc GeoPhysX::LegacySub { Grid } {
       default {
       }
    }
-   geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9
+   geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
    
    if { $GenX::Param(Z0Topo)=="LEGACY" } {
       Log::Print INFO "Saving legacy sub grid fields Z0 ZP"
