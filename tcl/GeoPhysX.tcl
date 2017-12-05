@@ -4780,11 +4780,12 @@ proc GeoPhysX::SubRoughnessLength { } {
        vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
        fstdfield define GPXZP -NOMVAR ZP -ETIKET GENPHYSX -IP1 0 -IP2 0
        fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   } elseif { ($GenX::Param(Z0NoTopo) == "") && ($GenX::Param(Z0Topo) == "LEGACY") } {
+       # nothing to do here, Z0 will be calculated in GeoPhysX::LegacySub
    } else {
        Log::Print WARNING "Invalid Z0 option(s) provided"
        Log::Print WARNING "   GenX::Param(Z0NoTopo)=$GenX::Param(Z0NoTopo)"
        Log::Print WARNING "   GenX::Param(Z0Topo)  =$GenX::Param(Z0Topo)"
-       return
    }
 
    fstdfield free GPXLH GPXSSS GPXHCOEF GPXZREF GPXSLP GPXZTP GPXZ0S GPXZ0W GPXZPW \
