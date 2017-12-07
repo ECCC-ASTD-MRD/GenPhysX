@@ -446,7 +446,7 @@ int GeoPhy_LegacyAsh(TDef *Topo,float *H,float DX,float DY,float *HTOT,float *AS
  *      et revisee en 2001
  *----------------------------------------------------------------------------
 */
-int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TData *LH,TData *DH,TData *HX2,TData *HY2,TData *HXY) {
+int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TData *LH,TData *DH,TData *HX2,TData *HY2,TData *HXY, Tcl_Obj *Set) {
  
    int   i,j,idx,ind,s,vg,sub;
    float as,htot,sum,silh;
@@ -455,6 +455,8 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
    float topo[SUB_SIZE*SUB_SIZE];
    double dx,dy;
    float *zz,*lh,*dh,*hx2,*hy2,*hxy;
+   int    zratioc=0;
+   Tcl_Obj *obj;
    
    if (!Topo || !Vege) {
       Tcl_AppendResult(Interp,"Invalid topographic and/or vegetation field",(char*)NULL);
@@ -464,7 +466,11 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
       Tcl_AppendResult(Interp,"Subgrid topography has not been calculated",(char*)NULL);
       return(TCL_ERROR);   
    }
-   
+
+   // Option to enable combined Z ratio to fix error caused by low terrain topo and high vegetation 
+   if (Set)
+      if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_ZREF_ZV_RATIO_C",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&zratioc); }
+  
    // Get array pointers
    Def_Pointer(ZZ->Def,0,0,zz);
    Def_Pointer(LH->Def,0,0,lh);
@@ -506,12 +512,18 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
 
          htot = FMAX(htot,HMIN);
          silh =  0.5f*CT*as/2.0f;
-         b    = logf(htot/(2.0f*rugv[vg-1]));
+         if (zratioc)
+            b    = logf(1.0 + htot/(2.0f*rugv[vg-1]));
+         else
+            b    = logf(htot/(2.0f*rugv[vg-1]));
          b    = (VK*VK)/(b*b);         
          a    = (VK*VK)/(silh + b);
          
          lh[idx] *=2.0f;
-         zz[idx] = htot/(2.0f*expf(sqrtf(a)));
+         if (zratioc)
+            zz[idx] = htot/(2.0f*(expf(sqrtf(a))-1.0));
+         else
+            zz[idx] = htot/(2.0f*expf(sqrtf(a)));
       }
    }
    
