@@ -4221,8 +4221,13 @@ proc GeoPhysX::LegacySub { Grid } {
    GenX::Procs
    
    #----- check for needed fields
-   if { [catch { fstdfield read GPXVG GPXOUTFILE -1 "" -1 -1 -1 "" "VG" } ] } {
-      Log::Print WARNING "Missing fields, will not calculate legacy sub grid fields"
+   if { $GenX::Settings(TOPO_RUGV_ZVG1) } {
+      set  varname ZVG1
+   } else {
+      set  varname VG
+   }
+   if { [catch { fstdfield read GPX${varname} GPXOUTFILE -1 "" -1 -1 -1 "" $varname } ] } {
+      Log::Print WARNING "Missing field: $varname, will not calculate legacy sub grid fields"
       return
    }
   
@@ -4245,7 +4250,13 @@ proc GeoPhysX::LegacySub { Grid } {
       default {
       }
    }
-   geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+   if { $GenX::Settings(TOPO_RUGV_ZVG1) } {
+      Log::Print INFO "Computing Z0 Using field ZVG1"
+      geophy subgrid_legacy GPXME GPXZVG1 GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+   } else {
+      Log::Print INFO "Computing Z0 Using field VG with Look up Table"
+      geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+   }
    
    if { $GenX::Param(Z0Topo)=="LEGACY" } {
       Log::Print INFO "Saving legacy sub grid fields Z0 ZP"
@@ -4278,7 +4289,7 @@ proc GeoPhysX::LegacySub { Grid } {
       fstdfield write GPXY9 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    }
 
-   fstdfield free GPXVG GPXZ0 GPXZP GPXLH GPXDH GPXY7 GPXY8 GPXY9
+   fstdfield free GPXVG GPXZVG1 GPXZ0 GPXZP GPXLH GPXDH GPXY7 GPXY8 GPXY9
 }
 
 #----------------------------------------------------------------------------

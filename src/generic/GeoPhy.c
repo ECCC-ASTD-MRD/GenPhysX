@@ -430,7 +430,7 @@ int GeoPhy_LegacyAsh(TDef *Topo,float *H,float DX,float DY,float *HTOT,float *AS
  * Parametres :
  *  <Interp>  : Interpreteur TCL.
  *  <Topo>    : Topographie cible.
- *  <Vege>    : Végétation cible
+ *  <Vege>    : Végétation cible ou ZVG1 si Settings(TOPO_RUGV_ZVG1)=True
  *  <ZZ>      : Longueur de rugosité scalaire cible en X seulement. 
  *  <LH>      : Variance des échelles non résolues.
  *  <DH>      : Biais des échelles non résolues.
@@ -456,6 +456,9 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
    double dx,dy;
    float *zz,*lh,*dh,*hx2,*hy2,*hxy;
    int    zratioc=0;
+   int    use_zvg1=0;
+   float  zv;
+
    Tcl_Obj *obj;
    
    if (!Topo || !Vege) {
@@ -490,9 +493,11 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
       }
    }
 
-   // Option to enable combined Z ratio to fix error caused by low terrain topo and high vegetation 
-   if (Set)
+   // Options to alter computations and parameters 
+   if (Set) {
       if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_ZREF_ZV_RATIO_C",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&zratioc); }
+      if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_RUGV_ZVG1",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&use_zvg1); }
+   }
   
    // Get array pointers
    Def_Pointer(ZZ->Def,0,0,zz);
@@ -531,14 +536,21 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
 
          GeoPhy_LegacyAsh(Topo->Def,topo,dx,dy,&htot,&as,&lh[idx],&hx2[idx],&hy2[idx],&hxy[idx]);
 
+         if (use_zvg1) {
+            Def_Get(Vege->Def,0,idx,zv);
+         } else {
+            Def_Get(Vege->Def,0,idx,vg);
+            zv = rugv[vg-1];
+         }
+
          Def_Get(Vege->Def,0,idx,vg);
 
          htot = FMAX(htot,HMIN);
          silh =  0.5f*CT*as/2.0f;
          if (zratioc)
-            b    = logf(1.0 + htot/(2.0f*rugv[vg-1]));
+            b    = logf(1.0 + htot/(2.0f*zv));
          else
-            b    = logf(htot/(2.0f*rugv[vg-1]));
+            b    = logf(htot/(2.0f*zv));
          b    = (VK*VK)/(b*b);         
          a    = (VK*VK)/(silh + b);
          
