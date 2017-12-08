@@ -209,11 +209,13 @@ namespace eval GenX { } {
    set Meta(Command)   ""                     ;#Launch command
 
    #----- GEM related variables
-   set Settings(GRD_TYP_S)       GU
-   set Settings(TOPO_DGFMS_L)    True
-   set Settings(TOPO_DGFMX_L)    True
-   set Settings(TOPO_FILMX_L)    True
-   set Settings(TOPO_CLIP_ORO_L) False
+   set Settings(GRD_TYP_S)            GU
+   set Settings(TOPO_DGFMS_L)         True
+   set Settings(TOPO_DGFMX_L)         True
+   set Settings(TOPO_FILMX_L)         True
+   set Settings(TOPO_CLIP_ORO_L)      False
+   set Settings(TOPO_ZREF_ZV_RATIO_C) False
+   set Settings(TOPO_VEGE_RUGV)       {}
 
    set Settings(LPASSFLT_RC_DELTAX)         3.0
    set Settings(LPASSFLT_P)                 20

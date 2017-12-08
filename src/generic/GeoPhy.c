@@ -467,6 +467,29 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
       return(TCL_ERROR);   
    }
 
+   // Option to override default Roughness associated with VF class
+   if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_VEGE_RUGV",0x0))) {
+      double   dval;
+      int   nv;
+      const char **list=NULL;
+      if (Tcl_SplitList(Interp,Tcl_GetString(obj),&nv,&list)==TCL_OK) {
+         if (nv > 0) {
+            if (nv != 26) {
+               char buf[32];
+               sprintf( buf, "%d", nv );
+               Tcl_AppendResult(Interp,"TOPO_VEGE_RUGV need 26 values but contains:", buf, (char*)NULL);
+               Tcl_Free((char*)list);
+               return(TCL_ERROR);
+            }
+            for (i = 0; i < 26 ; i++) {
+               Tcl_GetDouble(Interp,list[i],&dval);
+               rugv[i] = dval;
+            }
+         }
+         Tcl_Free((char*)list);
+      }
+   }
+
    // Option to enable combined Z ratio to fix error caused by low terrain topo and high vegetation 
    if (Set)
       if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_ZREF_ZV_RATIO_C",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&zratioc); }

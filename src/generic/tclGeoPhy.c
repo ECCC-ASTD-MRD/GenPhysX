@@ -113,7 +113,7 @@ static int GeoPhy_Cmd(ClientData clientData,Tcl_Interp *Interp,int Objc,Tcl_Obj 
 
       case SUBGRID_LEGACY:
          if(Objc<10) {
-            Tcl_WrongNumArgs(Interp,2,Objv,"topo vege zz lh dh hx2 hy2 hxy");
+            Tcl_WrongNumArgs(Interp,2,Objv,"topo vege zz lh dh hx2 hy2 hxy ?settings?");
             return(TCL_ERROR);
          }
          topo=Data_Get(Tcl_GetString(Objv[2]));
@@ -125,7 +125,10 @@ static int GeoPhy_Cmd(ClientData clientData,Tcl_Interp *Interp,int Objc,Tcl_Obj 
          hy2=Data_Get(Tcl_GetString(Objv[8]));
          hxy=Data_Get(Tcl_GetString(Objv[9]));
          
-         return(GeoPhy_SubGridLegacy(Interp,topo,vege,zz,lh,dh,hx2,hy2,hxy));
+         if(Objc==11)
+            return(GeoPhy_SubGridLegacy(Interp,topo,vege,zz,lh,dh,hx2,hy2,hxy,Objv[10]));
+         else
+            return(GeoPhy_SubGridLegacy(Interp,topo,vege,zz,lh,dh,hx2,hy2,hxy,NULL));
          break;
 
       case LPASS_FILTER:
