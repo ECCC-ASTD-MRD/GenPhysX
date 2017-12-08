@@ -216,7 +216,7 @@ namespace eval GenX { } {
    set Settings(TOPO_CLIP_ORO_L)      False
    set Settings(TOPO_ZREF_ZV_RATIO_C) False
    set Settings(TOPO_VEGE_RUGV)       {}
-   set Settings(TOPO_RUGV_ZVG1)       False
+   set Settings(TOPO_RUGV_ZVG2)       False
 
    set Settings(LPASSFLT_RC_DELTAX)         3.0
    set Settings(LPASSFLT_P)                 20

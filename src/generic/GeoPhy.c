@@ -430,7 +430,7 @@ int GeoPhy_LegacyAsh(TDef *Topo,float *H,float DX,float DY,float *HTOT,float *AS
  * Parametres :
  *  <Interp>  : Interpreteur TCL.
  *  <Topo>    : Topographie cible.
- *  <Vege>    : Végétation cible ou ZVG1 si Settings(TOPO_RUGV_ZVG1)=True
+ *  <Vege>    : Végétation cible ou ZVG2 si Settings(TOPO_RUGV_ZVG2)=True
  *  <ZZ>      : Longueur de rugosité scalaire cible en X seulement. 
  *  <LH>      : Variance des échelles non résolues.
  *  <DH>      : Biais des échelles non résolues.
@@ -456,7 +456,7 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
    double dx,dy;
    float *zz,*lh,*dh,*hx2,*hy2,*hxy;
    int    zratioc=0;
-   int    use_zvg1=0;
+   int    use_zvg2=0;
    float  zv;
 
    Tcl_Obj *obj;
@@ -496,7 +496,7 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
    // Options to alter computations and parameters 
    if (Set) {
       if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_ZREF_ZV_RATIO_C",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&zratioc); }
-      if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_RUGV_ZVG1",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&use_zvg1); }
+      if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_RUGV_ZVG2",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&use_zvg2); }
    }
   
    // Get array pointers
@@ -536,7 +536,7 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
 
          GeoPhy_LegacyAsh(Topo->Def,topo,dx,dy,&htot,&as,&lh[idx],&hx2[idx],&hy2[idx],&hxy[idx]);
 
-         if (use_zvg1) {
+         if (use_zvg2) {
             Def_Get(Vege->Def,0,idx,zv);
          } else {
             Def_Get(Vege->Def,0,idx,vg);
