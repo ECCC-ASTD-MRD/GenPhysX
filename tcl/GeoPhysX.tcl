@@ -336,6 +336,9 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
       foreach field [fstdfield find GPXTOPOFILE -1 "" -1 -1 -1 "" "ME"] {
          Log::Print DEBUG "      Processing field : $field"
          fstdfield read USGSTILE GPXTOPOFILE $field
+         if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [fstdfield define USGSTILE -georef]]]] } {
+            continue
+         }
          fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Param(Cell)
 
          if { $Opt(LegacyMode) } {
