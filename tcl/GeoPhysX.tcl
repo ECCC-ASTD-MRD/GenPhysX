@@ -4684,7 +4684,7 @@ proc GeoPhysX::SubRoughnessLength { } {
                vexpr GPXZ0V1 (GPXZ0V1+GPXVF*ln($zomv))
                vexpr GPXVFT (GPXVFT+GPXVF)
             } else {
-               vexpr GPXZ0V2 (GPXZ0V1+GPXVF*ln($zomv))
+               vexpr GPXZ0V2 (GPXZ0V2+GPXVF*ln($zomv))
             }
          }
       }
