@@ -1057,8 +1057,8 @@ proc GeoPhysX::AverageDerivTile { Grid Band } {
    set dgtord 3.14159265/180.
 
    #----- Calculate slope and aspect for the tile
-   vexpr SLOPE tan(dslopedeg($Band)*$dgtord)
-   vexpr ASP daspect($Band)*$dgtord
+   vexpr (Float32)SLOPE tan(dslopedeg($Band)*$dgtord)
+   vexpr (Float32)ASP daspect($Band)*$dgtord
 
    #----- Calculate the derivatives in each geographic direction
    vexpr DHDNS SLOPE*cos(ASP)
