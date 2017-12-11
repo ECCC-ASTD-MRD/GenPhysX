@@ -543,6 +543,9 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
             zv = rugv[vg-1];
          }
 
+         // avoid problem with htot/(2*zv)
+         zv = (zv > .0003) ? zv : .0003 ;
+
          Def_Get(Vege->Def,0,idx,vg);
 
          htot = FMAX(htot,HMIN);
