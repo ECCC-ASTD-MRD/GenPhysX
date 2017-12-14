@@ -457,7 +457,7 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
    float *zz,*lh,*dh,*hx2,*hy2,*hxy;
    int    zratioc=0;
    int    use_zvg2=0;
-   float  zv;
+   float  zv, zvmin=0.0003;
 
    Tcl_Obj *obj;
    
@@ -497,6 +497,10 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
    if (Set) {
       if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_ZREF_ZV_RATIO_C",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&zratioc); }
       if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_RUGV_ZVG2",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&use_zvg2); }
+      if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_ZV_MIN_THRESHOLD",0x0))) {
+         Tcl_GetDoubleFromObj(Interp,obj,&dval);
+         if (dval > 0.0) zvmin = dval;
+      }
    }
   
    // Get array pointers
@@ -544,7 +548,7 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
          }
 
          // avoid problem with htot/(2*zv)
-         zv = (zv > .0003) ? zv : .0003 ;
+         zv = (zv > zvmin) ? zv : zvmin;
 
          Def_Get(Vege->Def,0,idx,vg);
 

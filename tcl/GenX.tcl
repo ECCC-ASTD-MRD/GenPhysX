@@ -217,6 +217,8 @@ namespace eval GenX { } {
    set Settings(TOPO_ZREF_ZV_RATIO_C) False
    set Settings(TOPO_VEGE_RUGV)       {}
    set Settings(TOPO_RUGV_ZVG2)       False
+   set Settings(TOPO_RUGV_MG)         False
+   set Settings(TOPO_ZV_MIN_THRESHOLD)   0.0003
 
    set Settings(LPASSFLT_RC_DELTAX)         3.0
    set Settings(LPASSFLT_P)                 20
