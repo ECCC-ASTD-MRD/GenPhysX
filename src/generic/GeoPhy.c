@@ -495,6 +495,7 @@ int GeoPhy_SubGridLegacy(Tcl_Interp *Interp,TData *Topo,TData *Vege,TData *ZZ,TD
 
    // Options to alter computations and parameters 
    if (Set) {
+      double dval;
       if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_ZREF_ZV_RATIO_C",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&zratioc); }
       if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_RUGV_ZVG2",0x0))) { Tcl_GetBooleanFromObj(Interp,obj,&use_zvg2); }
       if ((obj=Tcl_GetVar2Ex(Interp,Tcl_GetString(Set),"TOPO_ZV_MIN_THRESHOLD",0x0))) {
