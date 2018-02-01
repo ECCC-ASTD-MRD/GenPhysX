@@ -804,6 +804,7 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageAspect { Grid } {
    variable Param
+   variable Const
 
    GenX::Procs SRTM CDED CDEM
    Log::Print INFO "Computing slope and aspect"
@@ -1009,6 +1010,10 @@ proc GeoPhysX::AverageAspect { Grid } {
       fstdfield free GPXMG
    }
 
+# compute SLOP field as needed by SVS
+# limit to max of 45 degree to avoid numerical problem
+   vexpr GPXSLOP "tan(min(GPXSLA,45.0)*$Const(Deg2Rad))"
+
    #----- Save everything
    fstdfield define GPXFSA  -NOMVAR FSA0 -ETIKET GENPHYSX -IP2 0
    fstdfield define GPXFSAN -NOMVAR FSA  -ETIKET GENPHYSX -IP2 0
@@ -1016,6 +1021,7 @@ proc GeoPhysX::AverageAspect { Grid } {
    fstdfield define GPXFSAS -NOMVAR FSA  -ETIKET GENPHYSX -IP2 180
    fstdfield define GPXFSAW -NOMVAR FSA  -ETIKET GENPHYSX -IP2 270
 
+   fstdfield define GPXSLOP -NOMVAR SLOP -ETIKET GENPHYSX -IP2 0
    fstdfield define GPXSLA  -NOMVAR SLA0 -ETIKET GENPHYSX -IP2 0
    fstdfield define GPXSLAN -NOMVAR SLA  -ETIKET GENPHYSX -IP2 0
    fstdfield define GPXSLAE -NOMVAR SLA  -ETIKET GENPHYSX -IP2 90
@@ -1028,13 +1034,14 @@ proc GeoPhysX::AverageAspect { Grid } {
    fstdfield write GPXFSAS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXFSAW GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
+   fstdfield write GPXSLOP GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLA  GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLAN GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLAE GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLAS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLAW GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   fstdfield free GPXSLA GPXSLAN GPXSLAE GPXSLAS GPXSLAW GPXFSA GPXFSAN GPXFSAE GPXFSAS GPXFSAW
+   fstdfield free GPXSLA GPXSLAN GPXSLAE GPXSLAS GPXSLAW GPXFSA GPXFSAN GPXFSAE GPXFSAS GPXFSAW GPXSLOP
    gdalband free DEMTILE DEMTILE2
 }
 
