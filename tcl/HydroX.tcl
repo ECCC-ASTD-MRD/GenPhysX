@@ -133,7 +133,7 @@ proc HydroX::DrainDensity { Grid } {
    #----- Effectuer le calculs de drainage
    if { [fstdfield is GPXMG] } {
       vexpr $Grid ifelse(GPXMG>=0.05,(GPXRIVERSUM+GPXLAKESUM)/(darea($Grid)*GPXMG),0)
-      vexpr $Grid ifelse(GPXMG>0.0 && $Grid==0,0.001,$Grid)
+      vexpr $Grid ifelse(GPXMG>0.0 && $Grid<0.00000001,0.001,$Grid)
    } else {
       vexpr $Grid (GPXRIVERSUM+GPXLAKESUM)/(darea($Grid)-GPXLAKEAREA)
    }
@@ -147,10 +147,10 @@ proc HydroX::DrainDensity { Grid } {
    fstdfield define $Grid -NOMVAR DRND -IP1 1200
    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   fstdfield define GPXRIVERSUM -NOMVAR RSUM -IP1 1200
-   fstdfield write GPXRIVERSUM GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   fstdfield define GPXLAKESUM -NOMVAR LSUM -IP1 1200
-   fstdfield write GPXLAKESUM GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+#   fstdfield define GPXRIVERSUM -NOMVAR RSUM -IP1 1200
+#   fstdfield write GPXRIVERSUM GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+#   fstdfield define GPXLAKESUM -NOMVAR LSUM -IP1 1200
+#   fstdfield write GPXLAKESUM GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    if { ![fstdfield is GPXMG] } {
       fstdfield define GPXLAKEAREA -NOMVAR LARE -IP1 1200
