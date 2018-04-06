@@ -186,6 +186,9 @@ namespace eval GeoPhysX { } {
    #----- New NALCMS correspondance table, very similar to MODIS
    set Const(NALCMS2RPN) { {   0 1  2 3 4 5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 }
                          { -99 4 26 5 7 7 25 11 11 14 13 11 22 22 23 15 24 21  3  2 } }
+
+   set Const(SLOP_MAX_ANGLE)    45.          ;# Max angle of Slope in computation of SLOP field
+
    #----- Options
    set Opt(SubSplit)     False
    set Opt(LegacyMode)   False
@@ -1012,7 +1015,7 @@ proc GeoPhysX::AverageAspect { Grid } {
 
 # compute SLOP field as needed by SVS
 # limit to max of 45 degree to avoid numerical problem
-   vexpr GPXSLOP "tan(min(GPXSLA,45.0)*$Const(Deg2Rad))"
+   vexpr GPXSLOP "tan(min(GPXSLA,$Const(SLOP_MAX_ANGLE))*$Const(Deg2Rad))"
 
    #----- Save everything
    fstdfield define GPXFSA  -NOMVAR FSA0 -ETIKET GENPHYSX -IP2 0
