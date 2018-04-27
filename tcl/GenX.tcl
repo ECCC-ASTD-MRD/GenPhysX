@@ -101,6 +101,7 @@ namespace eval GenX { } {
    set Param(Datyp)     5                     ;#Default DATYP to use for output fields
    set Param(CappedNBits)  24                 ;# Legacy limited nbits used for MG, VF and soil
    set Param(Interpolation)  ""               ;#Interpolation mode to use by default
+   set Param(ETIKET)    "GENPHYSX"            ;#Default ETIKET to use for output fields
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
    set Param(Aspects)   { SRTM CDED250 CDED50 CDEM GTOPO30 }
