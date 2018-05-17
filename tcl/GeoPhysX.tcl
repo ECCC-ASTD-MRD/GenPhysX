@@ -1463,6 +1463,8 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 #
 # Goal     : Generate the land/sea mask through averaging.
 #            using Climate Research Data Package Water Bodies (from ESA CCI)
+#            CCI_LC Sea Water normally come in seperate file but it had been
+#            previously merge into vege file for speedup.
 #
 # Parameters :
 #   <Grid>   : Grid on which to generate the mask
@@ -1479,6 +1481,18 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid } {
 
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0
+
+# when Mask and Vege is not the same, means we are trying to mix 2 databases
+# in that case, Mask, SeaWater and (Urban if requested have priority)
+   if { $GenX::Param(Mask) != $GenX::Param(Vege) } {
+      fstdfield copy GPXVF1MG  $Grid
+      GenX::GridClear GPXVF1MG 0.0
+      fstdfield copy GPXVF21MG  $Grid
+      GenX::GridClear GPXVF21MG 0.0
+      set has_mask_VF1 1
+   } else {
+      set has_mask_VF1 0
+   }
 
    #----- Open the file
    gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(CCI_LC)/CCI_LC.tif
@@ -1501,6 +1515,14 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid } {
             # the CCI_LC raster no_data value is 0, but because we are remapping everything to 1 or 0 for water
             # we have to change it to something else, otherwise, the averaging that follows will not be correct
             gdalband stats CCITILE -nodata 255 -celldim $GenX::Param(Cell)
+
+            # avoid reading data again by obtaining Sea Water Mask and Urban data here
+            if { $has_mask_VF1 } {
+               vexpr VFTILE ifelse(CCITILE==211,1.0,0.0)
+               fstdfield gridinterp GPXVF1MG VFTILE AVERAGE False
+               vexpr VFTILE ifelse(CCITILE==190,1.0,0.0)
+               fstdfield gridinterp GPXVF21MG VFTILE AVERAGE False
+            }
             vexpr CCITILE ifelse((CCITILE==210)||(CCITILE==211),0.0,1.0)
             fstdfield gridinterp GPXMASK CCITILE AVERAGE False
          }
@@ -1510,8 +1532,18 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid } {
       fstdfield gridinterp GPXMASK - NOP True
       fstdfield define GPXMASK -NOMVAR MG -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
       fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
-      fstdfield free MASKTILE
+      fstdfield free GPXMASK
 
+      if { $has_mask_VF1 } {
+         fstdfield gridinterp GPXVF1MG - NOP True
+         fstdfield define GPXVF1MG -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 1199 -DATYP $GenX::Param(Datyp)
+         fstdfield write GPXVF1MG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+         fstdfield free GPXVF1MG
+         fstdfield gridinterp GPXVF21MG - NOP True
+         fstdfield define GPXVF21MG -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 1179 -DATYP $GenX::Param(Datyp)
+         fstdfield write GPXVF21MG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+         fstdfield free GPXVF21MG
+      }
       gdalband free CCITILE
    }
    gdalfile close CCIFILE
@@ -4836,6 +4868,169 @@ proc GeoPhysX::SubRoughnessLength { } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <GeoPhysX::CheckMaskVegeConsistency
+# Creation : May 2018 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Make sure mask and Vege is consistent
+#
+# Parameters   :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::CheckMaskVegeConsistency {} {
+
+   GenX::Procs
+   Log::Print INFO "Applying Mask versus Vege consistency checks"
+
+   #----- Read mask
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+      fstdfield read GRDMG GPXOUTFILE $idx
+   } else {
+      Log::Print WARNING "Could not find mask field MG"
+      return
+   }
+
+   #----- Read Urban VF(21)
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" 1179 -1 -1 "" "VF"]]] } {
+      fstdfield read GRDVF21 GPXOUTFILE $idx
+   } elseif { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1179 -1 -1 "" "VF"]]] } {
+      fstdfield read GRDVF21 GPXAUXFILE $idx
+   } else {
+      Log::Print WARNING "Could not find water field VF(21)"
+      return
+   }
+
+   #----- Read water coverage VF(3)
+   if { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1197 -1 -1 "" "VF"]]] } {
+      fstdfield read GRDVF3 GPXAUXFILE $idx
+   } else {
+      Log::Print WARNING "Could not find water field VF(3)"
+      return
+   }
+
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" 1199 -1 -1 "" "VF"]]] } {
+      fstdfield read GRDVF1 GPXOUTFILE $idx
+   } elseif { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1199 -1 -1 "" "VF"]]] } {
+      fstdfield read GRDVF1 GPXAUXFILE $idx
+   } else {
+      Log::Print WARNING "Could not find water field VF(1)"
+      return
+   }
+
+   set max  [lindex [fstdfield stats GRDVF1 -max] 0]
+   set has_SaltWater  [expr $max == 1.0]
+
+# Obtain VF3 from MG and VF1 if any
+   vexpr WATER "1.0-GRDMG"
+   if { $has_SaltWater } {
+      vexpr GRDVF1 "ifelse(GRDVF1>=WATER,WATER,GRDVF1)"
+      vexpr GRDVF3 "1.0-GRDVF1-GRDMG"
+   } else {
+      vexpr GRDVF3 "ifelse(GRDVF3>=WATER,WATER,GRDVF3)"
+      vexpr GRDVF1 "1.0-GRDVF3-GRDMG"
+   }
+
+   vexpr VFfixed "GRDVF1+GRDVF3+GRDVF21"
+   vexpr VFT     "GRDVF1+GRDVF3"
+
+# make sure fixed part is under 1.0
+   vexpr GRDVF21 "ifelse(VFfixed<=1.0,GRDVF21,1.0-VFT)"
+   vexpr VFfixed "GRDVF1+GRDVF3+GRDVF21"
+
+# now we have to balance remaining VF
+
+   fstdfield copy SUM_VF GRDMG
+   fstdfield stats SUM_VF -nodata 0
+   fstdfield clear SUM_VF
+
+   # compute temporary VG field here just for use by filler
+   fstdfield copy GPXVG GRDMG
+   fstdfield copy GPXTP GRDMG
+   GenX::GridClear [list GPXVG GPXTP] 0.0
+
+   set kks    { 2 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 }
+   foreach  kk  $kks {
+      set  ip1  [expr 1200-$kk]
+      fstdfield read VF${kk}FLD   GPXAUXFILE   -1 "" $ip1 -1 -1 "" "VF"
+      vexpr GPXVG ifelse(GPXTP>=VF${kk}FLD,GPXVG,$kk)
+      vexpr GPXTP ifelse(GPXTP>=VF${kk}FLD,GPXTP,VF${kk}FLD)
+      vexpr  SUM_VF  "SUM_VF + VF${kk}FLD"
+   }
+
+   vexpr SUM_VF  "SUM_VF + GRDVF21"
+   vexpr FILLER "ifelse(SUM_VF<GRDMG,GRDMG-SUM_VF,0.0)"
+# either use VF24 and VF25 as filler or try searching for nearest VF type
+
+   # VG is better compared as Integer
+   #
+   vexpr (Byte)GPXVGI  "round(GPXVG)"
+   set  ni  [fstdfield define GPXVG -NI]
+   set  nj  [fstdfield define GPXVG -NJ]
+   set  thresm  0.0001
+
+   for { set j 0 } { $j < $nj } { incr j } {
+      for { set i 0 } { $i < $ni } { incr i } {
+         set svf  [fstdfield stats SUM_VF -gridvalue $i $j]
+         set val  [fstdfield stats FILLER -gridvalue $i $j]
+         if { $val > 0.0 && $svf < $thresm } {
+# replace filler when possible with nearest vg
+            set vg [Fetch_Grid_Nearest GPXVGI $i $j]
+            if { $vg > 0 } {
+               if { [fstdfield is VF${vg}FLD] } {
+                  fstdfield stats FILLER -gridvalue $i $j 0.0
+                  set val0 [fstdfield stats VF${vg}FLD -gridvalue $i $j]
+                  set val1 [expr $val0 + $val]
+                  fstdfield stats VF${vg}FLD -gridvalue $i $j $val1
+               } else {
+                  Log::Print WARNING "cannot replace filler, VG=$vg and VF${vg}FLD not exist"
+               }
+            }
+         }
+      }
+   }
+
+   vexpr VF24FLD  "VF24FLD + FILLER*0.5"
+   vexpr VF25FLD  "VF25FLD + FILLER*0.5"
+   vexpr  SUM_VF  "SUM_VF + VFT + FILLER"
+
+   vexpr  VFA  "1 - VFfixed"
+   vexpr  VFT  "SUM_VF - VFfixed"
+
+   vexpr  SUM_VF2  "VFfixed"
+   foreach  kk  $kks {
+      vexpr PPVF  "ifelse(VFT==0,0.0,VF${kk}FLD*VFA/VFT)"
+      vexpr SUM_VF2  "SUM_VF2 + PPVF"
+      Log::Print INFO "Overwriting VF$kk"
+      fstdfield define PPVF -IP1 [expr 1200-$kk] -NOMVAR VF
+      fstdfield write PPVF  GPXAUXFILE -32 True
+      fstdfield free VF${kk}FLD
+   }
+
+   fstdfield define SUM_VF2 -NOMVAR SMVF -IP1 0
+   fstdfield write SUM_VF2  GPXAUXFILE -32 True
+
+   fstdfield define GRDVF21 -NOMVAR VF -IP1 1179
+   fstdfield write GRDVF21  GPXAUXFILE -32 True
+
+   Log::Print INFO "Overwriting VF3"
+   fstdfield define GRDVF3 -NOMVAR VF -IP1 1197
+   fstdfield write GRDVF3  GPXAUXFILE -32 True
+
+   Log::Print INFO "Overwriting VF1"
+   fstdfield define GRDVF1 -NOMVAR VF -IP1 1199
+   fstdfield write GRDVF1  GPXAUXFILE -32 True
+
+   fstdfield define GRDMG -NOMVAR MG -IP1 0
+   fstdfield write GRDMG  GPXAUXFILE -32 True
+
+   fstdfield free GRDVF3 GRDVF1 GRDMG GPXVF GPXVGI
+   fstdfield free SUM_VF SUM_VF2 VFA VFT
+}
+
+#----------------------------------------------------------------------------
 # Name     : <GeoPhysX::CheckConsistencyStandard>
 # Creation : Octobre 2008 - J.P. Gauthier - CMC/CMOE
 #
@@ -4992,9 +5187,9 @@ proc GeoPhysX::LegacyChecks { } {
          set val_me  [fstdfield stats GPXME -gridvalue $i $j]
          set val_mg  [fstdfield stats GPXMG -gridvalue $i $j]
          set val_vg  [fstdfield stats GPXVGI -gridvalue $i $j]
-         if { ($val_me > 0.0)&&($val_mg >= $thresm) } {
+         if { ($val_me >= 0.0)&&($val_mg >= $thresm) } {
             if { $val_vg == 1 || $val_vg == 3 } { # is Water
-               set val_vg [Fetch_Grid_Nearest GPXVGI $i $j]
+               set val_vg [expr int([Fetch_Grid_Nearest GPXVGI $i $j])]
                if { $val_vg > 0 } {
                   fstdfield stats GPXVG -gridvalue $i $j $val_vg
                }
@@ -5004,14 +5199,6 @@ proc GeoPhysX::LegacyChecks { } {
            if { $val_vg != 1 && $val_vg != 2 } { # is Not Sea or Not Ice
                fstdfield stats GPXVG -gridvalue $i $j 1
            }
-         }
-         if { ($val_me == 0.0)&&($val_mg >= $thresm) } {
-            if { $val_vg == 1 || $val_vg == 3 } { # is Water
-               set val_vg [Fetch_Grid_Nearest GPXVGI $i $j]
-               if { $val_vg > 0 } {
-                  fstdfield stats GPXVG -gridvalue $i $j $val_vg
-               }
-            }
          }
       }
    }

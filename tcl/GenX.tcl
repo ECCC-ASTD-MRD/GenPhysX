@@ -294,6 +294,11 @@ proc GenX::Process { Grid } {
       GeoPhysX::AverageSoilHydraulic $Grid
    }
 
+   #----- Consistency checks for mask vs vege
+   if { $Param(Vege)!=$Param(Mask) } {
+      GeoPhysX::CheckMaskVegeConsistency
+   }
+
    #----- Consistency checks
    switch $Param(Check) {
       "STD" { GeoPhysX::CheckConsistencyStandard }
@@ -303,6 +308,7 @@ proc GenX::Process { Grid } {
    if { $GeoPhysX::Opt(LegacyMode) } {
       GeoPhysX::LegacyChecks
    }
+
 
    #----- Sub grid calculations
    switch $Param(Sub) {
