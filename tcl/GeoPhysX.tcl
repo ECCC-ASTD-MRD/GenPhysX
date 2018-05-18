@@ -192,6 +192,7 @@ namespace eval GeoPhysX { } {
    #----- Options
    set Opt(SubSplit)     False
    set Opt(LegacyMode)   False
+   set Opt(SlopOnly)     False
    
 }
 
@@ -808,14 +809,19 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
 proc GeoPhysX::AverageAspect { Grid } {
    variable Param
    variable Const
+   variable Opt
 
    GenX::Procs SRTM CDED CDEM
    Log::Print INFO "Computing slope and aspect"
+   if { $Opt(SlopOnly) } {
+      Log::Print INFO "Opt(SlopOnly)=$Opt(SlopOnly) : Will generate SLOP only"
+   }
 
    set SRTM [expr [lsearch -exact $GenX::Param(Aspect) SRTM]!=-1]
    set CDED 0
    set CDEM 0
    set GTOPO30 0
+   set USGS 0
 
    if { [lsearch -exact $GenX::Param(Aspect) CDED250]!=-1 } {
       set CDED 250
@@ -829,19 +835,27 @@ proc GeoPhysX::AverageAspect { Grid } {
    if { [lsearch -exact $GenX::Param(Aspect) GTOPO30]!=-1 } {
       set GTOPO30 1
    }
+   if { [lsearch -exact $GenX::Param(Aspect) USGS]!=-1 } {
+      set USGS 1
+   }
 
+   fstdfield copy GPXSLA  $Grid
+if { ! $Opt(SlopOnly) } {
    fstdfield copy GPXFSA  $Grid
    fstdfield copy GPXFSAN $Grid
    fstdfield copy GPXFSAE $Grid
    fstdfield copy GPXFSAS $Grid
    fstdfield copy GPXFSAW $Grid
-   fstdfield copy GPXSLA  $Grid
    fstdfield copy GPXSLAN $Grid
    fstdfield copy GPXSLAE $Grid
    fstdfield copy GPXSLAS $Grid
    fstdfield copy GPXSLAW $Grid
+}
 
-   GenX::GridClear [list GPXFSA GPXFSAN GPXFSAE GPXFSAS GPXFSAW GPXSLA GPXSLAN GPXSLAE GPXSLAS GPXSLAW] -1
+   GenX::GridClear GPXSLA  -1
+if { ! $Opt(SlopOnly) } {
+   GenX::GridClear [list GPXFSA GPXFSAN GPXFSAE GPXFSAS GPXFSAW GPXSLAN GPXSLAE GPXSLAS GPXSLAW] -1
+}
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set lat0 [lindex $limits 0]
@@ -862,6 +876,8 @@ proc GeoPhysX::AverageAspect { Grid } {
       }
    } elseif { $CDED==250 } {
       set res [expr (3.75/3600.0)]  ;# 0.75 arc-secondes CDED
+   } elseif { $USGS } {
+      set res [expr (30.0/3600.0)]  ;# 30 arc-secondes GTOPO30
    } elseif { $GTOPO30 } {
       set res [expr (30.0/3600.0)]  ;# 30 arc-secondes GTOPO30
    }
@@ -955,6 +971,30 @@ proc GeoPhysX::AverageAspect { Grid } {
             gdalband clear DEMTILE2
          }
 
+   #----- Loop over files
+         if { $USGS } {
+            foreach file [glob $GenX::Param(DBase)/$GenX::Path(TopoUSGS)/*] {
+               Log::Print DEBUG "   Processing USGS file : $file"
+               fstdfile open GPXTOPOFILE read $file
+
+               #----- Loop over fields (tiles)
+               foreach field [fstdfield find GPXTOPOFILE -1 "" -1 -1 -1 "" "ME"] {
+                  Log::Print DEBUG "   Checking field : $field"
+                  fstdfield read USGSTILE GPXTOPOFILE $field
+                  if { ![llength [set limits [georef intersect [gdalband define DEMTILE -georef] [fstdfield define USGSTILE -georef]]]] } {
+                     continue
+                  }
+                  Log::Print DEBUG "      Processing field : $field"
+                  fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Param(Cell)
+                  gdalband gridinterp DEMTILE2 USGSTILE NEAREST
+               }
+               vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata0,DEMTILE2,DEMTILE)"
+               gdalband clear DEMTILE2
+               fstdfile close GPXTOPOFILE
+            }
+            set data True
+         }
+
          #----- If the tile has data, process on destination grid
          if { $data } {
 #set outfile gdal.$xla.$xlo.tif
@@ -973,19 +1013,20 @@ proc GeoPhysX::AverageAspect { Grid } {
    GenX::CacheFree
 
    #----- Finalize Aspect and Slope
+   fstdfield gridinterp GPXSLA  - NOP True
+   vexpr GPXSLA  max(GPXSLA,0);
+if { ! $Opt(SlopOnly) } {
    fstdfield gridinterp GPXFSA  - NOP True
    fstdfield gridinterp GPXFSAN - NOP True
    fstdfield gridinterp GPXFSAE - NOP True
    fstdfield gridinterp GPXFSAS - NOP True
    fstdfield gridinterp GPXFSAW - NOP True
 
-   fstdfield gridinterp GPXSLA  - NOP True
    fstdfield gridinterp GPXSLAN - NOP True
    fstdfield gridinterp GPXSLAE - NOP True
    fstdfield gridinterp GPXSLAS - NOP True
    fstdfield gridinterp GPXSLAW - NOP True
 
-   vexpr GPXSLA  max(GPXSLA,0);
    vexpr GPXSLAN max(GPXSLAN,0);
    vexpr GPXSLAE max(GPXSLAE,0);
    vexpr GPXSLAS max(GPXSLAS,0);
@@ -995,21 +1036,24 @@ proc GeoPhysX::AverageAspect { Grid } {
    vexpr GPXFSAE max(GPXFSAE,0);
    vexpr GPXFSAS max(GPXFSAS,0);
    vexpr GPXFSAW max(GPXFSAW,0);
+}
 
 # filters out border artifact on lakes and Ocean, when other Topo are mixed with CDED or CDEM
 #
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
       fstdfield read GPXMG GPXOUTFILE $idx
+      vexpr  GPXSLA  "ifelse(GPXMG==0,0.0,GPXSLA)"
+if { ! $Opt(SlopOnly) } {
       vexpr  GPXFSA  "ifelse(GPXMG==0,-1.0,GPXFSA)"
       vexpr  GPXFSAN "ifelse(GPXMG==0,0.0,GPXFSAN)"
       vexpr  GPXFSAE "ifelse(GPXMG==0,0.0,GPXFSAE)"
       vexpr  GPXFSAS "ifelse(GPXMG==0,0.0,GPXFSAS)"
       vexpr  GPXFSAW "ifelse(GPXMG==0,0.0,GPXFSAW)"
-      vexpr  GPXSLA  "ifelse(GPXMG==0,0.0,GPXSLA)"
       vexpr  GPXSLAN "ifelse(GPXMG==0,0.0,GPXSLAN)"
       vexpr  GPXSLAE "ifelse(GPXMG==0,0.0,GPXSLAE)"
       vexpr  GPXSLAS "ifelse(GPXMG==0,0.0,GPXSLAS)"
       vexpr  GPXSLAW "ifelse(GPXMG==0,0.0,GPXSLAW)"
+}
       fstdfield free GPXMG
    }
 
@@ -1018,13 +1062,15 @@ proc GeoPhysX::AverageAspect { Grid } {
    vexpr GPXSLOP "tan(min(GPXSLA,$Const(SLOP_MAX_ANGLE))*$Const(Deg2Rad))"
 
    #----- Save everything
+   fstdfield define GPXSLOP -NOMVAR SLOP -ETIKET $GenX::Param(ETIKET) -IP2 0
+   fstdfield write GPXSLOP GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+if { ! $Opt(SlopOnly) } {
    fstdfield define GPXFSA  -NOMVAR FSA0 -ETIKET $GenX::Param(ETIKET) -IP2 0
    fstdfield define GPXFSAN -NOMVAR FSA  -ETIKET $GenX::Param(ETIKET) -IP2 0
    fstdfield define GPXFSAE -NOMVAR FSA  -ETIKET $GenX::Param(ETIKET) -IP2 90
    fstdfield define GPXFSAS -NOMVAR FSA  -ETIKET $GenX::Param(ETIKET) -IP2 180
    fstdfield define GPXFSAW -NOMVAR FSA  -ETIKET $GenX::Param(ETIKET) -IP2 270
 
-   fstdfield define GPXSLOP -NOMVAR SLOP -ETIKET $GenX::Param(ETIKET) -IP2 0
    fstdfield define GPXSLA  -NOMVAR SLA0 -ETIKET $GenX::Param(ETIKET) -IP2 0
    fstdfield define GPXSLAN -NOMVAR SLA  -ETIKET $GenX::Param(ETIKET) -IP2 0
    fstdfield define GPXSLAE -NOMVAR SLA  -ETIKET $GenX::Param(ETIKET) -IP2 90
@@ -1037,12 +1083,12 @@ proc GeoPhysX::AverageAspect { Grid } {
    fstdfield write GPXFSAS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXFSAW GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-   fstdfield write GPXSLOP GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLA  GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLAN GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLAE GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLAS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXSLAW GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+}
 
    fstdfield free GPXSLA GPXSLAN GPXSLAE GPXSLAS GPXSLAW GPXFSA GPXFSAN GPXFSAE GPXFSAS GPXFSAW GPXSLOP
    gdalband free DEMTILE DEMTILE2
@@ -1099,11 +1145,13 @@ proc GeoPhysX::AverageDerivTile { Grid Band } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageAspectTile { Grid Band } {
+   variable Opt
 
    #----- Calculate slope and aspect for the tile
    vexpr SLATILE dslopedeg($Band)
    vexpr FSATILE daspect($Band)
 
+if { ! $Opt(SlopOnly) } {
    #----- Define aspect ranges
    vexpr FSAN ifelse((FSATILE>315 || FSATILE<=45)  && SLATILE!=0.0,1,-1)
    vexpr FSAE ifelse((FSATILE>45  && FSATILE<=135) && SLATILE!=0.0,1,-1)
@@ -1137,6 +1185,7 @@ proc GeoPhysX::AverageAspectTile { Grid Band } {
    fstdfield gridinterp GPXSLAW SLAW AVERAGE False
 
    fstdfield gridinterp GPXFSA FSATILE VECTOR_AVERAGE False
+}
    fstdfield gridinterp GPXSLA SLATILE AVERAGE False
 }
 
@@ -4977,7 +5026,7 @@ proc GeoPhysX::CheckMaskVegeConsistency {} {
          set val  [fstdfield stats FILLER -gridvalue $i $j]
          if { $val > 0.0 && $svf < $thresm } {
 # replace filler when possible with nearest vg
-            set vg [Fetch_Grid_Nearest GPXVGI $i $j]
+            set vg [expr int([Fetch_Grid_Nearest GPXVGI $i $j])]
             if { $vg > 0 } {
                if { [fstdfield is VF${vg}FLD] } {
                   fstdfield stats FILLER -gridvalue $i $j 0.0
