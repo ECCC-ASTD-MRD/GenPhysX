@@ -962,6 +962,13 @@ if { ! $Opt(SlopOnly) } {
          if { $GTOPO30 } {
             set nodata -9999
             foreach file [glob $GenX::Param(DBase)/$GenX::Path(GTOPO30)/*.DEM] {
+               set bands [gdalfile open GTOPO30FILE read $file]
+               if { ![llength [set limits [georef intersect [gdalband define DEMTILE2 -georef] [gdalfile georef GTOPO30FILE]]]] } {
+                  gdalfile close GTOPO30FILE
+                  continue
+               } else {
+                  gdalfile close GTOPO30FILE
+               }
                GenX::CacheGet $file $nodata
                Log::Print DEBUG "   Processing GTOPO30 file : $file"
                gdalband gridinterp DEMTILE2 $file NEAREST
@@ -981,6 +988,7 @@ if { ! $Opt(SlopOnly) } {
                foreach field [fstdfield find GPXTOPOFILE -1 "" -1 -1 -1 "" "ME"] {
                   Log::Print DEBUG "   Checking field : $field"
                   fstdfield read USGSTILE GPXTOPOFILE $field
+                  fstdfield  configure USGSTILE  -rendertexture 1 -interpdegree NEAREST
                   if { ![llength [set limits [georef intersect [gdalband define DEMTILE -georef] [fstdfield define USGSTILE -georef]]]] } {
                      continue
                   }
@@ -3452,6 +3460,11 @@ proc GeoPhysX::AverageSoilBNU { Grid } {
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/BD1.nc
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/BD2.nc
    GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J4 -999 $has_MG  "$GenX::Param(ETIKET)" "Bulk Density"
+
+   set files  {}
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/OC1.tif
+   lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/OC2.nc
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files SOC -999 $has_MG  "$GenX::Param(ETIKET)" "Organic Carbon"
 
    fstdfield free GPXMG GPXJ
 }
