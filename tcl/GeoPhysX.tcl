@@ -3369,7 +3369,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
    fstdfield define GPXCLAYT -NOMVAR J2 -ETIKET $GenX::Param(ETIKET) -IP1 1199 -DATYP $GenX::Param(Datyp)
    fstdfield define GPXGRAVT -NOMVAR J3 -ETIKET $GenX::Param(ETIKET) -IP1 1199 -DATYP $GenX::Param(Datyp)
    fstdfield define GPXBULKT -NOMVAR J4 -ETIKET $GenX::Param(ETIKET) -IP1 1199 -DATYP $GenX::Param(Datyp)
-   fstdfield define GPXOCT   -NOMVAR J5 -ETIKET $GenX::Param(ETIKET) -IP1 1199 -DATYP $GenX::Param(Datyp)
+   fstdfield define GPXOCT   -NOMVAR SOC -ETIKET $GenX::Param(ETIKET) -IP1 1199 -DATYP $GenX::Param(Datyp)
 
    fstdfield write GPXSANDT GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    fstdfield write GPXCLAYT GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
@@ -3383,7 +3383,7 @@ proc GeoPhysX::AverageSoilHWSD { Grid } {
       fstdfield define GPXCLAYS -NOMVAR J2 -ETIKET $GenX::Param(ETIKET) -IP1 $ip1 -DATYP $GenX::Param(Datyp)
       fstdfield define GPXGRAVS -NOMVAR J3 -ETIKET $GenX::Param(ETIKET) -IP1 $ip1 -DATYP $GenX::Param(Datyp)
       fstdfield define GPXBULKS -NOMVAR J4 -ETIKET $GenX::Param(ETIKET) -IP1 $ip1 -DATYP $GenX::Param(Datyp)
-      fstdfield define GPXOCS   -NOMVAR J5 -ETIKET $GenX::Param(ETIKET) -IP1 $ip1 -DATYP $GenX::Param(Datyp)
+      fstdfield define GPXOCS   -NOMVAR SOC -ETIKET $GenX::Param(ETIKET) -IP1 $ip1 -DATYP $GenX::Param(Datyp)
 
       fstdfield write GPXSANDS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
       fstdfield write GPXCLAYS GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
