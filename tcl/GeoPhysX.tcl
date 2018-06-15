@@ -974,6 +974,7 @@ if { ! $Opt(SlopOnly) } {
                gdalband gridinterp DEMTILE2 $file NEAREST
             }
             set data True
+            vexpr DEMTILE2 "ifelse(DEMTILE2!=$nodata,DEMTILE2,0)"
             vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata0,DEMTILE2,DEMTILE)"
             gdalband clear DEMTILE2
          }
