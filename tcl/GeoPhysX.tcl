@@ -4379,7 +4379,7 @@ proc GeoPhysX::LegacySub { Grid } {
    }
    if { $GenX::Settings(TOPO_RUGV_ZVG2) } {
       Log::Print INFO "Computing Z0 Using field ZVG2"
-      geophy subgrid_legacy GPXME GPXZVG1 GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+      geophy subgrid_legacy GPXME GPXZVG2 GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
    } else {
       Log::Print INFO "Computing Z0 Using field VG with Look up Table"
       geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
