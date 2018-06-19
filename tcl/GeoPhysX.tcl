@@ -333,6 +333,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
    GenX::Procs TopoUSGS
    Log::Print INFO "Averaging topography using USGS database"
 
+   set  has_data  0
    #----- Loop over files
    foreach file [glob $GenX::Param(DBase)/$GenX::Path(TopoUSGS)/*] {
       Log::Print DEBUG "   Processing USGS file : $file"
@@ -346,7 +347,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
             continue
          }
          fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Param(Cell)
-
+         set  has_data  1
          if { $Opt(LegacyMode) } {
             vexpr  (Float64)WEIGHTTILE  "cos(dlat(USGSTILE)*$Const(Deg2Rad))*$Const(ResoUSGS)*$Const(ResoUSGS)"
             # avoid missing values -99 found in the data
@@ -373,6 +374,14 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
       fstdfile close GPXTOPOFILE
    }
    fstdfield free USGSTILE 
+
+   if { $has_data == 0 } {
+      if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
+         Log::Print WARNING " No USGS Data found for this Grid, Will use GTOPO30 to initialize needed subgrid field in LegacySub"
+         GeoPhysX::AverageTopoGTOPO30 $Grid
+      }
+   }
+
    #----- Create source resolution used in destination
    fstdfield gridinterp GPXRMS - ACCUM
    vexpr GPXRES ifelse((GPXTSK && GPXRMS),900.0,GPXRES)
