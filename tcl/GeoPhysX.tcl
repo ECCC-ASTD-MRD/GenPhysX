@@ -947,10 +947,8 @@ if { ! $Opt(SlopOnly) } {
                gdalband gridinterp DEMTILE2 $file NEAREST
             }
             set data True
-            # for 250k, nodata are not always 0, many tiles are also -32767, so need to filter them out
-            if { $nodata == 0 } {
-               vexpr DEMTILE2  "ifelse(DEMTILE2<-32000,0,DEMTILE2)"
-            }
+            # nodata are not always 0, many tiles are also -32767, so need to filter them out
+            vexpr DEMTILE2  "ifelse(DEMTILE2<-32000,0,DEMTILE2)"
             vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata0,DEMTILE2,DEMTILE)"
             gdalband clear DEMTILE2
          }
