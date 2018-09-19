@@ -1027,6 +1027,7 @@ if { ! $Opt(SlopOnly) } {
       }
    }
    GenX::CacheFree
+   fstdfield free USGSTILE
 
    #----- Finalize Aspect and Slope
    fstdfield gridinterp GPXSLA  - NOP True
