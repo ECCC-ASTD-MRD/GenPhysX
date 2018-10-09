@@ -127,9 +127,9 @@ namespace eval GenX { } {
    set Param(SRTM3)     False
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
-   set Batch(Host)     pollux                ;#Host onto which to submit the job
+   set Batch(Host)     ppp2                  ;#Host onto which to submit the job
    set Batch(Queue)    ""                    ;#Queue to use for the job
-   set Batch(Mem)      2G                    ;#Memory needed for the job
+   set Batch(Mem)      8G                    ;#Memory needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
    set Batch(Submit)   ord_soumet
@@ -639,16 +639,16 @@ proc GenX::CommandLine { } {
       -rindex   [format "%-34s : SMOKE restart index (default 1)" (${::APP_COLOR_GREEN}$Param(SMOKEIndex)${::APP_COLOR_RESET})]
       -check    [format "%-34s : Do consistency checks {$Param(Checks)}" (${::APP_COLOR_GREEN}$Param(Check)${::APP_COLOR_RESET})]
       -subgrid  [format "%-34s : Calculates sub grid fields {$Param(Subs)}" (${::APP_COLOR_GREEN}$Param(Sub)${::APP_COLOR_RESET})]
-      -z0notopo [format "%-34s : Roughness length Z0 with no topographic contribution {$Param(Z0NoTopo)}" (${::APP_COLOR_GREEN}[join $Param(Z0NoTopos)]${::APP_COLOR_RESET})]
-      -z0topo   [format "%-34s : Roughness length Z0 with topographic contribution {$Param(Z0Topos)}" (${::APP_COLOR_GREEN}[join $Param(Z0Topos)]${::APP_COLOR_RESET})]
-      -z0crop   [format "%-34s : if set to non-zero, Crop Z0 should be used when crop fraction higher than this value" (${::APP_COLOR_GREEN}$Param(CropZ0)${::APP_COLOR_RESET})]
+      -z0notopo [format "%-34s : Roughness length Z0 with no topographic contribution {$Param(Z0NoTopos)}" (${::APP_COLOR_GREEN}[join $Param(Z0NoTopo)]${::APP_COLOR_RESET})]
+      -z0topo   [format "%-34s : Roughness length Z0 with topographic contribution {$Param(Z0Topos)}" (${::APP_COLOR_GREEN}[join $Param(Z0Topo)]${::APP_COLOR_RESET})]
+      -z0crop   [format "%-34s : if set to non-zero, Crop Z0 should be used when crop fraction higher than this value (default 0.0)" (${::APP_COLOR_GREEN}$Param(CropZ0)${::APP_COLOR_RESET})]
       -diag     [format "%-25s : Do diagnostics (Not implemented yet)" ""]
       -egmgh    [format "%-34s : Earth Gravitational Model database to use among {$Param(EGMGHs)}" (${::APP_COLOR_GREEN}[join $Param(EGMGH)]${::APP_COLOR_RESET})]
 
    Specific processing parameters:
       -topostag [format "%-25s : Treat multiple grids as staggered topography grids" ""]
       -z0filter [format "%-25s : Apply GEM filter to roughness length" ""]
-      -mefilter [format "%-25s : Select filter for topography field ME" ""]
+      -mefilter [format "%-34s : Select filter for topography field ME {$Param(MEFilters)}" (${::APP_COLOR_GREEN}$Param(MEFilter)${::APP_COLOR_RESET})]
       -celldim  [format "%-34s : Grid cell dimension (1=point, 2=area)" (${::APP_COLOR_GREEN}$Param(Cell)${::APP_COLOR_RESET})]
       -compress [format "%-34s : Compress standard file output" (${::APP_COLOR_GREEN}$Param(Compress)${::APP_COLOR_RESET})]
       -nbits    [format "%-34s : Maximum number of bits to use to save RPN fields" (${::APP_COLOR_GREEN}$Param(NBits)${::APP_COLOR_RESET})]
