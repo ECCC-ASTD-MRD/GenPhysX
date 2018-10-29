@@ -4,9 +4,10 @@ arg=$1
 #----- TODO: Change ssm packages for remote runs
 
 NAME="GenPhysX"
-DESC="Geophysical field generator."
+DESCRIPTION="Geophysical field generator."
+SUMMARY="Tool to generate geophysical fields (ME,MG,VG,...) for meteorological and environmental models (GEM,GEM-MACH,...)"
 VERSION="2.5.1"
-MAINTAINER="Jean-Philippe Gauthier"
+MAINTAINER="Vanh.Souvanlasy@canada.ca, Jean-Philippe.Gauthier@canada.ca"
 BUILDINFO=`git describe --always`
 
 if [[ -n $COMP_ARCH ]]; then
@@ -50,7 +51,7 @@ if [[ $arg = "-ssm" ]]; then
    cp -r ../doc ${SSM_DEV}/workspace/${SSM_NAME}
    cp ../.ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
    find ${SSM_DEV}/workspace/${SSM_NAME} -name .svn -exec rm -f -r {} \;
-   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESC/${DESC}/" ../.ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
+   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESCRIPTION/${DESCRIPTION}/" -e "s/SUMMARY/${SUMMARY}/" ../.ssm.d/control.json > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control.json
    cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
    rm -f -r ${SSM_NAME}
 else

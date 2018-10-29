@@ -10,3 +10,28 @@ packageName=`basename ${packageHome}`
 profileDirPath=${packageHome}/etc/profile.d
 profilePath=${profileDirPath}/${packageName}.sh
 loginPath=${profileDirPath}/${packageName}.csh
+
+
+rm -f ${profilePath} ${loginPath}
+mkdir -p ${profileDirPath}
+
+cat > ${profilePath} << EOF
+#----- Dependencies
+if [ `domainname -d` = "science.gc.ca" ]; then
+   #----- On the SCIENCE side
+   [ -n "\${SPI_PATH}" ]                || . ssmuse-sh -x eccc/cmd/cmds/apps/SPI/beta
+else 
+   #----- On the EC side
+   [ -n "\${SPI_PATH}" ]                || . ssmuse-sh -x cmds/apps/SPI/beta
+fi
+EOF
+
+cat > ${loginPath} << EOF
+if [ `domainname -d` = "science.gc.ca" ]; then
+   #----- On the SCIENCE side
+   [ -n "\${SPI_PATH}" ]                || . ssmuse-sh -x eccc/cmd/cmds/apps/SPI/beta
+else 
+   #----- On the EC side
+   [ -n "\${SPI_PATH}" ]                || . ssmuse-sh -x cmds/apps/SPI/beta
+fi
+EOF
