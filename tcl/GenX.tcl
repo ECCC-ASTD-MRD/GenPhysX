@@ -47,7 +47,7 @@ package require TclSystem
 package require MetData
 package require Logger
 
-set Log::Param(SPI)       7.10.2
+set Log::Param(SPI)       7.12.2
 set Log::Param(Level)     INFO
 
 namespace eval GenX { } {
@@ -58,7 +58,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.4.1               ;#Application version
+   set Param(Version)      2.5.1               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time

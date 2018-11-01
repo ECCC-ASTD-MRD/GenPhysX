@@ -4,10 +4,9 @@ arg=$1
 #----- TODO: Change ssm packages for remote runs
 
 NAME="GenPhysX"
-DESCRIPTION="Geophysical field generator."
-SUMMARY="Tool to generate geophysical fields (ME,MG,VG,...) for meteorological and environmental models (GEM,GEM-MACH,...)"
+DESC="Geophysical field generator."
 VERSION="2.5.1"
-MAINTAINER="Vanh.Souvanlasy@canada.ca, Jean-Philippe.Gauthier@canada.ca"
+MAINTAINER="Jean-Philippe Gauthier"
 BUILDINFO=`git describe --always`
 
 if [[ -n $COMP_ARCH ]]; then
@@ -18,10 +17,9 @@ SSM_VERSION=${VERSION}${COMP}
 SSM_NAME=${NAME}_${VERSION}${COMP}_${ORDENV_PLAT}
 
 MAKE=make
-SPI_VERSION=8.0.0
-LIB_EER=${SSM_DEV}/workspace/eerUtils_3.4.0${COMP}_${ORDENV_PLAT}           #----- Location of eer library
+SPI_VERSION=7.12.2
 LIB_PATH=${SSM_DEV}/workspace/libSPI_${SPI_VERSION}${COMP}_${ORDENV_PLAT}                              
-EXT_LIB=/fs/ssm/eccc/cmd/cmds/extsup/shared/master/ubuntu-14.04-amd64-64
+LIB_PATH=/ssm/net/cmoe/apps/libSPI_7.12.2_ubuntu-14.04-amd64-64
 
 #unset LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=${LIB_PATH}/lib:$LD_LIBRARY_PATH
@@ -51,7 +49,7 @@ if [[ $arg = "-ssm" ]]; then
    cp -r ../doc ${SSM_DEV}/workspace/${SSM_NAME}
    cp ../.ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
    find ${SSM_DEV}/workspace/${SSM_NAME} -name .svn -exec rm -f -r {} \;
-   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESCRIPTION/${DESCRIPTION}/" -e "s/SUMMARY/${SUMMARY}/" ../.ssm.d/control.json > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control.json
+   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESC/${DESC}/" ../.ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
    cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
    rm -f -r ${SSM_NAME}
 else
@@ -69,8 +67,8 @@ echo ""
          --with-tcl=${LIB_PATH}/TCL/lib \
          --with-tk=${LIB_PATH}/TCL/lib \
          --with-rmn=${LIB_PATH} \
-         --with-eer=${LIB_EER} \
-         --with-gdal=${EXT_LIB}/bin/gdal-config
+         --with-eer=${SSM_DEV}/workspace/eerUtils_3.3.2${COMP}_${ORDENV_PLAT} \
+         --with-gdal=${LIB_PATH}/bin/gdal-config
    fi
 
    $MAKE install
