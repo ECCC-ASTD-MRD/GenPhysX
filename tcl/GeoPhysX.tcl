@@ -3824,7 +3824,6 @@ proc GeoPhysX::AverageSoil_SoilGrids { Grid } {
 proc GeoPhysX::AverageGeoidHeight { Grid } {
 
    variable  Param
-
 #
 # make sure EGMGH is valid, if not, set it to default EGM96
 #
@@ -3842,33 +3841,219 @@ proc GeoPhysX::AverageGeoidHeight { Grid } {
    fstdfield copy GPXGH  $Grid
    GenX::GridClear GPXGH 0.0
 
+   GeoPhysX::AverageIndexedBands  GPXGH  $GenX::Param(EGMGH) "$GenX::Param(DBase)/$GenX::Path(EGMGH)/data"
+
+   fstdfield define GPXGH -NOMVAR GH -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXGH GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield free GPXGH
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageBathymetry>
+# Creation : Octobre 2018 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the bathymetry through averaging.
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the bathy
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageBathymetry { Grid } {
+   variable Param
+   variable Opt
+
+   GenX::Procs $GenX::Param(Bathy)
+
+   fstdfield copy GPXCHS   $Grid
+   fstdfield copy GPXBATHY $Grid
+   fstdfield copy GPXDEPTH $Grid
+ 
+   GenX::GridClear {GPXBATHY} 0.0
+   set nodata 999 
+   GenX::GridClear {GPXDEPTH GPXCHS} $nodata
+
+   #----- check for needed fields
+   set Has_TOPO 1
+   if { [catch {
+      fstdfield read GPXTOPO   GPXOUTFILE -1 "" -1   -1 -1 "" "MENF"
+      } ] } {
+      Log::Print WARNING "Missing topo field"
+      set Has_TOPO 0
+   }
+   set Has_MG 1
+   if { [catch {
+      fstdfield read GPXMG   GPXOUTFILE -1 "" -1   -1 -1 "" "MG"
+      } ] } {
+      Log::Print WARNING "Missing Mask field MG"
+      set Has_MG 0
+   }
+
+   # the GEBCO bathymetry field is leveled according to sea levels = 0
+   if { [lsearch -exact $GenX::Param(Bathy) GEBCO]!=-1 } {
+      GeoPhysX::AverageBathymetryGEBCO  GPXBATHY
+      if { $Has_TOPO } {
+         vexpr  GPXDEPTH  "GPXBATHY-GPXTOPO"
+      }
+   }
+
+   # will use lake depth data if present
+   if { [lsearch -exact $GenX::Param(Bathy) HYDROLAKES]!=-1 } {
+
+      fstdfield copy GPXLAKED $Grid
+      fstdfield copy GPXLAKEF $Grid
+      GenX::GridClear {GPXLAKED GPXLAKEF} 0.0
+      HydroX::HydroLakesDepth GPXLAKED GPXLAKEF
+
+      vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
+   }
+
+   # the CHS bathymetry is simply water depth
+   if { [lsearch -exact $GenX::Param(Bathy) CHS]!=-1 } {
+
+      Log::Print INFO "Averaging CHS bathymetry data"
+      GenX::GridClear GPXBATHY $nodata
+      GeoPhysX::AverageIndexedBands  GPXBATHY CHS "$GenX::Param(DBase)/$GenX::Path(CHS)" $nodata
+
+      vexpr  GPXDEPTH  "ifelse(GPXBATHY<$nodata,GPXBATHY,GPXDEPTH)"
+   }
+
+   # the NCEI bathymetry is simply water depth
+   if { [lsearch -exact $GenX::Param(Bathy) NCEI]!=-1 } {
+
+      Log::Print INFO "Averaging NCEI Great Lakes bathymetry data"
+      set ncei_nodata -9999
+      GenX::GridClear GPXBATHY $ncei_nodata
+      GeoPhysX::AverageIndexedBands  GPXBATHY NCEI "$GenX::Param(DBase)/$GenX::Path(NCEI)" $ncei_nodata
+
+      vexpr  GPXDEPTH  "ifelse(GPXBATHY<0&&GPXBATHY>$ncei_nodata,GPXBATHY,GPXDEPTH)"
+   }
+
+   if { $Has_TOPO } {
+      vexpr GPXBATHY  "GPXDEPTH+GPXTOPO"
+      fstdfield define GPXBATHY -NOMVAR BMSL -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+      fstdfield write GPXBATHY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
+
+   if { $Has_MG } {
+      vexpr  GPXDEPTH  "ifelse(GPXMG<1.0,GPXDEPTH,0.0)"
+   }
+   fstdfield define GPXDEPTH -NOMVAR DEEP -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+   fstdfield write GPXDEPTH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   #----- Save output
+
+   fstdfield free GPXBATHY GPXDEPTH GPXCHS 
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageBathymetryGEBCO>
+# Creation : October 2018 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the bathymetry using GEBCO
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the bathymetry
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageBathymetryGEBCO { Grid } {
+   variable Param
+   variable Opt
+
+   GenX::Procs GEBCO
+   Log::Print INFO "Averaging bathymetry using GEBCO database"
+
+   set file  "$GenX::Param(DBase)/$GenX::Path(GEBCO)/GEBCO_2014_1D.nc"
+   set bands [gdalfile open GEBCOFILE read $file]
+
+   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GEBCOFILE]]]] } {
+      Log::Print WARNING "Specified grid does not intersect with GEBCO bathymetry database"
+      return
+   } else {
+      Log::Print INFO "Grid intersection with GEBCO bathymetry database is { $limits }"
+      set x0 [lindex $limits 0]
+      set x1 [lindex $limits 2]
+      set y0 [lindex $limits 1]
+      set y1 [lindex $limits 3]
+   }
+
+   #----- Loop over the data by tiles since it's too big to fit in memory
+   for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+      for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+         Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+         gdalband read GEBCOTILE { { GEBCOFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+         gdalband stats GEBCOTILE -nodata 0 -celldim $GenX::Param(Cell)
+
+         fstdfield gridinterp $Grid GEBCOTILE AVERAGE False
+      }
+   }
+
+   fstdfield gridinterp $Grid - NOP True
+   gdalfile close GEBCOFILE
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageIndexedBands>
+# Creation : October 2018 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Average bands into field
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the field
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageIndexedBands { Grid dbname basedir {nodata ""} {maxvalue  3.4e38} } {
+   variable Param
+
+   GenX::Procs $dbname
+   Log::Print INFO "Averaging field using bands from $dbname database"
+
+   # choose  the right mode for interpolation
    set grid_reso [GenX::Get_Grid_Reso $Grid]
    Log::Print INFO "   Estimated target grid resolution=$grid_reso"
-
-   set  mode  "$GenX::Param(Interpolation)"
-   if { $mode != "" } {
-      Log::Print INFO "   Using interpolation mode $mode"
+   set  inter_mode  "$GenX::Param(Interpolation)"
+   switch $inter_mode {
+      "LINEAR" {
+      }
+      "AVERAGE" {
+      }
+      "NEAREST" {
+      }
+      default {
+         set inter_mode ""
+      }
    }
-#
-# use EGM db files
-#
-   set lcdir  $GenX::Param(DBase)/$GenX::Path($GenX::Param(EGMGH))
-   set files [GenX::FindFiles $lcdir/data/Index/Index.shp $Grid]
+   if { $inter_mode != "" } {
+      Log::Print INFO "   Will use interpolation mode $inter_mode"
+   } else {
+      Log::Print INFO "   Will choose interpolation mode for each tile"
+   }
 
+   set indexfile "$basedir/Index/Index.shp"
+   set files [GenX::FindFiles $indexfile $Grid]
    #----- Loop over files
    if { [set nb [llength $files]] } {
 
       foreach file $files {
-         set  filename $lcdir/data/$file
+         set  filename $basedir/$file
          Log::Print INFO "   Processing file ([incr n]/$nb) $filename"
 
-         gdalfile open GHFILE read $lcdir/data/$file
-   
-         set georef [gdalfile  georef GHFILE]
+         gdalfile open BDBFILE read $filename
+         set georef [gdalfile  georef BDBFILE]
 
-
-         if { $mode == "" } {
-            set file_reso [GenX::Get_GDFile_Reso GHFILE]
+         if { $inter_mode == "" } {
+            set file_reso [GenX::Get_GDFile_Reso BDBFILE]
             Log::Print INFO "   GDAL File Reso=$file_reso"
             if { $grid_reso <= $file_reso } {
                set mode "LINEAR"
@@ -3876,10 +4061,12 @@ proc GeoPhysX::AverageGeoidHeight { Grid } {
                set mode "AVERAGE"
             }
             Log::Print INFO "   Using interpolation mode $mode"
+         } else {
+            set mode  $inter_mode
          }
 
-         if { [llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GHFILE]]]] } {
-            Log::Print INFO "   Grid intersection with GH file is { $limits }"
+         if { [llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef BDBFILE]]]] } {
+            Log::Print INFO "   Grid intersection with data file is { $limits }"
             set x0 [lindex $limits 0]
             set x1 [lindex $limits 2]
             set y0 [lindex $limits 1]
@@ -3889,29 +4076,32 @@ proc GeoPhysX::AverageGeoidHeight { Grid } {
             for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
                for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
                   Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
-                  gdalband read GHTILE { { GHFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
-                  gdalband stats GHTILE -celldim $GenX::Param(Cell)
+                  gdalband read BDBTILE { { BDBFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+
+                  # using default file's nodata or specify a new one
+                  if { "$nodata" != "" } {
+                     vexpr BDBTILE "ifelse(BDBTILE>$maxvalue,$nodata,BDBTILE)"
+                     gdalband stats BDBTILE -nodata $nodata -celldim $GenX::Param(Cell)
+                  } else {
+                     gdalband stats BDBTILE -celldim $GenX::Param(Cell)
+                  }
    
                   if { [string compare $mode "AVERAGE"] == 0 } {
-                     fstdfield gridinterp GPXGH GHTILE AVERAGE False
+                     fstdfield gridinterp $Grid BDBTILE AVERAGE False
                   } else {
-                     fstdfield gridinterp GPXGH GHTILE $mode
+                     fstdfield gridinterp $Grid BDBTILE $mode
                   }
-                  gdalband free GHTILE
+                  gdalband free BDBTILE
                }
             }
          }
-         gdalfile close GHFILE
+         gdalfile close BDBFILE
       }
-      #----- Save output
       if { [string compare $mode "AVERAGE"] == 0 } {
-         fstdfield gridinterp GPXGH - NOP True
+         fstdfield gridinterp $Grid - NOP True
       }
-      fstdfield define GPXGH -NOMVAR GH -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
-      fstdfield write GPXGH GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-      fstdfield free GHTILE
    } else {
-      Log::Print WARNING "The grid is not within $GenX::Param(EGMGH) limits"
+      Log::Print WARNING "The grid is not within $dbname limits"
    }
 }
 

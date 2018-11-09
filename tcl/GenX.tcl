@@ -83,6 +83,7 @@ namespace eval GenX { } {
    set Param(Hydraulic)  False                 ;#Soil Hydraulic parameters enabled
    set Param(MEFilter)   "STD"                 ;#Topo filter selected
    set Param(EGMGH)      ""                    ;#Earth Gravitational Model Geoid Height
+   set Param(Bathy)      ""                    ;#Bathymetry
    set Param(MEFilterForZ0) "STD"              ;#Topo filter selected for Z0
 
    set Param(Diag)      False                 ;#Diagnostics
@@ -121,6 +122,7 @@ namespace eval GenX { } {
    set Param(CropZ0)    0.0                  ;# if set to non-zero, Crop Z0 should be used when crop fraction higher
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS_5.1 AURAMS }   ;#Model cible
    set Param(EGMGHs)    { EGM96 EGM2008 }
+   set Param(Bathys)    { CHS NCEI GEBCO HYDROLAKES }
    set Param(Interpolations) { LINEAR NEAREST CUBIC AVERAGE }
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
@@ -194,8 +196,12 @@ namespace eval GenX { } {
    set Path(SOILGRIDS)  SoilGrids
    set Path(EGM2008)    NGA/EGM2008
    set Path(EGM96)      NGA/EGM96
+   set Path(CHS)        CHS/bathymetry
+   set Path(NCEI)       NOAA/NCEI/bathymetry
+   set Path(GEBCO)      GEBCO_2014
+   set Path(HYDROLAKES) HydroSHEDS/Misc/HydroLakes/splitted
 
-   set Path(StatCan)   /cnfs/dev/cmds/afsm/lib/geo/StatCan2006
+   set Path(StatCan)    $Param(DBase)/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
    set Path(SkipList)        ""
 
@@ -378,6 +384,11 @@ proc GenX::Process { Grid } {
    #----- Earth Gravitional Model
    if { $Param(EGMGH)!="" } {
       GeoPhysX::AverageGeoidHeight $Grid
+   }
+
+   #----- Bathymetry
+   if { $Param(Bathy)!="" } {
+      GeoPhysX::AverageBathymetry $Grid
    }
 }
 
@@ -644,6 +655,7 @@ proc GenX::CommandLine { } {
       -z0crop   [format "%-34s : if set to non-zero, Crop Z0 should be used when crop fraction higher than this value" (${::APP_COLOR_GREEN}$Param(CropZ0)${::APP_COLOR_RESET})]
       -diag     [format "%-25s : Do diagnostics (Not implemented yet)" ""]
       -egmgh    [format "%-34s : Earth Gravitational Model database to use among {$Param(EGMGHs)}" (${::APP_COLOR_GREEN}[join $Param(EGMGH)]${::APP_COLOR_RESET})]
+      -bathy    [format "%-34s : Bathymetry data to use among {$Param(Bathys)}" (${::APP_COLOR_GREEN}[join $Param(Bathy)]${::APP_COLOR_RESET})]
 
    Specific processing parameters:
       -topostag [format "%-25s : Treat multiple grids as staggered topography grids" ""]
@@ -747,6 +759,7 @@ proc GenX::ParseCommandLine { } {
          "geomask"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
          "vege"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
          "soil"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
+         "bathy"     { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Bathy) $GenX::Param(Bathys)]; incr flags }
          "egmgh"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(EGMGH) $GenX::Param(EGMGHs)]; incr flags }
          "subgrid"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Sub)]; incr flags }
          "aspect"    { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Aspect) $GenX::Param(Aspects)]; incr flags }
