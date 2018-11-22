@@ -3834,6 +3834,7 @@ proc GeoPhysX::AverageGeoidHeight { Grid } {
          set  GenX::Param(EGMGH)  "EGM96"
       }
    }
+   set GenX::Path(EGMGH)  $GenX::Path($GenX::Param(EGMGH))
 
    GenX::Procs $GenX::Param(EGMGH)
 
