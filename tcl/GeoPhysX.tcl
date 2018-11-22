@@ -185,7 +185,7 @@ namespace eval GeoPhysX { } {
 
    #----- New NALCMS correspondance table, very similar to MODIS
    set Const(NALCMS2RPN) { {   0 1  2 3 4 5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 }
-                         { -99 4 26 5 7 7 25 11 11 14 13 11 22 22 23 15 24 21  3  2 } }
+                           { -99 4 26 5 7 7 25 11 11 14 13 11 22 22 23 15 24 21  3  2 } }
 
    set Const(SLOP_MAX_ANGLE)    45.          ;# Max angle of Slope in computation of SLOP field
 
@@ -1235,6 +1235,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid }
       "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
       "USGS_R"    { GeoPhysX::AverageMaskUSGS_R    $Grid }
+      "NALCMS"    { GeoPhysX::AverageMaskNALCMS    $Grid }
    }
 }
 
@@ -1761,6 +1762,83 @@ proc GeoPhysX::AverageMaskAAFC { Grid } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageMaskNALCMS>
+# Creation : Nov 2018 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the land/sea mask through averaging.
+#            using NALCMS
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageMaskNALCMS { Grid } {
+
+   GenX::Procs CEC_NALCMS
+   Log::Print INFO "Averaging mask using NALCMS vegetation database"
+
+   fstdfield copy GPXMASK  $Grid
+   GenX::GridClear GPXMASK 0.0
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   set la0 [lindex $limits 0]
+   set lo0 [lindex $limits 1]
+   set la1 [lindex $limits 2]
+   set lo1 [lindex $limits 3]
+   Log::Print DEBUG "   Grid limits are from ($la0,$lo0) to ($la1,$lo1)"
+
+   set lcdir  $GenX::Param(DBase)/$GenX::Path(NALCMS)
+   set files  [glob -nocomplain $lcdir/*.tif]
+
+   #----- Loop over files
+   if { [set nb [llength $files]] } {
+
+      foreach file $files {
+         Log::Print INFO "   Processing file ([incr n]/$nb) $file"
+
+         gdalfile open NALCMSFILE read $file
+   
+         if { [llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef NALCMSFILE]]]] } {
+   
+            Log::Print INFO "Grid intersection with NALCMS file is { $limits }"
+            set x0 [lindex $limits 0]
+            set x1 [lindex $limits 2]
+            set y0 [lindex $limits 1]
+            set y1 [lindex $limits 3]
+   
+         #----- Loop over the data by tiles since it's too big to fit in memory
+            for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+               for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+                  Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+                  gdalband read NALCMSTILE { { NALCMSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+                  gdalband stats NALCMSTILE -celldim $GenX::Param(Cell)
+   
+                  # the NALCMS raster no_data value is 0, but because we are remapping everything to 1 or 0 for water
+                  # we have to change it to something else, otherwise, the averaging that follows will not be correct
+                  gdalband stats NALCMSTILE -nodata 0 -celldim $GenX::Param(Cell)
+                  vexpr NALCMSTILE ifelse(NALCMSTILE==18||NALCMSTILE==0,0.0,1.0)
+                  fstdfield gridinterp GPXMASK NALCMSTILE AVERAGE False
+                  gdalband free NALCMSTILE
+               }
+            }
+         }
+         gdalfile close NALCMSFILE
+      }
+      #----- Save output
+      fstdfield gridinterp GPXMASK - NOP True
+      fstdfield define GPXMASK -NOMVAR MG -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+      fstdfield free MASKTILE
+   } else {
+      Log::Print WARNING "The grid is not within NALCMS limits"
+   }
+}
+
+#----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageGeoMask>
 # Creation : June 2006 - J.P. Gauthier - CMC/CMOE
 #
@@ -1914,6 +1992,8 @@ proc GeoPhysX::AverageVege { Grid } {
    }
    fstdfield free GPXVSK
    fstdfield gridinterp GPXVF - NOP True
+
+   fstdfield stats GPXVF -mask ""
 
    #----- Save the 26 Vege types
    fstdfield define GPXVF -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP2 0 -DATYP $GenX::Param(Datyp)
