@@ -4,9 +4,10 @@ arg=$1
 #----- TODO: Change ssm packages for remote runs
 
 NAME="GenPhysX"
-DESC="Geophysical field generator."
+DESCRIPTION="Geophysical field generator."
+SUMMARY="Tool to generate geophysical fields (ME,MG,VG,...) for meteorological and environmental models (GEM,GEM-MACH,...)"
 VERSION="2.5.1"
-MAINTAINER="Jean-Philippe Gauthier"
+MAINTAINER="Vanh.Souvanlasy@canada.ca, Jean-Philippe.Gauthier@canada.ca"
 BUILDINFO=`git describe --always`
 
 if [[ -n $COMP_ARCH ]]; then
@@ -17,11 +18,10 @@ SSM_VERSION=${VERSION}${COMP}
 SSM_NAME=${NAME}_${VERSION}${COMP}_${ORDENV_PLAT}
 
 MAKE=make
-SPI_VERSION=7.12.2
+SPI_VERSION=8.0.0
+LIB_EER=${SSM_DEV}/workspace/eerUtils_3.4.0${COMP}_${ORDENV_PLAT}           #----- Location of eer library
 LIB_PATH=${SSM_DEV}/workspace/libSPI_${SPI_VERSION}${COMP}_${ORDENV_PLAT}                              
-LIB_PATH=/ssm/net/cmoe/apps/libSPI_7.12.2_ubuntu-14.04-amd64-64
 
-#unset LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=${LIB_PATH}/lib:$LD_LIBRARY_PATH
 export LIBRARY_PATH=${LIB_PATH}/lib:$LIBRARY_PATH
 
@@ -31,6 +31,7 @@ if [[ -n $INTELCOMP_HOME ]]; then
 fi
 
 export CFLAGS="-std=c99 -Winline"
+type -P autoconf2.50 && autoconf=autoconf2.50 || autoconf=autoconf
 
 echo ""
 echo "----- Building platform : ${ORDENV_PLAT} -----"
@@ -49,7 +50,7 @@ if [[ $arg = "-ssm" ]]; then
    cp -r ../doc ${SSM_DEV}/workspace/${SSM_NAME}
    cp ../.ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
    find ${SSM_DEV}/workspace/${SSM_NAME} -name .svn -exec rm -f -r {} \;
-   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESC/${DESC}/" ../.ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
+   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESCRIPTION/${DESCRIPTION}/" -e "s/SUMMARY/${SUMMARY}/" ../.ssm.d/control.json > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control.json
    cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
    rm -f -r ${SSM_NAME}
 else
@@ -59,16 +60,16 @@ echo "----- Making TclGeoPhy Library -----"
 echo ""
    if [[ $arg = "-reconf" ]]; then
       make distclean
-      autoconf2.50
+      $autoconf
       ./configure \
          --exec-prefix=${LIB_PATH}/TCL \
          --enable-threads \
          --enable-64bit \
          --with-tcl=${LIB_PATH}/TCL/lib \
          --with-tk=${LIB_PATH}/TCL/lib \
-         --with-rmn=${LIB_PATH} \
-         --with-eer=${SSM_DEV}/workspace/eerUtils_3.3.2${COMP}_${ORDENV_PLAT} \
-         --with-gdal=${LIB_PATH}/bin/gdal-config
+         --with-eer=${LIB_EER} \
+         --with-rmn=${LIB_EER} \
+         --with-gdal=`which gdal-config`
    fi
 
    $MAKE install

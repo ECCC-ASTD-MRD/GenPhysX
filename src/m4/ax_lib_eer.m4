@@ -169,7 +169,7 @@ System_IsBigEndian();
         LIBS="$saved_LIBS"
     fi
 
-    AC_MSG_CHECKING([for EER])
+    AC_MSG_CHECKING([for EERUtils])
 
 #EER_LDFLAGS="$eer_lib_flags"
 #eer_header_found="yes"
