@@ -372,3 +372,47 @@ proc HydroX::DrainDensityDCW { Grid la0 lo0 la1 lo1 clipped } {
       ogrfile close LAKEFILE
    }
 }
+
+#----------------------------------------------------------------------------
+# Name     : <HydroX::HydroLakesDepth>
+# Creation : 
+#
+# Goal     :  extract  lakes fraction and lakes depth from HydroLAKES
+#            
+#
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate lake depth
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc HydroX::HydroLakesDepth { Grid LakeF } {
+   variable Param
+
+   GenX::Procs HydroLAKES 
+
+   fstdfield clear $LakeF
+   fstdfield clear $Grid
+
+   set shp_dir  "$GenX::Param(DBase)/$GenX::Path(HYDROLAKES)"
+   set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
+
+   foreach file  $regfiles {
+      Log::Print INFO "Processing : $shp_dir$file"
+      set layer [ogrfile open LAYERFILE read "${shp_dir}${file}"]
+      ogrlayer read FEATURES LAYERFILE 0
+
+      Log::Print INFO "Calculating Lake fraction"
+      fstdfield gridinterp $LakeF FEATURES ALIASED 1
+
+      Log::Print INFO "Calculating Lake Average Depth"
+      fstdfield gridinterp $Grid FEATURES ALIASED Depth_avg
+      ogrfile close LAYERFILE
+   }
+
+   # we want to have an uniformed negative depth values like bathymetry
+   vexpr  $Grid "ifelse($LakeF>0.0,-1.0*$Grid/$LakeF,0.0)"
+}
