@@ -96,6 +96,7 @@ namespace eval GeoPhysX { } {
                                    #   calculation of the roughness length over soil and glacier
    set Const(z0min)   0.0001      ;# Threshold value of roughness length in meters, used to identify
                                    #   some "gaps" in the roughness length field
+   set Const(z0minUr) 0.75      ;# minimal urban value of roughness length in meters, when VCH is nil
    set Const(gaz0)    0.0003      ;# Roughness length for glacier-type surfaces
    set Const(waz0)    0.001       ;# Roughness length for water
    set Const(lres)    5000.0      ;# Horizontal reference scale (5000 m) for topography features,
@@ -5030,7 +5031,7 @@ proc GeoPhysX::SubRoughnessLength { } {
          Log::Print WARNING "Missing fields, will not calculate roughness length from canopy height"
          return
       }
-      vexpr GPXZ0VG ifelse(GPXMG>0.0,GPXVCH*0.1,0.0)
+      vexpr GPXZ0VG ifelse(GPXMG>0.0,max(GPXVCH*0.1,$Const(z0minUr)),0.0)
       fstdfield define GPXZ0VG -NOMVAR Z0VG -ETIKET $GenX::Param(ETIKET) -IP1 0 -IP2 0
       fstdfield write GPXZ0VG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
