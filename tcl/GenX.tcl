@@ -975,6 +975,25 @@ proc GenX::ParseTarget { } {
                    set Settings(TOPO_FILMX_L) True
                    set Settings(TOPO_CLIP_ORO_L) False
                 }
+      "HRDPS_NAT" { set Param(Topo)     "USGS"
+                    set Param(Vege)     "USGS_R"
+                    set Param(Mask)     "USGS_R"
+                    set Param(Soil)     "JPL"
+                    set Param(Check)    "STD"
+                    set Param(Sub)      "STD"
+                    set Param(Z0Filter) True
+                    set Param(Z0NoTopo) CANOPY_LT
+                    set Param(Compress) False
+                    set Param(Cell)     2
+
+                    set Settings(GRD_TYP_S)    LU
+                    set Settings(TOPO_DGFMS_L) True
+                    set Settings(TOPO_DGFMX_L) True
+                    set Settings(TOPO_FILMX_L) True
+                    set Settings(TOPO_CLIP_ORO_L) False
+
+                    set Const(z0minUr)  0.75
+                  }
    }
 }
 
