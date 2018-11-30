@@ -832,6 +832,7 @@ proc GeoPhysX::AverageAspect { Grid } {
    set CDEM 0
    set GTOPO30 0
    set USGS 0
+   set GMTED 0
 
    if { [lsearch -exact $GenX::Param(Aspect) CDED250]!=-1 } {
       set CDED 250
@@ -847,6 +848,15 @@ proc GeoPhysX::AverageAspect { Grid } {
    }
    if { [lsearch -exact $GenX::Param(Aspect) USGS]!=-1 } {
       set USGS 1
+   }
+   if { [lsearch -exact $GenX::Param(Aspect) GMTED30]!=-1 } {
+      set GMTED 30
+   }
+   if { [lsearch -exact $GenX::Param(Aspect) GMTED15]!=-1 } {
+      set GMTED 15
+   }
+   if { [lsearch -exact $GenX::Param(Aspect) GMTED75]!=-1 } {
+      set GMTED 75
    }
 
    fstdfield copy GPXSLA  $Grid
@@ -890,6 +900,12 @@ if { ! $Opt(SlopOnly) } {
       set res [expr (30.0/3600.0)]  ;# 30 arc-secondes GTOPO30
    } elseif { $GTOPO30 } {
       set res [expr (30.0/3600.0)]  ;# 30 arc-secondes GTOPO30
+   } elseif { $GMTED==75 } {
+      set res [expr (7.5/3600.0)]  ;# 7.5 arc-secondes CDED
+   } elseif { $GMTED==15 } {
+      set res [expr (15.0/3600.0)]  ;# 15 arc-secondes CDED
+   } elseif { $GMTED==30 } {
+      set res [expr (30.0/3600.0)]  ;# 30 arc-secondes CDED
    }
 
    set dpix [expr $GenX::Param(TileSize)*$res]
@@ -964,6 +980,34 @@ if { ! $Opt(SlopOnly) } {
             set data True
             vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata0,DEMTILE2,DEMTILE)"
             gdalband clear DEMTILE2
+         }
+
+         #----- Process CDED, if asked for
+         if { $GMTED } {
+            set nodata  -32768
+            gdalfile open GMTEDFILE read $GenX::Param(DBase)/$GenX::Path(GMTED2010)/products/mean/mn${GMTED}_grd.tif
+            if { ![llength [set limits [georef intersect [gdalband define DEMTILE2 -georef] [gdalfile georef GMTEDFILE]]]] } {
+               Log::Print WARNING "Specified grid does not intersect with GMTED2010 database, topo will not be calculated"
+            } else {
+               Log::Print INFO "Grid intersection with GMTED2010 database is { $limits }"
+               set x0 [lindex $limits 0]
+               set x1 [lindex $limits 2]
+               set y0 [lindex $limits 1]
+               set y1 [lindex $limits 3]
+               #----- Loop over the data by tiles since it's too big to fit in memory
+               for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+                  for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+                     Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+                     gdalband read GMTEDTILE { { GMTEDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+                     gdalband stats GMTEDTILE -celldim $GenX::Param(Cell)
+                     gdalband gridinterp DEMTILE2 GMTEDTILE NEAREST
+                  }
+               }
+               set data True
+               vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata,DEMTILE2,DEMTILE)"
+               gdalband clear DEMTILE2
+            }
+            gdalfile close GMTEDFILE
          }
 
          #----- Process GTOPO30, if asked for
