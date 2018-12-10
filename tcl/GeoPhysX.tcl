@@ -4035,6 +4035,13 @@ proc GeoPhysX::AverageBathymetry { Grid } {
       HydroX::HydroLakesDepth GPXLAKED GPXLAKEF
 
       vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
+
+      fstdfield define GPXLAKED -NOMVAR LACD -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+      fstdfield write GPXLAKED GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield define GPXLAKEF -NOMVAR LACF -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+      fstdfield write GPXLAKEF GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+      fstdfield free GPXLAKEF GPXLAKED
    }
 
    # the CHS bathymetry is simply water depth
@@ -4058,15 +4065,16 @@ proc GeoPhysX::AverageBathymetry { Grid } {
       vexpr  GPXDEPTH  "ifelse(GPXBATHY<0&&GPXBATHY>$ncei_nodata,GPXBATHY,GPXDEPTH)"
    }
 
+   if { $Has_MG } {
+      vexpr  GPXDEPTH  "ifelse(GPXMG<1.0,GPXDEPTH,0.0)"
+   }
    if { $Has_TOPO } {
+      vexpr GPXDEPTH  "ifelse(GPXDEPTH>0.0,0.0,GPXDEPTH)"
       vexpr GPXBATHY  "GPXDEPTH+GPXTOPO"
       fstdfield define GPXBATHY -NOMVAR BMSL -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
       fstdfield write GPXBATHY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    }
 
-   if { $Has_MG } {
-      vexpr  GPXDEPTH  "ifelse(GPXMG<1.0,GPXDEPTH,0.0)"
-   }
    fstdfield define GPXDEPTH -NOMVAR DEEP -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
    fstdfield write GPXDEPTH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
