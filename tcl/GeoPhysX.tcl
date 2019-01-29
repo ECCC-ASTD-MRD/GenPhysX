@@ -1277,7 +1277,9 @@ proc GeoPhysX::AverageMask { Grid } {
       "GLOBCOVER" { GeoPhysX::AverageMaskGLOBCOVER $Grid }
       "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
       "MCD12Q1"   { GeoPhysX::AverageMaskMCD12Q1   $Grid }
-      "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid }
+      "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2010" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
       "USGS_R"    { GeoPhysX::AverageMaskUSGS_R    $Grid }
       "NALCMS"    { GeoPhysX::AverageMaskNALCMS    $Grid }
@@ -1586,10 +1588,28 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageMaskCCI_LC { Grid } {
+proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
 
-   GenX::Procs CCI_LC
-   Log::Print INFO "Averaging mask using ESA CCI LC Water Bodies database"
+   set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
+   set  link [file readlink  $dbdir/CCI_LC.tif]
+   set  year [file tail [file dirname $link]]
+
+   switch $dbid {
+   "CCILC2015" {
+      GenX::Procs $dbid
+      }
+   "CCILC2010" {
+      GenX::Procs $dbid
+      }
+   default  {
+      GenX::Procs "CCILC${year}"
+      }
+   }
+
+   Log::Print INFO "Averaging mask using ESA CCI LC Water Bodies database $year"
+
+   set  datafile "$dbdir/$link"
+   Log::Print INFO "Will use data file: $datafile"
 
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0
@@ -2030,7 +2050,9 @@ proc GeoPhysX::AverageVege { Grid } {
          "CORINE"    { GeoPhysX::AverageVegeCORINE    GPXVF ;#----- CORINE over Europe only vege averaging method }
          "MCD12Q1"   { GeoPhysX::AverageVegeMCD12Q1   GPXVF ;#----- MODIS MCD12Q1 IGBP global vegetation }
          "AAFC"      { GeoPhysX::AverageVegeAAFC      GPXVF ;#----- AAFC Crop over Canada only vege averaging method }
-         "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF ;#----- ESA CCI CRDP Land cover }
+         "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2010" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "USGS_R"    { GeoPhysX::AverageVegeUSGS_R    GPXVF ;#----- USGS global vege raster averaging method }
          "NALCMS"    { GeoPhysX::AverageVegeNALCMS    GPXVF ;#----- NALCMS North America Land Cover vege raster averaging method }
       }
@@ -2528,12 +2550,30 @@ proc GeoPhysX::AverageVegeAAFC { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageVegeCCI_LC { Grid } {
+proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
    variable Param
    variable Const
 
-   GenX::Procs CCI_LC
-   Log::Print INFO "Averaging vegetation type using ESA CCI CRDP Land cover"
+   set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
+   set  link [file readlink  $dbdir/CCI_LC.tif]
+   set  year [file tail [file dirname $link]]
+
+   switch $dbid {
+   "CCILC2015" {
+      GenX::Procs $dbid
+      }
+   "CCILC2010" {
+      GenX::Procs $dbid
+      }
+   default  {
+      GenX::Procs "CCILC${year}"
+      }
+   }
+
+   Log::Print INFO "Averaging vegetation type using ESA CCI CRDP Land cover $year"
+
+   set  datafile "$dbdir/$link"
+   Log::Print INFO "Will use data file: $datafile"
 
    #----- Open the file
    gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(CCI_LC)/CCI_LC.tif

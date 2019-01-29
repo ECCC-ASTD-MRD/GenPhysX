@@ -106,9 +106,9 @@ namespace eval GenX { } {
 
    set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
    set Param(Aspects)   { SRTM CDED250 CDED50 CDEM GTOPO30 USGS GMTED30 GMTED15 GMTED75 }
-   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC USGS_R NALCMS }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC CCILC2015 CCILC2010 USGS_R NALCMS }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS SLC SOILGRIDS }
-   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC USGS_R AAFC NALCMS }
+   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC CCILC2015 CCILC2010 USGS_R AAFC NALCMS }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD HSRN DCW }
@@ -190,7 +190,9 @@ namespace eval GenX { } {
    set Path(BNU)        BNU
    set Path(CANSIS)     CANSIS
    set Path(MODIS_IGBP) MODIS/MCD12Q1/IGBP
-   set Path(CCI_LC)     ESA_CCI_LC/SeaWater
+   set Path(CCI_LC)     ESA_CCI_LC
+   set Path(CCILC2015)  ESA_CCI_LC/2015
+   set Path(CCILC2010)  ESA_CCI_LC/2010
    set Path(NALCMS)     NALCMS
    set Path(SLC)        SLC
    set Path(SOILGRIDS)  SoilGrids
@@ -514,7 +516,7 @@ proc GenX::Procs { args } {
    variable Meta
 
    set Meta(Databases) [lsort -unique [concat $Meta(Databases) $args]]
-
+  
    set proc [info level [expr [info level] -1]]
    if { [lsearch -exact $Meta(Procs) $proc]==-1 } {
       lappend Meta(Procs) $proc
