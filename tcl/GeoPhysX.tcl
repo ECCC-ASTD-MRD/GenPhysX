@@ -246,7 +246,9 @@ proc GeoPhysX::AverageTopo { Grid } {
    foreach topo $GenX::Param(Topo) {
       switch $topo {
          "USGS"      { GeoPhysX::AverageTopoUSGS      GPXME     ;#----- USGS topograhy averaging method (Global 900m) }
-         "SRTM"      { GeoPhysX::AverageTopoSRTM      GPXME     ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
+         "SRTM"      { GeoPhysX::AverageTopoSRTM      GPXME $topo  ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m or 30m) }
+         "SRTM30"    { GeoPhysX::AverageTopoSRTM      GPXME $topo  ;#----- STRMv4 topograhy averaging method (Latitude -60,60 30m) }
+         "SRTM90"    { GeoPhysX::AverageTopoSRTM      GPXME $topo  ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
          "CDED50"    { GeoPhysX::AverageTopoCDED      GPXME 50  ;#----- CDED50 topograhy averaging method (Canada 90m) }
          "CDED250"   { GeoPhysX::AverageTopoCDED      GPXME 250 ;#----- CDED250 topograhy averaging method (Canada 25m) }
          "ASTERGDEM" { GeoPhysX::AverageTopoASTERGDEM GPXME     ;#----- ASTERGDEM topograhy averaging method (Global but south pole 25m) }
@@ -526,12 +528,11 @@ proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageTopoSRTM { Grid } {
+proc GeoPhysX::AverageTopoSRTM { Grid {db SRTM} } {
    variable Param
    variable Opt
 
-   GenX::Procs SRTM
-   Log::Print INFO "Averaging topography using SRTM database"
+   Log::Print INFO "Averaging topography using $db database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set la0 [lindex $limits 0]
@@ -539,10 +540,14 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
    set la1 [lindex $limits 2]
    set lo1 [lindex $limits 3]
 
+   GenX::SRTMsetSelection  $db
+
    if { [GenX::SRTMuseVersion3] } {
       set d 30
+      GenX::Procs SRTM30
    } else {
       set d 90
+      GenX::Procs SRTM90
    }
 
    foreach file [GenX::SRTMFindFiles $la0 $lo0 $la1 $lo1] {
@@ -821,43 +826,64 @@ proc GeoPhysX::AverageAspect { Grid } {
    variable Const
    variable Opt
 
-   GenX::Procs SRTM CDED CDEM
    Log::Print INFO "Computing slope and aspect"
    if { $Opt(SlopOnly) } {
       Log::Print INFO "Opt(SlopOnly)=$Opt(SlopOnly) : Will generate SLOP only"
    }
 
-   set SRTM [expr [lsearch -exact $GenX::Param(Aspect) SRTM]!=-1]
+   set  dbused {}
+
+   set SRTM  0
    set CDED 0
    set CDEM 0
    set GTOPO30 0
    set USGS 0
    set GMTED 0
 
+   if { [GenX::SRTMsetSelection $GenX::Param(Aspect)] } {
+      if { [GenX::SRTMuseVersion3] } {
+         set SRTM  30
+         lappend dbused SRTM30
+      } else {
+         set SRTM  90
+         lappend dbused SRTM90
+      }
+   }
+
    if { [lsearch -exact $GenX::Param(Aspect) CDED250]!=-1 } {
       set CDED 250
+      lappend dbused CDED250
    }
    if { [lsearch -exact $GenX::Param(Aspect) CDED50]!=-1 } {
       set CDED 50
+      lappend dbused CDED50
    }
    if { [lsearch -exact $GenX::Param(Aspect) CDEM]!=-1 } {
       set CDEM 1
+      lappend dbused CDEM
    }
    if { [lsearch -exact $GenX::Param(Aspect) GTOPO30]!=-1 } {
       set GTOPO30 1
+      lappend dbused GTOPO30
    }
    if { [lsearch -exact $GenX::Param(Aspect) USGS]!=-1 } {
       set USGS 1
+      lappend dbused USGS
    }
    if { [lsearch -exact $GenX::Param(Aspect) GMTED30]!=-1 } {
       set GMTED 30
+      lappend dbused GMTED30
    }
    if { [lsearch -exact $GenX::Param(Aspect) GMTED15]!=-1 } {
       set GMTED 15
+      lappend dbused GMTED15
    }
    if { [lsearch -exact $GenX::Param(Aspect) GMTED75]!=-1 } {
       set GMTED 75
+      lappend dbused GMTED75
    }
+
+   GenX::Procs $dbused
 
    fstdfield copy GPXSLA  $Grid
 if { ! $Opt(SlopOnly) } {
