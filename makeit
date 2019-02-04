@@ -2,7 +2,7 @@
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
-VERSION="2.5.0"
+VERSION="2.5.2"
 MAINTAINER="Jean-Philippe Gauthier"
 BUILDINFO=`git describe --always`
 
@@ -71,7 +71,7 @@ echo ""
 if [[ $CLR -eq 1 ]]; then
    rm -f -r lib/*
    cd src
-   $MAKE -f $MAKEFILE clear
+   $MAKE -f $MAKEFILE distclean
    cd -
 fi
 
@@ -93,7 +93,7 @@ if [[ $BLD -eq 1 ]]; then
          --with-gdal=`which gdal-config`
    fi
 
-   $MAKE -f $MAKEFILE all
+   $MAKE -f $MAKEFILE install
    cd -
 fi
 
