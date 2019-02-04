@@ -246,7 +246,9 @@ proc GeoPhysX::AverageTopo { Grid } {
    foreach topo $GenX::Param(Topo) {
       switch $topo {
          "USGS"      { GeoPhysX::AverageTopoUSGS      GPXME     ;#----- USGS topograhy averaging method (Global 900m) }
-         "SRTM"      { GeoPhysX::AverageTopoSRTM      GPXME     ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
+         "SRTM"      { GeoPhysX::AverageTopoSRTM      GPXME $topo  ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m or 30m) }
+         "SRTM30"    { GeoPhysX::AverageTopoSRTM      GPXME $topo  ;#----- STRMv4 topograhy averaging method (Latitude -60,60 30m) }
+         "SRTM90"    { GeoPhysX::AverageTopoSRTM      GPXME $topo  ;#----- STRMv4 topograhy averaging method (Latitude -60,60 90m) }
          "CDED50"    { GeoPhysX::AverageTopoCDED      GPXME 50  ;#----- CDED50 topograhy averaging method (Canada 90m) }
          "CDED250"   { GeoPhysX::AverageTopoCDED      GPXME 250 ;#----- CDED250 topograhy averaging method (Canada 25m) }
          "ASTERGDEM" { GeoPhysX::AverageTopoASTERGDEM GPXME     ;#----- ASTERGDEM topograhy averaging method (Global but south pole 25m) }
@@ -526,12 +528,11 @@ proc GeoPhysX::AverageTopoASTERGDEM { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageTopoSRTM { Grid } {
+proc GeoPhysX::AverageTopoSRTM { Grid {db SRTM} } {
    variable Param
    variable Opt
 
-   GenX::Procs SRTM
-   Log::Print INFO "Averaging topography using SRTM database"
+   Log::Print INFO "Averaging topography using $db database"
 
    set limits [georef limit [fstdfield define $Grid -georef]]
    set la0 [lindex $limits 0]
@@ -539,10 +540,14 @@ proc GeoPhysX::AverageTopoSRTM { Grid } {
    set la1 [lindex $limits 2]
    set lo1 [lindex $limits 3]
 
+   GenX::SRTMsetSelection  $db
+
    if { [GenX::SRTMuseVersion3] } {
       set d 30
+      GenX::Procs SRTM30
    } else {
       set d 90
+      GenX::Procs SRTM90
    }
 
    foreach file [GenX::SRTMFindFiles $la0 $lo0 $la1 $lo1] {
@@ -821,43 +826,64 @@ proc GeoPhysX::AverageAspect { Grid } {
    variable Const
    variable Opt
 
-   GenX::Procs SRTM CDED CDEM
    Log::Print INFO "Computing slope and aspect"
    if { $Opt(SlopOnly) } {
       Log::Print INFO "Opt(SlopOnly)=$Opt(SlopOnly) : Will generate SLOP only"
    }
 
-   set SRTM [expr [lsearch -exact $GenX::Param(Aspect) SRTM]!=-1]
+   set  dbused {}
+
+   set SRTM  0
    set CDED 0
    set CDEM 0
    set GTOPO30 0
    set USGS 0
    set GMTED 0
 
+   if { [GenX::SRTMsetSelection $GenX::Param(Aspect)] } {
+      if { [GenX::SRTMuseVersion3] } {
+         set SRTM  30
+         lappend dbused SRTM30
+      } else {
+         set SRTM  90
+         lappend dbused SRTM90
+      }
+   }
+
    if { [lsearch -exact $GenX::Param(Aspect) CDED250]!=-1 } {
       set CDED 250
+      lappend dbused CDED250
    }
    if { [lsearch -exact $GenX::Param(Aspect) CDED50]!=-1 } {
       set CDED 50
+      lappend dbused CDED50
    }
    if { [lsearch -exact $GenX::Param(Aspect) CDEM]!=-1 } {
       set CDEM 1
+      lappend dbused CDEM
    }
    if { [lsearch -exact $GenX::Param(Aspect) GTOPO30]!=-1 } {
       set GTOPO30 1
+      lappend dbused GTOPO30
    }
    if { [lsearch -exact $GenX::Param(Aspect) USGS]!=-1 } {
       set USGS 1
+      lappend dbused USGS
    }
    if { [lsearch -exact $GenX::Param(Aspect) GMTED30]!=-1 } {
       set GMTED 30
+      lappend dbused GMTED30
    }
    if { [lsearch -exact $GenX::Param(Aspect) GMTED15]!=-1 } {
       set GMTED 15
+      lappend dbused GMTED15
    }
    if { [lsearch -exact $GenX::Param(Aspect) GMTED75]!=-1 } {
       set GMTED 75
+      lappend dbused GMTED75
    }
+
+   GenX::Procs $dbused
 
    fstdfield copy GPXSLA  $Grid
 if { ! $Opt(SlopOnly) } {
@@ -1277,7 +1303,9 @@ proc GeoPhysX::AverageMask { Grid } {
       "GLOBCOVER" { GeoPhysX::AverageMaskGLOBCOVER $Grid }
       "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
       "MCD12Q1"   { GeoPhysX::AverageMaskMCD12Q1   $Grid }
-      "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid }
+      "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2010" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
       "USGS_R"    { GeoPhysX::AverageMaskUSGS_R    $Grid }
       "NALCMS"    { GeoPhysX::AverageMaskNALCMS    $Grid }
@@ -1586,10 +1614,28 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageMaskCCI_LC { Grid } {
+proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
 
-   GenX::Procs CCI_LC
-   Log::Print INFO "Averaging mask using ESA CCI LC Water Bodies database"
+   set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
+   set  link [file readlink  $dbdir/CCI_LC.tif]
+   set  year [file tail [file dirname $link]]
+
+   switch $dbid {
+   "CCILC2015" {
+      GenX::Procs $dbid
+      }
+   "CCILC2010" {
+      GenX::Procs $dbid
+      }
+   default  {
+      GenX::Procs "CCILC${year}"
+      }
+   }
+
+   Log::Print INFO "Averaging mask using ESA CCI LC Water Bodies database $year"
+
+   set  datafile "$dbdir/$link"
+   Log::Print INFO "Will use data file: $datafile"
 
    fstdfield copy GPXMASK  $Grid
    GenX::GridClear GPXMASK 0.0
@@ -2030,7 +2076,9 @@ proc GeoPhysX::AverageVege { Grid } {
          "CORINE"    { GeoPhysX::AverageVegeCORINE    GPXVF ;#----- CORINE over Europe only vege averaging method }
          "MCD12Q1"   { GeoPhysX::AverageVegeMCD12Q1   GPXVF ;#----- MODIS MCD12Q1 IGBP global vegetation }
          "AAFC"      { GeoPhysX::AverageVegeAAFC      GPXVF ;#----- AAFC Crop over Canada only vege averaging method }
-         "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF ;#----- ESA CCI CRDP Land cover }
+         "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2010" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "USGS_R"    { GeoPhysX::AverageVegeUSGS_R    GPXVF ;#----- USGS global vege raster averaging method }
          "NALCMS"    { GeoPhysX::AverageVegeNALCMS    GPXVF ;#----- NALCMS North America Land Cover vege raster averaging method }
       }
@@ -2528,12 +2576,30 @@ proc GeoPhysX::AverageVegeAAFC { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageVegeCCI_LC { Grid } {
+proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
    variable Param
    variable Const
 
-   GenX::Procs CCI_LC
-   Log::Print INFO "Averaging vegetation type using ESA CCI CRDP Land cover"
+   set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
+   set  link [file readlink  $dbdir/CCI_LC.tif]
+   set  year [file tail [file dirname $link]]
+
+   switch $dbid {
+   "CCILC2015" {
+      GenX::Procs $dbid
+      }
+   "CCILC2010" {
+      GenX::Procs $dbid
+      }
+   default  {
+      GenX::Procs "CCILC${year}"
+      }
+   }
+
+   Log::Print INFO "Averaging vegetation type using ESA CCI CRDP Land cover $year"
+
+   set  datafile "$dbdir/$link"
+   Log::Print INFO "Will use data file: $datafile"
 
    #----- Open the file
    gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(CCI_LC)/CCI_LC.tif
