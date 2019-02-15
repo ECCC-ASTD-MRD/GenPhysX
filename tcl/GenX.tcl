@@ -120,7 +120,7 @@ namespace eval GenX { } {
    set Param(Z0NoTopos) { STD CANOPY CANOPY_LT }
    set Param(Z0Topos)   { STD LEGACY }
    set Param(CropZ0)    0.0                  ;# if set to non-zero, Crop Z0 should be used when crop fraction higher
-   set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS_5.1 AURAMS HRDPS_NAT }   ;#Model cible
+   set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS-5.1 AURAMS RELWS-1.0 }   ;#Model cible
    set Param(EGMGHs)    { EGM96 EGM2008 }
    set Param(Bathys)    { CHS NCEI GEBCO HYDROLAKES }
    set Param(Interpolations) { LINEAR NEAREST CUBIC AVERAGE }
@@ -139,7 +139,11 @@ namespace eval GenX { } {
    set Batch(Path)     "\$TMPDIR/GenPhysX\$\$"
 
    #----- Various database paths
-   set Param(DBase)    "/space/hall1/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBase)          "/space/hall1/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseeccc-ppp1) "/space/hall1/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseeccc-ppp2) "/space/hall2/sitestore/eccc/cmd/s/slib800/geo"
+   catch { set Param(DBase) $Param(DBase$env(ORDENV_TRUEHOST)) }
+   
    if { ![file isdirectory $Param(DBase)] } {
       set Param(DBase)    "/fs/cetus3/fs3/cmd/s/afsm/lib/geo"
    }
@@ -434,7 +438,7 @@ proc GenX::Submit { } {
 
    puts $f "#!/bin/ksh\nset -x\n"
    puts $f ". ssmuse-sh -f $domain"
-   puts $f "\nexport GENPHYSX_DBASE=$Param(DBase)\nexport GENPHYSX_PRIORITY=-0"
+   puts $f "\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
    puts $f "tmpdir=$tmpdir"
 
@@ -975,7 +979,7 @@ proc GenX::ParseTarget { } {
                   set Settings(TOPO_DGFMX_L) True
                   set Settings(TOPO_FILMX_L) True
                 }
-      "GDPS_5.1" { set Param(Topo)     "USGS"
+      "GDPS-5.1" { set Param(Topo)     "USGS"
                    set Param(Vege)     "USGS_R"
                    set Param(Mask)     "USGS_R"
                    set Param(Soil)     "USDA AGRC FAO"
@@ -990,14 +994,14 @@ proc GenX::ParseTarget { } {
                    set Settings(TOPO_FILMX_L) True
                    set Settings(TOPO_CLIP_ORO_L) False
                 }
-      "HRDPS_NAT" { set Param(Topo)     "USGS"
-                    set Param(Vege)     "USGS_R"
-                    set Param(Mask)     "USGS_R"
-                    set Param(Soil)     "JPL"
+      "RELWS-1.0" { set Param(Topo)     "CDED250+SRTM"
+                    set Param(Vege)     "CCI_LC"
+                    set Param(Mask)     "CCI_LC"
+                    set Param(Soil)     "BNU"
                     set Param(Check)    "STD"
                     set Param(Sub)      "STD"
                     set Param(Z0Filter) True
-                    set Param(Z0NoTopo) CANOPY_LT
+                    set Param(Z0NoTopo) CANOPY
                     set Param(Compress) False
                     set Param(Cell)     2
 
@@ -1006,8 +1010,7 @@ proc GenX::ParseTarget { } {
                     set Settings(TOPO_DGFMX_L) True
                     set Settings(TOPO_FILMX_L) True
                     set Settings(TOPO_CLIP_ORO_L) False
-
-                    set Const(z0minUr)  0.75
+                    set Const(z0minUr)  0.01
                   }
    }
 }
