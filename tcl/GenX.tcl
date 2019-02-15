@@ -47,7 +47,7 @@ package require TclSystem
 package require MetData
 package require Logger
 
-set Log::Param(SPI)       7.10.2
+set Log::Param(SPI)       8.0.0
 set Log::Param(Level)     INFO
 
 namespace eval GenX { } {
@@ -58,7 +58,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.4.1               ;#Application version
+   set Param(Version)      2.5.2               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time
@@ -120,7 +120,7 @@ namespace eval GenX { } {
    set Param(Z0NoTopos) { STD CANOPY CANOPY_LT }
    set Param(Z0Topos)   { STD LEGACY }
    set Param(CropZ0)    0.0                  ;# if set to non-zero, Crop Z0 should be used when crop fraction higher
-   set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS_5.1 AURAMS }   ;#Model cible
+   set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS-5.1 AURAMS RELWS-1.0 }   ;#Model cible
    set Param(EGMGHs)    { EGM96 EGM2008 }
    set Param(Bathys)    { CHS NCEI GEBCO HYDROLAKES }
    set Param(Interpolations) { LINEAR NEAREST CUBIC AVERAGE }
@@ -129,16 +129,21 @@ namespace eval GenX { } {
    set Param(SRTM3)     False
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
-   set Batch(Host)     pollux                ;#Host onto which to submit the job
+   set Batch(Host)     ppp2                  ;#Host onto which to submit the job
    set Batch(Queue)    ""                    ;#Queue to use for the job
-   set Batch(Mem)      2G                    ;#Memory needed for the job
+   set Batch(Mem)      8G                    ;#Memory needed for the job
+   set Batch(CPU)      1                     ;#CPU needed for the job
    set Batch(Time)     7200                  ;#Time needed for the job
    set Batch(Mail)     ""                    ;#Mail address to send completion info
    set Batch(Submit)   ord_soumet
    set Batch(Path)     "\$TMPDIR/GenPhysX\$\$"
 
    #----- Various database paths
-   set Param(DBase)    "/space/hall1/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBase)          "/space/hall1/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseeccc-ppp1) "/space/hall1/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseeccc-ppp2) "/space/hall2/sitestore/eccc/cmd/s/slib800/geo"
+   catch { set Param(DBase) $Param(DBase$env(ORDENV_TRUEHOST)) }
+   
    if { ![file isdirectory $Param(DBase)] } {
       set Param(DBase)    "/fs/cetus3/fs3/cmd/s/afsm/lib/geo"
    }
@@ -433,12 +438,11 @@ proc GenX::Submit { } {
    set f [open [set job $env(TMPDIR)/GenPhysX[pid]] w 0755]
 
    #----- Extract needed domain
-   set ld [split $env(LD_LIBRARY_PATH) :]
-   set domain [join [lrange [split [lindex $ld [lsearch -glob $ld "*/cmoe/base/*"]] /] 0 end-2] /]
+   set domain [join [lrange [split [lsearch -inline -glob [split $env(PATH) :] "*/SPI/*"] /] 0 end-2] /]
 
    puts $f "#!/bin/ksh\nset -x\n"
-   puts $f ". ssmuse-sh -d $domain"
-   puts $f "\nexport GENPHYSX_DBASE=$Param(DBase)\nexport GENPHYSX_PRIORITY=-0"
+   puts $f ". ssmuse-sh -f $domain"
+   puts $f "\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
    puts $f "tmpdir=$tmpdir"
 
@@ -450,23 +454,23 @@ proc GenX::Submit { } {
 
    if { $Param(GridFile)!="" } {
       if { $rem } {
-         puts $f "srcp $host:[file normalize $Param(GridFile)] ."
+         puts $f "sscp $host:[file normalize $Param(GridFile)] ."
          append rargv " -gridfile [file tail $Param(GridFile)]"
       }
    }
 
    if { $Param(Script)!="" } {
       if { $rem } {
-         puts $f "srcp $host:[file normalize $Param(Script)] ."
+         puts $f "sscp $host:[file normalize $Param(Script)] ."
          append rargv " -param [file tail $Param(Script)]"
       }
    }
    
    if { [file exists $Param(OutFile).fst] && $rem } {
-      puts $f "srcp $host:[file normalize ${Param(OutFile)}.fst] ."
+      puts $f "sscp $host:[file normalize ${Param(OutFile)}.fst] ."
    }
    if { [file exists ${Param(OutFile)}_aux.fst] && $rem } {
-      puts $f "srcp $host:[file normalize ${Param(OutFile)}_aux.fst] ."
+      puts $f "sscp $host:[file normalize ${Param(OutFile)}_aux.fst] ."
    }
    if { $rem } {
       append rargv " -result [file tail $Param(OutFile)]"
@@ -479,7 +483,7 @@ proc GenX::Submit { } {
    puts $f "GenPhysX $gargv \\\n   $rargv\n"
 
    if { $rem } {
-      puts $f "srcp -r [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r \$tmpdir"
+      puts $f "sscp -r [file tail $Param(OutFile)]* $host:$ldir\ncd ..\nrm -f -r \$tmpdir"
    }
 
    if { $Batch(Mail)!="" } {
@@ -489,7 +493,7 @@ proc GenX::Submit { } {
 
    #----- Launch job script
    Log::Print INFO "Using $Batch(Submit) to launch job ... "
-   set err [catch { exec $Batch(Submit) $job -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) 2>@1 } msg]
+   set err [catch { exec $Batch(Submit) $job -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) -cpus $Batch(CPU) 2>@1 } msg]
    if { $err } {
       Log::Print ERROR "Could not launch job ($job) on $Batch(Host)\n\n\t$msg"
       Log::End 1
@@ -654,9 +658,9 @@ proc GenX::CommandLine { } {
       -rindex   [format "%-34s : SMOKE restart index (default 1)" (${::APP_COLOR_GREEN}$Param(SMOKEIndex)${::APP_COLOR_RESET})]
       -check    [format "%-34s : Do consistency checks {$Param(Checks)}" (${::APP_COLOR_GREEN}$Param(Check)${::APP_COLOR_RESET})]
       -subgrid  [format "%-34s : Calculates sub grid fields {$Param(Subs)}" (${::APP_COLOR_GREEN}$Param(Sub)${::APP_COLOR_RESET})]
-      -z0notopo [format "%-34s : Roughness length Z0 with no topographic contribution {$Param(Z0NoTopo)}" (${::APP_COLOR_GREEN}[join $Param(Z0NoTopos)]${::APP_COLOR_RESET})]
-      -z0topo   [format "%-34s : Roughness length Z0 with topographic contribution {$Param(Z0Topos)}" (${::APP_COLOR_GREEN}[join $Param(Z0Topos)]${::APP_COLOR_RESET})]
-      -z0crop   [format "%-34s : if set to non-zero, Crop Z0 should be used when crop fraction higher than this value" (${::APP_COLOR_GREEN}$Param(CropZ0)${::APP_COLOR_RESET})]
+      -z0notopo [format "%-34s : Roughness length Z0 with no topographic contribution {$Param(Z0NoTopos)}" (${::APP_COLOR_GREEN}[join $Param(Z0NoTopo)]${::APP_COLOR_RESET})]
+      -z0topo   [format "%-34s : Roughness length Z0 with topographic contribution {$Param(Z0Topos)}" (${::APP_COLOR_GREEN}[join $Param(Z0Topo)]${::APP_COLOR_RESET})]
+      -z0crop   [format "%-34s : if set to non-zero, Crop Z0 should be used when crop fraction higher than this value (default 0.0)" (${::APP_COLOR_GREEN}$Param(CropZ0)${::APP_COLOR_RESET})]
       -diag     [format "%-25s : Do diagnostics (Not implemented yet)" ""]
       -egmgh    [format "%-34s : Earth Gravitational Model database to use among {$Param(EGMGHs)}" (${::APP_COLOR_GREEN}[join $Param(EGMGH)]${::APP_COLOR_RESET})]
       -bathy    [format "%-34s : Bathymetry data to use among {$Param(Bathys)}" (${::APP_COLOR_GREEN}[join $Param(Bathy)]${::APP_COLOR_RESET})]
@@ -664,19 +668,20 @@ proc GenX::CommandLine { } {
    Specific processing parameters:
       -topostag [format "%-25s : Treat multiple grids as staggered topography grids" ""]
       -z0filter [format "%-25s : Apply GEM filter to roughness length" ""]
-      -mefilter [format "%-25s : Select filter for topography field ME" ""]
+      -mefilter [format "%-34s : Select filter for topography field ME {$Param(MEFilters)}" (${::APP_COLOR_GREEN}$Param(MEFilter)${::APP_COLOR_RESET})]
       -celldim  [format "%-34s : Grid cell dimension (1=point, 2=area)" (${::APP_COLOR_GREEN}$Param(Cell)${::APP_COLOR_RESET})]
       -compress [format "%-34s : Compress standard file output" (${::APP_COLOR_GREEN}$Param(Compress)${::APP_COLOR_RESET})]
       -nbits    [format "%-34s : Maximum number of bits to use to save RPN fields" (${::APP_COLOR_GREEN}$Param(NBits)${::APP_COLOR_RESET})]
       -interpol [format "%-25s : Select interpolation mode to use {$Param(Interpolations)}" ""]
 
-   Batch mode parameters:
+   Batch mode parameters (ord_soumet):
       -batch    [format "%-25s : Launch in batch mode" ""]
       -path     [format "%-34s : Remote path if local not accessible" (${::APP_COLOR_GREEN}$Batch(Path)${::APP_COLOR_RESET})]
       -mail     [format "%-34s : EMail address to send completion mail" (${::APP_COLOR_GREEN}$Batch(Mail)${::APP_COLOR_RESET})]
       -mach     [format "%-34s : Machine to run on in batch mode" (${::APP_COLOR_GREEN}$Batch(Host)${::APP_COLOR_RESET})]
       -t        [format "%-34s : Reserved CPU time (s)" (${::APP_COLOR_GREEN}$Batch(Time)${::APP_COLOR_RESET})]
       -cm       [format "%-34s : Reserved RAM (MB)" ${::APP_COLOR_GREEN}($Batch(Mem)${::APP_COLOR_RESET})]
+      -cpus     [format "%-34s : Number of CPU" ${::APP_COLOR_GREEN}($Batch(CPU)${::APP_COLOR_RESET})]
 
    If you have questions, suggestions or problems, send them to:
 
@@ -757,6 +762,7 @@ proc GenX::ParseCommandLine { } {
          "mach"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Batch(Host)] }
          "t"         { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Batch(Time)] }
          "cm"        { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Batch(Mem)] }
+         "cpus"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Batch(CPU)] }
          "mail"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Batch(Mail)] }
          "topo"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Topo) $GenX::Param(Topos)]; incr flags }
          "mask"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Mask) $GenX::Param(Masks)]; incr flags }
@@ -977,7 +983,7 @@ proc GenX::ParseTarget { } {
                   set Settings(TOPO_DGFMX_L) True
                   set Settings(TOPO_FILMX_L) True
                 }
-      "GDPS_5.1" { set Param(Topo)     "USGS"
+      "GDPS-5.1" { set Param(Topo)     "USGS"
                    set Param(Vege)     "USGS_R"
                    set Param(Mask)     "USGS_R"
                    set Param(Soil)     "USDA AGRC FAO"
@@ -992,6 +998,24 @@ proc GenX::ParseTarget { } {
                    set Settings(TOPO_FILMX_L) True
                    set Settings(TOPO_CLIP_ORO_L) False
                 }
+      "RELWS-1.0" { set Param(Topo)     "CDED250+SRTM"
+                    set Param(Vege)     "CCI_LC"
+                    set Param(Mask)     "CCI_LC"
+                    set Param(Soil)     "BNU"
+                    set Param(Check)    "STD"
+                    set Param(Sub)      "STD"
+                    set Param(Z0Filter) True
+                    set Param(Z0NoTopo) CANOPY
+                    set Param(Compress) False
+                    set Param(Cell)     2
+
+                    set Settings(GRD_TYP_S)    LU
+                    set Settings(TOPO_DGFMS_L) True
+                    set Settings(TOPO_DGFMX_L) True
+                    set Settings(TOPO_FILMX_L) True
+                    set Settings(TOPO_CLIP_ORO_L) False
+                    set Const(z0minUr)  0.01
+                  }
    }
 }
 
