@@ -4060,13 +4060,13 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 
    GenX::Procs $GenX::Param(Bathy)
 
-   fstdfield copy GPXCHS   $Grid
+   fstdfield copy GPXGEBCO $Grid
    fstdfield copy GPXBATHY $Grid
    fstdfield copy GPXDEPTH $Grid
  
    GenX::GridClear {GPXBATHY} 0.0
    set nodata 999 
-   GenX::GridClear {GPXDEPTH GPXCHS} $nodata
+   GenX::GridClear {GPXDEPTH GPXGEBCO} $nodata
 
    #----- check for needed fields
    set Has_TOPO 1
@@ -4086,10 +4086,11 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 
    # the GEBCO bathymetry field is leveled according to sea levels = 0
    if { [lsearch -exact $GenX::Param(Bathy) GEBCO]!=-1 } {
-      GeoPhysX::AverageBathymetryGEBCO  GPXBATHY
-      if { $Has_TOPO } {
-         vexpr  GPXDEPTH  "GPXBATHY-GPXTOPO"
-      }
+      GeoPhysX::AverageBathymetryGEBCO  GPXGEBCO
+      vexpr  GPXDEPTH  "ifelse(GPXGEBCO<0.0,GPXGEBCO,0.0)"
+      set Has_GEBCO  1
+   } else {
+      set Has_GEBCO  0
    }
 
    # will use lake depth data if present
@@ -4134,19 +4135,25 @@ proc GeoPhysX::AverageBathymetry { Grid } {
    if { $Has_MG } {
       vexpr  GPXDEPTH  "ifelse(GPXMG<1.0,GPXDEPTH,0.0)"
    }
+   vexpr GPXDEPTH  "ifelse(GPXDEPTH>0.0,0.0,GPXDEPTH)"
+
    if { $Has_TOPO } {
-      vexpr GPXDEPTH  "ifelse(GPXDEPTH>0.0,0.0,GPXDEPTH)"
       vexpr GPXBATHY  "GPXDEPTH+GPXTOPO"
-      fstdfield define GPXBATHY -NOMVAR BMSL -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXBATHY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   } elseif { $Has_GEBCO } {
+      vexpr  GPXBATHY  "ifelse(GPXGEBCO>0.0,GPXGEBCO+GPXDEPTH,GPXDEPTH)"
+   } else {
+      vexpr GPXBATHY  "GPXDEPTH"
    }
+
+   fstdfield define GPXBATHY -NOMVAR BMSL -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+   fstdfield write GPXBATHY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    fstdfield define GPXDEPTH -NOMVAR DEEP -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
    fstdfield write GPXDEPTH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Save output
 
-   fstdfield free GPXBATHY GPXDEPTH GPXCHS 
+   fstdfield free GPXBATHY GPXDEPTH GPXGEBCO
 }
 
 #----------------------------------------------------------------------------
