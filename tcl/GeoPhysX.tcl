@@ -2101,7 +2101,6 @@ proc GeoPhysX::AverageVege { Grid } {
        "CANOPY"  { GeoPhysX::AverageGLAS $Grid }
        "CANOPY_LT" { GeoPhysX::AverageGLAS_Z0 $Grid }
       }
-      GeoPhysX::AverageGSRS_DBRK $Grid
    }
 }
 
@@ -2929,7 +2928,7 @@ proc GeoPhysX::AverageGSRS_DBRK { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs GSRS_DBRK
+   GenX::Procs GSRS
    Log::Print INFO "Averaging Global Soil Regolith Sediment database for Depth to bedrock Soil Thickness DBRK"
 
    fstdfield copy GPXDBRK  $Grid
