@@ -3347,6 +3347,8 @@ proc GeoPhysX::AverageSand { Grid } {
       }
       fstdfield gridinterp GPXJ1 - NOP True
 
+      #----- avoid saving the mask
+      fstdfield stats GPXJ1 -mask ""
       #----- Save output
       fstdfield define GPXJ1 -NOMVAR J1 -ETIKET $GenX::Param(ETIKET) -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
       fstdfield write GPXJ1 GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
@@ -4435,6 +4437,8 @@ proc GeoPhysX::AverageClay { Grid } {
       }
       fstdfield gridinterp GPXJ2 - NOP True
 
+      #----- avoid saving the mask
+      fstdfield stats GPXJ2 -mask ""
       #----- Save output
       fstdfield define GPXJ2 -NOMVAR J2 -ETIKET $GenX::Param(ETIKET) -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
       fstdfield write GPXJ2 GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
