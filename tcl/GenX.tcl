@@ -68,6 +68,7 @@ namespace eval GenX { } {
 
    set Param(Vege)       ""                    ;#Vegetation data selected
    set Param(Soil)       ""                    ;#Soil type data selected
+   set Param(SoilDBRK)   ""                    ;#Soil depth to bed rock selected, "" will default to GSRS
    set Param(Topo)       ""                    ;#Topography data selected
    set Param(Mask)       ""                    ;#Mask data selected
    set Param(GeoMask)    ""                    ;#Geographical mask data selected
@@ -108,6 +109,7 @@ namespace eval GenX { } {
    set Param(Aspects)   { SRTM SRTM30 SRTM90 CDED250 CDED50 CDEM GTOPO30 USGS GMTED30 GMTED15 GMTED75 }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC CCILC2015 CCILC2010 USGS_R NALCMS }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS SLC SOILGRIDS }
+   set Param(SoilDBRKs) { GSRS }
    set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC CCILC2015 CCILC2010 USGS_R AAFC NALCMS }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
@@ -270,7 +272,17 @@ proc GenX::Process { Grid } {
    set Param(TMPDIR) $Param(OutFile)_tmp$Param(Process)
    set Log::Param(Process) $Param(Process)
    if { $Param(Sub)=="SPLIT" }  { set GeoPhysX::Opt(SubSplit) True }
-   if { $Param(Sub)=="LEGACY" } { set GeoPhysX::Opt(LegacyMode) True }
+
+   # Opt(LegacyMode) enabled will trigger data area averaging for USGS topography
+   if { $Param(Sub)=="LEGACY" } { 
+      set GeoPhysX::Opt(LegacyMode) True 
+   # DBRK is disabled by default in legacy mode, but can be enabled if set to other than ""
+   } else {
+   # Soil depth to bed rock is enabled by default when not in LEGACY mode
+      if { $Param(SoilDBRK)=="" } {
+         set  Param(SoilDBRK)  "GSRS"
+      }
+   }
 
    #----- Land-water mask
    if { $Param(Mask)!="" } {
@@ -305,6 +317,11 @@ proc GenX::Process { Grid } {
    #----- Soil type
    if { $Param(Soil)!="" } {
       GeoPhysX::AverageSoil $Grid
+   }
+
+   #----- Soil type
+   if { $Param(SoilDBRK)!="" } {
+      GeoPhysX::AverageGSRS_DBRK $Grid
    }
 
    #----- Hydraulic
@@ -650,6 +667,7 @@ proc GenX::CommandLine { } {
       -geomask  [format "%-34s : Mask method, one of {$Param(GeoMasks)}" (${::APP_COLOR_GREEN}[join $Param(GeoMask)]${::APP_COLOR_RESET})]
       -vege     [format "%-34s : Vegetation method(s) among {$Param(Veges)}" (${::APP_COLOR_GREEN}[join $Param(Vege)]${::APP_COLOR_RESET})]
       -soil     [format "%-34s : Soil method(s) among {$Param(Soils)}" (${::APP_COLOR_GREEN}[join $Param(Soil)]${::APP_COLOR_RESET})]
+      -dbrk     [format "%-34s : Soil depth to bed rock among {$Param(SoilDBRKs)}" (${::APP_COLOR_GREEN}[join $Param(SoilDBRK)]${::APP_COLOR_RESET})]
       -aspect   [format "%-34s : Slope and aspect method(s) among {$Param(Aspects)}" (${::APP_COLOR_GREEN}[join $Param(Aspect)]${::APP_COLOR_RESET})]
       -biogenic [format "%-34s : Biogenic method(s) among {$Param(Biogenics)}" (${::APP_COLOR_GREEN}[join $Param(Biogenic)]${::APP_COLOR_RESET})]
       -hydro    [format "%-34s : Hydrographic method(s) among {$Param(Hydros)}" (${::APP_COLOR_GREEN}[join $Param(Hydro)]${::APP_COLOR_RESET})]
@@ -769,6 +787,7 @@ proc GenX::ParseCommandLine { } {
          "geomask"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
          "vege"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
          "soil"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
+         "dbrk"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(SoilDBRK) $GenX::Param(SoilDBRKs)]; incr flags }
          "bathy"     { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Bathy) $GenX::Param(Bathys)]; incr flags }
          "egmgh"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(EGMGH) $GenX::Param(EGMGHs)]; incr flags }
          "subgrid"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Sub)]; incr flags }
