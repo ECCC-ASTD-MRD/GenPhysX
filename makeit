@@ -22,7 +22,6 @@ CLR=0
 BLD=0
 SSM=0
 REC=0
-INS=0
 
 #----- Get arguments
 while [ $# -gt 0 ]; do
@@ -32,7 +31,6 @@ while [ $# -gt 0 ]; do
         -build)   BLD=1;;
         -src)     SRC=1;;
         -ssm)     SSM=1;;
-        -install) INS=1;;
 
         -h|-help)    printf -- "$HELP\n"; exit 0;;
         -v|-version) printf -- "$VERSION\n"; exit 0;;
@@ -110,12 +108,6 @@ if [[ $SSM -eq 1 ]]; then
    sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESC/${DESC}/" .ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
    cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
    rm -f -r ${SSM_NAME}
-fi
-
-if [[ $INS -eq 1 ]]; then
-   cd src
-   $MAKE -f $MAKEFILE install
-   cd -
 fi
 
 if [[ $SRC -eq 1 ]]; then
