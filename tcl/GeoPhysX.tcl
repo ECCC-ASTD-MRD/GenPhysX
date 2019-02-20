@@ -2101,7 +2101,6 @@ proc GeoPhysX::AverageVege { Grid } {
        "CANOPY"  { GeoPhysX::AverageGLAS $Grid }
        "CANOPY_LT" { GeoPhysX::AverageGLAS_Z0 $Grid }
       }
-      GeoPhysX::AverageGSRS_DBRK $Grid
    }
 }
 
@@ -2929,7 +2928,7 @@ proc GeoPhysX::AverageGSRS_DBRK { Grid } {
    variable Param
    variable Const
 
-   GenX::Procs GSRS_DBRK
+   GenX::Procs GSRS
    Log::Print INFO "Averaging Global Soil Regolith Sediment database for Depth to bedrock Soil Thickness DBRK"
 
    fstdfield copy GPXDBRK  $Grid
@@ -3348,6 +3347,8 @@ proc GeoPhysX::AverageSand { Grid } {
       }
       fstdfield gridinterp GPXJ1 - NOP True
 
+      #----- avoid saving the mask
+      fstdfield stats GPXJ1 -mask ""
       #----- Save output
       fstdfield define GPXJ1 -NOMVAR J1 -ETIKET $GenX::Param(ETIKET) -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
       fstdfield write GPXJ1 GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
@@ -4060,13 +4061,13 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 
    GenX::Procs $GenX::Param(Bathy)
 
-   fstdfield copy GPXCHS   $Grid
+   fstdfield copy GPXGEBCO $Grid
    fstdfield copy GPXBATHY $Grid
    fstdfield copy GPXDEPTH $Grid
  
    GenX::GridClear {GPXBATHY} 0.0
    set nodata 999 
-   GenX::GridClear {GPXDEPTH GPXCHS} $nodata
+   GenX::GridClear {GPXDEPTH GPXGEBCO} $nodata
 
    #----- check for needed fields
    set Has_TOPO 1
@@ -4086,10 +4087,11 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 
    # the GEBCO bathymetry field is leveled according to sea levels = 0
    if { [lsearch -exact $GenX::Param(Bathy) GEBCO]!=-1 } {
-      GeoPhysX::AverageBathymetryGEBCO  GPXBATHY
-      if { $Has_TOPO } {
-         vexpr  GPXDEPTH  "GPXBATHY-GPXTOPO"
-      }
+      GeoPhysX::AverageBathymetryGEBCO  GPXGEBCO
+      vexpr  GPXDEPTH  "ifelse(GPXGEBCO<0.0,GPXGEBCO,0.0)"
+      set Has_GEBCO  1
+   } else {
+      set Has_GEBCO  0
    }
 
    # will use lake depth data if present
@@ -4134,19 +4136,25 @@ proc GeoPhysX::AverageBathymetry { Grid } {
    if { $Has_MG } {
       vexpr  GPXDEPTH  "ifelse(GPXMG<1.0,GPXDEPTH,0.0)"
    }
+   vexpr GPXDEPTH  "ifelse(GPXDEPTH>0.0,0.0,GPXDEPTH)"
+
    if { $Has_TOPO } {
-      vexpr GPXDEPTH  "ifelse(GPXDEPTH>0.0,0.0,GPXDEPTH)"
       vexpr GPXBATHY  "GPXDEPTH+GPXTOPO"
-      fstdfield define GPXBATHY -NOMVAR BMSL -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXBATHY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   } elseif { $Has_GEBCO } {
+      vexpr  GPXBATHY  "ifelse(GPXGEBCO>0.0,GPXGEBCO+GPXDEPTH,GPXDEPTH)"
+   } else {
+      vexpr GPXBATHY  "GPXDEPTH"
    }
+
+   fstdfield define GPXBATHY -NOMVAR BMSL -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+   fstdfield write GPXBATHY GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    fstdfield define GPXDEPTH -NOMVAR DEEP -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
    fstdfield write GPXDEPTH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    #----- Save output
 
-   fstdfield free GPXBATHY GPXDEPTH GPXCHS 
+   fstdfield free GPXBATHY GPXDEPTH GPXGEBCO
 }
 
 #----------------------------------------------------------------------------
@@ -4429,6 +4437,8 @@ proc GeoPhysX::AverageClay { Grid } {
       }
       fstdfield gridinterp GPXJ2 - NOP True
 
+      #----- avoid saving the mask
+      fstdfield stats GPXJ2 -mask ""
       #----- Save output
       fstdfield define GPXJ2 -NOMVAR J2 -ETIKET $GenX::Param(ETIKET) -IP1 [expr 1200-$type] -DATYP $GenX::Param(Datyp)
       fstdfield write GPXJ2 GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
