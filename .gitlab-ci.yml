@@ -1,0 +1,53 @@
+#The program 'gitlab-runner' must be found in the PATH to get the artifacts collecting working.
+#local tests: gitlab-ci-multi-runner-linux-amd64 exec shell [stage]
+
+variables:
+    # CI_DEBUG_TRACE: "true"
+
+stages:
+   - build
+   - test
+   - package
+   - deploy
+#   - doc
+
+build:
+   stage: build
+   script:
+      - . ssmuse-sh -x ${SSM_EXT}
+      - ./makeit -reconf -build 
+   only:
+      - master
+
+test:
+   stage: test
+   variables:
+   script:
+      - test/test.sh
+   only:
+      - master
+
+package:
+   stage: package
+   script:
+      - ./makeit -ssm
+   only:
+      - master
+
+deploy:
+   stage: deploy
+   script:
+      - . ./VERSION
+      #- ssm install -d /ssm/net/cmds/apps/SPI/master -f $SSM_DEV/package/libSPI_${SPI_VERSION}_ubuntu-14.04-amd64-64.ssm
+      #- ssm publish -d /ssm/net/cmds/apps/SPI/master -P /ssm/net/cmds/apps/SPI/beta -p libSPI_${SPI_VERSION}_ubuntu-14.04-amd64-64
+   only:
+      - master
+      
+#doc:
+  #stage: doc
+  #variables:
+    #docname: $CI_BUILD_REF_NAME-$CI_BUILD_REF
+    #midasdoc: /home/erv000/public_html/midas-doc
+  #script:
+  #only:
+    #- master

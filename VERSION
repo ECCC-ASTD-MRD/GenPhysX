@@ -1,0 +1,4 @@
+export TCL_VERSION=8.6
+export SPI_VERSION=8.0.0
+export EER_VERSION=3.4.0
+export GENPHYSX_VERSION=2.5.2
