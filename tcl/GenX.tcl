@@ -2210,6 +2210,49 @@ proc  GenX::Load_CCRN_Table { filename } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <GenX::Load_CSV_Vector>
+# Creation : Feb 2019 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Load a Data Class to Splitted CCRN fraction Correspondance Table
+#
+# Parameters :
+#  <filename>    : file containing a table
+#
+# Return:
+#   <vector>  : Vector of correspondance table
+#
+# Remarks :   
+#
+#----------------------------------------------------------------------------
+proc  GenX::Load_CSV_Vector { filename {vectorid ""} } {
+
+   if { ![file exist $filename] } {
+      return {}
+   }
+
+   if { [string compare $vectorid ""] == 0 } {
+      set  vectorid CSVLUT$filename
+   }
+   vector create $vectorid
+
+   set   f  [open $filename r]
+
+   gets $f headline ;# Setting the dimension of the vector
+   set attribs [split $headline ,]
+   vector dim $vectorid $attribs
+
+   while { ![eof $f] } {
+      gets $f line
+      if { $line!="" } {
+         set tuple [split $line ,]
+         vector append $vectorid $tuple
+      }
+   }
+   close $f
+   return $vectorid
+}
+
+#----------------------------------------------------------------------------
 # Name     : <GenX::Get_GDFile_Reso>
 # Creation : October 2017 - Vanh Souvanlasy - CMC/CMDS
 #
