@@ -68,6 +68,7 @@ namespace eval GenX { } {
 
    set Param(Vege)       ""                    ;#Vegetation data selected
    set Param(Soil)       ""                    ;#Soil type data selected
+   set Param(SoilDBRK)   ""                    ;#Soil depth to bed rock selected, "" will default to GSRS
    set Param(Topo)       ""                    ;#Topography data selected
    set Param(Mask)       ""                    ;#Mask data selected
    set Param(GeoMask)    ""                    ;#Geographical mask data selected
@@ -104,11 +105,12 @@ namespace eval GenX { } {
    set Param(Interpolation)  ""               ;#Interpolation mode to use by default
    set Param(ETIKET)    "GENPHYSX"            ;#Default ETIKET to use for output fields
 
-   set Param(Topos)     { USGS SRTM CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
-   set Param(Aspects)   { SRTM CDED250 CDED50 CDEM GTOPO30 USGS }
-   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC USGS_R NALCMS }
+   set Param(Topos)     { USGS SRTM SRTM30 SRTM90 CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
+   set Param(Aspects)   { SRTM SRTM30 SRTM90 CDED250 CDED50 CDEM GTOPO30 USGS GMTED30 GMTED15 GMTED75 }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC CCILC2015 CCILC2010 USGS_R NALCMS }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS SLC SOILGRIDS }
-   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC USGS_R AAFC NALCMS }
+   set Param(SoilDBRKs) { GSRS }
+   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC CCILC2015 CCILC2010 USGS_R AAFC NALCMS }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD HSRN DCW }
@@ -166,6 +168,8 @@ namespace eval GenX { } {
    set Path(Grad)       RPN/data_grad
    set Path(HWSD)       HWSD
    set Path(SRTM)       SRTM
+   set Path(SRTM30)     SRTM30
+   set Path(SRTM90)     SRTMv4
    set Path(CDED)       CDED
    set Path(CDEM)       CDEM
    set Path(ASTERGDEM)  ASTER-GDEM
@@ -195,7 +199,9 @@ namespace eval GenX { } {
    set Path(BNU)        BNU
    set Path(CANSIS)     CANSIS
    set Path(MODIS_IGBP) MODIS/MCD12Q1/IGBP
-   set Path(CCI_LC)     ESA_CCI_LC/SeaWater
+   set Path(CCI_LC)     ESA_CCI_LC
+   set Path(CCILC2015)  ESA_CCI_LC/2015
+   set Path(CCILC2010)  ESA_CCI_LC/2010
    set Path(NALCMS)     NALCMS
    set Path(SLC)        SLC
    set Path(SOILGRIDS)  SoilGrids
@@ -266,7 +272,17 @@ proc GenX::Process { Grid } {
    set Param(TMPDIR) $Param(OutFile)_tmp$Param(Process)
    set Log::Param(Process) $Param(Process)
    if { $Param(Sub)=="SPLIT" }  { set GeoPhysX::Opt(SubSplit) True }
-   if { $Param(Sub)=="LEGACY" } { set GeoPhysX::Opt(LegacyMode) True }
+
+   # Opt(LegacyMode) enabled will trigger data area averaging for USGS topography
+   if { $Param(Sub)=="LEGACY" } { 
+      set GeoPhysX::Opt(LegacyMode) True 
+   # DBRK is disabled by default in legacy mode, but can be enabled if set to other than ""
+   } else {
+   # Soil depth to bed rock is enabled by default when not in LEGACY mode
+      if { $Param(SoilDBRK)=="" } {
+         set  Param(SoilDBRK)  "GSRS"
+      }
+   }
 
    #----- Land-water mask
    if { $Param(Mask)!="" } {
@@ -301,6 +317,11 @@ proc GenX::Process { Grid } {
    #----- Soil type
    if { $Param(Soil)!="" } {
       GeoPhysX::AverageSoil $Grid
+   }
+
+   #----- Soil type
+   if { $Param(SoilDBRK)!="" } {
+      GeoPhysX::AverageGSRS_DBRK $Grid
    }
 
    #----- Hydraulic
@@ -518,7 +539,7 @@ proc GenX::Procs { args } {
    variable Meta
 
    set Meta(Databases) [lsort -unique [concat $Meta(Databases) $args]]
-
+  
    set proc [info level [expr [info level] -1]]
    if { [lsearch -exact $Meta(Procs) $proc]==-1 } {
       lappend Meta(Procs) $proc
@@ -646,6 +667,7 @@ proc GenX::CommandLine { } {
       -geomask  [format "%-34s : Mask method, one of {$Param(GeoMasks)}" (${::APP_COLOR_GREEN}[join $Param(GeoMask)]${::APP_COLOR_RESET})]
       -vege     [format "%-34s : Vegetation method(s) among {$Param(Veges)}" (${::APP_COLOR_GREEN}[join $Param(Vege)]${::APP_COLOR_RESET})]
       -soil     [format "%-34s : Soil method(s) among {$Param(Soils)}" (${::APP_COLOR_GREEN}[join $Param(Soil)]${::APP_COLOR_RESET})]
+      -dbrk     [format "%-34s : Soil depth to bed rock among {$Param(SoilDBRKs)}" (${::APP_COLOR_GREEN}[join $Param(SoilDBRK)]${::APP_COLOR_RESET})]
       -aspect   [format "%-34s : Slope and aspect method(s) among {$Param(Aspects)}" (${::APP_COLOR_GREEN}[join $Param(Aspect)]${::APP_COLOR_RESET})]
       -biogenic [format "%-34s : Biogenic method(s) among {$Param(Biogenics)}" (${::APP_COLOR_GREEN}[join $Param(Biogenic)]${::APP_COLOR_RESET})]
       -hydro    [format "%-34s : Hydrographic method(s) among {$Param(Hydros)}" (${::APP_COLOR_GREEN}[join $Param(Hydro)]${::APP_COLOR_RESET})]
@@ -765,6 +787,7 @@ proc GenX::ParseCommandLine { } {
          "geomask"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
          "vege"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
          "soil"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
+         "dbrk"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(SoilDBRK) $GenX::Param(SoilDBRKs)]; incr flags }
          "bathy"     { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Bathy) $GenX::Param(Bathys)]; incr flags }
          "egmgh"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(EGMGH) $GenX::Param(EGMGHs)]; incr flags }
          "subgrid"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Sub)]; incr flags }
@@ -1504,7 +1527,7 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
 
       for { set lat [expr int(ceil(24-((60.0 + $Lat1)/5)))]} { $lat<=$latmax } { incr lat } {
          for { set lon [expr int(ceil((180.0 + $Lon0)/5))] } { $lon<=$lonmax } { incr lon } {
-            if { [file exists [set path [format "$Param(DBase)/$Path(SRTM)/srtm_%02i_%02i.TIF" $lon $lat]]] } {
+            if { [file exists [set path [format "$Param(DBase)/$Path(SRTM90)/srtm_%02i_%02i.TIF" $lon $lat]]] } {
                lappend files $path
             }
          }
@@ -1535,7 +1558,7 @@ proc GenX::SRTMFindFiles { Lat0 Lon0 Lat1 Lon1 } {
                set lo $lon
             }
    
-            if { [llength [set lst [glob -nocomplain [format "$Param(DBase)/$Path(SRTM)/UNIT_%s%02i%s%03i/*.TIF" $y $la $x $lo]]]] } {
+            if { [llength [set lst [glob -nocomplain [format "$Param(DBase)/$Path(SRTM30)/UNIT_%s%02i%s%03i/*.TIF" $y $la $x $lo]]]] } {
                set files [concat $files $lst]
             }
          }
@@ -1580,6 +1603,39 @@ proc GenX::SRTMuseVersion3 {} {
    } else {
       return False
    }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::SRTMsetSelection>
+# Creation : Fev 2019 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : set SRTM parameters according to database selection
+#
+# Parameters : list of topo databases used
+#
+# Return:
+#   <bool>
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::SRTMsetSelection { Topo } {
+
+   if { [lsearch -exact $Topo SRTM]!=-1 } {
+      # this will set  GenX::Param(SRTM3) to true if default is version 3
+      GenX::SRTMuseVersion3
+      return True
+   }
+   #----- check if SRTM30 or SRTM90 is specified
+   if { [lsearch -exact $Topo SRTM30]!=-1 } {
+      set  GenX::Param(SRTM3)   True
+      return True
+   }
+   if { [lsearch -exact $Topo SRTM90]!=-1 } {
+      set  GenX::Param(SRTM3)   False
+      return True
+   }
+   return False
 }
 
 #----------------------------------------------------------------------------

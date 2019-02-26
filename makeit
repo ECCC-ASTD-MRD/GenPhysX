@@ -1,0 +1,122 @@
+#!/bin/sh
+
+NAME="GenPhysX"
+DESC="Geophysical field generator."
+VERSION="2.5.2"
+MAINTAINER="Jean-Philippe Gauthier"
+BUILDINFO=`[ -z "\${ORDENV_SETUP}" ] || git describe --always`
+
+SPI_VERSION="8.0.0"
+EER_VERSION="3.4.0"
+
+HELP="Arguments must be:\n\n   Information parameters:
+\t-help        : This information
+\t-version     : Version
+
+   Commands:
+\t-clear       : Clear package
+\t-ssm         : Build SSM package
+\t-build       : Compile package
+\t-reconf      : Reconfigure package\n"
+
+CLR=0
+BLD=0
+SSM=0
+REC=0
+
+#----- Get arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -clear)   CLR=1;;
+        -reconf)  REC=1;;
+        -build)   BLD=1;;
+        -src)     SRC=1;;
+        -ssm)     SSM=1;;
+
+        -h|-help)    printf -- "$HELP\n"; exit 0;;
+        -v|-version) printf -- "$VERSION\n"; exit 0;;
+        --)          shift; break;;
+        *)           printf -- "Invalid argument $1.\n\n$HELP"; exit 1;;
+    esac
+    shift
+done
+
+MAKE=make
+MAKEFILE=Makefile
+
+if [[ -n $COMP_ARCH ]]; then
+   COMP=-${COMP_ARCH}
+fi
+ORDENV_PLAT=${ORDENV_PLAT:-`uname -s`-`uname -m`}
+
+LIB_PATH=${SSM_DEV}/workspace/libSPI_${SPI_VERSION}${COMP}_${ORDENV_PLAT}                              
+LIB_EER=${SSM_DEV}/workspace/eerUtils_${EER_VERSION}${COMP}_${ORDENV_PLAT}         #----- Location of eer library
+
+#unset LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${LIB_PATH}/lib:$LD_LIBRARY_PATH
+export LIBRARY_PATH=${LIB_PATH}/lib:$LIBRARY_PATH
+
+if [[ -n $INTELCOMP_HOME ]]; then
+   export CC=icc
+   export CXX=icpc
+fi
+
+export CFLAGS="-std=c99 -Winline"
+
+echo ""
+echo "----- Building platform : ${ORDENV_PLAT} -----"
+echo ""
+
+if [[ $CLR -eq 1 ]]; then
+   rm -f -r lib/*
+   cd src
+   $MAKE -f $MAKEFILE distclean
+   cd -
+fi
+
+if [[ $BLD -eq 1 ]]; then
+   printf -- "\n----- Making TclGeoPhy Library  -----\n"
+   cd src
+   
+   type -P autoconf2.50 && autoconf=autoconf2.50 || autoconf=autoconf
+   if [[ $REC -eq 1 ]]; then
+      make distclean
+      $autoconf
+      ./configure \
+         --exec-prefix=${LIB_PATH}/TCL \
+         --enable-threads \
+         --enable-64bit \
+         --with-tcl=${LIB_PATH}/TCL/lib \
+         --with-tk=${LIB_PATH}/TCL/lib \
+         --with-rmn=${LIB_EER} \
+         --with-eer=${LIB_EER} \
+         --with-gdal=`which gdal-config`
+   fi
+
+   $MAKE -f $MAKEFILE install
+   cd -
+fi
+
+if [[ $SSM -eq 1 ]]; then  
+   SSM_VERSION=${VERSION}${COMP}
+   SSM_NAME=${NAME}_${SSM_VERSION}_${ORDENV_PLAT}
+
+   printf -- "\n----- Building ssm package : ${SSM_DEV}/workspace/${SSM_NAME} -----\n"
+
+   rm -f -r ${SSM_DEV}/workspace/${SSM_NAME} ${SSM_DEV}/package/${SSM_NAME}.ssm 
+   mkdir -p ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d ${SSM_DEV}/workspace/${SSM_NAME}/etc/profile.d
+   cp -r bin lib tcl doc ${SSM_DEV}/workspace/${SSM_NAME}
+   cp .ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
+   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESC/${DESC}/" .ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
+   cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
+   rm -f -r ${SSM_NAME}
+fi
+
+if [[ $SRC -eq 1 ]]; then
+   printf -- "\n----- Building source package : ${SSM_DEV}/src/${NAME}-${VERSION}  -----\n"
+
+   ./makeit -clear
+   rm -f -r ${SSM_DEV}/src/${NAME}-${VERSION}
+   cp -r ../${NAME} ${SSM_DEV}/src/${NAME}-${VERSION}
+   find ${SSM_DEV}/src/${NAME}-${VERSION} -name .git -prune -exec rm -f -r {} \+
+fi
