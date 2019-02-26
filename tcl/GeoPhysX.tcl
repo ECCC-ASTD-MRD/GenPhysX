@@ -2606,9 +2606,30 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCIFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with CCI_LC database, vegetation will not be calculated"
    } else {
-      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(CCI_LC2RPN) 0]\n   To  :[lindex $Const(CCI_LC2RPN) 1]"
-      vector create FROMCCI  [lindex $Const(CCI_LC2RPN) 0]
-      vector create TORPN    [lindex $Const(CCI_LC2RPN) 1]
+      set has_lut     0
+      if { [info exist GenX::Path(CCI_LC2RPN_CSV)] } {
+         set  ccilc_lut  [GenX::Load_CSV_Vector $GenX::Path(CCI_LC2RPN_CSV) CCILC_LUT]
+         set  dim        [vector dim $ccilc_lut]
+         set  values     [vector get $ccilc_lut 0]
+         set  len        [vector length $ccilc_lut]
+         set has_lut     [llength $values]
+         if { [lindex $values 0] != [llength $Param(VegeTypes)] } {
+            Log::Print ERROR "Specified LUT $GenX::Path(CCI_LC2RPN_CSV) is invalid, Nb Vege Types not equal to [llength $Param(VegeTypes)], vegetation will not be calculated"
+            exit
+         }
+         Log::Print INFO "Using CSV correspondance table file: $GenX::Path(CCI_LC2RPN_CSV)"
+         set lutstr "[vector dim $ccilc_lut]\n"
+         for {set l 0} {$l < $len} {incr l} {
+            append lutstr "       [vector get $ccilc_lut $l]\n"
+         }
+         Log::Print INFO $lutstr
+      }
+ 
+      if { $has_lut == 0 } {
+         Log::Print INFO "Using correspondance table\n   From:[lindex $Const(CCI_LC2RPN) 0]\n   To  :[lindex $Const(CCI_LC2RPN) 1]"
+         vector create FROMCCI  [lindex $Const(CCI_LC2RPN) 0]
+         vector create TORPN    [lindex $Const(CCI_LC2RPN) 1]
+      }
 
       Log::Print INFO "Grid intersection with CCI_LC database is { $limits }"
       set x0 [lindex $limits 0]
@@ -2623,9 +2644,17 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
             gdalband read CCITILE { { CCIFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats CCITILE -nodata 0 -celldim $GenX::Param(Cell)
 
-            vexpr CCITILE lut(CCITILE,FROMCCI,TORPN)
-            fstdfield gridinterp $Grid CCITILE NORMALIZED_COUNT $Param(VegeTypes) False
+            if { $has_lut } {
+               fstdfield gridinterp $Grid CCITILE NORMALIZED_COUNT $ccilc_lut False
+            } else {
+               vexpr CCITILE lut(CCITILE,FROMCCI,TORPN)
+               fstdfield gridinterp $Grid CCITILE NORMALIZED_COUNT $Param(VegeTypes) False
+            }
          }
+      }
+
+      if { $has_lut } {
+          vector free $ccilc_lut
       }
 
       #----- If there is other DB to process
@@ -2638,7 +2667,9 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
       }
 
       gdalband free CCITILE
-      vector free FROMCCI TORPN
+      if { $has_lut == 0 } {
+         vector free FROMCCI TORPN
+      }
    }
    gdalfile close CCIFILE
 }
