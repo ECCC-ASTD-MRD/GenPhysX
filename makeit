@@ -2,8 +2,9 @@
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
+SUMMARY="Tool to generate geophysical fields (ME,MG,VG,...) for meteorological and environmental models (GEM,GEM-MACH,...)"
 VERSION="2.5.2"
-MAINTAINER="Jean-Philippe Gauthier"
+MAINTAINER="Vanh.Souvanlasy@canada.ca, Jean-Philippe.Gauthier@canada.ca"
 BUILDINFO=`[ -z "\${ORDENV_SETUP}" ] || git describe --always`
 
 SPI_VERSION="8.0.0"
@@ -107,7 +108,7 @@ if [[ $SSM -eq 1 ]]; then
    mkdir -p ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d ${SSM_DEV}/workspace/${SSM_NAME}/etc/profile.d
    cp -r bin lib tcl doc ${SSM_DEV}/workspace/${SSM_NAME}
    cp .ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
-   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESC/${DESC}/" .ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
+   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESCRIPTION/${DESCRIPTION}/" -e "s/SUMMARY/${SUMMARY}/" ../.ssm.d/control.json > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control.json
    cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
    rm -f -r ${SSM_NAME}
 fi
