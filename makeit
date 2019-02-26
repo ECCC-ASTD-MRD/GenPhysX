@@ -2,9 +2,10 @@
 
 NAME="GenPhysX"
 DESC="Geophysical field generator."
+SUMMARY="Tool to generate geophysical fields (ME,MG,VG,...) for meteorological and environmental models (GEM,GEM-MACH,...)"
 VERSION="2.5.2"
-MAINTAINER="Jean-Philippe Gauthier"
-BUILDINFO=`git describe --always`
+MAINTAINER="Vanh.Souvanlasy@canada.ca, Jean-Philippe.Gauthier@canada.ca"
+BUILDINFO=`[ -z "\${ORDENV_SETUP}" ] || git describe --always`
 
 SPI_VERSION="8.0.0"
 EER_VERSION="3.4.0"
@@ -16,13 +17,13 @@ HELP="Arguments must be:\n\n   Information parameters:
    Commands:
 \t-clear       : Clear package
 \t-ssm         : Build SSM package
-\t-build       : Compile package\n"
+\t-build       : Compile package
+\t-reconf      : Reconfigure package\n"
 
 CLR=0
 BLD=0
 SSM=0
 REC=0
-INS=0
 
 #----- Get arguments
 while [ $# -gt 0 ]; do
@@ -32,7 +33,6 @@ while [ $# -gt 0 ]; do
         -build)   BLD=1;;
         -src)     SRC=1;;
         -ssm)     SSM=1;;
-        -install) INS=1;;
 
         -h|-help)    printf -- "$HELP\n"; exit 0;;
         -v|-version) printf -- "$VERSION\n"; exit 0;;
@@ -79,9 +79,10 @@ if [[ $BLD -eq 1 ]]; then
    printf -- "\n----- Making TclGeoPhy Library  -----\n"
    cd src
    
+   type -P autoconf2.50 && autoconf=autoconf2.50 || autoconf=autoconf
    if [[ $REC -eq 1 ]]; then
       make distclean
-      autoconf2.50
+      $autoconf
       ./configure \
          --exec-prefix=${LIB_PATH}/TCL \
          --enable-threads \
@@ -107,15 +108,9 @@ if [[ $SSM -eq 1 ]]; then
    mkdir -p ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d ${SSM_DEV}/workspace/${SSM_NAME}/etc/profile.d
    cp -r bin lib tcl doc ${SSM_DEV}/workspace/${SSM_NAME}
    cp .ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
-   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESC/${DESC}/" .ssm.d/control > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control
+   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESCRIPTION/${DESCRIPTION}/" -e "s/SUMMARY/${SUMMARY}/" ../.ssm.d/control.json > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control.json
    cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
    rm -f -r ${SSM_NAME}
-fi
-
-if [[ $INS -eq 1 ]]; then
-   cd src
-   $MAKE -f $MAKEFILE install
-   cd -
 fi
 
 if [[ $SRC -eq 1 ]]; then
