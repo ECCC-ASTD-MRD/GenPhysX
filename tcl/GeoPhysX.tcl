@@ -2607,17 +2607,17 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
       Log::Print WARNING "Specified grid does not intersect with CCI_LC database, vegetation will not be calculated"
    } else {
       set has_lut     0
-      if { [info exist GenX::Path(CCI_LC2RPN_CSV)] } {
-         set  ccilc_lut  [GenX::Load_CSV_Vector $GenX::Path(CCI_LC2RPN_CSV) CCILC_LUT]
+      if { $GenX::Param(UseVegeLUT) && [info exist GenX::Path(CCILC_LUT_CSV)] } {
+         set  ccilc_lut  [GenX::Load_CSV_Vector $GenX::Path(CCILC_LUT_CSV) CCILC_LUT]
          set  dim        [vector dim $ccilc_lut]
          set  values     [vector get $ccilc_lut 0]
          set  len        [vector length $ccilc_lut]
          set has_lut     [llength $values]
          if { [lindex $values 0] != [llength $Param(VegeTypes)] } {
-            Log::Print ERROR "Specified LUT $GenX::Path(CCI_LC2RPN_CSV) is invalid, Nb Vege Types not equal to [llength $Param(VegeTypes)], vegetation will not be calculated"
+            Log::Print ERROR "Specified LUT $GenX::Path(CCILC_LUT_CSV) is invalid, Nb Vege Types not equal to [llength $Param(VegeTypes)], vegetation will not be calculated"
             exit
          }
-         Log::Print INFO "Using CSV correspondance table file: $GenX::Path(CCI_LC2RPN_CSV)"
+         Log::Print INFO "Using CSV correspondance table file: $GenX::Path(CCILC_LUT_CSV)"
          set lutstr "[vector dim $ccilc_lut]\n"
          for {set l 0} {$l < $len} {incr l} {
             append lutstr "       [vector get $ccilc_lut $l]\n"
@@ -5390,9 +5390,10 @@ proc GeoPhysX::CheckMaskVegeConsistency {} {
    #----- Read mask
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
       fstdfield read GRDMG GPXOUTFILE $idx
+      set has_MG  1
    } else {
-      Log::Print WARNING "Could not find mask field MG"
-      return
+      Log::Print INFO "Could not find mask field MG, will create it using VF1 and VF3"
+      set has_MG  0
    }
 
    #----- Read Urban VF(21)
@@ -5426,13 +5427,22 @@ proc GeoPhysX::CheckMaskVegeConsistency {} {
    set has_SaltWater  [expr $max == 1.0]
 
 # Obtain VF3 from MG and VF1 if any
-   vexpr WATER "1.0-GRDMG"
-   if { $has_SaltWater } {
-      vexpr GRDVF1 "ifelse(GRDVF1>=WATER,WATER,GRDVF1)"
-      vexpr GRDVF3 "1.0-GRDVF1-GRDMG"
+   if {$has_MG} {
+      vexpr WATER "1.0-GRDMG"
+      if { $has_SaltWater } {
+         vexpr GRDVF1 "ifelse(GRDVF1>=WATER,WATER,GRDVF1)"
+         vexpr GRDVF3 "1.0-GRDVF1-GRDMG"
+      } else {
+         vexpr GRDVF3 "ifelse(GRDVF3>=WATER,WATER,GRDVF3)"
+         vexpr GRDVF1 "1.0-GRDVF3-GRDMG"
+      }
    } else {
-      vexpr GRDVF3 "ifelse(GRDVF3>=WATER,WATER,GRDVF3)"
-      vexpr GRDVF1 "1.0-GRDVF3-GRDMG"
+      vexpr GRDMG "1.0-GRDVF3-GRDVF1"
+      fstdfield define GRDMG -NOMVAR MG -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GRDMG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+      Log::Print INFO "Since MG is created from VF1 and VF3, no need to rebalance all VF fields"
+      fstdfield free GRDVF3 GRDVF1 GRDMG WATER
+      return
    }
 
    vexpr VFfixed "GRDVF1+GRDVF3+GRDVF21"
@@ -5529,7 +5539,7 @@ proc GeoPhysX::CheckMaskVegeConsistency {} {
    fstdfield write GRDMG  GPXAUXFILE -32 True
 
    fstdfield free GRDVF3 GRDVF1 GRDMG GPXVF GPXVGI
-   fstdfield free SUM_VF SUM_VF2 VFA VFT
+   fstdfield free SUM_VF SUM_VF2 VFA VFT WATER
 }
 
 #----------------------------------------------------------------------------
