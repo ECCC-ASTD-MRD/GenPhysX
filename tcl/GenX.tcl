@@ -2237,12 +2237,30 @@ proc  GenX::Load_CSV_Vector { filename {vectorid ""} } {
 
    set   f  [open $filename r]
 
-   gets $f headline ;# Setting the dimension of the vector
+   # getting the first line as dimension of the vector
+   # skip all comment lines if any
+#   gets $f headline ;# Setting the dimension of the vector
+   while { ![eof $f] } {
+      gets $f line
+      # skip all comment lines
+      set head  [string range $line 0 0]
+      if { [string compare $head "#"] == 0 } {
+         continue
+      }
+      set headline $line
+      break
+   }
+#   gets $f headline ;# Setting the dimension of the vector
    set attribs [split $headline ,]
    vector dim $vectorid $attribs
 
    while { ![eof $f] } {
       gets $f line
+      # skip all comment lines
+      set head  [string range $line 0 0]
+      if { [string compare $head "#"] == 0 } {
+         continue
+      }
       if { $line!="" } {
          set tuple [split $line ,]
          vector append $vectorid $tuple
