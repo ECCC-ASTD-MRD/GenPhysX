@@ -2609,7 +2609,10 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
       set has_lut     0
       if { $GenX::Param(UseVegeLUT) && [info exist GenX::Path(CCILC_LUT_CSV)] } {
          set  ccilc_lut  [GenX::Load_CSV_Vector $GenX::Path(CCILC_LUT_CSV) CCILC_LUT]
-         set  dim        [vector dim $ccilc_lut]
+         if { $ccilc_lut == "" } {
+            Log::Print ERROR "Specified LUT $GenX::Path(CCILC_LUT_CSV) is invalid"
+            exit
+         }
          set  values     [vector get $ccilc_lut 0]
          set  len        [vector length $ccilc_lut]
          set has_lut     [llength $values]
@@ -2702,9 +2705,33 @@ proc GeoPhysX::AverageVegeUSGS_R { Grid } {
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef USGSFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with USGS_R database, vegetation will not be calculated"
    } else {
-      Log::Print INFO "Using correspondance table\n   From:[lindex $Const(USGS_BATS2RPN) 0]\n   To  :[lindex $Const(USGS_BATS2RPN) 1]"
-      vector create FROMUSGS  [lindex $Const(USGS_BATS2RPN) 0]
-      vector create TORPN    [lindex $Const(USGS_BATS2RPN) 1]
+      set has_lut     0
+      if { $GenX::Param(UseVegeLUT) && [info exist GenX::Path(USGS_GLCC_LUT_CSV)] } {
+         set  usgs_lut  [GenX::Load_CSV_Vector $GenX::Path(USGS_GLCC_LUT_CSV) USGS_LUT]
+         if { $usgs_lut == "" } {
+            Log::Print ERROR "Specified LUT $GenX::Path(USGS_GLCC_LUT_CSV) is invalid"
+            exit
+         }
+         set  values     [vector get $usgs_lut 0]
+         set  len        [vector length $usgs_lut]
+         set  has_lut    [llength $values]
+         if { [lindex $values 0] != [llength $Param(VegeTypes)] } {
+            Log::Print ERROR "Specified LUT $GenX::Path(USGS_GLCC_LUT_CSV) is invalid, Nb Vege Types not equal to [llength $Param(VegeTypes)], vegetation will not be calculated"
+            exit
+         }
+         Log::Print INFO "Using CSV correspondance table file: $GenX::Path(USGS_GLCC_LUT_CSV)"
+         set lutstr "[vector dim $usgs_lut]\n"
+         for {set l 0} {$l < $len} {incr l} {
+            append lutstr "       [vector get $usgs_lut $l]\n"
+         }
+         Log::Print INFO $lutstr
+      }
+ 
+      if { $has_lut == 0 } {
+         Log::Print INFO "Using correspondance table\n   From:[lindex $Const(USGS_BATS2RPN) 0]\n   To  :[lindex $Const(USGS_BATS2RPN) 1]"
+         vector create FROMUSGS  [lindex $Const(USGS_BATS2RPN) 0]
+         vector create TORPN    [lindex $Const(USGS_BATS2RPN) 1]
+      }
 
       Log::Print INFO "Grid intersection with USGS_R database is { $limits }"
       set x0 [lindex $limits 0]
@@ -2719,8 +2746,12 @@ proc GeoPhysX::AverageVegeUSGS_R { Grid } {
             gdalband read USGSTILE { { USGSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats USGSTILE -nodata 0 -celldim $GenX::Param(Cell)
 
-            vexpr USGSTILE lut(USGSTILE,FROMUSGS,TORPN)
-            fstdfield gridinterp $Grid USGSTILE NORMALIZED_COUNT $Param(VegeTypes) False
+            if { $has_lut } {
+               fstdfield gridinterp $Grid USGSTILE NORMALIZED_COUNT $usgs_lut  False
+            } else {
+               vexpr USGSTILE lut(USGSTILE,FROMUSGS,TORPN)
+               fstdfield gridinterp $Grid USGSTILE NORMALIZED_COUNT $Param(VegeTypes) False
+            }
          }
       }
 
@@ -5440,7 +5471,7 @@ proc GeoPhysX::CheckMaskVegeConsistency {} {
       vexpr GRDMG "1.0-GRDVF3-GRDVF1"
       fstdfield define GRDMG -NOMVAR MG -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
       fstdfield write GRDMG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
-      Log::Print INFO "Since MG is created from VF1 and VF3, no need to rebalance all VF fields"
+      Log::Print INFO "Since MG is created from VF1 and VF3, no need to rebalance VF fields"
       fstdfield free GRDVF3 GRDVF1 GRDMG WATER
       return
    }
