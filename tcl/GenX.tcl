@@ -86,6 +86,8 @@ namespace eval GenX { } {
    set Param(EGMGH)      ""                    ;#Earth Gravitational Model Geoid Height
    set Param(Bathy)      ""                    ;#Bathymetry
    set Param(MEFilterForZ0) "STD"              ;#Topo filter selected for Z0
+   set Param(Vege2Mask) False                  ;#Generate Mask from Vege
+   set Param(UseVegeLUT) False                 ;#Enable use of CSV LUT for vegetation
 
    set Param(Diag)      False                 ;#Diagnostics
    set Param(Z0Filter)  False                 ;#Filter roughness length
@@ -202,6 +204,7 @@ namespace eval GenX { } {
    set Path(CCI_LC)     ESA_CCI_LC
    set Path(CCILC2015)  ESA_CCI_LC/2015
    set Path(CCILC2010)  ESA_CCI_LC/2010
+   set Path(CCILC_LUT_CSV)    $Param(DBase)/$Path(CCI_LC)/CCI_LC_lut.csv
    set Path(NALCMS)     NALCMS
    set Path(SLC)        SLC
    set Path(SOILGRIDS)  SoilGrids
@@ -289,6 +292,16 @@ proc GenX::Process { Grid } {
       GeoPhysX::AverageMask $Grid
    }
 
+   #----- Vegetation type
+   if { $Param(Vege)!="" } {
+      GeoPhysX::AverageVege $Grid
+   }
+
+   #----- Consistency checks for mask vs vege
+   if { $Param(Vege)!=$Param(Mask) || $Param(UseVegeLUT) } {
+      GeoPhysX::CheckMaskVegeConsistency
+   }
+
    #----- Topography
    if { $Param(Topo)!="" } {
       GeoPhysX::AverageTopo $Grid
@@ -309,10 +322,6 @@ proc GenX::Process { Grid } {
       GeoPhysX::AverageGeoMask $Grid
    }
 
-   #----- Vegetation type
-   if { $Param(Vege)!="" } {
-      GeoPhysX::AverageVege $Grid
-   }
 
    #----- Soil type
    if { $Param(Soil)!="" } {
@@ -327,11 +336,6 @@ proc GenX::Process { Grid } {
    #----- Hydraulic
    if { $Param(Hydraulic) } {
       GeoPhysX::AverageSoilHydraulic $Grid
-   }
-
-   #----- Consistency checks for mask vs vege
-   if { $Param(Vege)!=$Param(Mask) } {
-      GeoPhysX::CheckMaskVegeConsistency
    }
 
    #----- Consistency checks
@@ -871,13 +875,13 @@ proc GenX::ParseCommandLine { } {
    #----- Check dependencies
    if { $Param(Vege)!="" } {
       if { $Param(Mask)=="" } {
-         Log::Print ERROR "To generate vegetation type fields you need to generate the mask"
-         GenX::Continue
+         set  Param(Vege2Mask)  True
+         Log::Print INFO "Will be using vegetation VF1 and VF3 fields to generate the mask"
       }
    }
 
    if { $Param(Sub)=="STD" } {
-      if { $Param(Mask)=="" } {
+      if { $Param(Mask)=="" && $Param(Vege2Mask)==False } {
          Log::Print ERROR "To generate sub-grid post-processed fields you need to generate the mask"
          GenX::Continue
       }
@@ -899,7 +903,7 @@ proc GenX::ParseCommandLine { } {
    }
 
    if { $Param(Hydro)!="" } {
-      if { $Param(Mask)=="" } {
+      if { $Param(Mask)=="" && $Param(Vege2Mask)==False } {
          Log::Print ERROR "To generate hydrographic type fields you need to generate the mask"
          GenX::Continue
       }
