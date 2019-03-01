@@ -23,7 +23,7 @@ test:
    stage: test
    variables:
    script:
-      - test/test.sh
+      - CI_Master.sh ${CI_PROJECT_DIR} ${CI_BUILD_REF} ${CI_PROJECT_DIR}/test/CI.sh
    only:
       - master
 
@@ -38,8 +38,8 @@ deploy:
    stage: deploy
    script:
       - . ./VERSION
-      #- ssm install -d /ssm/net/cmds/apps/SPI/master -f $SSM_DEV/package/libSPI_${SPI_VERSION}_ubuntu-14.04-amd64-64.ssm
-      #- ssm publish -d /ssm/net/cmds/apps/SPI/master -P /ssm/net/cmds/apps/SPI/beta -p libSPI_${SPI_VERSION}_ubuntu-14.04-amd64-64
+      #- ssm install -d /ssm/net/cmds/apps/SPI/master -f ${SSM_DEV}/package/GenPhysX_${GENPHYSX_VERSION}-${COMP_ARCH}_${ORDENV_PLAT}.ssm
+      #- ssm publish -d /ssm/net/cmds/apps/SPI/master -P /ssm/net/cmds/apps/SPI/beta -p GenPhysX_${GENPHYSX_VERSION}-${COMP_ARCH}_${ORDENV_PLAT}
    only:
       - master
       
