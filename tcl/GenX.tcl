@@ -462,7 +462,7 @@ proc GenX::Submit { } {
    set domain [join [lrange [split [lsearch -inline -glob [split $env(PATH) :] "*/SPI/*"] /] 0 end-2] /]
 
    puts $f "#!/bin/ksh\nset -x\n"
-   puts $f ". ssmuse-sh -f $domain"
+   puts $f ". ssmuse-sh -x $domain"
    puts $f "\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
    puts $f "tmpdir=$tmpdir"
