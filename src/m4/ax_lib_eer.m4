@@ -120,11 +120,12 @@ AC_DEFUN([AX_LIB_EER],
             AC_LANG_PROGRAM(
                 [[
 @%:@include <eerUtils.h>
+@%:@include <QTree.h>
                 ]],
                 [[]]
             )],
             [
-            EER_CFLAGS="-I$eer_include_dir"
+            EER_CFLAGS="-I$eer_include_dir -DHAVE_GPC -DHAVE_TCL"
             eer_header_found="yes"
             AC_MSG_RESULT([found])
             ],
@@ -147,9 +148,10 @@ AC_DEFUN([AX_LIB_EER],
                 AC_LANG_PROGRAM(
                     [[
 @%:@include <eerUtils.h>
+@%:@include <QTree.h>
                     ]],
                     [[
-System_IsBigEndian();
+free(QTree_New(-1,-1,1,1,NULL));
                     ]]
                 )],
                 [
