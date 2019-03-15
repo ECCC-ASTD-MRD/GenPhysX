@@ -1,6 +1,6 @@
 # GenPhysX Description
 
-GenPhysX is the modern and easy-to-use surface fields generator at the CMC. It processes several geospatial databases, specifically averaging, counting, slope and aspect calculations and more. It supports hundreds of geospatial data file formats, including RPN standard files, and seamlessly manage geographical projections and datum. GenPhysX can generate surface fields at any scale for anywhere in the world. GenPhysX uses SPI at its core.
+GenPhysX is the modern and easy-to-use surface fields generator at the CMC. It processes several geospatial databases, specifically averaging, counting, slope and aspect calculations and more. It supports hundreds of geospatial data file formats, including RPN standard files, and seamlessly manages geographical projections and datum. GenPhysX can generate surface fields at any scale for anywhere in the world. GenPhysX uses [SPI](https://gitlab.science.gc.ca/ECCC_CMOE_APPS/eerspi) at its core.
 
 A set of databases are queried by GenPhysX to create model fields of quantities including:
 
@@ -28,7 +28,7 @@ $SSM_DEV/
    workspace
 ```
 
-The makeit script will allow you to build the source and ssm package.
+The ```makeit``` script at the root of the repository will allow you to build from source and produce an ssm package.
 
 ```makeit -reconf -build -ssm```
 
