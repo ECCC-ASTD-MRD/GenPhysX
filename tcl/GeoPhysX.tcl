@@ -1991,7 +1991,7 @@ proc GeoPhysX::AverageMaskOSM { Grid } {
       Log::Print INFO "LACF field not found, will generate it using HydroLakes"
       fstdfield copy GPXLAKEF $Grid
       GenX::GridClear GPXLAKEF 0.0
-      HydroX::HydroLakesDepth GPXLAKEF
+      HydroX::HydroLakesDepth $Grid GPXLAKEF
    }
 
    vexpr GPXVF3  "GPXVF3 + GPXLAKEF"
@@ -4281,10 +4281,10 @@ proc GeoPhysX::AverageBathymetry { Grid } {
    if { [lsearch -exact $GenX::Param(Bathy) HYDROLAKES]!=-1 } {
       fstdfield copy GPXLAKEF $Grid
       fstdfield copy GPXLAKED $Grid
-      fstdfield copy GPXLAKEA $Grid
       fstdfield copy GPXLAKES $Grid
-      GenX::GridClear {GPXLAKEF GPXLAKED GPXLAKEA GPXLAKES} 0.0
-      HydroX::HydroLakesDepth GPXLAKEF GPXLAKED GPXLAKEA GPXLAKES
+      fstdfield copy GPXLAKEG $Grid
+      GenX::GridClear {GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG} 0.0
+      HydroX::HydroLakesDepth $Grid GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG
 
       vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
 
@@ -4292,12 +4292,12 @@ proc GeoPhysX::AverageBathymetry { Grid } {
       fstdfield write GPXLAKED GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
       fstdfield define GPXLAKEF -NOMVAR LACF -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
       fstdfield write GPXLAKEF GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-      fstdfield define GPXLAKEA -NOMVAR LACA -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXLAKEA GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
       fstdfield define GPXLAKES -NOMVAR LACS -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
       fstdfield write GPXLAKES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield define GPXLAKEG -NOMVAR LACG -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+      fstdfield write GPXLAKEG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-      fstdfield free GPXLAKEF GPXLAKED GPXLAKEA GPXLAKES
+      fstdfield free GPXLAKEF GPXLAKED GPXLAKEA GPXLAKES GPXLAKEG
    }
 
    # the CHS bathymetry is simply water depth

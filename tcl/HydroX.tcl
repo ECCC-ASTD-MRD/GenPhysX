@@ -391,29 +391,27 @@ proc HydroX::DrainDensityDCW { Grid la0 lo0 la1 lo1 clipped } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc HydroX::HydroLakesDepth { LakeF {LakeD ""} {LakeA ""} {LakeS ""} } {
+proc HydroX::HydroLakesDepth { Grid LakeF {LakeD ""} {LakeS ""} {LakeG ""} } {
    variable Param
 
    GenX::Procs HydroLAKES 
 
-   if { ! [fstdfield is $LakeF] } {
-      Log::Print ERROR "  LakeF Grid not valid"
-      return
+   if { [fstdfield is $LakeF] } {
+      set Has_LakeF  1
+   } else {
+      set Has_LakeF  0
    }
-
-   fstdfield clear $LakeF
    if { [fstdfield is $LakeD] } {
-      fstdfield clear $LakeD
-   }
-   if { [fstdfield is $LakeA] } {
-      fstdfield clear $LakeA
-   }
-   if { [fstdfield is $LakeS] } {
-      fstdfield clear $LakeS
+      # create a temporary LakeF to calculate LakeD
+      if { $Has_LakeF == 0 } {
+         set LakeF  "LakesFractionFLD"
+         fstdfield copy $LakeF $Grid
+         GenX::GridClear $LakeF 0.0
+      }
    }
 
    set shp_dir  "$GenX::Param(DBase)/$GenX::Path(HYDROLAKES)"
-   set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $LakeF]
+   set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
 
    set count [llength $regfiles]
    set n     0
@@ -433,14 +431,14 @@ proc HydroX::HydroLakesDepth { LakeF {LakeD ""} {LakeA ""} {LakeS ""} } {
          fstdfield gridinterp $LakeD FEATURES ALIASED Depth_avg
       }
 
-      if { [fstdfield is $LakeA] } {
-         Log::Print INFO "Calculating Lake Average Area"
-         fstdfield gridinterp $LakeA FEATURES INTERSECT Lake_area "" AVERAGE
+      if { [fstdfield is $LakeS] } {
+         Log::Print INFO "Calculating Lake Surface Average"
+         fstdfield gridinterp $LakeS FEATURES INTERSECT Lake_area "" AVERAGE
       }
 
-      if { [fstdfield is $LakeS] } {
-         Log::Print INFO "Calculating Lake Grid's Average Surface"
-         fstdfield gridinterp $LakeS FEATURES CONSERVATIVE Lake_area "" AVERAGE
+      if { [fstdfield is $LakeG] } {
+         Log::Print INFO "Calculating Lake Grid Surface Average"
+         fstdfield gridinterp $LakeG FEATURES CONSERVATIVE Lake_area "" AVERAGE
       }
 
       ogrfile close LAYERFILE
@@ -449,5 +447,12 @@ proc HydroX::HydroLakesDepth { LakeF {LakeD ""} {LakeA ""} {LakeS ""} } {
    # we want to have an uniformed negative depth values like bathymetry
    if { [fstdfield is $LakeD] && [fstdfield is $LakeF] } {
       vexpr  $LakeD "ifelse($LakeF>0.0,-1.0*$LakeD/$LakeF,0.0)"
+   }
+
+   # discard temporary created LakeF
+   if { $Has_LakeF == 0 } {
+      if { [fstdfield is $LakeF] } {
+         fstdfield free  $LakeF
+      }
    }
 }
