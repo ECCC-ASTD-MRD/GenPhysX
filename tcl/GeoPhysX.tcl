@@ -1974,7 +1974,7 @@ proc GeoPhysX::AverageMaskOSM { Grid } {
    }
 
    #----- now generate VF3  using OSM Hydrography from 2016 snapshot
-   set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSMWATER)/freshwater/hydrography_tiled"
+   set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSMWATER)/freshwater/hydrography-tiled"
    set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
    foreach file  $regfiles {
       set shp_file "$shp_dir$file"
