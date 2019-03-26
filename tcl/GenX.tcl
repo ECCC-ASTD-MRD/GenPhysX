@@ -131,6 +131,7 @@ namespace eval GenX { } {
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
    set Param(SRTM3)     False
+   set Param(AddHydroLakesToMask)   False    ; #add HydroLakes Lakes fraction to OSM Mask
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     ppp2                  ;#Host onto which to submit the job
@@ -213,8 +214,8 @@ namespace eval GenX { } {
    set Path(CHS)        CHS/bathymetry
    set Path(NCEI)       NOAA/NCEI/bathymetry
    set Path(GEBCO)      GEBCO_2014
-   set Path(HYDROLAKES) HydroSHEDS/Misc/HydroLakes/splitted
-   set Path(OSMWATER)   OSM/data/water_mask
+   set Path(HYDROLAKES) HydroSHEDS/Misc/HydroLakes/HydroLAKES_polys_v10-tiled
+   set Path(OSM)        OSM/data
 
    set Path(StatCan)    $Param(DBase)/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC

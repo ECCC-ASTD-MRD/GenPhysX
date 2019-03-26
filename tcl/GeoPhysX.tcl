@@ -1962,7 +1962,7 @@ proc GeoPhysX::AverageMaskOSM { Grid } {
    GenX::GridClear GPXVF1 0.0
 
    #---- First generate sea water using water-polygons-split-4326
-   set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSMWATER)/seawater/water-polygons-tiled"
+   set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSM)/water/water-polygons-tiled"
    set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
    foreach file  $regfiles {
       set shp_file "$shp_dir$file"
@@ -1974,7 +1974,13 @@ proc GeoPhysX::AverageMaskOSM { Grid } {
    }
 
    #----- now generate VF3  using OSM Hydrography from 2016 snapshot
-   set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSMWATER)/freshwater/hydrography-tiled"
+   #----- if hydrolakes will be added also, then use the version that 
+   #----- had hydrolakes portion cut out, to avoid double counting
+   if { $GenX::Param(AddHydroLakesToMask) } {
+      set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSM)/water/hydrography-cut-hydrolakes-tiled"
+   } else {
+      set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSM)/water/hydrography-tiled"
+   }
    set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
    foreach file  $regfiles {
       set shp_file "$shp_dir$file"
@@ -1985,20 +1991,23 @@ proc GeoPhysX::AverageMaskOSM { Grid } {
       ogrfile close LAYERFILE
    }
 
-   if { [catch {
-      fstdfield read GPXLAKEF   GPXAUXFILE -1 "" -1   -1 -1 "" "LACF"
-      } ] } {
-      Log::Print INFO "LACF field not found, will generate it using HydroLakes"
-      fstdfield copy GPXLAKEF $Grid
-      GenX::GridClear GPXLAKEF 0.0
-      HydroX::HydroLakesDepth $Grid GPXLAKEF
+   if { $GenX::Param(AddHydroLakesToMask) } {
+      if { [catch {
+         fstdfield read GPXLAKEF   GPXAUXFILE -1 "" -1   -1 -1 "" "LACF"
+         } ] } {
+         Log::Print INFO "LACF field not found, will generate it using HydroLakes"
+         fstdfield copy GPXLAKEF $Grid
+         GenX::GridClear GPXLAKEF 0.0
+         HydroX::HydroLakesDepth $Grid GPXLAKEF
+      }
+
+      vexpr GPXVF3  "GPXVF3 + GPXLAKEF"
+      fstdfield free GPXLAKEF
    }
 
-   vexpr GPXVF3  "GPXVF3 + GPXLAKEF"
    vexpr GPXVF3  "ifelse(GPXVF3>1.0,1.0,GPXVF3)"
    vexpr GPXVF1  "ifelse(GPXVF1>1.0,1.0,GPXVF1)"
    vexpr GPXMASK  "1.0 - GPXVF1 - GPXVF3"
-   fstdfield free GPXLAKEF
 
    #----- Save output
    fstdfield define GPXMASK -NOMVAR MG -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
