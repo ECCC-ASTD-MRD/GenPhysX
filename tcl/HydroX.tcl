@@ -423,12 +423,12 @@ proc HydroX::HydroLakesDepth { Grid LakeF {LakeD ""} {LakeS ""} {LakeG ""} } {
 
       if { [fstdfield is $LakeF] } {
          Log::Print INFO "Calculating Lake fraction"
-         fstdfield gridinterp $LakeF FEATURES ALIASED 1
+         fstdfield gridinterp $LakeF FEATURES ALIASED 1 "" SUM
       }
 
       if { [fstdfield is $LakeD] } {
          Log::Print INFO "Calculating Lake Average Depth"
-         fstdfield gridinterp $LakeD FEATURES ALIASED Depth_avg
+         fstdfield gridinterp $LakeD FEATURES ALIASED Depth_avg "" SUM
       }
 
       if { [fstdfield is $LakeS] } {

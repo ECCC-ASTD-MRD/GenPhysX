@@ -1563,7 +1563,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
       Log::Print DEBUG "   Processing file $file"
       ogrfile open CANVECFILE read $file
       ogrlayer read CANVECTILE CANVECFILE 0
-      fstdfield gridinterp GPXMASK CANVECTILE ALIASED 1.0
+      fstdfield gridinterp GPXMASK CANVECTILE ALIASED 1.0 "" SUM
       ogrfile close CANVECFILE
    }
 
@@ -1969,7 +1969,7 @@ proc GeoPhysX::AverageMaskOSM { Grid } {
       Log::Print INFO "Using shapefile : $shp_dir$file"
       set layer [ogrfile open LAYERFILE read $shp_file]
       ogrlayer read FEATURES LAYERFILE 0
-      fstdfield gridinterp GPXVF1 FEATURES ALIASED 1
+      fstdfield gridinterp GPXVF1 FEATURES ALIASED 1 "" SUM
       ogrfile close LAYERFILE
    }
 
@@ -1987,7 +1987,7 @@ proc GeoPhysX::AverageMaskOSM { Grid } {
       Log::Print INFO "Using shapefile : $shp_dir$file"
       set layer [ogrfile open LAYERFILE read $shp_file]
       ogrlayer read FEATURES LAYERFILE 0
-      fstdfield gridinterp GPXVF3 FEATURES ALIASED 1
+      fstdfield gridinterp GPXVF3 FEATURES ALIASED 1 "" SUM
       ogrfile close LAYERFILE
    }
 
