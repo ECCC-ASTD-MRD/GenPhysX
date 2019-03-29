@@ -382,39 +382,77 @@ proc HydroX::DrainDensityDCW { Grid la0 lo0 la1 lo1 clipped } {
 #
 #
 # Parameters :
-#   <LakeD>   : Grid on which to generate lake depth
 #   <LakeF>   : Grid on which to generate lake fraction
+#   <LakeD>   : Grid on which to generate lake depth
+#   <LakeA>   : Grid on which to generate lake surface
 #
 # Return:
 #
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc HydroX::HydroLakesDepth { LakeD LakeF } {
+proc HydroX::HydroLakesDepth { Grid LakeF {LakeD ""} {LakeS ""} {LakeG ""} } {
    variable Param
 
    GenX::Procs HydroLAKES 
 
-   fstdfield clear $LakeF
-   fstdfield clear $LakeD
+   if { [fstdfield is $LakeF] } {
+      set Has_LakeF  1
+   } else {
+      set Has_LakeF  0
+   }
+   if { [fstdfield is $LakeD] } {
+      # create a temporary LakeF to calculate LakeD
+      if { $Has_LakeF == 0 } {
+         set LakeF  "LakesFractionFLD"
+         fstdfield copy $LakeF $Grid
+         GenX::GridClear $LakeF 0.0
+      }
+   }
 
    set shp_dir  "$GenX::Param(DBase)/$GenX::Path(HYDROLAKES)"
-   set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $LakeD]
+   set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
 
+   set count [llength $regfiles]
+   set n     0
    foreach file  $regfiles {
       set shp_file "$shp_dir$file"
-      Log::Print INFO "Using shapefile : $file"
+      Log::Print INFO "   Processing shapefile $shp_file ([incr n]/$count)"
       set layer [ogrfile open LAYERFILE read $shp_file]
       ogrlayer read FEATURES LAYERFILE 0
 
-      Log::Print INFO "Calculating Lake fraction"
-      fstdfield gridinterp $LakeF FEATURES ALIASED 1
+      if { [fstdfield is $LakeF] } {
+         Log::Print INFO "Calculating Lake fraction"
+         fstdfield gridinterp $LakeF FEATURES ALIASED 1 "" SUM
+      }
 
-      Log::Print INFO "Calculating Lake Average Depth"
-      fstdfield gridinterp $LakeD FEATURES ALIASED Depth_avg
+      if { [fstdfield is $LakeD] } {
+         Log::Print INFO "Calculating Lake Average Depth"
+         fstdfield gridinterp $LakeD FEATURES ALIASED Depth_avg "" SUM
+      }
+
+      if { [fstdfield is $LakeS] } {
+         Log::Print INFO "Calculating Lake Surface Average"
+         fstdfield gridinterp $LakeS FEATURES INTERSECT Lake_area "" AVERAGE
+      }
+
+      if { [fstdfield is $LakeG] } {
+         Log::Print INFO "Calculating Lake Grid Surface Average"
+         fstdfield gridinterp $LakeG FEATURES CONSERVATIVE Lake_area "" AVERAGE
+      }
+
       ogrfile close LAYERFILE
    }
 
    # we want to have an uniformed negative depth values like bathymetry
-   vexpr  $LakeD "ifelse($LakeF>0.0,-1.0*$LakeD/$LakeF,0.0)"
+   if { [fstdfield is $LakeD] && [fstdfield is $LakeF] } {
+      vexpr  $LakeD "ifelse($LakeF>0.0,-1.0*$LakeD/$LakeF,0.0)"
+   }
+
+   # discard temporary created LakeF
+   if { $Has_LakeF == 0 } {
+      if { [fstdfield is $LakeF] } {
+         fstdfield free  $LakeF
+      }
+   }
 }

@@ -1309,6 +1309,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
       "USGS_R"    { GeoPhysX::AverageMaskUSGS_R    $Grid }
       "NALCMS"    { GeoPhysX::AverageMaskNALCMS    $Grid }
+      "OSM"       { GeoPhysX::AverageMaskOSM       $Grid }
    }
 }
 
@@ -1562,7 +1563,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
       Log::Print DEBUG "   Processing file $file"
       ogrfile open CANVECFILE read $file
       ogrlayer read CANVECTILE CANVECFILE 0
-      fstdfield gridinterp GPXMASK CANVECTILE ALIASED 1.0
+      fstdfield gridinterp GPXMASK CANVECTILE ALIASED 1.0 "" SUM
       ogrfile close CANVECFILE
    }
 
@@ -1928,6 +1929,100 @@ proc GeoPhysX::AverageMaskNALCMS { Grid } {
       Log::Print WARNING "The grid is not within NALCMS limits"
    }
 }
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageMaskOSM>
+# Creation : Nov 2018
+#
+# Goal     :  generates land mask using OSM data
+#            
+#
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageMaskOSM { Grid } {
+   variable Param
+
+   GenX::Procs OSM
+   Log::Print INFO "Averaging mask using OSM database"
+
+   fstdfield copy GPXMASK  $Grid
+   GenX::GridClear GPXMASK 0.0
+
+   fstdfield copy GPXVF3  $Grid
+   GenX::GridClear GPXVF3 0.0
+
+   fstdfield copy GPXVF1  $Grid
+   GenX::GridClear GPXVF1 0.0
+
+   #---- First generate sea water using water-polygons-split-4326
+   set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSM)/water/water-polygons-tiled"
+   set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
+   foreach file  $regfiles {
+      set shp_file "$shp_dir$file"
+      Log::Print INFO "Using shapefile : $shp_dir$file"
+      set layer [ogrfile open LAYERFILE read $shp_file]
+      ogrlayer read FEATURES LAYERFILE 0
+      fstdfield gridinterp GPXVF1 FEATURES ALIASED 1 "" SUM
+      ogrfile close LAYERFILE
+   }
+
+   #----- now generate VF3  using OSM Hydrography from 2016 snapshot
+   #----- if hydrolakes will be added also, then use the version that 
+   #----- had hydrolakes portion cut out, to avoid double counting
+   if { $GenX::Param(AddHydroLakesToMask) } {
+      set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSM)/water/hydrography-cut-hydrolakes-tiled"
+   } else {
+      set shp_dir  "$GenX::Param(DBase)/$GenX::Path(OSM)/water/hydrography-tiled"
+   }
+   set regfiles [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
+   foreach file  $regfiles {
+      set shp_file "$shp_dir$file"
+      Log::Print INFO "Using shapefile : $shp_dir$file"
+      set layer [ogrfile open LAYERFILE read $shp_file]
+      ogrlayer read FEATURES LAYERFILE 0
+      fstdfield gridinterp GPXVF3 FEATURES ALIASED 1 "" SUM
+      ogrfile close LAYERFILE
+   }
+
+   if { $GenX::Param(AddHydroLakesToMask) } {
+      if { [catch {
+         fstdfield read GPXLAKEF   GPXAUXFILE -1 "" -1   -1 -1 "" "LACF"
+         } ] } {
+         Log::Print INFO "LACF field not found, will generate it using HydroLakes"
+         fstdfield copy GPXLAKEF $Grid
+         GenX::GridClear GPXLAKEF 0.0
+         HydroX::HydroLakesDepth $Grid GPXLAKEF
+      }
+
+      vexpr GPXVF3  "GPXVF3 + GPXLAKEF"
+      fstdfield free GPXLAKEF
+   }
+
+   vexpr GPXVF3  "ifelse(GPXVF3>1.0,1.0,GPXVF3)"
+   vexpr GPXVF1  "ifelse(GPXVF1>1.0,1.0,GPXVF1)"
+   vexpr GPXMASK  "1.0 - GPXVF1 - GPXVF3"
+
+   #----- Save output
+   fstdfield define GPXMASK -NOMVAR MG -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXMASK GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+   fstdfield free MASKTILE
+
+   fstdfield define GPXVF3 -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 [expr 1200-3] -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXVF3 GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+   fstdfield free GPXVF3
+
+   fstdfield define GPXVF1 -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 [expr 1200-1] -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXVF1 GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+   fstdfield free GPXVF1
+}
+
 
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageGeoMask>
@@ -2755,6 +2850,10 @@ proc GeoPhysX::AverageVegeUSGS_R { Grid } {
          }
       }
 
+      if { $has_lut } {
+          vector free $usgs_lut
+      }
+
       #----- If there is other DB to process
       if { [lsearch -exact $GenX::Param(Vege) USGS_R]<[expr [llength $GenX::Param(Vege)]-1] } {
          #----- Use accumulator to figure out coverage in destination
@@ -2809,9 +2908,33 @@ proc GeoPhysX::AverageVegeNALCMS { Grid } {
       if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef NALCMSFILE]]]] } {
          Log::Print INFO "Specified grid does not intersect with NALCMS file: $file"
       } else {
-         Log::Print INFO "Using correspondance table\n   From:[lindex $Const(NALCMS2RPN) 0]\n   To  :[lindex $Const(NALCMS2RPN) 1]"
-         vector create FROMNALCMS  [lindex $Const(NALCMS2RPN) 0]
-         vector create TORPN    [lindex $Const(NALCMS2RPN) 1]
+         set has_lut     0
+         if { $GenX::Param(UseVegeLUT) && [info exist GenX::Path(NALCMS_LUT_CSV)] } {
+            set  nalcms_lut  [GenX::Load_CSV_Vector $GenX::Path(NALCMS_LUT_CSV) NALCMS_LUT]
+            if { $nalcms_lut == "" } {
+               Log::Print ERROR "Specified LUT $GenX::Path(NALCMS_LUT_CSV) is invalid"
+               exit
+            }
+            set  values     [vector get $nalcms_lut 0]
+            set  len        [vector length $nalcms_lut]
+            set  has_lut    [llength $values]
+            if { [lindex $values 0] != [llength $Param(VegeTypes)] } {
+               Log::Print ERROR "Specified LUT $GenX::Path(NALCMS_LUT_CSV) is invalid, Nb Vege Types not equal to [llength $Param(VegeTypes)], vegetation will not be calculated"
+               exit
+            }
+            Log::Print INFO "Using CSV correspondance table file: $GenX::Path(NALCMS_LUT_CSV)"
+            set lutstr "[vector dim $nalcms_lut]\n"
+            for {set l 0} {$l < $len} {incr l} {
+               append lutstr "       [vector get $nalcms_lut $l]\n"
+            }
+            Log::Print INFO $lutstr
+         }
+    
+         if { $has_lut == 0 } {
+            Log::Print INFO "Using correspondance table\n   From:[lindex $Const(NALCMS2RPN) 0]\n   To  :[lindex $Const(NALCMS2RPN) 1]"
+            vector create FROMNALCMS  [lindex $Const(NALCMS2RPN) 0]
+            vector create TORPN    [lindex $Const(NALCMS2RPN) 1]
+         }
    
          Log::Print INFO "Grid intersection with NALCMS database is { $limits }"
          set x0 [lindex $limits 0]
@@ -2826,13 +2949,21 @@ proc GeoPhysX::AverageVegeNALCMS { Grid } {
                gdalband read LCTILE { { NALCMSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
                gdalband stats LCTILE -nodata 0 -celldim $GenX::Param(Cell)
    
-               vexpr LCTILE lut(LCTILE,FROMNALCMS,TORPN)
+               if { $has_lut } {
+                  fstdfield gridinterp $Grid LCTILE NORMALIZED_COUNT $nalcms_lut False
+               } else {
+                  vexpr LCTILE lut(LCTILE,FROMNALCMS,TORPN)
                # the NALCMS2RPN table change NoData value from 255 to -99
-               gdalband stats LCTILE -nodata -99
-               fstdfield gridinterp $Grid LCTILE NORMALIZED_COUNT $Param(VegeTypes) False
+                  gdalband stats LCTILE -nodata -99
+                  fstdfield gridinterp $Grid LCTILE NORMALIZED_COUNT $Param(VegeTypes) False
+               }
             }
          }
    
+         if { $has_lut } {
+            vector free $nalcms_lut
+         }
+
          #----- If there is other DB to process
          if { [lsearch -exact $GenX::Param(Vege) NEAE]<[expr [llength $GenX::Param(Vege)]-1] } {
             #----- Use accumulator to figure out coverage in destination
@@ -4143,7 +4274,6 @@ proc GeoPhysX::AverageBathymetry { Grid } {
    if { [catch {
       fstdfield read GPXMG   GPXOUTFILE -1 "" -1   -1 -1 "" "MG"
       } ] } {
-      Log::Print WARNING "Missing Mask field MG"
       set Has_MG 0
    }
 
@@ -4158,11 +4288,12 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 
    # will use lake depth data if present
    if { [lsearch -exact $GenX::Param(Bathy) HYDROLAKES]!=-1 } {
-
-      fstdfield copy GPXLAKED $Grid
       fstdfield copy GPXLAKEF $Grid
-      GenX::GridClear {GPXLAKED GPXLAKEF} 0.0
-      HydroX::HydroLakesDepth GPXLAKED GPXLAKEF
+      fstdfield copy GPXLAKED $Grid
+      fstdfield copy GPXLAKES $Grid
+      fstdfield copy GPXLAKEG $Grid
+      GenX::GridClear {GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG} 0.0
+      HydroX::HydroLakesDepth $Grid GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG
 
       vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
 
@@ -4170,8 +4301,12 @@ proc GeoPhysX::AverageBathymetry { Grid } {
       fstdfield write GPXLAKED GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
       fstdfield define GPXLAKEF -NOMVAR LACF -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
       fstdfield write GPXLAKEF GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield define GPXLAKES -NOMVAR LACS -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+      fstdfield write GPXLAKES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield define GPXLAKEG -NOMVAR LACG -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+      fstdfield write GPXLAKEG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-      fstdfield free GPXLAKEF GPXLAKED
+      fstdfield free GPXLAKEF GPXLAKED GPXLAKEA GPXLAKES GPXLAKEG
    }
 
    # the CHS bathymetry is simply water depth
@@ -5438,7 +5573,11 @@ proc GeoPhysX::CheckMaskVegeConsistency {} {
    }
 
    #----- Read water coverage VF(3)
-   if { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1197 -1 -1 "" "VF"]]] } {
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" 1197 -1 -1 "" "VF"]]] } {
+      Log::Print INFO "Reading VF3 from GPXOUTFILE"
+      fstdfield read GRDVF3 GPXOUTFILE $idx
+   } elseif { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1197 -1 -1 "" "VF"]]] } {
+      Log::Print INFO "Reading VF3 from GPXAUXFILE"
       fstdfield read GRDVF3 GPXAUXFILE $idx
    } else {
       Log::Print WARNING "Could not find water field VF(3)"
@@ -5446,8 +5585,10 @@ proc GeoPhysX::CheckMaskVegeConsistency {} {
    }
 
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" 1199 -1 -1 "" "VF"]]] } {
+      Log::Print INFO "Reading VF1 from GPXOUTFILE"
       fstdfield read GRDVF1 GPXOUTFILE $idx
    } elseif { [llength [set idx [fstdfield find GPXAUXFILE -1 "" 1199 -1 -1 "" "VF"]]] } {
+      Log::Print INFO "Reading VF1 from GPXAUXFILE"
       fstdfield read GRDVF1 GPXAUXFILE $idx
    } else {
       Log::Print WARNING "Could not find water field VF(1)"
@@ -5455,7 +5596,7 @@ proc GeoPhysX::CheckMaskVegeConsistency {} {
    }
 
    set max  [lindex [fstdfield stats GRDVF1 -max] 0]
-   set has_SaltWater  [expr $max == 1.0]
+   set has_SaltWater  [expr $max > 0.9]
 
 # Obtain VF3 from MG and VF1 if any
    if {$has_MG} {
@@ -5465,7 +5606,9 @@ proc GeoPhysX::CheckMaskVegeConsistency {} {
          vexpr GRDVF3 "1.0-GRDVF1-GRDMG"
       } else {
          vexpr GRDVF3 "ifelse(GRDVF3>=WATER,WATER,GRDVF3)"
-         vexpr GRDVF1 "1.0-GRDVF3-GRDMG"
+         if { $max > 0.0 } {
+            vexpr GRDVF1 "1.0-GRDVF3-GRDMG"
+         }
       }
    } else {
       vexpr GRDMG "1.0-GRDVF3-GRDVF1"

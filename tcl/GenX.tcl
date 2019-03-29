@@ -112,7 +112,7 @@ namespace eval GenX { } {
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC CCILC2015 CCILC2010 USGS_R NALCMS }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS SLC SOILGRIDS }
    set Param(SoilDBRKs) { GSRS }
-   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC CCILC2015 CCILC2010 USGS_R AAFC NALCMS }
+   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC CCILC2015 CCILC2010 USGS_R AAFC NALCMS OSM }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD HSRN DCW }
@@ -131,6 +131,7 @@ namespace eval GenX { } {
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
    set Param(SRTM3)     False
+   set Param(AddHydroLakesToMask)   False    ; #add HydroLakes Lakes fraction to OSM Mask
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
    set Batch(Host)     ppp2                  ;#Host onto which to submit the job
@@ -213,7 +214,8 @@ namespace eval GenX { } {
    set Path(CHS)        CHS/bathymetry
    set Path(NCEI)       NOAA/NCEI/bathymetry
    set Path(GEBCO)      GEBCO_2014
-   set Path(HYDROLAKES) HydroSHEDS/Misc/HydroLakes/splitted
+   set Path(HYDROLAKES) HydroSHEDS/Misc/HydroLakes/HydroLAKES_polys_v10-tiled
+   set Path(OSM)        OSM/data
 
    set Path(StatCan)    $Param(DBase)/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
@@ -297,16 +299,21 @@ proc GenX::Process { Grid } {
       GeoPhysX::AverageVege $Grid
    }
 
-   #----- Consistency checks for mask vs vege
-   if { $Param(Vege)!=$Param(Mask) || $Param(UseVegeLUT) } {
-      GeoPhysX::CheckMaskVegeConsistency
-   }
-
    #----- Topography
    if { $Param(Topo)!="" } {
       GeoPhysX::AverageTopo $Grid
    }
    
+   #----- Bathymetry
+   if { $Param(Bathy)!="" } {
+      GeoPhysX::AverageBathymetry $Grid
+   }
+
+   #----- Consistency checks for mask vs vege
+   if { $Param(Vege)!=$Param(Mask) || $Param(UseVegeLUT) } {
+      GeoPhysX::CheckMaskVegeConsistency
+   }
+
    #----- If staggered topograhy is enabled and this is not the first grid, exit
    if { $Param(TopoStag) && $Param(Process)!="" && $Param(Process)!=0 } {
       return
@@ -414,11 +421,6 @@ proc GenX::Process { Grid } {
    #----- Earth Gravitional Model
    if { $Param(EGMGH)!="" } {
       GeoPhysX::AverageGeoidHeight $Grid
-   }
-
-   #----- Bathymetry
-   if { $Param(Bathy)!="" } {
-      GeoPhysX::AverageBathymetry $Grid
    }
 }
 
