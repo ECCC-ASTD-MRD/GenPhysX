@@ -1141,6 +1141,34 @@ proc GenX::FieldCopy { FileIn FileOut DateV Etiket IP1 IP2 IP3 TV NV } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <GenX::CreateTypedField>
+# Creation : Octobre 2007 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : create a new field of Grid in a difference type
+#
+# Parameters :
+#  <NewId>   : a new id for field to create
+#  <Grid>    : a grid that the new field is based on
+#  <Type>    : type of the new field
+#  <DefValue> : default value to set
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::CreateTypedField { NewId Grid Type {DefValue 0.0} } {
+   set ni [fstdfield define $Grid -NI]
+   set nj [fstdfield define $Grid -NJ]
+   set nk [fstdfield define $Grid -NK]
+   fstdfield create $NewId $ni $nj $nk $Type
+   fstdfield copyhead $NewId $Grid
+   fstdfield define $NewId -georef [fstdfield define $Grid -georef]
+   fstdfield stats $NewId -nodata $DefValue
+   fstdfield clear $NewId
+}
+
+#----------------------------------------------------------------------------
 # Name     : <GenX::GridClear>
 # Creation : Octobre 2007 - J.P. Gauthier - CMC/CMOE
 #
@@ -2027,7 +2055,7 @@ proc GenX::Create_GridGeometry { Grid poly } {
    set lon0 [lindex $limits 1]
    set lat1 [lindex $limits 2]
    set lon1 [lindex $limits 3]
-
+  
    set ni  [fstdfield define $Grid -NI]
    set nj  [fstdfield define $Grid -NJ]
 

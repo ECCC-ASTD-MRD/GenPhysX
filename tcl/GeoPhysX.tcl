@@ -227,6 +227,8 @@ proc GeoPhysX::AverageTopo { Grid } {
    GenX::GridClear GPXRMS 0.0
    GenX::GridClear GPXTSK 1.0
 
+   fstdfield  configure GPXME  -rendertexture 1 -interpdegree NEAREST
+
    if { $Opt(SubSplit) } {
       fstdfield copy GPXGXX  $Grid
       fstdfield copy GPXGYY  $Grid
@@ -239,8 +241,9 @@ proc GeoPhysX::AverageTopo { Grid } {
    # we need accuracy of real*8 as what's found in Genesis 
    if { $Opt(LegacyMode) } {
       Log::Print INFO "Averaging topography using Legacy weighted averaging (Genesis)"
-      vexpr (Float64)GPXMESUM $Grid*0.0
-      vexpr (Float64)GPXWESUM $Grid*0.0
+      GenX::CreateTypedField  GPXWESUM $Grid Float64 0.0
+      GenX::CreateTypedField  GPXMESUM $Grid Float64 0.0
+#      fstdfield  configure GPXWESUM  -rendertexture 1 -interpdegree NEAREST
    }
 
    foreach topo $GenX::Param(Topo) {
@@ -264,14 +267,7 @@ proc GeoPhysX::AverageTopo { Grid } {
 
    if { $Opt(LegacyMode) } {
       vexpr (Float64)GPXMEWE  "ifelse(GPXWESUM>0.0,GPXMESUM/GPXWESUM,0.0)"
-      set ni [fstdfield define $Grid -NI]
-      set nj [fstdfield define $Grid -NJ]
-      for { set j 0 } { $j < $nj } {incr j} {
-         for { set i 0 } { $i < $ni } {incr i} {
-            set  pval [fstdfield stats GPXMEWE -gridvalue $i $j]
-            fstdfield stats GPXME -gridvalue $i $j $pval
-         }
-      }
+      fstdfield stats GPXME -datacopy GPXMEWE
       fstdfield free GPXMEWE  GPXMESUM GPXWESUM
    }
 
@@ -340,15 +336,19 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
    #----- Loop over files
    foreach file [glob $GenX::Param(DBase)/$GenX::Path(TopoUSGS)/*] {
       Log::Print DEBUG "   Processing USGS file : $file"
+
       fstdfile open GPXTOPOFILE read $file
 
       #----- Loop over fields (tiles)
       foreach field [fstdfield find GPXTOPOFILE -1 "" -1 -1 -1 "" "ME"] {
+
          Log::Print DEBUG "      Processing field : $field"
          fstdfield read USGSTILE GPXTOPOFILE $field
+
          if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [fstdfield define USGSTILE -georef]]]] } {
             continue
          }
+
          fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Param(Cell)
          set  has_data  1
          if { $Opt(LegacyMode) } {
@@ -363,6 +363,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
          }
 
          if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
+            Log::Print DEBUG "      Generating Subgrid  with field : $field"
             fstdfield gridinterp $Grid USGSTILE SUBLINEAR 11
          }
          
@@ -377,13 +378,6 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
       fstdfile close GPXTOPOFILE
    }
    fstdfield free USGSTILE 
-
-   if { $has_data == 0 } {
-      if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
-         Log::Print WARNING " No USGS Data found for this Grid, Will use GTOPO30 to initialize needed subgrid field in LegacySub"
-         GeoPhysX::AverageTopoGTOPO30 $Grid
-      }
-   }
 
    #----- Create source resolution used in destination
    fstdfield gridinterp GPXRMS - ACCUM
@@ -4969,6 +4963,8 @@ proc GeoPhysX::LegacySub { Grid } {
    fstdfield copy GPXY7 $Grid
    fstdfield copy GPXY8 $Grid
    fstdfield copy GPXY9 $Grid
+   GenX::GridClear { GPXLH GPXDH GPXY7 GPXY8 GPXY9 } 0.0
+   GenX::GridClear { GPXZ0 } 0.001
   
    Log::Print INFO "Computing legacy sub grid fields Z0 ZP LH DH Y7 Y8 Y9"
 
@@ -4982,12 +4978,19 @@ proc GeoPhysX::LegacySub { Grid } {
       default {
       }
    }
-   if { $GenX::Settings(TOPO_RUGV_ZVG2) } {
-      Log::Print INFO "Computing Z0 Using field ZVG2"
-      geophy subgrid_legacy GPXME GPXZVG2 GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+
+
+   set  smax  [vexpr a "smax(GPXME)"]
+   if { $smax > 0.0 } {
+      if { $GenX::Settings(TOPO_RUGV_ZVG2) } {
+         Log::Print INFO "Computing Z0 Using field ZVG2"
+         geophy subgrid_legacy GPXME GPXZVG2 GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+      } else {
+         Log::Print INFO "Computing Z0 Using field VG with Look up Table"
+         geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+      }
    } else {
-      Log::Print INFO "Computing Z0 Using field VG with Look up Table"
-      geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+      Log::Print INFO "Will not calculate Z0, using default because ME field maximum value is $smax, subgrid field may not be available"
    }
    
    if { $GenX::Param(Z0Topo)=="LEGACY" } {
