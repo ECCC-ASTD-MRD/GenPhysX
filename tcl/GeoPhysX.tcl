@@ -194,6 +194,7 @@ namespace eval GeoPhysX { } {
    set Opt(SubSplit)     False
    set Opt(LegacyMode)   False
    set Opt(SlopOnly)     False
+   set Opt(LinearNodata) True
    
 }
 
@@ -378,6 +379,13 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
       fstdfile close GPXTOPOFILE
    }
    fstdfield free USGSTILE 
+
+   if { $has_data == 0 } {
+      if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
+         Log::Print WARNING " No USGS Data found for this Grid, Will use GTOPO30 to initialize needed subgrid field in LegacySub"
+         GeoPhysX::AverageTopoGTOPO30 $Grid
+      }
+   }
 
    #----- Create source resolution used in destination
    fstdfield gridinterp GPXRMS - ACCUM
@@ -5837,7 +5845,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : LegacyChecks
+# Name     : CheckLegacyVG
 # Creation : January 2016 - V. Souvanlasy - CMC/CMDS
 #
 # Goal     : ASSURE LA CONSISTANCE
@@ -5852,7 +5860,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 #    extrait de conseq.f de genesis. 
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::LegacyChecks { } {
+proc GeoPhysX::CheckLegacyVG { } {
    GenX::Procs
    Log::Print INFO "Applying Legacy consistency checks on ME, MG and VG "
    #----- Check consistency for ME
@@ -5863,6 +5871,13 @@ proc GeoPhysX::LegacyChecks { } {
       Log::Print WARNING "Missing fields, will not check ME consistency with MG"
       return
    }
+
+   # this is what make difference between released version and current dev version
+   if { $Opt(LinearNodata) } {
+      fstdfield stats GPXME -nodata 0
+      fstdfield  configure GPXME  -rendertexture 0 -interpdegree LINEAR
+   }
+
 
    # VG is better compared as Integer
    #

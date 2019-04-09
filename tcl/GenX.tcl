@@ -352,7 +352,7 @@ proc GenX::Process { Grid } {
 
    #----- Consistency checks similar to Genesis
    if { $GeoPhysX::Opt(LegacyMode) } {
-      GeoPhysX::LegacyChecks
+      GeoPhysX::CheckLegacyVG
    }
 
 
