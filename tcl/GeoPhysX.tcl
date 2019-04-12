@@ -5861,6 +5861,8 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::CheckLegacyVG { } {
+   variable Opt
+
    GenX::Procs
    Log::Print INFO "Applying Legacy consistency checks on ME, MG and VG "
    #----- Check consistency for ME
