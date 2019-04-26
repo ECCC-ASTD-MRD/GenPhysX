@@ -738,9 +738,16 @@ proc GeoPhysX::AverageTopoCDEM { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
    variable Opt
+   variable Const
 
    GenX::Procs GMTED2010
    Log::Print INFO "Averaging topography using GMTED2010 md${Res} database"
+
+   switch $Res {
+     30 { set ResoTopo [expr 30.0/3600] }
+     15 { set ResoTopo [expr 30.0/3600] }
+     75 { set ResoTopo [expr 7.5/3600] }
+   }
 
    # we use the mean instead of median because Antarctica and Groenland is missing in median products
    #----- Open the file
@@ -762,7 +769,16 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
             gdalband read GMTEDTILE { { GMTEDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GMTEDTILE -celldim $GenX::Param(Cell)
 
-            fstdfield gridinterp $Grid GMTEDTILE AVERAGE False
+            if { $Opt(LegacyMode) } {
+               vexpr  (Float64)WEIGHTTILE  "cos(dlat(GMTEDTILE)*$Const(Deg2Rad))*$ResoTopo*$ResoTopo"
+               # avoid missing values -9999 found in the data
+               vexpr  (Float64)WTOPOTILE   "ifelse(GMTEDTILE!=-9999,GMTEDTILE*WEIGHTTILE,0.0)"
+               fstdfield gridinterp GPXMESUM WTOPOTILE  SUM
+               fstdfield gridinterp GPXWESUM WEIGHTTILE SUM
+               fstdfield free WTOPOTILE WEIGHTTILE
+            } else {
+               fstdfield gridinterp $Grid GMTEDTILE AVERAGE False
+            }
             if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
                fstdfield gridinterp $Grid GMTEDTILE SUBLINEAR 11
             }
