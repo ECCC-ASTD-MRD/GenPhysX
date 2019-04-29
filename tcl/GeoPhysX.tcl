@@ -4342,10 +4342,10 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 
       Log::Print INFO "Averaging NCEI Great Lakes bathymetry data"
       set ncei_nodata -9999
-      GenX::GridClear GPXBATHY $ncei_nodata
-      GeoPhysX::AverageIndexedBands  GPXBATHY NCEI "$GenX::Param(DBase)/$GenX::Path(NCEI)" $ncei_nodata
+      GenX::GridClear GPXBATHY 0.0
+      GeoPhysX::AverageIndexedBands  GPXBATHY NCEI "$GenX::Param(DBase)/$GenX::Path(NCEI)" $ncei_nodata 0.0
 
-      vexpr  GPXDEPTH  "ifelse(GPXBATHY<0&&GPXBATHY>$ncei_nodata,GPXBATHY,GPXDEPTH)"
+      vexpr  GPXDEPTH  "ifelse(GPXBATHY<0,GPXBATHY,GPXDEPTH)"
    }
 
    if { $Has_MG } {
