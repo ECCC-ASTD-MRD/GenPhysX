@@ -215,6 +215,7 @@ namespace eval GenX { } {
    set Path(NCEI)       NOAA/NCEI/bathymetry
    set Path(GEBCO)      GEBCO_2014
    set Path(HYDROLAKES) HydroSHEDS/Misc/HydroLakes/HydroLAKES_polys_v10-tiled
+   set Path(GREATLAKES) HydroSHEDS/Misc/HydroLakes/great_lakes_shp
    set Path(OSM)        OSM/data
 
    set Path(StatCan)    $Param(DBase)/StatCan2006
