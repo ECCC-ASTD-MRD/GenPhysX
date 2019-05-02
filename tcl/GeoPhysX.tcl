@@ -2156,6 +2156,49 @@ proc GeoPhysX::GetFallbackMask { Grid MGFB } {
    return $has_fallback
 }
 
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageIndexedLayers>
+# Creation : Mai 2019 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     :  averaging shapefiles to a grid
+#            
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#   <shp>    : files or path to shapefiles
+#
+# Return:  
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageIndexedLayers { Grid  shp_dir {operators "INTERSECT 1 {} SUM"} } {
+#   fstdfield copy GREATLAKES $Grid
+   GenX::GridClear $Grid 0.0
+
+# set shp_dir   "$GenX::Param(DBase)/$GenX::Path(GREATLAKES)"
+   if { [file exist $shp_dir/Index/Index.shp] } {
+      set files [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
+   } else {
+      if { [file isdir $shp_dir] } {
+         set files [exec glob $shp_dir/*.shp]
+      } else {
+         if { [file exist $shp_dir] } {
+            set files $shp_dir
+         }
+      }
+   }
+
+   foreach shp_file $files {
+      set layer [ogrfile open LAYERFILE read $shp_dir/$shp_file]
+      ogrlayer read FEATURES LAYERFILE 0
+      Log::Print INFO "Processing : $shp_file"
+      eval "fstdfield gridinterp $Grid FEATURES $operators"
+      ogrfile close LAYERFILE
+   }
+}
+
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageVege>
 # Creation : June 2006 - J.P. Gauthier - CMC/CMOE
@@ -2759,6 +2802,7 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
             Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read CCITILE { { CCIFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats CCITILE -nodata 0 -celldim $GenX::Param(Cell)
+
 
             if { $has_lut } {
                fstdfield gridinterp $Grid CCITILE NORMALIZED_COUNT $ccilc_lut False
@@ -4304,27 +4348,39 @@ proc GeoPhysX::AverageBathymetry { Grid } {
       set Has_GEBCO  0
    }
 
+   set Has_HL 1
+   if { [catch {
+      fstdfield read GPXLAKED   GPXAUXFILE -1 "" -1   -1 -1 "" "LACD"
+      fstdfield read GPXLAKEF   GPXAUXFILE -1 "" -1   -1 -1 "" "LACF"
+      Log::Print INFO "Will use existing LAKED and LAKEF"
+      } ] } {
+      set Has_HL 0
+   }
+
    # will use lake depth data if present
    if { [lsearch -exact $GenX::Param(Bathy) HYDROLAKES]!=-1 } {
-      fstdfield copy GPXLAKEF $Grid
-      fstdfield copy GPXLAKED $Grid
-      fstdfield copy GPXLAKES $Grid
-      fstdfield copy GPXLAKEG $Grid
-      GenX::GridClear {GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG} 0.0
-      HydroX::HydroLakesDepth $Grid GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG
-
-      vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
-
-      fstdfield define GPXLAKED -NOMVAR LACD -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXLAKED GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-      fstdfield define GPXLAKEF -NOMVAR LACF -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXLAKEF GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-      fstdfield define GPXLAKES -NOMVAR LACS -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXLAKES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-      fstdfield define GPXLAKEG -NOMVAR LACG -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXLAKEG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
-      fstdfield free GPXLAKEF GPXLAKED GPXLAKEA GPXLAKES GPXLAKEG
+      if { $Has_HL == 0 } {
+         fstdfield copy GPXLAKEF $Grid
+         fstdfield copy GPXLAKED $Grid
+         fstdfield copy GPXLAKES $Grid
+         fstdfield copy GPXLAKEG $Grid
+         GenX::GridClear {GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG} 0.0
+         HydroX::HydroLakesDepth $Grid GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG
+   
+         fstdfield define GPXLAKED -NOMVAR LACD -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+         fstdfield write GPXLAKED GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         fstdfield define GPXLAKEF -NOMVAR LACF -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+         fstdfield write GPXLAKEF GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         fstdfield define GPXLAKES -NOMVAR LACS -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+         fstdfield write GPXLAKES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         fstdfield define GPXLAKEG -NOMVAR LACG -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+         fstdfield write GPXLAKEG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   
+         fstdfield free GPXLAKEA GPXLAKES GPXLAKEG
+         set Has_HL  1
+      }
+   } else {
+      set Has_HL  0
    }
 
    # the CHS bathymetry is simply water depth
@@ -4339,13 +4395,32 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 
    # the NCEI bathymetry is simply water depth
    if { [lsearch -exact $GenX::Param(Bathy) NCEI]!=-1 } {
-
       Log::Print INFO "Averaging NCEI Great Lakes bathymetry data"
       set ncei_nodata -9999
       GenX::GridClear GPXBATHY 0.0
       GeoPhysX::AverageIndexedBands  GPXBATHY NCEI "$GenX::Param(DBase)/$GenX::Path(NCEI)" $ncei_nodata 0.0
 
-      vexpr  GPXDEPTH  "ifelse(GPXBATHY<0,GPXBATHY,GPXDEPTH)"
+      if { $Has_HL } {
+         fstdfield copy GREATLAKES $Grid
+         GenX::GridClear GREATLAKES 0.0
+
+         set shp_dir   "$GenX::Param(DBase)/$GenX::Path(GREATLAKES)"
+         GeoPhysX::AverageIndexedLayers GREATLAKES $shp_dir
+         vexpr GPXLAKED  "ifelse(GREATLAKES>0,GPXLAKED*GPXLAKEF,GPXLAKED)"
+         vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
+         vexpr GPXDEPTH  "ifelse(GPXBATHY<0,GPXBATHY,GPXDEPTH)"
+         fstdfield free GREATLAKES
+      } else {
+         vexpr  GPXDEPTH  "ifelse(GPXBATHY<0,GPXBATHY,GPXDEPTH)"
+      }
+   } else {
+      if { $Has_HL } {
+         vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
+      }
+   }
+
+   if { $Has_HL } {
+      fstdfield free GPXLAKED GPXLAKEF
    }
 
    if { $Has_MG } {
