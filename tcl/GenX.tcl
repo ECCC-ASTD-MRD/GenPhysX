@@ -1023,7 +1023,7 @@ proc GenX::ParseTarget { } {
                    set Settings(TOPO_FILMX_L) True
                    set Settings(TOPO_CLIP_ORO_L) False
                 }
-      "RELWS-1.0" { set Param(Topo)     "CDED250+SRTM"
+      "RELWS-1.0" { set Param(Topo)     "CDED250 SRTM"
                     set Param(Vege)     "CCI_LC"
                     set Param(Mask)     "CCI_LC"
                     set Param(Soil)     "BNU"
