@@ -157,8 +157,8 @@ namespace eval GeoPhysX { } {
 #   set Const(CCI_LC2RPN) { {  0 220 210 70 71 50 72 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 152 153 160 170 180 200 201 202 90 100 110 120 121 122 } 
 #                           {-99   2   3  4  4  5  4  6  6  6  7  7  7 14  13 15 15 15 15 20  21  22  22  22  22  23  23  23  24  24  24 25  26  26  11  10  11 } }
    # ajoute 151 en prevision de la version 2.0.7 et 211 pour inclusion de Ocean and Inland Water Body v4.0
-   set Const(CCI_LC2RPN) { {  0 211 220 210 70 71 72 50 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 151 152 153 160 170 180 200 201 202 90 100 110 120 121 122 }
-                           {-99   1   2   3  4  4  4  5  6  6  6  7  7  7 14  13 15 15 15 15 20  21  22  22  22  22  22  23  23  23  24  24  24 25  26  26  11  10  11 } }
+   set Const(CCI_LC2RPN) { {  0 211 220 210 70 71 72 50 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 151 152 153 160 170 180 200 201 202 90 100 110 120 121 122 123 }
+                           {-99   1   2   3  4  4  4  5  6  6  6  7  7  7 14  13 15 15 15 15 20  21  22  22  22  22  22  23  23  23  24  24  24 25  26  26  11  10  11  12 } }
 
    #----- Correspondance de Douglas Chan Mai 2010 pour la conversion des classes GCL2000 vers les classes RPN
    set Const(GLC20002RPN) { { 1 2 3 4 5 6   7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22  23 200}
@@ -1322,6 +1322,8 @@ proc GeoPhysX::AverageMask { Grid } {
       "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
       "MCD12Q1"   { GeoPhysX::AverageMaskMCD12Q1   $Grid }
       "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015-2" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015-1" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2010" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
@@ -1637,9 +1639,15 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
 
    set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
    set  link [file readlink  $dbdir/CCI_LC.tif]
-   set  year [file tail [file dirname $link]]
+   set  year [file tail $dbdir]
 
    switch $dbid {
+   "CCILC2015-2" {
+      GenX::Procs $dbid
+      }
+   "CCILC2015-1" {
+      GenX::Procs $dbid
+      }
    "CCILC2015" {
       GenX::Procs $dbid
       }
@@ -1672,7 +1680,7 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
    }
 
    #----- Open the file
-   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(CCI_LC)/CCI_LC.tif
+   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path($dbid)/CCI_LC.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCIFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with ESA CCI LC database, mask will not be calculated"
@@ -1701,6 +1709,7 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
                fstdfield gridinterp GPXVF21MG VFTILE AVERAGE False
             }
             vexpr CCITILE ifelse((CCITILE==210)||(CCITILE==211),0.0,1.0)
+            gdalband stats CCITILE -nodata 255 -celldim $GenX::Param(Cell)
             fstdfield gridinterp GPXMASK CCITILE AVERAGE False
          }
       }
@@ -1720,6 +1729,10 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
          fstdfield define GPXVF21MG -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 1179 -DATYP $GenX::Param(Datyp)
          fstdfield write GPXVF21MG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
          fstdfield free GPXVF21MG
+         fstdfield gridinterp GPXVF3MG - NOP True
+         fstdfield define GPXVF3MG -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 1197 -DATYP $GenX::Param(Datyp)
+         fstdfield write GPXVF3MG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+         fstdfield free GPXVF3MG
       }
       gdalband free CCITILE
    }
@@ -2174,10 +2187,7 @@ proc GeoPhysX::GetFallbackMask { Grid MGFB } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageIndexedLayers { Grid  shp_dir {operators "INTERSECT 1 {} SUM"} } {
-#   fstdfield copy GREATLAKES $Grid
-   GenX::GridClear $Grid 0.0
 
-# set shp_dir   "$GenX::Param(DBase)/$GenX::Path(GREATLAKES)"
    if { [file exist $shp_dir/Index/Index.shp] } {
       set files [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
    } else {
@@ -2233,6 +2243,8 @@ proc GeoPhysX::AverageVege { Grid } {
          "MCD12Q1"   { GeoPhysX::AverageVegeMCD12Q1   GPXVF ;#----- MODIS MCD12Q1 IGBP global vegetation }
          "AAFC"      { GeoPhysX::AverageVegeAAFC      GPXVF ;#----- AAFC Crop over Canada only vege averaging method }
          "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015-2" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015-1" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2010" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "USGS_R"    { GeoPhysX::AverageVegeUSGS_R    GPXVF ;#----- USGS global vege raster averaging method }
@@ -2737,9 +2749,18 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
 
    set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
    set  link [file readlink  $dbdir/CCI_LC.tif]
-   set  year [file tail [file dirname $link]]
+   set  year [file tail $dbdir]
+
+   Log::Print INFO "Averaging vegetation type using ESA CCI CRDP Land cover $year"
 
    switch $dbid {
+   "CCILC2015-2" {
+      GenX::Procs $dbid
+      Log::Print INFO "Using CCILC2015-2 with Ecoregions2017 deserts already added"
+      }
+   "CCILC2015-1" {
+      GenX::Procs $dbid
+      }
    "CCILC2015" {
       GenX::Procs $dbid
       }
@@ -2751,13 +2772,11 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
       }
    }
 
-   Log::Print INFO "Averaging vegetation type using ESA CCI CRDP Land cover $year"
-
    set  datafile "$dbdir/$link"
    Log::Print INFO "Will use data file: $datafile"
 
    #----- Open the file
-   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(CCI_LC)/CCI_LC.tif
+   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path($dbid)/CCI_LC.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCIFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with CCI_LC database, vegetation will not be calculated"
@@ -2802,7 +2821,6 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
             Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
             gdalband read CCITILE { { CCIFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats CCITILE -nodata 0 -celldim $GenX::Param(Cell)
-
 
             if { $has_lut } {
                fstdfield gridinterp $Grid CCITILE NORMALIZED_COUNT $ccilc_lut False
@@ -4405,6 +4423,7 @@ proc GeoPhysX::AverageBathymetry { Grid } {
          GenX::GridClear GREATLAKES 0.0
 
          set shp_dir   "$GenX::Param(DBase)/$GenX::Path(GREATLAKES)"
+
          GeoPhysX::AverageIndexedLayers GREATLAKES $shp_dir
          vexpr GPXLAKED  "ifelse(GREATLAKES>0,GPXLAKED*GPXLAKEF,GPXLAKED)"
          vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
