@@ -213,7 +213,6 @@ namespace eval GeoPhysX { } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopo { Grid } {
-   variable Param
    variable Opt
 
    GenX::Procs
@@ -1637,7 +1636,7 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
 
-   set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
+   set  dbdir "$GenX::Param(DBase)/$GenX::Path($dbid)"
    set  link [file readlink  $dbdir/CCI_LC.tif]
    set  year [file tail $dbdir]
 
@@ -4648,19 +4647,22 @@ proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG et
       set bands [gdalfile open BFRFILE read $file]
       set nbands [llength $bands]
       if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef BFRFILE]]]] } {
-         Log::Print WARNING "Specified grid does not intersect with database, $varname will not be calculated"
+         Log::Print WARNING "Specified grid does not intersect with database, $varname will be saved as empty"
+         set  intersect 0
       } else {
          Log::Print INFO "Grid intersection with database is { $limits }"
          set x0 [lindex $limits 0]
          set x1 [lindex $limits 2]
          set y0 [lindex $limits 1]
          set y1 [lindex $limits 3]
-   
-         set   bno  1
-         foreach  band $bands {
+         set  intersect 1
+      }
 
-            GenX::GridClear  $Grid  0.0
-            #----- Loop over the data by tiles since it's too big to fit in memory
+      foreach  band $bands {
+
+         GenX::GridClear  $Grid  0.0
+         if { $intersect } {
+         #----- Loop over the data by tiles since it's too big to fit in memory
             for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
                for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
                   Log::Print DEBUG "   Processing tile: $band $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
@@ -4676,15 +4678,15 @@ proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG et
             if { $has_MG } {
                vexpr  $Grid "ifelse(GPXMG>0.0, $Grid, 0.0)"
             }
-   
-            #----- Save output (Same for all layers)
-            lappend types $type
-            fstdfield define $Grid -NOMVAR $varname -IP1 [expr 1200-$type] -ETIKET "$etiket"
-            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-            gdalband free BFRTILE
-            incr type
-            incr bno
          }
+   
+         #----- Save output (Same for all layers)
+         lappend types $type
+         fstdfield define $Grid -NOMVAR $varname -IP1 [expr 1200-$type] -ETIKET "$etiket"
+         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         gdalband free BFRTILE
+
+         incr type
       }
       gdalfile close BFRFILE
       set fntype [expr $fntype + $nbands]
