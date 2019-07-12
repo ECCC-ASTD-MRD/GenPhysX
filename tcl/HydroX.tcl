@@ -48,8 +48,6 @@ namespace eval HydroX { } {
 proc HydroX::DrainDensity { Grid } {
    variable Param
 
-   GenX::Procs
-
 # see what database to use in $Param(Hydro)
    
    set NHN  0
@@ -291,7 +289,7 @@ proc HydroX::DrainDensityNHD { Grid la0 lo0 la1 lo1 } {
 proc HydroX::DrainDensityHSRN { Grid la0 lo0 la1 lo1 clipped } {
    variable Param
 
-   GenX::Procs HydroSHEDS River Network
+   GenX::Procs HSRN
    #----- Lire les donnees des rivieres USGS HydroSHEDS
    set n 0
    set usgsdir  $GenX::Param(DBase)/$GenX::Path(HSRN)
@@ -335,7 +333,7 @@ proc HydroX::DrainDensityHSRN { Grid la0 lo0 la1 lo1 clipped } {
 proc HydroX::DrainDensityDCW { Grid la0 lo0 la1 lo1 clipped } {
    variable Param
 
-   GenX::Procs DCW Rivers and Lakes
+   GenX::Procs DCW
 
    #----- Lire les donnees des rivieres de DCW
    set dcwdir  $GenX::Param(DBase)/$GenX::Path(DCW)

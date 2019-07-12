@@ -157,8 +157,8 @@ namespace eval GeoPhysX { } {
 #   set Const(CCI_LC2RPN) { {  0 220 210 70 71 50 72 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 152 153 160 170 180 200 201 202 90 100 110 120 121 122 } 
 #                           {-99   2   3  4  4  5  4  6  6  6  7  7  7 14  13 15 15 15 15 20  21  22  22  22  22  23  23  23  24  24  24 25  26  26  11  10  11 } }
    # ajoute 151 en prevision de la version 2.0.7 et 211 pour inclusion de Ocean and Inland Water Body v4.0
-   set Const(CCI_LC2RPN) { {  0 211 220 210 70 71 72 50 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 151 152 153 160 170 180 200 201 202 90 100 110 120 121 122 }
-                           {-99   1   2   3  4  4  4  5  6  6  6  7  7  7 14  13 15 15 15 15 20  21  22  22  22  22  22  23  23  23  24  24  24 25  26  26  11  10  11 } }
+   set Const(CCI_LC2RPN) { {  0 211 220 210 70 71 72 50 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 151 152 153 160 170 180 200 201 202 90 100 110 120 121 122 123 }
+                           {-99   1   2   3  4  4  4  5  6  6  6  7  7  7 14  13 15 15 15 15 20  21  22  22  22  22  22  23  23  23  24  24  24 25  26  26  11  10  11  12 } }
 
    #----- Correspondance de Douglas Chan Mai 2010 pour la conversion des classes GCL2000 vers les classes RPN
    set Const(GLC20002RPN) { { 1 2 3 4 5 6   7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22  23 200}
@@ -194,6 +194,7 @@ namespace eval GeoPhysX { } {
    set Opt(SubSplit)     False
    set Opt(LegacyMode)   False
    set Opt(SlopOnly)     False
+   set Opt(LinearNodata) True
    
 }
 
@@ -212,7 +213,6 @@ namespace eval GeoPhysX { } {
 #
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopo { Grid } {
-   variable Param
    variable Opt
 
    GenX::Procs
@@ -227,6 +227,8 @@ proc GeoPhysX::AverageTopo { Grid } {
    GenX::GridClear GPXRMS 0.0
    GenX::GridClear GPXTSK 1.0
 
+   fstdfield  configure GPXME  -rendertexture 1 -interpdegree NEAREST
+
    if { $Opt(SubSplit) } {
       fstdfield copy GPXGXX  $Grid
       fstdfield copy GPXGYY  $Grid
@@ -239,8 +241,9 @@ proc GeoPhysX::AverageTopo { Grid } {
    # we need accuracy of real*8 as what's found in Genesis 
    if { $Opt(LegacyMode) } {
       Log::Print INFO "Averaging topography using Legacy weighted averaging (Genesis)"
-      vexpr (Float64)GPXMESUM $Grid*0.0
-      vexpr (Float64)GPXWESUM $Grid*0.0
+      GenX::CreateTypedField  GPXWESUM $Grid Float64 0.0
+      GenX::CreateTypedField  GPXMESUM $Grid Float64 0.0
+#      fstdfield  configure GPXWESUM  -rendertexture 1 -interpdegree NEAREST
    }
 
    foreach topo $GenX::Param(Topo) {
@@ -264,14 +267,7 @@ proc GeoPhysX::AverageTopo { Grid } {
 
    if { $Opt(LegacyMode) } {
       vexpr (Float64)GPXMEWE  "ifelse(GPXWESUM>0.0,GPXMESUM/GPXWESUM,0.0)"
-      set ni [fstdfield define $Grid -NI]
-      set nj [fstdfield define $Grid -NJ]
-      for { set j 0 } { $j < $nj } {incr j} {
-         for { set i 0 } { $i < $ni } {incr i} {
-            set  pval [fstdfield stats GPXMEWE -gridvalue $i $j]
-            fstdfield stats GPXME -gridvalue $i $j $pval
-         }
-      }
+      fstdfield stats GPXME -datacopy GPXMEWE
       fstdfield free GPXMEWE  GPXMESUM GPXWESUM
    }
 
@@ -340,15 +336,19 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
    #----- Loop over files
    foreach file [glob $GenX::Param(DBase)/$GenX::Path(TopoUSGS)/*] {
       Log::Print DEBUG "   Processing USGS file : $file"
+
       fstdfile open GPXTOPOFILE read $file
 
       #----- Loop over fields (tiles)
       foreach field [fstdfield find GPXTOPOFILE -1 "" -1 -1 -1 "" "ME"] {
+
          Log::Print DEBUG "      Processing field : $field"
          fstdfield read USGSTILE GPXTOPOFILE $field
+
          if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [fstdfield define USGSTILE -georef]]]] } {
             continue
          }
+
          fstdfield stats USGSTILE -nodata -99.0 -celldim $GenX::Param(Cell)
          set  has_data  1
          if { $Opt(LegacyMode) } {
@@ -363,6 +363,7 @@ proc GeoPhysX::AverageTopoUSGS { Grid } {
          }
 
          if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
+            Log::Print DEBUG "      Generating Subgrid  with field : $field"
             fstdfield gridinterp $Grid USGSTILE SUBLINEAR 11
          }
          
@@ -736,9 +737,16 @@ proc GeoPhysX::AverageTopoCDEM { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
    variable Opt
+   variable Const
 
    GenX::Procs GMTED2010
    Log::Print INFO "Averaging topography using GMTED2010 md${Res} database"
+
+   switch $Res {
+     30 { set ResoTopo [expr 30.0/3600] }
+     15 { set ResoTopo [expr 30.0/3600] }
+     75 { set ResoTopo [expr 7.5/3600] }
+   }
 
    # we use the mean instead of median because Antarctica and Groenland is missing in median products
    #----- Open the file
@@ -760,7 +768,16 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
             gdalband read GMTEDTILE { { GMTEDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
             gdalband stats GMTEDTILE -celldim $GenX::Param(Cell)
 
-            fstdfield gridinterp $Grid GMTEDTILE AVERAGE False
+            if { $Opt(LegacyMode) } {
+               vexpr  (Float64)WEIGHTTILE  "cos(dlat(GMTEDTILE)*$Const(Deg2Rad))*$ResoTopo*$ResoTopo"
+               # avoid missing values -9999 found in the data
+               vexpr  (Float64)WTOPOTILE   "ifelse(GMTEDTILE!=-9999,GMTEDTILE*WEIGHTTILE,0.0)"
+               fstdfield gridinterp GPXMESUM WTOPOTILE  SUM
+               fstdfield gridinterp GPXWESUM WEIGHTTILE SUM
+               fstdfield free WTOPOTILE WEIGHTTILE
+            } else {
+               fstdfield gridinterp $Grid GMTEDTILE AVERAGE False
+            }
             if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
                fstdfield gridinterp $Grid GMTEDTILE SUBLINEAR 11
             }
@@ -1304,6 +1321,8 @@ proc GeoPhysX::AverageMask { Grid } {
       "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
       "MCD12Q1"   { GeoPhysX::AverageMaskMCD12Q1   $Grid }
       "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015-2" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015-1" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2010" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
@@ -1617,11 +1636,17 @@ proc GeoPhysX::AverageMaskCANVEC { Grid } {
 #----------------------------------------------------------------------------
 proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
 
-   set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
+   set  dbdir "$GenX::Param(DBase)/$GenX::Path($dbid)"
    set  link [file readlink  $dbdir/CCI_LC.tif]
-   set  year [file tail [file dirname $link]]
+   set  year [file tail $dbdir]
 
    switch $dbid {
+   "CCILC2015-2" {
+      GenX::Procs $dbid
+      }
+   "CCILC2015-1" {
+      GenX::Procs $dbid
+      }
    "CCILC2015" {
       GenX::Procs $dbid
       }
@@ -1654,7 +1679,7 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
    }
 
    #----- Open the file
-   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(CCI_LC)/CCI_LC.tif
+   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path($dbid)/CCI_LC.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCIFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with ESA CCI LC database, mask will not be calculated"
@@ -1683,6 +1708,7 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
                fstdfield gridinterp GPXVF21MG VFTILE AVERAGE False
             }
             vexpr CCITILE ifelse((CCITILE==210)||(CCITILE==211),0.0,1.0)
+            gdalband stats CCITILE -nodata 255 -celldim $GenX::Param(Cell)
             fstdfield gridinterp GPXMASK CCITILE AVERAGE False
          }
       }
@@ -1702,6 +1728,10 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
          fstdfield define GPXVF21MG -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 1179 -DATYP $GenX::Param(Datyp)
          fstdfield write GPXVF21MG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
          fstdfield free GPXVF21MG
+         fstdfield gridinterp GPXVF3MG - NOP True
+         fstdfield define GPXVF3MG -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 1197 -DATYP $GenX::Param(Datyp)
+         fstdfield write GPXVF3MG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
+         fstdfield free GPXVF3MG
       }
       gdalband free CCITILE
    }
@@ -2138,6 +2168,46 @@ proc GeoPhysX::GetFallbackMask { Grid MGFB } {
    return $has_fallback
 }
 
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageIndexedLayers>
+# Creation : Mai 2019 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     :  averaging shapefiles to a grid
+#            
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#   <shp>    : files or path to shapefiles
+#
+# Return:  
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageIndexedLayers { Grid  shp_dir {operators "INTERSECT 1 {} SUM"} } {
+
+   if { [file exist $shp_dir/Index/Index.shp] } {
+      set files [GenX::FindFiles $shp_dir/Index/Index.shp $Grid]
+   } else {
+      if { [file isdir $shp_dir] } {
+         set files [exec glob $shp_dir/*.shp]
+      } else {
+         if { [file exist $shp_dir] } {
+            set files $shp_dir
+         }
+      }
+   }
+
+   foreach shp_file $files {
+      set layer [ogrfile open LAYERFILE read $shp_dir/$shp_file]
+      ogrlayer read FEATURES LAYERFILE 0
+      Log::Print INFO "Processing : $shp_file"
+      eval "fstdfield gridinterp $Grid FEATURES $operators"
+      ogrfile close LAYERFILE
+   }
+}
+
 #----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageVege>
 # Creation : June 2006 - J.P. Gauthier - CMC/CMOE
@@ -2172,6 +2242,8 @@ proc GeoPhysX::AverageVege { Grid } {
          "MCD12Q1"   { GeoPhysX::AverageVegeMCD12Q1   GPXVF ;#----- MODIS MCD12Q1 IGBP global vegetation }
          "AAFC"      { GeoPhysX::AverageVegeAAFC      GPXVF ;#----- AAFC Crop over Canada only vege averaging method }
          "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015-2" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015-1" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2010" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "USGS_R"    { GeoPhysX::AverageVegeUSGS_R    GPXVF ;#----- USGS global vege raster averaging method }
@@ -2676,9 +2748,18 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
 
    set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
    set  link [file readlink  $dbdir/CCI_LC.tif]
-   set  year [file tail [file dirname $link]]
+   set  year [file tail $dbdir]
+
+   Log::Print INFO "Averaging vegetation type using ESA CCI CRDP Land cover $year"
 
    switch $dbid {
+   "CCILC2015-2" {
+      GenX::Procs $dbid
+      Log::Print INFO "Using CCILC2015-2 with Ecoregions2017 deserts already added"
+      }
+   "CCILC2015-1" {
+      GenX::Procs $dbid
+      }
    "CCILC2015" {
       GenX::Procs $dbid
       }
@@ -2690,13 +2771,11 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
       }
    }
 
-   Log::Print INFO "Averaging vegetation type using ESA CCI CRDP Land cover $year"
-
    set  datafile "$dbdir/$link"
    Log::Print INFO "Will use data file: $datafile"
 
    #----- Open the file
-   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path(CCI_LC)/CCI_LC.tif
+   gdalfile open CCIFILE read $GenX::Param(DBase)/$GenX::Path($dbid)/CCI_LC.tif
 
    if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef CCIFILE]]]] } {
       Log::Print WARNING "Specified grid does not intersect with CCI_LC database, vegetation will not be calculated"
@@ -4286,27 +4365,39 @@ proc GeoPhysX::AverageBathymetry { Grid } {
       set Has_GEBCO  0
    }
 
+   set Has_HL 1
+   if { [catch {
+      fstdfield read GPXLAKED   GPXAUXFILE -1 "" -1   -1 -1 "" "LACD"
+      fstdfield read GPXLAKEF   GPXAUXFILE -1 "" -1   -1 -1 "" "LACF"
+      Log::Print INFO "Will use existing LAKED and LAKEF"
+      } ] } {
+      set Has_HL 0
+   }
+
    # will use lake depth data if present
    if { [lsearch -exact $GenX::Param(Bathy) HYDROLAKES]!=-1 } {
-      fstdfield copy GPXLAKEF $Grid
-      fstdfield copy GPXLAKED $Grid
-      fstdfield copy GPXLAKES $Grid
-      fstdfield copy GPXLAKEG $Grid
-      GenX::GridClear {GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG} 0.0
-      HydroX::HydroLakesDepth $Grid GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG
-
-      vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
-
-      fstdfield define GPXLAKED -NOMVAR LACD -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXLAKED GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-      fstdfield define GPXLAKEF -NOMVAR LACF -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXLAKEF GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-      fstdfield define GPXLAKES -NOMVAR LACS -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXLAKES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-      fstdfield define GPXLAKEG -NOMVAR LACG -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
-      fstdfield write GPXLAKEG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
-      fstdfield free GPXLAKEF GPXLAKED GPXLAKEA GPXLAKES GPXLAKEG
+      if { $Has_HL == 0 } {
+         fstdfield copy GPXLAKEF $Grid
+         fstdfield copy GPXLAKED $Grid
+         fstdfield copy GPXLAKES $Grid
+         fstdfield copy GPXLAKEG $Grid
+         GenX::GridClear {GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG} 0.0
+         HydroX::HydroLakesDepth $Grid GPXLAKEF GPXLAKED GPXLAKES GPXLAKEG
+   
+         fstdfield define GPXLAKED -NOMVAR LACD -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+         fstdfield write GPXLAKED GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         fstdfield define GPXLAKEF -NOMVAR LACF -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+         fstdfield write GPXLAKEF GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         fstdfield define GPXLAKES -NOMVAR LACS -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+         fstdfield write GPXLAKES GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         fstdfield define GPXLAKEG -NOMVAR LACG -IP1 1200 -DATYP $GenX::Param(Datyp) -ETIKET $GenX::Param(ETIKET)
+         fstdfield write GPXLAKEG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   
+         fstdfield free GPXLAKEA GPXLAKES GPXLAKEG
+         set Has_HL  1
+      }
+   } else {
+      set Has_HL  0
    }
 
    # the CHS bathymetry is simply water depth
@@ -4321,13 +4412,33 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 
    # the NCEI bathymetry is simply water depth
    if { [lsearch -exact $GenX::Param(Bathy) NCEI]!=-1 } {
-
       Log::Print INFO "Averaging NCEI Great Lakes bathymetry data"
       set ncei_nodata -9999
-      GenX::GridClear GPXBATHY $ncei_nodata
-      GeoPhysX::AverageIndexedBands  GPXBATHY NCEI "$GenX::Param(DBase)/$GenX::Path(NCEI)" $ncei_nodata
+      GenX::GridClear GPXBATHY 0.0
+      GeoPhysX::AverageIndexedBands  GPXBATHY NCEI "$GenX::Param(DBase)/$GenX::Path(NCEI)" $ncei_nodata 0.0
 
-      vexpr  GPXDEPTH  "ifelse(GPXBATHY<0&&GPXBATHY>$ncei_nodata,GPXBATHY,GPXDEPTH)"
+      if { $Has_HL } {
+         fstdfield copy GREATLAKES $Grid
+         GenX::GridClear GREATLAKES 0.0
+
+         set shp_dir   "$GenX::Param(DBase)/$GenX::Path(GREATLAKES)"
+
+         GeoPhysX::AverageIndexedLayers GREATLAKES $shp_dir
+         vexpr GPXLAKED  "ifelse(GREATLAKES>0,GPXLAKED*GPXLAKEF,GPXLAKED)"
+         vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
+         vexpr GPXDEPTH  "ifelse(GPXBATHY<0,GPXBATHY,GPXDEPTH)"
+         fstdfield free GREATLAKES
+      } else {
+         vexpr  GPXDEPTH  "ifelse(GPXBATHY<0,GPXBATHY,GPXDEPTH)"
+      }
+   } else {
+      if { $Has_HL } {
+         vexpr GPXDEPTH  "ifelse(GPXLAKED<0.0,GPXLAKED,GPXDEPTH)"
+      }
+   }
+
+   if { $Has_HL } {
+      fstdfield free GPXLAKED GPXLAKEF
    }
 
    if { $Has_MG } {
@@ -4536,19 +4647,22 @@ proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG et
       set bands [gdalfile open BFRFILE read $file]
       set nbands [llength $bands]
       if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef BFRFILE]]]] } {
-         Log::Print WARNING "Specified grid does not intersect with database, $varname will not be calculated"
+         Log::Print WARNING "Specified grid does not intersect with database, $varname will be saved as empty"
+         set  intersect 0
       } else {
          Log::Print INFO "Grid intersection with database is { $limits }"
          set x0 [lindex $limits 0]
          set x1 [lindex $limits 2]
          set y0 [lindex $limits 1]
          set y1 [lindex $limits 3]
-   
-         set   bno  1
-         foreach  band $bands {
+         set  intersect 1
+      }
 
-            GenX::GridClear  $Grid  0.0
-            #----- Loop over the data by tiles since it's too big to fit in memory
+      foreach  band $bands {
+
+         GenX::GridClear  $Grid  0.0
+         if { $intersect } {
+         #----- Loop over the data by tiles since it's too big to fit in memory
             for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
                for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
                   Log::Print DEBUG "   Processing tile: $band $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
@@ -4564,15 +4678,15 @@ proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG et
             if { $has_MG } {
                vexpr  $Grid "ifelse(GPXMG>0.0, $Grid, 0.0)"
             }
-   
-            #----- Save output (Same for all layers)
-            lappend types $type
-            fstdfield define $Grid -NOMVAR $varname -IP1 [expr 1200-$type] -ETIKET "$etiket"
-            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-            gdalband free BFRTILE
-            incr type
-            incr bno
          }
+   
+         #----- Save output (Same for all layers)
+         lappend types $type
+         fstdfield define $Grid -NOMVAR $varname -IP1 [expr 1200-$type] -ETIKET "$etiket"
+         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         gdalband free BFRTILE
+
+         incr type
       }
       gdalfile close BFRFILE
       set fntype [expr $fntype + $nbands]
@@ -4969,6 +5083,8 @@ proc GeoPhysX::LegacySub { Grid } {
    fstdfield copy GPXY7 $Grid
    fstdfield copy GPXY8 $Grid
    fstdfield copy GPXY9 $Grid
+   GenX::GridClear { GPXLH GPXDH GPXY7 GPXY8 GPXY9 } 0.0
+   GenX::GridClear { GPXZ0 } 0.001
   
    Log::Print INFO "Computing legacy sub grid fields Z0 ZP LH DH Y7 Y8 Y9"
 
@@ -4982,12 +5098,19 @@ proc GeoPhysX::LegacySub { Grid } {
       default {
       }
    }
-   if { $GenX::Settings(TOPO_RUGV_ZVG2) } {
-      Log::Print INFO "Computing Z0 Using field ZVG2"
-      geophy subgrid_legacy GPXME GPXZVG2 GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+
+
+   set  smax  [vexpr a "smax(GPXME)"]
+   if { $smax > 0.0 } {
+      if { $GenX::Settings(TOPO_RUGV_ZVG2) } {
+         Log::Print INFO "Computing Z0 Using field ZVG2"
+         geophy subgrid_legacy GPXME GPXZVG2 GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+      } else {
+         Log::Print INFO "Computing Z0 Using field VG with Look up Table"
+         geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+      }
    } else {
-      Log::Print INFO "Computing Z0 Using field VG with Look up Table"
-      geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+      Log::Print INFO "Will not calculate Z0, using default because ME field maximum value is $smax, subgrid field may not be available"
    }
    
    if { $GenX::Param(Z0Topo)=="LEGACY" } {
@@ -5834,7 +5957,7 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : LegacyChecks
+# Name     : CheckLegacyVG
 # Creation : January 2016 - V. Souvanlasy - CMC/CMDS
 #
 # Goal     : ASSURE LA CONSISTANCE
@@ -5849,7 +5972,9 @@ proc GeoPhysX::CheckConsistencyStandard { } {
 #    extrait de conseq.f de genesis. 
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::LegacyChecks { } {
+proc GeoPhysX::CheckLegacyVG { } {
+   variable Opt
+
    GenX::Procs
    Log::Print INFO "Applying Legacy consistency checks on ME, MG and VG "
    #----- Check consistency for ME
@@ -5860,6 +5985,13 @@ proc GeoPhysX::LegacyChecks { } {
       Log::Print WARNING "Missing fields, will not check ME consistency with MG"
       return
    }
+
+   # this is what make difference between released version and current dev version
+   if { $Opt(LinearNodata) } {
+      fstdfield stats GPXME -nodata 0
+      fstdfield  configure GPXME  -rendertexture 0 -interpdegree LINEAR
+   }
+
 
    # VG is better compared as Integer
    #
