@@ -109,10 +109,10 @@ namespace eval GenX { } {
 
    set Param(Topos)     { USGS SRTM SRTM30 SRTM90 CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
    set Param(Aspects)   { SRTM SRTM30 SRTM90 CDED250 CDED50 CDEM GTOPO30 USGS GMTED30 GMTED15 GMTED75 }
-   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC CCILC2015 CCILC2010 USGS_R NALCMS }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC CCILC2015-2 CCILC2015-1 CCILC2015 CCILC2010 USGS_R NALCMS }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS SLC SOILGRIDS }
    set Param(SoilDBRKs) { GSRS }
-   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC CCILC2015 CCILC2010 USGS_R AAFC NALCMS OSM }
+   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC CCILC2015-2 CCILC2015-1 CCILC2015 CCILC2010 USGS_R AAFC NALCMS OSM }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD HSRN DCW }
@@ -203,6 +203,8 @@ namespace eval GenX { } {
    set Path(CANSIS)     CANSIS
    set Path(MODIS_IGBP) MODIS/MCD12Q1/IGBP
    set Path(CCI_LC)     ESA_CCI_LC
+   set Path(CCILC2015-1)  ESA_CCI_LC/2015-1
+   set Path(CCILC2015-2)  ESA_CCI_LC/2015-2
    set Path(CCILC2015)  ESA_CCI_LC/2015
    set Path(CCILC2010)  ESA_CCI_LC/2010
    set Path(CCILC_LUT_CSV)    $Param(DBase)/$Path(CCI_LC)/CCI_LC_lut.csv
@@ -215,6 +217,7 @@ namespace eval GenX { } {
    set Path(NCEI)       NOAA/NCEI/bathymetry
    set Path(GEBCO)      GEBCO_2014
    set Path(HYDROLAKES) HydroSHEDS/Misc/HydroLakes/HydroLAKES_polys_v10-tiled
+   set Path(GREATLAKES) HydroSHEDS/Misc/HydroLakes/great_lakes_shp
    set Path(OSM)        OSM/data
 
    set Path(StatCan)    $Param(DBase)/StatCan2006
@@ -352,7 +355,7 @@ proc GenX::Process { Grid } {
 
    #----- Consistency checks similar to Genesis
    if { $GeoPhysX::Opt(LegacyMode) } {
-      GeoPhysX::LegacyChecks
+      GeoPhysX::CheckLegacyVG
    }
 
 
@@ -1138,6 +1141,34 @@ proc GenX::FieldCopy { FileIn FileOut DateV Etiket IP1 IP2 IP3 TV NV } {
       fstdfield write GPXTMP $FileOut 0 True $GenX::Param(Compress)
       GenX::GridCopyDesc GPXTMP $FileIn $FileOut
    }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GenX::CreateTypedField>
+# Creation : Octobre 2007 - J.P. Gauthier - CMC/CMOE
+#
+# Goal     : create a new field of Grid in a difference type
+#
+# Parameters :
+#  <NewId>   : a new id for field to create
+#  <Grid>    : a grid that the new field is based on
+#  <Type>    : type of the new field
+#  <DefValue> : default value to set
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::CreateTypedField { NewId Grid Type {DefValue 0.0} } {
+   set ni [fstdfield define $Grid -NI]
+   set nj [fstdfield define $Grid -NJ]
+   set nk [fstdfield define $Grid -NK]
+   fstdfield create $NewId $ni $nj $nk $Type
+   fstdfield copyhead $NewId $Grid
+   fstdfield define $NewId -georef [fstdfield define $Grid -georef]
+   fstdfield stats $NewId -nodata $DefValue
+   fstdfield clear $NewId
 }
 
 #----------------------------------------------------------------------------
@@ -2027,7 +2058,7 @@ proc GenX::Create_GridGeometry { Grid poly } {
    set lon0 [lindex $limits 1]
    set lat1 [lindex $limits 2]
    set lon1 [lindex $limits 3]
-
+  
    set ni  [fstdfield define $Grid -NI]
    set nj  [fstdfield define $Grid -NJ]
 
