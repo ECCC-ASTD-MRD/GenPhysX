@@ -2261,14 +2261,6 @@ proc GeoPhysX::AverageVege { Grid } {
    fstdfield write GPXVF GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
    fstdfield free GPXVF
-
-   #----- Vegetation canopy height and depth to bedrock
-   if { $GenX::Param(Sub)!="LEGACY" } {
-      switch $GenX::Param(Z0NoTopo) {
-       "CANOPY"  { GeoPhysX::AverageGLAS $Grid }
-       "CANOPY_LT" { GeoPhysX::AverageGLAS_Z0 $Grid }
-      }
-   }
 }
 
 #----------------------------------------------------------------------------

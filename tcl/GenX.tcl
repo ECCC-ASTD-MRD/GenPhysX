@@ -338,9 +338,18 @@ proc GenX::Process { Grid } {
       GeoPhysX::AverageSoil $Grid
    }
 
-   #----- Soil type
+   #----- depth to bedrock
    if { $Param(SoilDBRK)!="" } {
       GeoPhysX::AverageGSRS_DBRK $Grid
+   }
+
+   #----- Vegetation canopy height
+   if { $GenX::Param(Sub)!="LEGACY" } {
+      if { $GenX::Param(Z0NoTopo) == "CANOPY" } {
+         GeoPhysX::AverageGLAS $Grid
+      } elseif { ($GenX::Param(Z0NoTopo) == "CANOPY_LT") || ($GenX::Param(TOPO_ZVG2_TYPE) == "CANOPY_LT") } {
+         GeoPhysX::AverageGLAS_Z0 $Grid
+      }
    }
 
    #----- Hydraulic
