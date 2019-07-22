@@ -76,12 +76,15 @@ namespace eval GeoPhysX { } {
    set Param(VegeTypes)    { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 }
    set Param(VegeCrops)    { 15 16 17 18 19 20 }
    set Param(VegeTree)     { 4 5 6 7 8 9 25 26 }
+   #  new VF18 represent tropical & sub trop mixed forest shrubs
+   set Param(VegeTree_Eco) { 4 5 6 7 8 9 18 25 26 }
 
    set Param(VegeZ0vTypes) { 0.001 0.0003 0.001 1.5 3.5 1.0 2.0 3.0 0.8 0.05 0.15 0.15 0.02
                             0.08 0.08 0.08 0.35 0.25 0.1 0.08 1.35 0.01 0.05 0.05 1.5 0.05 }
    # values decided by Stephane Belair for local Z0 computation using GLAS tree height   27/03/2015
    # pour CANOPY_LT seul.
    set Param(Z0M_VegeZ0)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.1  0.15 0.15 0.35 0.25 0.10 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
+   set Param(Z0M_VegeZ0_Eco)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.15  0.15 0.15 0.15 1.75 0.10 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
 
    #----- Constants definitions
 
@@ -1321,7 +1324,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "GLC2000"   { GeoPhysX::AverageMaskGLC2000   $Grid }
       "MCD12Q1"   { GeoPhysX::AverageMaskMCD12Q1   $Grid }
       "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
-      "CCILC2015-2" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015-ECO2017" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015-1" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2010" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
@@ -1641,7 +1644,7 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
    set  year [file tail $dbdir]
 
    switch $dbid {
-   "CCILC2015-2" {
+   "CCILC2015-ECO2017" {
       GenX::Procs $dbid
       }
    "CCILC2015-1" {
@@ -1659,7 +1662,7 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
    }
 
    Log::Print INFO "Averaging mask using ESA CCI LC Water Bodies database $year"
-
+ 
    set  datafile "$dbdir/$link"
    Log::Print INFO "Will use data file: $datafile"
 
@@ -2242,7 +2245,7 @@ proc GeoPhysX::AverageVege { Grid } {
          "MCD12Q1"   { GeoPhysX::AverageVegeMCD12Q1   GPXVF ;#----- MODIS MCD12Q1 IGBP global vegetation }
          "AAFC"      { GeoPhysX::AverageVegeAAFC      GPXVF ;#----- AAFC Crop over Canada only vege averaging method }
          "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
-         "CCILC2015-2" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015-ECO2017" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015-1" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2010" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
@@ -2738,16 +2741,17 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
    variable Param
    variable Const
 
-   set  dbdir "$GenX::Param(DBase)/$GenX::Path(CCI_LC)"
+   set  dbdir "$GenX::Param(DBase)/$GenX::Path($dbid)"
    set  link [file readlink  $dbdir/CCI_LC.tif]
    set  year [file tail $dbdir]
 
    Log::Print INFO "Averaging vegetation type using ESA CCI CRDP Land cover $year"
 
    switch $dbid {
-   "CCILC2015-2" {
+   "CCILC2015-ECO2017" {
       GenX::Procs $dbid
-      Log::Print INFO "Using CCILC2015-2 with Ecoregions2017 deserts already added"
+      Log::Print INFO "Using CCILC2015 with Ecoregions2017 already added"
+      set GenX::Param(UseVegeLUT)     True
       }
    "CCILC2015-1" {
       GenX::Procs $dbid
@@ -2760,6 +2764,13 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
       }
    default  {
       GenX::Procs "CCILC${year}"
+      }
+   }
+
+   if { $GenX::Param(UseVegeLUT) } {
+      if { [string compare $GenX::Path(CCILC_LUT_CSV) ""] == 0 } {
+         set GenX::Path(CCILC_LUT_CSV)   "$GenX::Param(DBase)/$GenX::Path($dbid)/CCI_LC_lut.csv"
+         Log::Print INFO "GenX::Path(CCILC_LUT_CSV) not defined, Will use default CSV LUT"
       }
    }
 
@@ -5040,20 +5051,26 @@ proc GeoPhysX::LegacySub { Grid } {
    variable Const
 
    GenX::Procs
-   
+ 
    #----- check for needed fields
    if { $GenX::Settings(TOPO_RUGV_ZVG2) } {
-      set  varname ZVG2
+      if {$GenX::Param(TOPO_ZVG2_TYPE) == "CANOPY_LT"} {
+         set  varname Z0VG
+         set  infile  GPXAUXFILE
+      } else {
+         set  varname ZVG2
+         set  infile  GPXOUTFILE
+      }
    } else {
       set  varname VG
    }
-   if { [catch { fstdfield read GPX${varname} GPXOUTFILE -1 "" -1 -1 -1 "" $varname } ] } {
+   if { [catch { fstdfield read GPXZVG $infile -1 "" -1 -1 -1 "" $varname } ] } {
       Log::Print WARNING "Missing field: $varname, will not calculate legacy sub grid fields"
       return
    }
 
    #----- if MG is used to set water roughness
-   if { $varname == "ZVG2" } {
+   if { $GenX::Settings(TOPO_RUGV_ZVG2) } {
       if { $GenX::Settings(TOPO_RUGV_MG) } {
          if { [catch { fstdfield read GPXMG GPXOUTFILE -1 "" -1 -1 -1 "" MG } ] } {
             Log::Print WARNING "Missing field: MG, will not calculate legacy sub grid fields"
@@ -5064,7 +5081,7 @@ proc GeoPhysX::LegacySub { Grid } {
          } else {
             set  zwater 0.001
          }
-         vexpr GPXZVG2  "ifelse(GPXMG>0.0,GPXZVG2,$zwater)"
+         vexpr GPXZVG  "ifelse(GPXMG>0.0,GPXZVG,$zwater)"
          fstdfield free GPXMG
       }
    }
@@ -5077,7 +5094,7 @@ proc GeoPhysX::LegacySub { Grid } {
    fstdfield copy GPXY9 $Grid
    GenX::GridClear { GPXLH GPXDH GPXY7 GPXY8 GPXY9 } 0.0
    GenX::GridClear { GPXZ0 } 0.001
-  
+ 
    Log::Print INFO "Computing legacy sub grid fields Z0 ZP LH DH Y7 Y8 Y9"
 
    switch $GenX::Param(MEFilterForZ0) {
@@ -5095,11 +5112,11 @@ proc GeoPhysX::LegacySub { Grid } {
    set  smax  [vexpr a "smax(GPXME)"]
    if { $smax > 0.0 } {
       if { $GenX::Settings(TOPO_RUGV_ZVG2) } {
-         Log::Print INFO "Computing Z0 Using field ZVG2"
-         geophy subgrid_legacy GPXME GPXZVG2 GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+         Log::Print INFO "Computing Z0 Using field $varname"
+         geophy subgrid_legacy GPXME GPXZVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
       } else {
          Log::Print INFO "Computing Z0 Using field VG with Look up Table"
-         geophy subgrid_legacy GPXME GPXVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
+         geophy subgrid_legacy GPXME GPXZVG GPXZ0 GPXLH GPXDH GPXY7 GPXY8 GPXY9 GenX::Settings
       }
    } else {
       Log::Print INFO "Will not calculate Z0, using default because ME field maximum value is $smax, subgrid field may not be available"
@@ -5461,6 +5478,8 @@ proc GeoPhysX::SubRoughnessLength { } {
       vexpr GPXZ0V1 (GPXZ0V1+GPXVF*$zzov)
       vexpr GPXZ0V2 (GPXZ0V2+GPXVF)
    }
+
+   Log::Print INFO "Computing Z0V1 (save as ZVG2) using Lookup Table VegeZ0vTypes : $Param(VegeZ0vTypes)"
    vexpr GPXZ0V1 ifelse(GPXZ0V2>0.001,GPXZ0V1/GPXZ0V2,0.0)
    fstdfield define GPXZ0V1 -NOMVAR ZVG2 -ETIKET $GenX::Param(ETIKET) -IP1 0 -IP2 0
    fstdfield write GPXZ0V1 GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
@@ -5503,21 +5522,29 @@ proc GeoPhysX::SubRoughnessLength { } {
       vexpr GPXZP  ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
       fstdfield define GPXZP -NOMVAR ZP -ETIKET $GenX::Param(ETIKET) -IP1 0 -IP2 0
       fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   } elseif { $GenX::Param(Z0NoTopo) == "CANOPY_LT" } {
+   } elseif { ($GenX::Param(Z0NoTopo) == "CANOPY_LT") || ($GenX::Param(TOPO_ZVG2_TYPE) == "CANOPY_LT") } {
       Log::Print INFO "Computing Local Vegetation Roughness"
       if { [catch { fstdfield read GPXZ0VH  GPXAUXFILE -1 "" -1 -1 -1 "" "Z0VH" }] } {
          Log::Print WARNING "Missing fields, will not calculate local roughness length from canopy height"
          return
       }
 
+      if { $GenX::Param(Vege) == "CCILC2015-ECO2017" } { 
+         set VegeTree  $Param(VegeTree_Eco)
+         set Z0M_VegeZ0  $Param(Z0M_VegeZ0_Eco)
+      } else {
+         set VegeTree  $Param(VegeTree)
+         set Z0M_VegeZ0  $Param(Z0M_VegeZ0)
+      }
+
       fstdfield copy GPXZ0V3 GPXZ0VH
       fstdfield copy GPXVFT GPXZ0VH
       GenX::GridClear { GPXZ0V1 GPXZ0V2 GPXZ0V3 GPXVFT } 0.0
-      foreach element $Param(VegeTypes) zomv $Param(Z0M_VegeZ0)  {
+      foreach element $Param(VegeTypes) zomv $Z0M_VegeZ0  {
          Log::Print DEBUG "  Processing LN(Z0) with VF $element"
          set ip1 [expr 1200-$element]
          fstdfield read GPXVF GPXOUTFILE -1 "" $ip1 -1 -1 "" "VF"
-         if { [lsearch $Param(VegeTree) $element]!=-1 } {
+         if { [lsearch $VegeTree $element]!=-1 } {
             # remplace LN(Z0) from VF and LUT with Z0VH if available
             Log::Print DEBUG "Using Tree Height for VF=$element"
             vexpr GPXZ0V1 ifelse(GPXZ0VH>0.0,GPXZ0V1+GPXVF*ln(GPXZ0VH),GPXZ0V1+GPXVF*ln($zomv))
@@ -5559,7 +5586,9 @@ proc GeoPhysX::SubRoughnessLength { } {
       vexpr GPXZP ifelse(GPXZ0>$Const(z0def),ln(GPXZ0),$Const(zpdef))
       fstdfield define GPXZP -NOMVAR ZP -ETIKET $GenX::Param(ETIKET) -IP1 0 -IP2 0
       fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-   } elseif { ($GenX::Param(Z0NoTopo) == "") && ($GenX::Param(Z0Topo) == "STD") } {
+   } 
+
+   if { ($GenX::Param(Z0NoTopo) == "") && ($GenX::Param(Z0Topo) == "STD") } {
        #------ roughness length with topographic contribution and lookup table
        #------ Filter roughness length
 
@@ -5640,6 +5669,7 @@ proc GeoPhysX::SubRoughnessLength { } {
        fstdfield write GPXZP GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
    } elseif { ($GenX::Param(Z0NoTopo) == "") && ($GenX::Param(Z0Topo) == "LEGACY") } {
        # nothing to do here, Z0 will be calculated in GeoPhysX::LegacySub
+   } elseif { $GenX::Param(Z0NoTopo) == "CANOPY_LT" } {
    } else {
        Log::Print WARNING "Invalid Z0 option(s) provided"
        Log::Print WARNING "   GenX::Param(Z0NoTopo)=$GenX::Param(Z0NoTopo)"
