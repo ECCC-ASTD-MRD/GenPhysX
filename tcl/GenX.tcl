@@ -134,7 +134,7 @@ namespace eval GenX { } {
    set Param(AddHydroLakesToMask)   False    ; #add HydroLakes Lakes fraction to OSM Mask
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
-   set Batch(Host)     ppp2                  ;#Host onto which to submit the job
+   set Batch(Host)     ppp4                  ;#Host onto which to submit the job
    set Batch(Queue)    ""                    ;#Queue to use for the job
    set Batch(Mem)      8G                    ;#Memory needed for the job
    set Batch(CPU)      1                     ;#CPU needed for the job
@@ -144,9 +144,9 @@ namespace eval GenX { } {
    set Batch(Path)     "\$TMPDIR/GenPhysX\$\$"
 
    #----- Various database paths
-   set Param(DBase)          "/space/hall1/sitestore/eccc/cmd/s/slib800/geo"
-   set Param(DBaseeccc-ppp1) "/space/hall1/sitestore/eccc/cmd/s/slib800/geo"
-   set Param(DBaseeccc-ppp2) "/space/hall2/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBase)          "/space/hall3/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseeccc-ppp3) "/space/hall3/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseeccc-ppp4) "/space/hall4/sitestore/eccc/cmd/s/slib800/geo"
    catch { set Param(DBase) $Param(DBase$env(ORDENV_TRUEHOST)) }
    
    if { ![file isdirectory $Param(DBase)] } {
