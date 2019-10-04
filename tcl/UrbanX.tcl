@@ -24,6 +24,7 @@ namespace eval UrbanX { } {
    variable Const
    variable Meta
    variable Path
+   variable GeoRef
 
    set Param(Version)       	 0.95   ;# UrbanX version number
    set Param(CULUCVersion)       0.9.2  ;# CULUC version number
@@ -50,9 +51,22 @@ namespace eval UrbanX { } {
 
    # added at Serge's request ;-) will use the CULUC_PATH provided by the user if any
    if { [info exists env(CULUC_PATH)] } {
-      set Param(CULUCPath) $env(CULUC_PATH)/CULUC
+      set Param(CULUCPath) $env(CULUC_PATH)
    } else {
-      set Param(CULUCPath)       "/cnfs/dev/cmdd/afsm/lib/geo/CULUC/$Param(CULUCVersion)/" ;# Path to the permanent CULUC repository
+      set Param(CULUCPath)       "$GenX::Param(DBase)/CULUC/CA" ;# Path to the permanent CULUC repository
+   }
+
+   set Param(WULUCPath) ""
+   if { [info exists env(WULUC_PATH)] } {
+      set Param(WULUCPath)  "$env(WULUC_PATH)"
+   } else {
+      set Param(WULUCPath)  "$GenX::Param(DBase)/CULUC/US" ;# Path to the permanent WULUC repository
+   }
+
+   if { [info exists env(BLDH_PATH)] } {
+      set Param(BLDH_PATH) $env(BLDH_PATH)
+   } else {
+      set Param(BLDH_PATH) $GenX::Param(TMPDIR)
    }
 
    #----- Directory where to find processing procs
@@ -430,7 +444,7 @@ proc UrbanX::Sandwich { indexCouverture } {
    Log::Print INFO "Rasterizing, flattening and post-processing CanVec layers over the raster of size $Param(Width)x$Param(Height) at a $Param(Resolution)m spatial resolution"
 
    gdalband create RSANDWICH $Param(Width) $Param(Height) 1 UInt16
-   gdalband define RSANDWICH -georef UTMREF$Param(NTSSheet)
+   gdalband define RSANDWICH -georef $Param(SheetGeoRef)
 
    #----- Rasterization of CanVec layers
    foreach file $Param(Files) {
@@ -868,7 +882,7 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
    gdalband read RSANDWICH [gdalfile open FSANDWICH read $GenX::Param(TMPDIR)/$Param(NTSSheet)_sandwich.tif]
 
    gdalband create RBUFFER $Param(Width) $Param(Height) 1 Byte
-   eval gdalband define RBUFFER -georef UTMREF$Param(NTSSheet)
+   eval gdalband define RBUFFER -georef $Param(SheetGeoRef)
 
    set i 0
    foreach file $Param(Files) {
@@ -902,7 +916,7 @@ proc UrbanX::ChampsBuffers { indexCouverture } {
 
    Log::Print INFO "Cookie cutting grass and fields buffers and setting grass and fields and building vicinity values"
    gdalband create RBUFFERCUT $Param(Width) $Param(Height) 1 UInt16
-   gdalband define RBUFFERCUT -georef UTMREF$Param(NTSSheet)
+   gdalband define RBUFFERCUT -georef $Param(SheetGeoRef)
    vexpr RBUFFERCUT ifelse(((RSANDWICH==0) && (RBUFFER==0)),820,RBUFFERCUT)
    vexpr RBUFFERCUT ifelse(((RSANDWICH==0) && (RBUFFER!=0)),510,RBUFFERCUT)
 
@@ -960,7 +974,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
    #----- Création d'un fichier de rasterization des polygones de DA
    gdalband create RDA $Param(Width) $Param(Height) 1 Int32
    gdalband clear RDA -1
-   gdalband define RDA -georef UTMREF$Param(NTSSheet)
+   gdalband define RDA -georef $Param(SheetGeoRef)
 
    Log::Print DEBUG "Rasterize the selected Dissemination Area (DA) polygons"
    gdalband gridinterp RDA VPOPDENS FAST FEATURE_ID
@@ -1029,7 +1043,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
    Log::Print DEBUG "Conversion of population density in a raster file"
    gdalband create RPOPDENS $Param(Width) $Param(Height) 1 Float32
-   eval gdalband define RPOPDENS -georef UTMREF$Param(NTSSheet)
+   eval gdalband define RPOPDENS -georef $Param(SheetGeoRef)
    gdalband gridinterp RPOPDENS VPOPDENS $Param(Mode) CSDUID
 
    file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_popdens.tif
@@ -1044,7 +1058,7 @@ proc UrbanX::PopDens2Builtup { indexCouverture } {
 
    Log::Print DEBUG "Cookie cutting population density and setting SMOKE/TEB values"
    gdalband create RPOPDENSCUT $Param(Width) $Param(Height) 1 Byte
-   gdalband define RPOPDENSCUT -georef UTMREF$Param(NTSSheet)
+   gdalband define RPOPDENSCUT -georef $Param(SheetGeoRef)
    vexpr RRESIDENTIAL RSANDWICH==218
    gdalband free RSANDWICH
 
@@ -1092,7 +1106,7 @@ proc UrbanX::HeightGain { indexCouverture } {
 
    gdalband read RCHAMPS [gdalfile open FCHAMPS read $GenX::Param(TMPDIR)/$Param(NTSSheet)_champs-only+building-vicinity.tif]
    gdalband create RHAUTEURPROJ $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURPROJ -georef UTMREF$Param(NTSSheet)
+   gdalband define RHAUTEURPROJ -georef $Param(SheetGeoRef)
    gdalband stats RHAUTEURPROJ -nodata -9999
 
    #----- La vérification pourrait être fait dans un proc avec vérification des 4 points de la source
@@ -1152,7 +1166,7 @@ proc UrbanX::BuildingHeight { indexCouverture } {
    gdalband read RHAUTEURWMASK [gdalfile open FHAUTEUR read $Param(HeightMaskFile)]
 
    gdalband create RHAUTEURWMASKPROJ $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURWMASKPROJ -georef UTMREF$Param(NTSSheet)
+   gdalband define RHAUTEURWMASKPROJ -georef $Param(SheetGeoRef)
 
    gdalband gridinterp RHAUTEURWMASKPROJ RHAUTEURWMASK
    gdalband free RHAUTEURWMASK
@@ -1296,7 +1310,7 @@ proc UrbanX::Priorities2TEB { } {
    # Using limits to burn NoData 0 values outside of NTS sheet, where data is incomplete
    eval ogrlayer read NTSMASKLAYER$Param(NTSSheet) [lindex [ogrfile open NTSMASKSHAPE$Param(NTSSheet) read [glob -nocomplain $Param(NTSSheetPath)/$Param(NTSSheet)*_LI_1210009_2.shp]] 0]
    gdalband create RNTSMASK $Param(Width) $Param(Height) 1 Byte
-   gdalband define RNTSMASK -georef UTMREF$Param(NTSSheet)
+   gdalband define RNTSMASK -georef $Param(SheetGeoRef)
    gdalband gridinterp RNTSMASK NTSMASKLAYER$Param(NTSSheet) $Param(Mode) 1
    vexpr (UByte)RTEB ifelse(RNTSMASK==1,RTEB,0)
    gdalband stats RTEB -nodata 0
@@ -1380,6 +1394,142 @@ proc UrbanX::VegeMask { } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <UrbanX::CreateGridIJTile>
+# Creation : 
+# Revision : 
+#
+# Goal     :
+#
+# Parameters :
+#   <Grid>   : the Target grid
+#   <bands>  : file info of opened band file
+#   <georef> : projection of opened band file
+#   <Tile>   : name of output Tile
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::CreateGridIJTile { Tile bands georef Grid } {
+   set info   [lindex $bands 0]
+puts $info
+   set Width  [lindex $info 3]
+   set Height [lindex $info 4]
+   set ni     [fstdfield define $Grid -NI]
+   set nj     [fstdfield define $Grid -NJ]
+
+   gdalband free $Tile
+   if { $ni < 255 && $nj < 255 } {
+      gdalband create $Tile $Width $Height 2 Byte
+      gdalband define $Tile -georef $georef
+      gdalband stats  $Tile -nodata 255
+   } else {
+      gdalband create $Tile $Width $Height 2 UInt16
+      gdalband define $Tile -georef $georef
+      gdalband stats  $Tile -nodata 65535
+   }
+}
+
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::GetULUCFilename>
+# Creation : 
+# Revision : 
+#
+# Goal     :  return the filename of an existing CULUC sheet or 
+#             a to be generate filename
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::GetULUCFilename { sheet } {
+   variable Param
+
+   set s250 [string range $sheet 0 2]
+   set sl   [string tolower [string range $sheet 3 3]]
+   set s50  [string range $sheet 4 5]
+   set clfilename "$s250/$sl/CULUC_${sheet}_v$Param(CULUCVersion).tif"
+   set filename  $Param(CULUCPath)/$clfilename
+   if { [file exists $filename] } {
+      return $filename
+   }
+
+   set paths [split $Param(WULUCPath) ":"]
+   foreach  WULUCPath  $paths {
+      set filename $WULUCPath/$clfilename
+      if { [file exists $filename] } {
+         return $filename
+      }
+   }
+
+#   Log::Print DEBUG "Param(TMPDIR) is : $GenX::Param(TMPDIR)"
+   set clfilename "CULUC_${sheet}_v$Param(CULUCVersion).tif"
+   set filename $GenX::Param(TMPDIR)/$clfilename
+   return $filename
+}
+
+proc UrbanX::GetBldHgtShpfile { Tile } {
+   variable Param
+
+   if { ($Param(BuildingsHgtShpDir)!="") } {
+      set limits [georef limit [gdalband define $Tile -georef]]
+      set la0 [lindex $limits 0]
+      set lo0 [lindex $limits 1]
+      set la1 [lindex $limits 2]
+      set lo1 [lindex $limits 3]
+      puts "$la0 $lo0 $la1 $lo1"
+
+      set  indexfile $Param(BuildingsHgtShpDir)/Index/Index.shp
+      set items [GenX::Fetch_Shpfile_Index $indexfile $la0 $lo0 $la1 $lo1]
+      set files {}
+      foreach item $items {
+         lappend files "$Param(BuildingsHgtShpDir)/${item}-buildings_H.shp"
+      }
+      return $files
+   }
+   return {}
+}
+
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::tebparam2nomvarip1>
+# Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
+#
+# Goal     : Computing TEB parameters on the target RPN fstd grid
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::tebparam2nomvarip1 { tebparam } {
+
+#----- Fixing NOMVAR names from unique values to their RPN value
+   set nomvar_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
+
+   set nomvar_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
+
+   set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
+   set ip1 [expr int($ip1)] ;# IP1 must be an integer
+
+	if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
+	   set nomvar [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
+	} else {
+	   set nomvar $tebparam
+	}
+   if { $nomvar == "VEGF"} {
+	   set nomvar "NATF"
+	}
+   return "$nomvar $ip1"
+}
+
+
+#----------------------------------------------------------------------------
 # Name     : <UrbanX::TEB2FSTD>
 # Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
 #
@@ -1399,6 +1549,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    Log::Print INFO "Computing TEB parameters on the target RPN fstd grid: $GenX::Param(GridFile)"
 
    Log::Print DEBUG "Reading the TEB parameters LUT in csv exported from the TEB-Params_LUT.xls file"
+
    set csvfile [open $Param(TEBParamsLUTCSVFile) r]
 
    vector create CSVTEBPARAMS
@@ -1418,215 +1569,390 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
 # concatanate NTS and US UTM Sheets together
-   set all_sheets  "$Param(USUTSSheets) $Param(NTSSheets)"
+   set all_sheets  "$Param(WTSSheets) $Param(NTSSheets)"
+#TEST
+#   set all_sheets   "040p01 040p08 040p09"
+#   set all_sheets   "040p01"
 
-#----- Fixing NOMVAR names from unique values to their RPN value
-   set nomvar_5lettres { HCRF1 HCRD1 HCWL1 TCRF1 TCRD1 TCWL1 DPRF1 DPRD1 DPWL1 HCRF2 HCRD2 HCWL2 TCRF2 TCRD2 TCWL2 DPRF2 DPRD2 DPWL2 HCRF3 HCRD3 HCWL3 TCRF3 TCRD3 TCWL3 DPRF3 DPRD3 DPWL3 VF_1 VF_2 VF_3 VF_4 VF_5 VF_6 VF_7 VF_8 VF_9 VF10 VF11 VF12 VF13 VF14 VF15 VF16 VF17 VF18 VF19 VF20 VF21 VF22 VF23 VF24 VF25 VF26 }
-   set nomvar_fixed    { HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL HCRF HCRD HCWL TCRF TCRD TCWL DPRF DPRD DPWL VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF VF }
+   set tmpdir $GenX::Param(TMPDIR)
 
+# first create all fields to be processed
+   set tebparams_list {}
    foreach tebparam [lrange [vector dim CSVTEBPARAMS] 1 end] {
-      # Clearing grid for the new TEB parameter
-      GenX::GridClear $Grid 0.0
 
-      set ip1 [vector get CSVTEBPARAMS.$tebparam 0]
-      set ip1 [expr int($ip1)] ;# IP1 must be an integer
+      set   nomvar [tebparam2nomvarip1 $tebparam]
+      set   ip1     [lindex $nomvar 1]
+      set   nomvar  [lindex $nomvar 0]
 
-	   if { [lsearch $nomvar_5lettres $tebparam ] !=-1} {
-	      set nomvar [lindex $nomvar_fixed [lsearch $nomvar_5lettres $tebparam]]
-	   } else {
-	      set nomvar $tebparam
-	   }
-	   # rename VEGF to NATF, unless VEGF in CSV has been renamed to NATF
-	   if { $nomvar == "VEGF"} {
-	     set nomvar "NATF"
-	   }
 # check if the result was done already, then we can skip to next
       if { $nomvar == "VF"} {
          set fields [fstdfield find GPXOUTFILE -1 "" $ip1 -1 -1 "" "$nomvar"]
-         if { [llength $fields] > 0 } {
-            Log::Print INFO "$nomvar: found existing record, will not redo"
-            continue
-         }
+#         if { [llength $fields] > 0 } {
+#            Log::Print INFO "$nomvar $ip1: found existing record, will not redo"
+#            continue
+#         }
       } else {
          set fields [fstdfield find GPXAUXFILE -1 "" $ip1 -1 -1 "" "$nomvar"]
+#         if { [llength $fields] > 0 } {
+#            if { $nomvar != "BLDH" && $nomvar != "BLDF" } {
+#               continue
+#            }
+#            Log::Print INFO "$nomvar $ip1: found existing record, will not redo"
+#               continue
+#            if { $nomvar != "QETR" && $nomvar != "QHTR" } {
+#            }
+#         }
+      }
+
+      lappend tebparams_list $tebparam
+
+      if { [llength $fields] > 0 } {
+         if { $nomvar == "PAVF" || $nomvar == "BLDF" || $nomvar == "VEGF" || $nomvar == "BLDH"} {
+            set LoadedField($tebparam)  False
+            fstdfield copy $Grid.$tebparam $Grid
+            GenX::GridClear $Grid.$tebparam 0.0
+         } else {
+            Log::Print INFO "Loading $nomvar $ip1 existing record"
+            if { $nomvar == "VF"} {
+               fstdfield read $Grid.$tebparam GPXOUTFILE -1 "" $ip1 -1 -1 "" "$nomvar"
+            } else {
+               fstdfield read $Grid.$tebparam GPXAUXFILE -1 "" $ip1 -1 -1 "" "$nomvar"
+            }
+            set LoadedField($tebparam)  True
+         }
+      } else {
+         fstdfield copy $Grid.$tebparam $Grid
+         GenX::GridClear $Grid.$tebparam 0.0
+         set LoadedField($tebparam)  False
+      }
+
+      # pour NATF,BLDF,PAVF seulement
+      switch $nomvar {
+         NATF  { set no_zero 1 }
+         BLDF  { set no_zero 1 }
+         PAVF  { set no_zero 1 }
+         default { set no_zero 0 } 
+      }
+#      if { $no_zero } {
+#         fstdfield stats $Grid.$tebparam -nodata -9999 ;# Required to avoid account of zero in the gridinterp AVERAGE over nodata-only values
+#      }
+   }
+
+# TEST
+    puts $tebparams_list
+
+#    set tebparams_list {BLDH}
+#   set tebparams_list {BLDF PAVF BLDH NATF}
+
+# see if option HMIN, HMAX and HVAR are requested and already exist
+   if { $Param(OptionalTEBParams) } {
+      set need_opt_tebparams ""
+      foreach nomvar { HMIN HMAX BLDH HVAR } {
+         set fields [fstdfield find GPXAUXFILE -1 "" $ip1 -1 -1 "" "$nomvar"]
          if { [llength $fields] > 0 } {
-            Log::Print INFO "$nomvar: found existing record, will not redo"
+            Log::Print INFO "$nomvar $ip1: found existing record, will not redo"
+         } else {
+            lappend need_opt_tebparams $nomvar
+         }
+      }
+      set  NeedBLDH 0
+      if { [lsearch $need_opt_tebparams "HMIN"]>=0 } {
+         Log::Print INFO "Creating storage for HMIN"
+         fstdfield copy $Grid.HMIN $Grid
+         GenX::GridClear $Grid.HMIN 0.0
+         set NeedHMIN 1
+         set NeedBLDH 1
+      } else {
+         set NeedHMIN 0
+      }
+      if { [lsearch $need_opt_tebparams "HMAX"]>=0 } {
+         Log::Print INFO "Creating storage for HMAX"
+         fstdfield copy $Grid.HMAX $Grid
+         GenX::GridClear $Grid.HMAX 0.0
+         set NeedHMAX 1
+         set NeedBLDH 1
+      } else {
+         set NeedHMAX 0
+      }
+      if { [lsearch $need_opt_tebparams "BLDH"]>=0 } {
+         set  HasBLDH  0
+      } else {
+         set  HasBLDH  1
+      }
+      if { [lsearch $need_opt_tebparams "HVAR"]>=0 } {
+         set NeedHVAR 1
+         if { $HasBLDH == 0 } {
+# BLDH field is needed to compute HVAR
+            set NeedBLDH 1
+         }
+      } else {
+         set NeedHVAR 0
+      }
+# BLDH is essential to computation of HMIN HMAX HVAR
+      if { $NeedBLDH && ([lsearch $tebparams_list "BLDH"]<0) } {
+         lappend tebparams_list BLDH
+         fstdfield copy $Grid.BLDH $Grid
+         GenX::GridClear $Grid.BLDH 0.0
+      }
+   }
+
+   Log::Print INFO "Will Compute TEB parameters: $tebparams_list"
+   if { [llength $tebparams_list] == 0 } {
+      set NeedProcessSheets  0
+   } else {
+      set NeedProcessSheets  1
+   }
+
+   if { [lsearch $tebparams_list "BLDH"]>=0 } {
+      fstdfield copy $Grid.B3DH $Grid
+      GenX::GridClear $Grid.B3DH 0.0
+   }
+
+# Load all NTS sheets only once or twice by moving it to outside loop
+if { $NeedProcessSheets } {
+   foreach sheet $all_sheets {
+      set Param(NTSSheet) $sheet
+
+      set  culucfilename [UrbanX::GetULUCFilename $sheet]
+      puts "$culucfilename"
+      if { [file exists $culucfilename] } {
+      Log::Print INFO "Loading $culucfilename"
+      set bands [gdalfile open FCULUC read $culucfilename]
+      if { [catch { gdalband read RCULUC $bands }] } {
+         gdalfile close FCULUC
+         Log::Print ERROR "ERROR: Can't read: $culucfilename"
+         Log::End 1;
+      }
+      Log::Print INFO "Loaded $culucfilename"
+         vexpr RCULUC ifelse(RCULUC==22, 35, RCULUC)
+         set Param(Width)  [gdalfile width  FCULUC]
+         set Param(Height) [gdalfile height FCULUC]
+         set georef [gdalfile georef FCULUC]
+#         georef copy UTMREF$Param(NTSSheet) $georef
+         set  Param(SheetGeoRef) $georef
+      } else {
+         continue
+      }
+
+      Log::Print INFO "Making IJCULUC"
+      set culuc_IJ   "$tmpdir/$sheet-IJ.tif"
+      if { [file exists $culuc_IJ] } {
+         if { [catch { gdalband read IJCULUC [gdalfile open FCULUCIJ read $culuc_IJ] }] } {
+            Log::Print ERROR "ERROR: Can't read: $culuc_IJ"
+            Log::End 1;
+         }
+         gdalfile close FCULUCIJ
+      } else {
+         Log::Print INFO "Generating Grid Scanline cache over $Param(NTSSheet)"
+         set georef [gdalfile georef FCULUC]
+
+         Log::Print INFO "Creating IJCULUC"
+         UrbanX::CreateGridIJTile IJCULUC $bands $georef $Grid
+         set cnt [gdalband stats IJCULUC -grid2grid $Grid]
+         if { $cnt <= 0 } {
+            Log::Print INFO "Tile $Param(NTSSheet) not inside grid"
+            gdalfile close FCULUC
             continue
          }
       }
 
-      foreach sheet $all_sheets {
-         set Param(NTSSheet) $sheet
-         # Identify path components for NTS sheet
-         set s250 [string range $Param(NTSSheet) 0 2]
-         set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
-         set s50  [string range $Param(NTSSheet) 4 5]
+      foreach tebparam $tebparams_list {
 
-         # Finding the CULUC file in temporary or permanent locations
-         if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
-            if { [catch { gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] }] } {
-               Log::Print ERROR "ERROR: Can't read: $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif"
-               Log::End 1;
-            }
-         } else {
-            if { [catch { gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] }] } {
-               Log::Print ERROR "ERROR: Can't read: $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif"
-               Log::End 1;
-            }
-         }
-         gdalfile close FCULUC
+         set   nomvar [tebparam2nomvarip1 $tebparam]
+         set   ip1     [lindex $nomvar 1]
+         set   nomvar  [lindex $nomvar 0]
 
-         Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
-	 vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
-         # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
-         vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
-         gdalband free RCULUC
-         gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
-
-	 # For debugging purposes, writing TEB parameter values at 5m in a file
-	 #file delete -force $Param(NTSSheet)_TEB-$tebparam.tif
-	 #gdalfile open FILEOUT write $Param(NTSSheet)_TEB-$tebparam.tif GeoTiff
-	 #gdalband write RTEBPARAM FILEOUT
-	 #gdalfile close FILEOUT
-	 #Log::Print INFO "The file $Param(NTSSheet)_TEB-$tebparam.tif has been saved for debugging purposes"
+         if { $LoadedField($tebparam)  == False } {
+            Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
+	         vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+            # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
+            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
+            gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
 
 	 # Don't waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
-         if { $tebparam != "VF21" } {
-            Log::Print INFO "Averaging TEB parameter $tebparam (IP1=$ip1) values over $Param(NTSSheet)"
-            fstdfield gridinterp $Grid RTEBPARAM AVERAGE False
+            if { $tebparam != "VF21" } {
+               Log::Print INFO "Averaging TEB parameter $tebparam (IP1=$ip1) values over $Param(NTSSheet)"
+               fstdfield fromband $Grid.$tebparam RTEBPARAM IJCULUC AVERAGE
+            }
          }
+
+         if { $nomvar == "BLDH" } {
+#            set bld_height_file "$GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif"
+            set bld_height_file "$Param(BLDH_PATH)/$Param(NTSSheet)_Building-heights.tif"
+            Log::Print INFO "Need Buildings Height Raster file: $bld_height_file"
+            if { ![file exist $bld_height_file] } {
+               if { $Param(BuildingsHgtShpDir)!="" } {
+                  Log::Print INFO "Looking for Buildings Height Shapefiles in: $Param(BuildingsHgtShpDir)"
+                  set shpfiles  [UrbanX::GetBldHgtShpfile RCULUC]
+                  Log::Print INFO "Using Buildings Height Shapefile(s): $shpfiles"
+                  UrbanX::BuildingHeights2Raster  $shpfiles  ;# Rasterizes building heights
+               } elseif { $Param(BuildingsShapefile)!="" } {
+                  Log::Print INFO "Using Buildings Height Shapefile(s): $Param(BuildingsShapefile)"
+                  UrbanX::BuildingHeights2Raster  $Param(BuildingsShapefile) ;# Rasterizes building heights
+               }
+            }
+            if { [file exist $bld_height_file] } {
+               Log::Print INFO "Adjusting BLDH with Buildings Height Raster"
+               gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $bld_height_file]
+               gdalband stats RHAUTEURBLD -nodata 0;# memory fault if this comes after the gdalband write
+               vexpr RHAUTEURBLD "ifelse(RHAUTEURBLD>0 && RHAUTEURBLD < 4.5,4.5,RHAUTEURBLD)"
+
+               fstdfield fromband $Grid.B3DH RHAUTEURBLD IJCULUC AVERAGE
+               gdalband free RHAUTEURBLD
+               gdalfile close FHAUTEURBLD
+            } else {
+               Log::Print WARNING "Buildings Height Raster file not found: $bld_height_file"
+            }
+         }
+         if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
+            if  { $NeedHMIN } {
+               #----- Building height min computation
+               Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over $Param(NTSSheet)"
+               fstdfield fromband $Grid.HMIN RTEBPARAM IJCULUC MINIMUM
+
+            }
+
+            if  { $NeedHMAX } {
+               #----- Building height max computation
+               Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
+               fstdfield fromband $Grid.HMAX RTEBPARAM IJCULUC MAXIMUM
+            }
+         }
+
          gdalband free RTEBPARAM
       }
-      # Computing the gridinterp with all NTS sheets
-      fstdfield gridinterp $Grid - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
+      gdalband free RCULUC IJCULUC
+      gdalfile close FCULUC
+   }
+
+   # Computing the teb fields with all NTS sheets
+   foreach tebparam $tebparams_list {
+
+      set   nomvar [tebparam2nomvarip1 $tebparam]
+      set   ip1     [lindex $nomvar 1]
+      set   nomvar  [lindex $nomvar 0]
+
+      if { $LoadedField($tebparam)  == False } {
+         fstdfield gridinterp $Grid.$tebparam - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
+      }
+
+# UGLY PATCH for NATF, set all 0 "zero" to 1.0 , where no data is available
+      if { [string compare $nomvar "NATF"] == 0 } {
+         vexpr $Grid.$tebparam "ifelse($Grid.$tebparam==0,1,$Grid.$tebparam)"
+      }
+      if { [string compare $nomvar "BLDH"] == 0 } {
+         fstdfield gridinterp $Grid.B3DH - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
+         fstdfield define $Grid.B3DH -NOMVAR B3DH -IP1 $ip1
+         fstdfield write $Grid.B3DH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;
+         vexpr $Grid.$tebparam "ifelse($Grid.B3DH > 4.0 && $Grid.BLDF>0.0,$Grid.B3DH,$Grid.$tebparam)"
+#         vexpr $Grid.$tebparam "ifelse($Grid.$tebparam < 8.0 && $Grid.$tebparam>0.0,8.0,$Grid.$tebparam)"
+         fstdfield free $Grid.B3DH
+if { 0 } {
+         vexpr $Grid.$tebparam "ifelse($Grid.B3DH > 0.0,$Grid.B3DH,$Grid.$tebparam)"
+         vexpr $Grid.$tebparam "max($Grid.B3DH, $Grid.$tebparam)"
+}
+      }
 
       # Writing result to gridfile
-      fstdfield define $Grid -NOMVAR $nomvar -IP1 $ip1
+      fstdfield define $Grid.$tebparam -NOMVAR $nomvar -IP1 $ip1 -ETIKET $Param(RevisionETIKET)
       if { $nomvar == "VF"} {
-         fstdfield write $Grid GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
+         fstdfield write $Grid.$tebparam GPXOUTFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing VF fields to the OutFile
       } else {
-         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
-      }
-
-      # HVAR calculation, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
-      if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
-         GenX::GridClear $Grid 0.0
-         foreach sheet $all_sheets {
-            set Param(NTSSheet) $sheet
-            # Building height variance computation
-            set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;# the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
-            # -1 means that we don't even try to do it at the moment... will need to test on a 64 bits OS...
-            if { $memoryrequired > -1 } {
-               # Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
-               Log::Print INFO "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) $Param(NTSSheet)"
-            } else {
-               # Identify path components for NTS sheet
-               set s250 [string range $Param(NTSSheet) 0 2]
-               set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
-               set s50  [string range $Param(NTSSheet) 4 5]
-
-               # Finding the CULUC file in temporary or permanent locations
-               if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
-                   gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
-               } else {
-                   gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
-               }
-               gdalfile close FCULUC
-
-               Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
-               vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
-               # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
-               vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
-               gdalband free RCULUC
-               gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
-
-               Log::Print INFO "Computing Building Height Variance HVAR (IP1=0) values over $Param(NTSSheet) (RAM needed: $memoryrequired)"
-               gdalband free RCULUC ;# to reduce possibilities of a real memory fault
-# this won't work but I haven't tested...
-               fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
-               fstdfield gridinterp $Grid RTEBPARAM AVERAGE_VARIANCE BLDHFIELD False
-               fstdfield free BLDHFIELD
-               gdalband free RTEBPARAM
-            }
-         }
-         fstdfield gridinterp $Grid - NOP True ;# to conclude the AVERAGE_VARIANCE computations on all NTS sheets
-         fstdfield define $Grid -NOMVAR HVAR -IP1 0
-         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
-      }
-      # HMIN calculations, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
-      if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
-         GenX::GridClear $Grid 0.0
-         foreach sheet $all_sheets {
-            set Param(NTSSheet) $sheet
-            # Identify path components for NTS sheet
-            set s250 [string range $Param(NTSSheet) 0 2]
-            set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
-            set s50  [string range $Param(NTSSheet) 4 5]
-
-            # Finding the CULUC file in temporary or permanent locations
-            if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
-                gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
-            } else {
-                gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
-            }
-            gdalfile close FCULUC
-
-            Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
-            vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
-            # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
-            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
-            gdalband free RCULUC
-            gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
-
-            #----- Building height min computation
-            Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over $Param(NTSSheet)"
-            fstdfield gridinterp $Grid RTEBPARAM MINIMUM
-            gdalband free RTEBPARAM
-         }
-         fstdfield define $Grid -NOMVAR HMIN -IP1 0
-         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
-      }
-      # HMAX calculations, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
-      if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
-         GenX::GridClear $Grid 0.0
-         foreach sheet $all_sheets {
-            set Param(NTSSheet) $sheet
-            # Identify path components for NTS sheet
-            set s250 [string range $Param(NTSSheet) 0 2]
-            set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
-            set s50  [string range $Param(NTSSheet) 4 5]
-
-            # Finding the CULUC file in temporary or permanent locations
-            if { [file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
-                gdalband read RCULUC [gdalfile open FCULUC read $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
-            } else {
-                gdalband read RCULUC [gdalfile open FCULUC read $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif]
-            }
-            gdalfile close FCULUC
-
-            Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
-            vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
-            # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
-            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
-            gdalband free RCULUC
-            gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
-
-            #----- Building height max computation
-            Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
-            fstdfield gridinterp $Grid RTEBPARAM MAXIMUM
-            gdalband free RTEBPARAM
-         }
-         fstdfield define $Grid -NOMVAR HMAX -IP1 0
-         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+         fstdfield write $Grid.$tebparam GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
       }
    }
+}
+
+# free all fields in a loop after the previous one because BLDF is needed when finalizing BLDH
+   foreach tebparam $tebparams_list {
+      fstdfield free $Grid.$tebparam
+   }
+
+   if { $Param(OptionalTEBParams) } {
+      set  list {}
+      if  { $NeedHMIN } {
+         lappend list HMIN
+      }
+      if  { $NeedHMAX } {
+         lappend list HMAX
+      }
+      foreach  tebparam $list {
+         set   ip1     0
+         set   nomvar  $tebparam
+
+         fstdfield gridinterp $Grid.$tebparam - NOP True ;# to conclude the AVERAGE computations on all NTS sheets
+      # Writing result to gridfile
+         fstdfield define $Grid.$tebparam -NOMVAR $nomvar -IP1 $ip1 -ETIKET $Param(RevisionETIKET)
+         fstdfield write $Grid.$tebparam GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+         fstdfield free $Grid.$tebparam
+      }
+   }
+
+# HVAR calculation, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
+   if { $Param(OptionalTEBParams) && $NeedHVAR } {
+      # Building height variance computation
+      # the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
+      set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;
+      # -1 means that we don't even try to do it at the moment... will need to test on a 64 bits OS...
+      if { $memoryrequired > -1 } {
+      # Changed test to systematically bypass HVAR (was > 1600) since it's causing trouble to some
+         Log::Print INFO "HVAR: target grid size too large, memory requirements over $memoryrequired megs. Until we compile 64 bits, can't compute Building Height Variance (HVAR) $Param(NTSSheet)"
+      } else {
+         fstdfield copy $Grid.HVAR $Grid
+         GenX::GridClear $Grid.HVAR 0.0
+
+         fstdfield read BLDHFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "BLDH"
+
+         set tebparam "BLDH"
+         foreach sheet $all_sheets {
+            set Param(NTSSheet) $sheet
+            set  culucfilename [UrbanX::GetULUCFilename $sheet]
+            if { [file exists $culucfilename] } {
+               if { [catch { gdalband read RCULUC [gdalfile open FCULUC read $culucfilename] }] } {
+                  Log::Print ERROR "ERROR: Can't read: $culucfilename"
+                  Log::End 1;
+               }
+               gdalfile close FCULUC
+            } else {
+               continue
+            }
+
+            Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
+            vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
+            gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
+
+            Log::Print INFO "Computing Building Height Variance HVAR (IP1=0) values over $Param(NTSSheet) (RAM needed: $memoryrequired)"
+            fstdfield gridinterp $Grid.HVAR RTEBPARAM AVERAGE_VARIANCE BLDHFIELD False
+
+            gdalband free RTEBPARAM
+            gdalband free RCULUC
+            }
+
+         fstdfield gridinterp $Grid.HVAR - NOP True ;# to conclude the AVERAGE_VARIANCE computations on all NTS sheets
+         fstdfield define $Grid.HVAR -NOMVAR HVAR -IP1 0 -ETIKET $Param(RevisionETIKET)
+         fstdfield write $Grid.HVAR GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress) ;# Writing TEB-only fields to the AuxFile
+         fstdfield free $Grid.HVAR
+         fstdfield free BLDHFIELD
+      }
+   }
+
    vector free CSVTEBPARAMS
 
+# temporary 3 lines followed is for Fixing NATF problem
+   set fields [fstdfield find GPXAUXFILE -1 "" -1 -1 -1 "" "NATF"]
+   if { [llength $fields] > 0 } {
+      fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
+      vexpr NATFFIELD  "ifelse(NATFFIELD==0,1,NATFFIELD)"
+      fstdfield write NATFFIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
+
    # Balancing BLDF versus PAVF values and redistribute the other parameters accordingly
-   UrbanX::Balance_BLDFvsPAVF
+#   UrbanX::Balance_BLDFvsPAVF
 
    # Need to re-normalize VF due to changes made to PAVF and BLDF
-   UrbanX::NormalizeVFvsPAVFBLDF
+#   UrbanX::NormalizeVFvsPAVFBLDF
+#   return
 
    fstdfield read Z0RDFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0RD"
    fstdfield read Z0RFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "Z0RF"
@@ -1637,7 +1963,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    fstdfield read NATFFIELD GPXAUXFILE -1 "" 0 -1 -1 "" "NATF"
 
    # WALL-O-HOR formulae provided by Sylvie Leroyer
-   # bldw ---> mean width of building (BLDWFIELD)  --> add column
+   # bldw ---> mean width of building (BLDWFIELD)  --> add column 
 
    # Wall-O-Hor calculation
    Log::Print INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
@@ -1646,7 +1972,7 @@ proc UrbanX::TEB2FSTD { Grid } {
    Log::Print INFO "Computing geometric TEB parameter Wall-O-Hor WHOR (IP1=0) values over target grid"
    vexpr WHORFIELD "ifelse(NATFFIELD==1||BLDWFIELD==0,0,BLDHFIELD*2.0*BLDFFIELD/(BLDWFIELD *(1.0-NATFFIELD)))" ;#ifelse required to avoid division by 0
 
-   fstdfield define WHORFIELD -NOMVAR WHOR -IP1 0
+   fstdfield define WHORFIELD -NOMVAR WHOR -IP1 0 -ETIKET $Param(RevisionETIKET)
    fstdfield write WHORFIELD GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
    # Z0_TOWN calculation
@@ -1654,7 +1980,14 @@ proc UrbanX::TEB2FSTD { Grid } {
    GenX::GridClear $Grid 0.0
 
    vexpr DISPH BLDHFIELD*(1+(4.43^(BLDFFIELD*(-1.0))*(BLDFFIELD-1.0))) ;# Computing Displacement height
+# Can't compute this as is because (a^(-0.5)) will give NaN if a is 0
+if { 0 } {
    vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*((0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))^( -0.5))))) ;# ifelse required to avoid dividing by 0
+} else {
+   vexpr TMPFIELD ifelse(BLDHFIELD==0,0, 0.5*1.0*1.2/0.4^2*((1.0-DISPH/BLDHFIELD)*(WHORFIELD/2.0)))
+   vexpr TMPFIELD ifelse(TMPFIELD==0,0, TMPFIELD^(-0.5))
+   vexpr $Grid ifelse(BLDHFIELD==0,0, BLDHFIELD*((1.0-DISPH/BLDHFIELD)*exp(-1.0*TMPFIELD))) ;
+}
    vexpr $Grid ifelse(BLDFFIELD>0.9,max(Z0RFFIELD,$Grid),$Grid)  ;# we are on a roof surface --> use roof Z0
    vexpr $Grid ifelse(PAVFFIELD>0.9,max(Z0RDFIELD,$Grid),$Grid)  ;# we are on a paved surface --> use paved Z0
    fstdfield define $Grid -NOMVAR Z0TW -IP1 0
@@ -1667,7 +2000,7 @@ proc UrbanX::TEB2FSTD { Grid } {
       vexpr $Grid NATFFIELD+BLDFFIELD+PAVFFIELD
       fstdfield define $Grid -NOMVAR SUMF -IP1 0
       fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
-
+   
       # DPBH calculation
       Log::Print INFO "Computing TEB parameter DISPBLDH DPBH (IP1=0) values over target grid"
       vexpr DISPBLDH ifelse(BLDHFIELD==0,0, DISPH/BLDHFIELD)
@@ -1698,42 +2031,43 @@ proc UrbanX::TEB2FSTD { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc UrbanX::BuildingHeights2Raster { } {
+proc UrbanX::BuildingHeights2Raster { {shpfiles ""} } {
    variable Param
 
    GenX::Procs
    Log::Print INFO "Converting 2.5D buildings shapefile to raster"
+   Log::Print INFO "Shapefiles: $shpfiles"
 
-   set shp_layer [lindex [ogrfile open SHAPE read $Param(BuildingsShapefile)] 0]
-   eval ogrlayer read LAYER $shp_layer
-
-   # The next commented lines creates a RHAUTEURBLD that is of the extent of the shapefile, which creates a problem with a vexpr in UrbanX::3DBuildings2Sandwich
-   #set extent [ogrlayer stats LAYER -extent] ;# in UTM
-   #set rwidth [expr int(ceil(([lindex $extent 2]-[lindex $extent 0])))/$Param(Resolution)]
-   #set rheight [expr int(ceil(([lindex $extent 3]-[lindex $extent 1])))/$Param(Resolution)]
-
-   #georef copy UTMREFCROPPED [ogrlayer define LAYER -georef] ;# Retrieving georef from the shapefile
-   #georef define UTMREFCROPPED -transform [list [lindex $extent 0] $Param(Resolution) 0.0 [lindex $extent 1] 0.0 $Param(Resolution)]
-
-   #gdalband create RHAUTEURBLD $rwidth $rheight 1 Float32
-   #gdalband define RHAUTEURBLD -georef UTMREFCROPPED
+   if { $shpfiles == "" } {
+      set shpfiles $Param(BuildingsShapefile)
+   }
 
    gdalband create RHAUTEURBLD $Param(Width) $Param(Height) 1 Float32
-   gdalband define RHAUTEURBLD -georef UTMREF$Param(NTSSheet)
+   gdalband define RHAUTEURBLD -georef $Param(SheetGeoRef)
+   gdalband clear RHAUTEURBLD 0.0
 
-   gdalband gridinterp RHAUTEURBLD LAYER $Param(Mode) $Param(BuildingsHgtField)
+   foreach shpfile $shpfiles {
+      set shp_layer [lindex [ogrfile open SHAPE read $shpfile] 0]
+      eval ogrlayer read LAYER $shp_layer
 
-   Log::Print INFO "All buildings shorter than 4.5m set to an height of 4.5m"
-   vexpr RHAUTEURBLD ifelse(RHAUTEURBLD<4.5 && RHAUTEURBLD>0,4.5,RHAUTEURBLD)
 
-   ogrlayer free LAYER
-   ogrfile close SHAPE
+      gdalband gridinterp RHAUTEURBLD LAYER $Param(Mede) $Param(BuildingsHgtField)
 
-   file delete -force $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif
-   gdalfile open FILEOUT write $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif GeoTiff
+      Log::Print INFO "All buildings shorter than 4.5m set to an height of 4.5m"
+      vexpr RHAUTEURBLD ifelse(RHAUTEURBLD<4.5 && RHAUTEURBLD>0,4.5,RHAUTEURBLD)
+
+      ogrlayer free LAYER
+      ogrfile close SHAPE
+   }
+
+   set bld_height_file "$GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif"
+   set bld_height_file "$Param(BLDH_PATH)/$Param(NTSSheet)_Building-heights.tif"
+
+   file delete -force $bld_height_file
+   gdalfile open FILEOUT write $bld_height_file GeoTiff
    gdalband write RHAUTEURBLD FILEOUT
    gdalfile close FILEOUT
-   Log::Print INFO "The file $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif has been generated"
+   Log::Print INFO "The file $bld_height_file has been generated"
 
    gdalband free RHAUTEURBLD
 }
@@ -2797,6 +3131,88 @@ proc UrbanX::FindUSUTSSheets { Lat0 Lon0 Lat1 Lon1 } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <UrbanX::FindWTSSheets>
+# Creation : July 2012 - Vanh Souvanlasy - CMC/CMDS
+#
+# Goal     : Find the World UTM sheets intersecting an area
+#
+# Parameters :
+#  <Lat0>    : Lower left corner latitude
+#  <Lon0>    : Lower left corner longitude
+#  <Lat1>    : Upper right corner latitude
+#  <Lon1>    : Upper right corner longitude  
+#
+# Return:
+#   <sheets>  : List of sheets intersecting with the area
+#
+# Remarks :   
+#
+#   US UTS are based on the UTM coordinate system
+#   US UTS sheets identifiers are similar to NTS sheets identifier
+#   and are compatible in the directory hierarchy and file naming in the CULUC structure
+#
+#       UULCRR
+#
+#    where  UU   is the UTM Zone ranging from 1 to 60 with 6 degree width
+#            L   is the Latitude Band from letter  C to X starting at -80S, 8 degree high
+#            C   is the sub column ranging from a to l at a width of DLON=0.5
+#           RR   is the sub row ranging from 1 to 32 at a width of DLAT=0.25
+#
+#----------------------------------------------------------------------------
+proc UrbanX::FindWTSSheets { Lat0 Lon0 Lat1 Lon1 } {
+   variable Param
+
+   set  udsv  "_v"
+   set  sheets {}
+   set  rejected {}
+
+set paths [split $Param(WULUCPath) ":"]
+foreach  WULUCPath  $paths {
+   set  indexfile   $WULUCPath/Index/Index.shp
+   Log::Print INFO "Looking up : $indexfile"
+   if { ![file exist $indexfile] } {
+      Log::Print WARNING "sheets index file not found: $indexfile"
+      continue
+   }
+
+   set layer [lindex [ogrfile open UTSINDEXFILE read $indexfile] 0]
+   eval ogrlayer read UTSINDEXLAYER $layer
+   set ids [ogrlayer pick UTSINDEXLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True]
+   foreach id $ids {
+      set sheet [ogrlayer define UTSINDEXLAYER -feature $id IDENTIFIAN]
+
+      set geom1 [ogrlayer define UTSINDEXLAYER -geometry $id]
+      Log::Print INFO "Got geom1: $geom1"
+      set intersect [ogrgeometry stats $geom1 -intersect myGridPoly]
+      if { $intersect } {
+         set s250 [string range $sheet 0 2]
+         set sl   [string tolower [string range $sheet 3 3]]
+         set s50  [string range $sheet 4 5]
+#
+# All sheets must be pre-generate because UrbanX wont generate it on the fly like the NTS sheet
+#
+         if { [file exists $WULUCPath/$s250/$sl/CULUC_$sheet$udsv$Param(CULUCVersion).tif] } {
+                 if { [lsearch $sheets $sheet] ==-1 } {
+               lappend sheets $sheet
+            } else {
+               Log::Print WARNING "Warning: duplicate sheet '$sheet' found in : $indexfile"
+            }
+         }
+      } else {
+         lappend rejected $sheet
+      }
+   }
+   ogrfile close UTSINDEXFILE
+}
+
+   if { [llength $rejected] > 0 } {
+      Log::Print INFO "Avoided processing of outside sheets: $rejected"
+   }
+
+   return $sheets
+}
+
+#----------------------------------------------------------------------------
 # Name     : <UrbanX::UTMZoneDefine>
 # Creation : October 2010 - Alexandre Lerous, Lucie Boucher - CMC/AQMAS
 #
@@ -2906,15 +3322,18 @@ proc UrbanX::Process { Coverage Grid } {
           return
       }
 
+      GenX::Create_GridGeometry $Grid myGridPoly
       set Param(NTSSheets) [UrbanX::FindNTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
-      set Param(USUTSSheets) [UrbanX::FindUSUTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
+      set Param(WTSSheets) [UrbanX::FindWTSSheets $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)]
+
       Log::Print INFO "NTS sheets to process: $Param(NTSSheets)"
-      if { [llength $Param(USUTSSheets)] > 0 } {
-         Log::Print INFO "US UTM sheets to process: $Param(USUTSSheets)"
+      if { [llength $Param(WTSSheets)] > 0 } {
+         Log::Print INFO "World UTM sheets to process: $Param(WTSSheets)"
       }
    }
 
    # Generate the CULUC classification for the NTS sheet(s)
+   set  ntssheets {}
    foreach ntssheet $Param(NTSSheets) {
       set Param(NTSSheet) $ntssheet
 
@@ -2926,16 +3345,26 @@ proc UrbanX::Process { Coverage Grid } {
       set sl   [string tolower [string range $Param(NTSSheet) 3 3]]
       set s50  [string range $Param(NTSSheet) 4 5]
 
+      set culucfn  "CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif"
+      set culucnd  "CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).done"
+
       # Don't generate the CULUC classification if it already exists
-      if { ![file exists $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] && ![file exists $Param(CULUCPath)/$s250/$sl/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif] } {
+     if { ![file exists $GenX::Param(TMPDIR)/$culucfn] &&
+           ![file exists $Param(CULUCPath)/$s250/$sl/$culucfn] } {
+
+        if { [file exists $Param(CULUCPath)/$s250/$sl/$culucnd] } {
+            Log::Print INFO "The file $culucfn was processed, Canvec has no data for this NTS sheet"
+            continue
+         }
+
          Log::Print INFO "The file CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif has not been found and will be created"
 
 	 Log::Print INFO "Locating CanVec files to be processed for NTS sheet $Param(NTSSheet)"
 	 # OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
          # Path structure for CanVec-7.0: set Param(NTSSheetPath)  $GenX::Param(DBase)/$GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
          # Path structure for CanVec-9.0
-Log::Print WARNING "TEMPORARILY FORCING USING CanVec-9.0"
-set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
+         Log::Print WARNING "TEMPORARILY FORCING USING CanVec-9.0"
+         set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
 #         set Param(NTSSheetPath)  $GenX::Param(DBase)/$GenX::Path(CANVEC)/$s250/$sl
          Log::Print DEBUG "Using CanVec files from  $GenX::Param(DBase)/$GenX::Path(CANVEC)"
 	 foreach ntslayer $Param(Entities) {
@@ -2945,11 +3374,13 @@ set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
 	 }
 
 # Canvec may not have file for this NTS sheet
-    catch "glob -nocomplain $Param(NTSSheetPath)/$ntssheet*_LI_1210009_2.shp" sfile
-    if { ![file exist $sfile] } {
-       Log::Print INFO "Cannot find CanVec files for NTS sheet :  $Param(NTSSheet)"
-       continue
-    }
+         catch "glob -nocomplain $Param(NTSSheetPath)/$ntssheet*_LI_1210009_2.shp" sfile
+         if { ![file exist $sfile] } {
+             Log::Print INFO "Cannot find CanVec files for NTS sheet :  $Param(NTSSheet)"
+             continue
+         }
+
+         lappend ntssheets $ntssheet
 
          # Find and use the extent of the NTS sheet being processed
 	 eval ogrlayer read NTSLAYER$ntssheet [lindex [ogrfile open NTSSHAPE$ntssheet read $sfile] 0]
@@ -2962,7 +3393,8 @@ set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
 	 ogrfile close NTSSHAPE$ntssheet
 
 	 # This sets UTMREF and Param(Width) and Param(Height)
-	 UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) UTMREF$Param(NTSSheet)
+         set Param(SheetGeoRef)  UTMREF$Param(NTSSheet)
+	 UrbanX::UTMZoneDefine $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Resolution) $Param(SheetGeoRef)
 #         UrbanX::UTMZoneDefine $Param(Lat1) $Param(Lon0) $Param(Lat0) $Param(Lon1) $Param(Resolution) UTMREF$Param(NTSSheet)
 #puts "Param(Lat0) Param(Lon0) Param(Lat1) Param(Lon1) = $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1)"
 
@@ -2974,12 +3406,12 @@ set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
 	 UrbanX::Sandwich $Coverage
 
 	 #----- Vector building height processing - done only if data exists over the city
-	 if { $Param(BuildingsShapefile)!="" } {
-	     UrbanX::BuildingHeights2Raster  ;# Rasterizes building heights
+#	 if { $Param(BuildingsShapefile)!="" } {
+#	     UrbanX::BuildingHeights2Raster  ;# Rasterizes building heights
 	     # We ignore 3DBuildings2Sandwich until we find a way to generate TEB parameters accordingly
 	     ## move?? next proc after TEB2FSTD and update from priority to TEB class
-	     UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
-	 }
+#	     UrbanX::3DBuildings2Sandwich $Coverage       ;# Overwrites Sandwich by adding 3D buildings data
+#	 }
 
 	 #----- Creates the fields and building vicinity output using spatial buffers
 	 UrbanX::ChampsBuffers $Coverage
@@ -3020,12 +3452,12 @@ set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
           UrbanX::TEB2FSTD $Grid
           if { $Param(BuildingsShapefile)!="" } {
             # if $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif doesn't exists than create it (ie, if the $GenX::Param(TMPDIR)/CULUC_$Param(NTSSheet)_v$Param(CULUCVersion).tif file existed)
-            if { ![file exists $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif] } {
+#            if { ![file exists $GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif] } {
 # IMCOMPLETE: BuildingHeight2Raster DOES NOT USE THE RIGHT EXTENT AT THE MOMENT????? --- how to do it for the grid extent????
 #                UrbanX::FindNTSSheetExtent $Param(NTSSheet)
 # MAKE CERTAIN THE RIGHT UTMREF is used!
 #                UrbanX::BuildingHeights2Raster
-            }
+#            }
             #----- Computes TEB geometric parameters from 3D buildings
 # To fix and re-enable - wrong extent ?
 #              UrbanX::3DBld2TEBGeoParams $Grid
