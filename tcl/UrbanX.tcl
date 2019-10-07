@@ -66,7 +66,7 @@ namespace eval UrbanX { } {
    if { [info exists env(BLDH_PATH)] } {
       set Param(BLDH_PATH) $env(BLDH_PATH)
    } else {
-      set Param(BLDH_PATH) $GenX::Param(TMPDIR)
+      set Param(BLDH_PATH) ""
    }
 
    #----- Directory where to find processing procs
@@ -3309,6 +3309,10 @@ proc UrbanX::Process { Coverage Grid } {
 
    Log::Print INFO "Beginning of UrbanX"
    GenX::Procs CANVEC StatCan
+
+   if { [string compare $Param(BLDH_PATH) ""] == 0 } {
+      set Param(BLDH_PATH) $GenX::Param(TMPDIR)
+   }
 
    # Test is we're in CULUC generation mode, ie testing if it's a single NTS sheet in input
    if { [string is integer [string range $Coverage 0 0]] } {
