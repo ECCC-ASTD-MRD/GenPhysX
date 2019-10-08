@@ -530,7 +530,7 @@ proc GenX::Submit { } {
 
    #----- Launch job script
    Log::Print INFO "Using $Batch(Submit) to launch job ... "
-   set err [catch { exec $Batch(Submit) $job -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) -cpus $Batch(CPU) 2>@1 } msg]
+   set err [catch { exec $Batch(Submit) $job -waste 100 -mach $Batch(Host) -t $Batch(Time) -cm $Batch(Mem) -cpus $Batch(CPU) 2>@1 } msg]
    if { $err } {
       Log::Print ERROR "Could not launch job ($job) on $Batch(Host)\n\n\t$msg"
       Log::End 1
