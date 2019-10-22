@@ -145,8 +145,8 @@ proc HydroX::DrainDensity { Grid } {
    fstdfield define $Grid -NOMVAR DRND -IP1 1200
    fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
-#   fstdfield define GPXRIVERSUM -NOMVAR RSUM -IP1 1200
-#   fstdfield write GPXRIVERSUM GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield define GPXRIVERSUM -NOMVAR RSUM -IP1 1200
+   fstdfield write GPXRIVERSUM GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 #   fstdfield define GPXLAKESUM -NOMVAR LSUM -IP1 1200
 #   fstdfield write GPXLAKESUM GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 
