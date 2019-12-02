@@ -18,8 +18,8 @@ dnl	to configure the system for the local environment.
 # This will also define a special symbol for Windows (BUILD_sample in
 # this case) so that we create the export library with the dll.
 #-----------------------------------------------------------------------
-
-AC_INIT([TclGeoPhy], [1.0])
+. ../VERSION
+AC_INIT([TclGeoPhy],m4_esyscmd_s(echo $GENPHYSX_VERSION))
 
 PKG_CFLAGS="-D_GNU_SOURCE -D_BSD_SOURCE"
 
