@@ -28,6 +28,12 @@ namespace eval UrbanX { } {
 
    set Param(Version)       	 0.95   ;# UrbanX version number
    set Param(CULUCVersion)       0.9.2  ;# CULUC version number
+   # The following is used to tag all output fields from this version of UrbanX
+   #  095 ==> 0.95
+   #  092 ==> 0.9.2
+   #  -01 ==> revision of scripts
+   set Param(RevisionETIKET)      "095092-02"
+
    set Param(Resolution)         5      ;# Spatial rez of rasterization and outputs, leave at 5m unless for testing purposes
    set Param(Mode)               FAST   ;# Rasterization mode: INCLUDED or FAST - fast is... much much faster!
    set Param(HeightGain)         0      ;# Default value if proc HeightGain is not ran
