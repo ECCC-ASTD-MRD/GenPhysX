@@ -76,15 +76,18 @@ namespace eval GeoPhysX { } {
    set Param(VegeTypes)    { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 }
    set Param(VegeCrops)    { 15 16 17 18 19 20 }
    set Param(VegeTree)     { 4 5 6 7 8 9 25 26 }
+#   set Param(VegeTree_Eco) { 4 5 6 7 8 9 18 25 26 }
    #  new VF18 represent tropical & sub trop mixed forest shrubs
-   set Param(VegeTree_Eco) { 4 5 6 7 8 9 18 25 26 }
+   #  new VF19 represent temperate grassland evergreen needle leafs trees
+   set Param(VegeTree_Eco) { 4 5 6 7 8 9 18 19 25 26 }
 
    set Param(VegeZ0vTypes) { 0.001 0.0003 0.001 1.5 3.5 1.0 2.0 3.0 0.8 0.05 0.15 0.15 0.02
                             0.08 0.08 0.08 0.35 0.25 0.1 0.08 1.35 0.01 0.05 0.05 1.5 0.05 }
    # values decided by Stephane Belair for local Z0 computation using GLAS tree height   27/03/2015
    # pour CANOPY_LT seul.
    set Param(Z0M_VegeZ0)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.1  0.15 0.15 0.35 0.25 0.10 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
-   set Param(Z0M_VegeZ0_Eco)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.15  0.15 0.15 0.15 1.75 0.10 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
+#   set Param(Z0M_VegeZ0_Eco)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.15  0.15 0.15 0.15 1.75 0.10 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
+   set Param(Z0M_VegeZ0_Eco)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.15  0.15 0.15 0.15 1.75 1.75 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
 
    #----- Constants definitions
 
@@ -5499,6 +5502,10 @@ proc GeoPhysX::SubRoughnessLength { } {
       #------ because vegetation height where crop are dominant are too low (zero)
       #------ compensate with crop's Z0 using lookup table
       if { $GenX::Param(CropZ0) > 0.0 } {
+         if { $GenX::Param(Vege) == "CCILC2015-ECO2017" } { 
+            set Param(VegeCrops)    { 15 16 17 20 }
+         }
+
          fstdfield copy GPXZ0CROP GPXZ0V1
          fstdfield copy GPXVFCROP GPXZ0V1
          GenX::GridClear { GPXZ0CROP GPXVFCROP } 0.0
