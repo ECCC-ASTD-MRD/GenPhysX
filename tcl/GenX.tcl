@@ -82,7 +82,7 @@ namespace eval GenX { } {
    set Param(SMOKE)      ""                    ;#SMOKE emissions
    set Param(SMOKEIndex) 1                     ;#SMOKE restart index
    set Param(Hydraulic)  False                 ;#Soil Hydraulic parameters enabled
-   set Param(MEFilter)   "STD"                 ;#Topo filter selected
+   set Param(MEFilter)   ""                 ;#Topo filter selected
    set Param(EGMGH)      ""                    ;#Earth Gravitational Model Geoid Height
    set Param(Bathy)      ""                    ;#Bathymetry
    set Param(MEFilterForZ0) "STD"              ;#Topo filter selected for Z0
@@ -868,6 +868,11 @@ proc GenX::ParseCommandLine { } {
             }
          }
       }
+   }
+
+   #---- when MEFilter is specified, if subgrid is not set then set it to STD
+   if { $Param(MEFilter)!="" }  { 
+      if { $Param(Sub)=="" }  { set GenX::Param(Sub) "STD" }
    }
 
    #----- Check for user definitiond
