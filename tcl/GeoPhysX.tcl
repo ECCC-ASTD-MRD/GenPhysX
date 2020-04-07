@@ -999,7 +999,8 @@ if { ! $Opt(SlopOnly) } {
             foreach file $srtmfiles {
                GenX::CacheGet $file -32768
                Log::Print DEBUG "      Processing SRTM DEM file $file"
-               gdalband gridinterp DEMTILE $file NEAREST
+               gdalband gridinterp DEMTILE2 $file NEAREST
+               vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata0,DEMTILE2,DEMTILE)"
             }
             set data True
          }
