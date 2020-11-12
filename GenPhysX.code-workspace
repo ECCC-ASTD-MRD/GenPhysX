@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"telemetry.enableTelemetry": false,
+		"telemetry.enableCrashReporter": false
+	}
+}
