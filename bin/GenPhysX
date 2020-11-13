@@ -1,7 +1,7 @@
 #!/bin/ksh
 
 export GENPHYSX_PATH=$(readlink -f $(dirname $(readlink -f $0))/..)
-export TCLLIBPATH="${GENPHYSX_PATH}/lib ${TCLLIBPATH}"
+export TCLLIBPATH="${GENPHYSX_PATH}/TCL/lib ${TCLLIBPATH}"
 
 # make sure that OMP_NUM_THREADS is defined, if not it will use all CPU (may get killed)
 if [ -z "$OMP_NUM_THREADS" ]

@@ -58,7 +58,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.5.3               ;#Application version
+   set Param(Version)      2.6.0               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time

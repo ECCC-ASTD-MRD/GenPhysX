@@ -2,7 +2,6 @@
 
 HELP="Arguments must be:\n\n   Information parameters:
 \t-help        : This information
-\t-version     : Version
 
    Commands:
 \t-clear       : Clear package
@@ -27,7 +26,6 @@ while [ $# -gt 0 ]; do
         -ssm)     SSM=1;;
 
         -h|-help)    printf -- "$HELP\n"; exit 0;;
-        -v|-version) printf -- "$VERSION\n"; exit 0;;
         --)          shift; break;;
         *)           printf -- "Invalid argument $1.\n\n$HELP"; exit 1;;
     esac
@@ -55,7 +53,7 @@ mkdir -p ${SSM_DEV}/package/ ${SSM_DEV}/workspace/
 MAKE=make
 
 if [[ $CLR -eq 1 || $SRC -eq 1 || $REC -eq 1 ]]; then
-   rm -f -r build;mkdir build
+   rm -f -r build; mkdir build
 fi
 
 if [[ $BLD -eq 1 ]]; then
@@ -65,7 +63,7 @@ if [[ $BLD -eq 1 ]]; then
    export SPI_ROOT=${SSM_DEV}/workspace/libSPI_${SPI_VERSION}${SSM_COMP}_${ORDENV_PLAT}                              
    export EER_ROOT=${SSM_DEV}/workspace/libeerUtils_${EER_VERSION}${SSM_COMP}_${ORDENV_PLAT}   #----- Location of eer library
    export TCL_ROOT=${SPI_ROOT}/TCL
-   
+
    export CRAYPE_LINK_TYPE=dynamic
 
    #----- Source Tcl/Tk local config
@@ -87,13 +85,16 @@ fi
 if [[ $SSM -eq 1 ]]; then  
    printf -- "\n----- Building ssm package : ${SSM_DEV}/workspace/${SSM_NAME} -----\n"
 
-   rm -f -r ${SSM_DEV}/workspace/${SSM_NAME} ${SSM_DEV}/package/${SSM_NAME}.ssm 
+   touch ${SSM_DEV}/workspace/${SSM_NAME}
+   rm -f -r ${SSM_DEV}/package/${SSM_NAME}.ssm 
    mkdir -p ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d ${SSM_DEV}/workspace/${SSM_NAME}/etc/profile.d
-   cp -r bin lib tcl doc VERSION ${SSM_DEV}/workspace/${SSM_NAME}
+   cp -r bin tcl doc MANIFEST ${SSM_DEV}/workspace/${SSM_NAME}
    cp .ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
+
+   find ${SSM_DEV}/workspace/${SSM_NAME} \( -name "*~" -o -name ".*.sw?" -o -name ".nfs*" \) -exec rm -f {} \+
    sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESCRIPTION/${DESCRIPTION}/" -e "s/SUMMARY/${SUMMARY}/" .ssm.d/control.json > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control.json
    cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
-   rm -f -r ${SSM_NAME}
+#   rm -f -r ${SSM_NAME}
 fi
 
 if [[ $SRC -eq 1 ]]; then

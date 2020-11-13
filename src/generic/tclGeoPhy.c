@@ -52,7 +52,7 @@ static int GeoPhy_Cmd(ClientData clientData,Tcl_Interp *Interp,int Objc,Tcl_Obj 
 */
 int Tclgeophy_Init(Tcl_Interp *Interp) {
 
-   if (Tcl_PkgProvide(Interp,"TclGeoPhy",PACKAGE_VERSION) != TCL_OK) {
+   if (Tcl_PkgProvide(Interp,PACKAGE_NAME,PACKAGE_VERSION) != TCL_OK) {
       return(TCL_ERROR);
    }
 
