@@ -100,7 +100,7 @@ if [[ $SSM -eq 1 ]]; then
       \"summary\": \"${SUMMARY}\",
       \"description\": \"${DESCRIPTION}\",
       \"requires\": \"\",
-      \"x-buildinfo\": \"${BUIL_DINFO}\"
+      \"x-buildinfo\": \"`[ -z "\${ORDENV_SETUP}" ] || git describe --always`\"
    }" > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control.json
    cd ${SSM_DEV}/workspace; tar --exclude=.nfs* -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
 #   rm -f -r ${SSM_NAME}
