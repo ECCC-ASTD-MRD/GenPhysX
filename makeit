@@ -53,7 +53,7 @@ mkdir -p ${SSM_DEV}/package/ ${SSM_DEV}/workspace/
 MAKE=make
 
 if [[ $CLR -eq 1 || $SRC -eq 1 || $REC -eq 1 ]]; then
-   rm -f -r build; mkdir build
+   rm -f -r build ${SSM_DEV}/workspace/${SSM_NAME}; mkdir build
 fi
 
 if [[ $BLD -eq 1 ]]; then
@@ -92,8 +92,17 @@ if [[ $SSM -eq 1 ]]; then
    cp .ssm.d/post-install ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d
 
    find ${SSM_DEV}/workspace/${SSM_NAME} \( -name "*~" -o -name ".*.sw?" -o -name ".nfs*" \) -exec rm -f {} \+
-   sed -e "s/NAME/${NAME}/" -e "s/VERSION/${SSM_VERSION}/" -e "s/PLATFORM/${ORDENV_PLAT}/" -e "s/MAINTAINER/${MAINTAINER}/" -e "s/BUILDINFO/${BUILDINFO}/" -e "s/DESCRIPTION/${DESCRIPTION}/" -e "s/SUMMARY/${SUMMARY}/" .ssm.d/control.json > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control.json
-   cd ${SSM_DEV}/workspace; tar -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
+   echo "{
+      \"name\": \"${NAME}\",
+      \"version\": \"${VERSION}\",
+      \"platform\": \"${ORDENV_PLAT}\",
+      \"maintainer\": \"${MAINTAINER}\",
+      \"summary\": \"${SUMMARY}\",
+      \"description\": \"${DESCRIPTION}\",
+      \"requires\": \"\",
+      \"x-buildinfo\": \"${BUIL_DINFO}\"
+   }" > ${SSM_DEV}/workspace/${SSM_NAME}/.ssm.d/control.json
+   cd ${SSM_DEV}/workspace; tar --exclude=.nfs* -zcvf ${SSM_DEV}/package/${SSM_NAME}.ssm ${SSM_NAME}
 #   rm -f -r ${SSM_NAME}
 fi
 
