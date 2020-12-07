@@ -13,19 +13,14 @@ set_target_properties(${NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_INCLUDE_FILES}
 
 add_dependencies(${NAME} build_info)
 
-if (EER_FOUND) 
-   target_link_libraries(${NAME} ${EER_LIBRARIES})
-endif()
+target_link_libraries(${NAME} eerUtils::eerUtils)
 
-if (RMN_FOUND) 
-   target_link_libraries(${NAME} ${RMN_LIBRARIES})
-endif()
+#----- Optional libs
+ec_target_link_library_if(${NAME} RMN_FOUND              RMN::RMN)
+ec_target_link_library_if(${NAME} VGRID_FOUND            VGRID::VGRID)
+ec_target_link_library_if(${NAME} GDAL_FOUND             GDAL::GDAL)
 
-if(GDAL_FOUND)
-   target_link_libraries(${NAME} ${GDAL_LIBRARIES})
-endif()
-
-target_link_libraries(${NAME} ${TCL_LIBRARIES})
+target_link_libraries(${NAME} TCL::TCL)
 
 install(TARGETS ${NAME}
    LIBRARY DESTINATION TCL/lib/${NAME}${VERSION}

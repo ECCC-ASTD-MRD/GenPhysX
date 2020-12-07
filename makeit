@@ -38,6 +38,9 @@ while IFS= read -r line; do
       var=$(echo ${line%%:*} | xargs)
       val=$(echo ${line#*:} | xargs)
       eval $var=\""$val"\"
+   else 
+      read -a arr <<< $line
+      eval ${arr[0]}_VERSION=${arr[2]}
    fi
 done < MANIFEST
 
@@ -61,7 +64,7 @@ if [[ $BLD -eq 1 ]]; then
    export EC_CMAKE_MODULE_PATH="`pwd`/cmake;$EC_CMAKE_MODULE_PATH"
    export DESTDIR=${SSM_DEV}/workspace/${SSM_NAME}
    export SPI_ROOT=${SSM_DEV}/workspace/libSPI_${SPI_VERSION}${SSM_COMP}_${ORDENV_PLAT}                              
-   export EER_ROOT=${SSM_DEV}/workspace/libeerUtils_${EER_VERSION}${SSM_COMP}_${ORDENV_PLAT}   #----- Location of eer library
+   export eerUtils_ROOT=${SSM_DEV}/workspace/eerUtils_${EER_VERSION}${SSM_COMP}_${ORDENV_PLAT}
    export TCL_ROOT=${SPI_ROOT}/TCL
 
    export CRAYPE_LINK_TYPE=dynamic
