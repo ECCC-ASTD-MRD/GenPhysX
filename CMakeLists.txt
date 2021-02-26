@@ -5,16 +5,19 @@ foreach(PATH $ENV{EC_CMAKE_MODULE_PATH})
    list(APPEND CMAKE_MODULE_PATH ${PATH})
 endforeach()
 
-include(ec_utils)   # Include EC specific cmake utils
-ec_parse_manifest() # Parse MANIFEST file
-ec_build_info()     # Generate build include file
+include(ec_init)           # Include EC specific cmake utils
+include(ec_parse_manifest) # Parse MANIFEST file
+include(ec_build_info)     # Generate build include file
 
 #include(compiler_presets)
 project(${NAME} VERSION ${VERSION} DESCRIPTION "${DESCRIPTION}")
 
 set(CMAKE_INSTALL_PREFIX "" CACHE PATH "..." FORCE)
 
-include(compiler_rules)
+enable_language(C)
+enable_language(Fortran)
+
+include(compiler_presets)
 
 find_package(TCL ${TCL_REQ_VERSION} REQUIRED)
 if(TCL_FOUND)
