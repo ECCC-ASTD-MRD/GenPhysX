@@ -78,7 +78,7 @@ if [[ $BLD -eq 1 ]]; then
    cd build
    
    #----- Making TclGeoPhy Library
-   cmake -DCMAKE_INSTALL_PREFIX=$DESTDIR $CMAKE_COMP_FLAGS ../
+   cmake -DCMAKE_INSTALL_PREFIX=$DESTDIR $CMAKE_COMP_FLAGS -DVERSION=${VERSION} ../
    $MAKE -j
    $MAKE install 
 
