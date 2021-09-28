@@ -1,6 +1,6 @@
 NAME       : GenPhysX
 VERSION    : 2.6.0
-BUILD      : Release
+BUILD      : 
 DESCRIPTION: ECCC-SMC-CCMEP Geophysical field generator
 SUMMARY    : Tool to generate geophysical fields (ME,MG,VG,...) for meteorological and environmental models (GEM,GEM-MACH,...)
 MAINTAINER : Vanh.Souvanlasy@canada.ca 
@@ -10,9 +10,9 @@ URL        : https://gitlab.science.gc.ca/ECCC_CMOE_APPS/GenPhysX
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
 
-SPI   = 8.1.0
-TCL   >= 8.6.0
-EER   >= 4.0.0
+SPI   = 8.2.0
+TCL   = 8.6.6
+EER   = 4.1.1
 RMN   >= 19.6.0
 VGRID >= 6.5.0
 GDAL  >= 2.1.0
