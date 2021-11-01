@@ -1493,7 +1493,7 @@ proc UrbanX::GetBldHgtShpfile { Tile } {
       set items [GenX::Fetch_Shpfile_Index $indexfile $la0 $lo0 $la1 $lo1]
       set files {}
       foreach item $items {
-         lappend files "$Param(BuildingsHgtShpDir)/${item}-buildings_H.shp"
+         lappend files "$Param(BuildingsHgtShpDir)/${item}"
       }
       return $files
    }
@@ -2057,7 +2057,7 @@ proc UrbanX::BuildingHeights2Raster { {shpfiles ""} } {
       eval ogrlayer read LAYER $shp_layer
 
 
-      gdalband gridinterp RHAUTEURBLD LAYER $Param(Mede) $Param(BuildingsHgtField)
+      gdalband gridinterp RHAUTEURBLD LAYER $Param(Mode) $Param(BuildingsHgtField)
 
       Log::Print INFO "All buildings shorter than 4.5m set to an height of 4.5m"
       vexpr RHAUTEURBLD ifelse(RHAUTEURBLD<4.5 && RHAUTEURBLD>0,4.5,RHAUTEURBLD)
