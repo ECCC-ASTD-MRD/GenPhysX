@@ -6,10 +6,11 @@ foreach(PATH $ENV{EC_CMAKE_MODULE_PATH})
    list(APPEND CMAKE_MODULE_PATH ${PATH})
 endforeach()
 
-include(ec_init)           # Include EC specific cmake utils
-include(ec_shared_lib)     # Shared library related functions
-ec_git_version()           # Get version from git state
-ec_parse_manifest()        # Parse MANIFEST file
+include(ec_init)               # Include EC specific cmake utils
+include(ec_shared_lib)         # Shared library related functions
+include(ec_build_tcl_pkgindex) # Tcl package generation
+ec_git_version()               # Get version from git state
+ec_parse_manifest()            # Parse MANIFEST file
 
 project(${NAME} DESCRIPTION "${DESCRIPTION}")
 set(PROJECT_VERSION ${VERSION})
@@ -51,8 +52,8 @@ if(TCL_FOUND)
 endif()
 
 find_package(eerUtils ${EER_REQ_VERSION} CONFIG REQUIRED)
-find_package(RMN ${RMN_REQ_VERSION} COMPONENTS beta shared OPTIONAL)
-find_package(VGRID ${VGRID_REQ_VERSION} COMPONENTS shared OPTIONAL)
+find_package(RMN ${RMN_REQ_VERSION} COMPONENTS SHARED OPTIONAL)
+find_package(VGRID ${VGRID_REQ_VERSION} COMPONENTS SHARED OPTIONAL)
 find_package(GDAL ${GDAL_REQ_VERSION})
 if(GDAL_FOUND)
    target_compile_definitions(GDAL::GDAL INTERFACE HAVE_GDAL)
