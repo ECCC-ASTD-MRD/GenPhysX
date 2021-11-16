@@ -13,7 +13,7 @@ ec_git_version()               # Get version from git state
 ec_parse_manifest()            # Parse MANIFEST file
 
 project(${NAME} DESCRIPTION "${DESCRIPTION}")
-set(PROJECT_VERSION ${VERSION})
+set(PROJECT_VERSION ${VERSION}${STATE})
 
 ec_build_info()            # Generate build include file
 
