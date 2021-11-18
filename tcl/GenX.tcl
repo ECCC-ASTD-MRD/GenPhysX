@@ -2400,3 +2400,37 @@ proc GenX::Get_Grid_Reso { Grid } {
    return $reso
 }
 
+#----------------------------------------------------------------------------
+# Name     : <GenX::Fetch_Shpfile_Index>
+# Creation : Novembre 2012 - Vanh Souvanlasy
+#
+# Goal     : create a fine polygon that surround every grid point
+#            not just the 4 corners
+#
+# Parameters :
+#   <indexfile>   : Grid
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GenX::Fetch_Shpfile_Index { indexfile Lat0 Lon0 Lat1 Lon1 } {
+
+   set layer [lindex [ogrfile open INDEXFILE read $indexfile] 0]
+   eval ogrlayer read INDEXLAYER $layer
+
+# there is something wrong with intersect routine
+#   foreach id [ogrlayer pick INDEXLAYER POLY 1 INTERSECT]
+   set files {}
+   foreach id [ogrlayer pick INDEXLAYER [list $Lat1 $Lon1 $Lat1 $Lon0 $Lat0 $Lon0 $Lat0 $Lon1 $Lat1 $Lon1] True] {
+      set geom [ogrlayer define INDEXLAYER -geometry $id]
+         set file [ogrlayer define INDEXLAYER -feature $id IDX_PREFIX]
+         lappend files $file
+   }
+   ogrfile close INDEXFILE
+
+   ogrlayer free INDEXLAYER
+   return $files
+}
+

@@ -17,25 +17,64 @@ GenPhysX is the next-generation geophysical field generator, and is intended to 
 
 # [GenPhysX Databases](https://wiki.cmc.ec.gc.ca/wiki/GenPhysX/Databases)
 
+# Getting the source code
+```shell
+git clone --recursive git@gitlab.science.gc.ca:ECCC_CMOE_APPS/GenPhysX
+```
+# Building GenPhysX
+You will need cmake with a version at least 3.12
+```shell
+. ssmuse-sh -x /fs/ssm/main/opt/cmake-3.21.1
+```
 # Building GenPhysX
 
-You will have to define the environmenent variable SSM_DEV which defines the workspace and packaging location as bellow
-
-```
-$SSM_DEV/
-   src
-   package
-   workspace
+## Optional dependencies
+* codetools and compilers
+```shell
+. r.load.dot rpn/code-tools/ENV/cdt-1.5.3-intel-19.0.3.199
 ```
 
-The ```makeit``` script at the root of the repository will allow you to build from source and produce an ssm package.
+* [librmn](https://gitlab.science.gc.ca/RPN-SI/librmn)
+```shell
+. r.load.dot rpn/libs/19.7.0
+```
 
-```makeit -reconf -build -ssm```
+* [vgrid](https://gitlab.science.gc.ca/RPN-SI/vgrid)
+```shell
+. r.load.dot rpn/vgrid/6.5.0
+```
 
-# GenPhysX test suite
+* External dependencies ([GDAL](https://gdal.org/). Within the ECCC/SCIENCE network, a package containing all the dependencies can be loaded
+```shell
+export CMD_EXT_PATH=/fs/ssm/eccc/cmd/cmds/ext/20210211; . ssmuse-sh -x $CMD_EXT_PATH
+```
 
-# Automatic Testing using GitLab-CI
+## Environment setup (At CMC)
 
-An automatic system of tests has been developed.  For each push in the
-`master` branch the system tests are launched to guarantee that the
-all the tests pass for the `master` branch.
+Source the right file depending on the architecture you need from the env directory. This will load the specified compiler and define the ECCI_DATA_DIR variable for the test datasets
+
+- Example for PPP3 and skylake specific architecture:
+```shell
+. ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
+```
+
+- Example for XC50 on intel-19.0.5
+```shell
+. ci-env/latest/sles-15-skylake-64/intel-19.0.5.281.sh
+```
+
+- Example for CMC network and gnu 7.5:
+```shell
+. ci-env/latest/ubuntu-18.04-amd-64/gnu-7.5.0.sh
+```
+
+## Build, install and package
+```shell
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=$SSM_DEV/workspace  ../
+make -j 4
+make test
+make install
+make package
+```

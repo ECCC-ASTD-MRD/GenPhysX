@@ -3,34 +3,40 @@
 # This forms the basis for the xx-config utility, which tells you
 # various things about the library installation.
 
-cc=CMAKE_CC
-ftn=CMAKE_FTN
-cflags=CMAKE_CFLAGS
-libs=CMAKE_LIBS
+cc="@CMAKE_C_COMPILER_ID@ @CMAKE_C_COMPILER_VERSION@"
+fc="@CMAKE_Fortran_COMPILER_ID@ @CMAKE_Fortran_COMPILER_VERSION@"
+cflags="@CMAKE_C_FLAGS@"
+fflags="@CMAKE_Fortran_FLAGS@"
+defs="@EC_CMAKE_DEFINITIONS@"
 
-build=CMAKE_BUILD
-version=CMAKE_VERSION
-has_eer=CMAKE_EER
-has_rmn=CMAKE_RMN
-has_gdal=CMAKE_GDAL
+version=@PROJECT_VERSION@
+env=@EC_CI_ENV@
+
+has_rmn=@RMN_VERSION@@RMN_STATE@
+has_gdal=@GDAL_VERSION@
+has_vgrid=@VGRID_VERSION@@VGRID_STATE@
+has_eer=@eerUtils_VERSION@@EER_STATE@
 
 usage()
 {
     cat <<EOF
-Usage: libgeoref-config [OPTION]
+Usage: @NAME@-config [OPTION]
 
 Available values for OPTION include:
 
   --help         display this help message and exit
   --cc           C compiler [${cc}]
-  --ftn          FORTRAN compiler [${ftn}]
-  --cflags       pre-processor and compiler flags [${cflags}]
+  --fc           FORTRAN compiler [${fc}]
+  --cflags       C compiler flags [${cflags}]
+  --fflags       Fortran compiler flags [${fflags}]
+  --defs         Preprocessor definitions [${defs}]
   --libs         library linking information [${libs}]
-  --build        Build type [${build}]
-  --version      Library version [${version}]
-  --has-eer      which version of libeerUtils is it compiled with [${has_eer}]
+  --version      library version [${version}]
+  --env          environment version used [${env}]
   --has-rmn      which version of librmn is it compiled with [${has_rmn}]
   --has-gdal     which version of gdal is it compiled with [${has_gdal}]
+  --has-vgrid    which version of vgrid is it compiled with [${has_vgrid}]
+  --has-eer      which version of eerUtils is it compiled with [${has_eer}]
 
 EOF
 }
@@ -58,21 +64,25 @@ while test $# -gt 0; do
        	echo ${cc:-no}
        	;;
 
-    --ftn)
-       	echo ${ftn:-no}
+    --fc)
+       	echo ${fc:-no}
        	;;
 
     --cflags)
        	echo ${cflags}
        	;;
            
+    --fflags)
+       	echo ${fflags}
+       	;;
+
+    --defs)
+       	echo ${defs}
+       	;;
+
     --libs)
        	echo ${libs}
        	;;
-
-    --has-eer)
-       	echo ${has_eer:-no}
-        ;;
 
     --has-rmn)
        	echo ${has_rmn:-no}
@@ -82,14 +92,22 @@ while test $# -gt 0; do
        	echo ${has_gdal:-no}
        	;;
 
-    --build)
-	    echo $build
-        ;;
+    --has-vgrid)
+       	echo ${has_vgrid:-no}
+       	;;
+
+    --has-eer)
+       	echo ${has_eer:-no}
+       	;;
 
     --version)
-	    echo $version
+	    echo ${version}
 	    ;;
 
+    --env)
+       echo ${env}
+       ;;
+       
     *)
         echo "unknown option: $1"
 	    usage 1

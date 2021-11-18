@@ -1,53 +1,93 @@
-#The program 'gitlab-runner' must be found in the PATH to get the artifacts collecting working.
-#local tests: gitlab-ci-multi-runner-linux-amd64 exec shell [stage]
-
 variables:
-    # CI_DEBUG_TRACE: "true"
-
+   GIT_SUBMODULE_STRATEGY: recursive
 stages:
    - build
    - test
    - package
-   - deploy
-#   - doc
+#   - deploy
 
-build:
+before_script:
+   # Force color CMake output even when output is not TTY
+   - export CLICOLOR_FORCE=true
+
+build:intel-19.0.3:
    stage: build
-   script:
-      - . ssmuse-sh -x ${SSM_EXT}
-      - ./makeit -reconf -build 
    only:
       - master
-
-test:
-   stage: test
-   variables:
+      - dev
    script:
-      - CI_Run.sh -path ${CI_PROJECT_DIR} -ref ${CI_BUILD_REF} -test ${CI_PROJECT_DIR}/test/CI.sh
+      - source ci-env/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
+      - export SSM_DEV=/users/dor/afsr/005/links/storage/ssm
+      - export CMD_EXT_PATH=/ssm/net/cmds/ext/20210301
+      - . ssmuse-sh -x $CMD_EXT_PATH
+      - mkdir build_intel-19.0.3
+      - cd build_intel-19.0.3
+      - cmake ../ 
+      - make
+   artifacts:
+      expire_in: 2 hrs
+      paths:
+         - build_intel-19.0.3
+
+build:gnu-7.4.0:
+   stage: build
    only:
       - master
+      - dev
+   script:
+      - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+      - export SSM_DEV=/users/dor/afsr/005/links/storage/ssm
+      - export CMD_EXT_PATH=/ssm/net/cmds/ext/20210301
+      - . ssmuse-sh -x $CMD_EXT_PATH
+      - mkdir build_gnu-7.4.0
+      - cd build_gnu-7.4.0
+      - cmake ../ 
+      - make
+   artifacts:
+      expire_in: 2 hrs
+      paths:
+         - build_gnu-7.4.0
 
-package:
+# test:intel-19.0.3:
+#    stage: test
+#    only:
+#       - master
+#       - dev
+#    script:
+#       - source ci-env/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
+#       - cd build_intel-19.0.3
+#       - make check
+
+# test:gnu-7.4.0:
+#    stage: test
+#    only:
+#       - master
+#       - dev
+#    script:
+#       - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+#       - cd build_gnu-7.4.0
+#       - make check
+
+package:intel-19.0.3:
    stage: package
-   script:
-      - ./makeit -ssm
    only:
-      - master
+      - tags
+   environment:
+      name: testing
+   script:
+      - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
+      - cd build_intel-19.0.3
+      - make package
+      - ~/ci-admin-bundle/bin/ci-deploy-ssm.sh package
 
-deploy:
-   stage: deploy
-   script:
-      - . ./VERSION
-      #- ssm install -d /ssm/net/cmds/apps/SPI/master -f ${SSM_DEV}/package/GenPhysX_${GENPHYSX_VERSION}-${COMP_ARCH}_${ORDENV_PLAT}.ssm
-      #- ssm publish -d /ssm/net/cmds/apps/SPI/master -P /ssm/net/cmds/apps/SPI/beta -p GenPhysX_${GENPHYSX_VERSION}-${COMP_ARCH}_${ORDENV_PLAT}
+package:gnu-7.4.0:
+   stage: package
    only:
-      - master
-      
-#doc:
-  #stage: doc
-  #variables:
-    #docname: $CI_BUILD_REF_NAME-$CI_BUILD_REF
-    #midasdoc: /home/erv000/public_html/midas-doc
-  #script:
-  #only:
-    #- master
+      - tags
+   environment:
+      name: testing
+   script:
+      - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+      - cd build_gnu-7.4.0
+      - make package
+      - ~/ci-admin-bundle/bin/ci-deploy-ssm.sh package
