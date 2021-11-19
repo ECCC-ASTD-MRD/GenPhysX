@@ -72,7 +72,7 @@ Source the right file depending on the architecture you need from the env direct
 ```shell
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=$SSM_DEV/workspace  ../
+cmake -DCMAKE_INSTALL_PREFIX=$SSM_DEV/workspace -DeerUtils_ROOT=$SSM_DEV/workspace/eerUtils_4.1.1-intel-19.0.3.199_ubuntu-18.04-skylake-64/ ../
 make -j 4
 make test
 make install
