@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 export GENPHYSX_PATH=$(readlink -f $(dirname $(readlink -f $0))/..)
 export TCLLIBPATH="${GENPHYSX_PATH}/TCL/lib ${TCLLIBPATH}"
