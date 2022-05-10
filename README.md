@@ -22,7 +22,7 @@ GenPhysX is the next-generation geophysical field generator, and is intended to 
 git clone --recursive git@gitlab.science.gc.ca:ECCC_CMOE_APPS/GenPhysX
 ```
 # Building GenPhysX
-You will need cmake with a version at least 3.12
+You will need cmake with a version at least 3.21
 ```shell
 . ssmuse-sh -x /fs/ssm/main/opt/cmake-3.21.1
 ```
