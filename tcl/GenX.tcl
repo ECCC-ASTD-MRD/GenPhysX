@@ -459,7 +459,11 @@ proc GenX::Submit { } {
 
    upvar #0 argv gargv
 
-   set host  [info hostname]
+   if { [catch {set host $env(ORDENV_TRUEHOST) }] } {
+      if { [catch {set host $env(TRUE_HOST) }] } {
+         set host $Batch(Host)
+      }
+   }
    set rargv ""
    set rem   0
 
