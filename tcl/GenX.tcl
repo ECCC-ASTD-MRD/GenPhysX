@@ -147,6 +147,8 @@ namespace eval GenX { } {
    set Param(DBase)          "/space/hall3/sitestore/eccc/cmd/s/slib800/geo"
    set Param(DBaseeccc-ppp3) "/space/hall3/sitestore/eccc/cmd/s/slib800/geo"
    set Param(DBaseeccc-ppp4) "/space/hall4/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseeccc-ppp5) "/space/hall5/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseeccc-ppp6) "/space/hall6/sitestore/eccc/cmd/s/slib800/geo"
    catch { set Param(DBase) $Param(DBase$env(ORDENV_TRUEHOST)) }
    
    if { ![file isdirectory $Param(DBase)] } {
