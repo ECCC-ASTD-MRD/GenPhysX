@@ -1,5 +1,5 @@
 NAME       : GenPhysX
-VERSION    : 2.6.2
+VERSION    : 2.6.3
 BUILD      : Release
 STATE      :
 DESCRIPTION: ECCC-SMC-CCMEP Geophysical field generator
@@ -11,7 +11,7 @@ URL        : https://gitlab.science.gc.ca/ECCC_CMOE_APPS/GenPhysX
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
 
-SPI   = 8.2.1
+SPI   = 8.2.2
 TCL   = 8.6.6
 EER   = 4.1.1
 RMN   >= 19.7.0
