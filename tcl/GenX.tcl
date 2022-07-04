@@ -288,12 +288,6 @@ proc GenX::Process { Grid } {
    # Opt(LegacyMode) enabled will trigger data area averaging for USGS topography
    if { $Param(Sub)=="LEGACY" } { 
       set GeoPhysX::Opt(LegacyMode) True 
-   # DBRK is disabled by default in legacy mode, but can be enabled if set to other than ""
-   } else {
-   # Soil depth to bed rock is enabled by default when not in LEGACY mode
-      if { $Param(SoilDBRK)=="" } {
-         set  Param(SoilDBRK)  "GSRS"
-      }
    }
 
    #----- Land-water mask
