@@ -567,7 +567,8 @@ proc UrbanX::Sandwich { indexCouverture } {
                # Entity: Pipeline, line
                Log::Print DEBUG "Post-processing for Pipelines, lines"
                #if relation2ground != 1 (aboveground), exclus; else, valeur générale
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM \"$filename\" WHERE (type = 1)"
+	       # attribute name is relground, not type
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM \"$filename\" WHERE (relground = 1)"
                Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (aboveground pipeline entity) as FEATURES with priority value $priority"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $priority
             }
