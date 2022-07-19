@@ -489,13 +489,6 @@ proc GenX::Submit { } {
    }
    puts $f "cd \$tmpdir"
 
-   if { [info exist env(GENPHYSX_PROFILE)] } {
-      if { [file exist $env(GENPHYSX_PROFILE)] } {
-         puts $f "sscp $host:[file normalize $env(GENPHYSX_PROFILE)] ."
-         puts $f "source [file tail $env(GENPHYSX_PROFILE)]"
-      }
-   }
-
    if { $Param(GridFile)!="" } {
       if { $rem } {
          puts $f "sscp $host:[file normalize $Param(GridFile)] ."
