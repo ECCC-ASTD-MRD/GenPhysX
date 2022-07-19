@@ -134,7 +134,7 @@ namespace eval GenX { } {
    set Param(AddHydroLakesToMask)   False    ; #add HydroLakes Lakes fraction to OSM Mask
 
    set Batch(On)       False                 ;#Activate batch mode (soumet)
-   set Batch(Host)     ppp4                  ;#Host onto which to submit the job
+   set Batch(Host)     ppp5                  ;#Host onto which to submit the job
    set Batch(Queue)    ""                    ;#Queue to use for the job
    set Batch(Mem)      8G                    ;#Memory needed for the job
    set Batch(CPU)      1                     ;#CPU needed for the job
