@@ -48,6 +48,7 @@ namespace eval UrbanX { } {
    set Param(HeightMaskFile)     ""     ;# Set by CITYNAME
    set Param(BuildingsShapefile) ""     ;# 2.5D buildings shapefile for CITYNAME
    set Param(BuildingsHgtField)  ""     ;# Name of the height attribute of the 2.5D buildings shapefile
+   set Param(SAVE_BLDH_RASTER)    0     ;# with Saving of BLDH raster to BLDH_PATH or Not, seems to be faster without
 
    # Optional TEB parameters - they are not computed by default in order to reduce processing time
    # According to Sylvie and Maria, optional TEB parameters are: SUMF DPBH Z0H BLDW HVAR HMIN HMAX
@@ -567,7 +568,8 @@ proc UrbanX::Sandwich { indexCouverture } {
                # Entity: Pipeline, line
                Log::Print DEBUG "Post-processing for Pipelines, lines"
                #if relation2ground != 1 (aboveground), exclus; else, valeur générale
-               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM \"$filename\" WHERE (type = 1)"
+	       # attribute name is relground, not type
+               ogrlayer sqlselect FEATURES SHAPE "SELECT * FROM \"$filename\" WHERE (relground = 1)"
                Log::Print DEBUG "Rasterizing [ogrlayer define FEATURES -nb] features from layer $entity (aboveground pipeline entity) as FEATURES with priority value $priority"
                gdalband gridinterp RSANDWICH FEATURES $Param(Mode) $priority
             }
@@ -1454,12 +1456,14 @@ puts $info
 #----------------------------------------------------------------------------
 proc UrbanX::GetULUCFilename { sheet } {
    variable Param
+   global   env
 
    set s250 [string range $sheet 0 2]
    set sl   [string tolower [string range $sheet 3 3]]
    set s50  [string range $sheet 4 5]
    set clfilename "$s250/$sl/CULUC_${sheet}_v$Param(CULUCVersion).tif"
    set filename  $Param(CULUCPath)/$clfilename
+
    if { [file exists $filename] } {
       return $filename
    }
@@ -1534,6 +1538,96 @@ proc UrbanX::tebparam2nomvarip1 { tebparam } {
    return "$nomvar $ip1"
 }
 
+#----------------------------------------------------------------------------
+# Name     : <UrbanX::Load_TEBParams>
+# Creation : 
+#
+# Goal     : Load TEB parameters CSV
+#
+# Parameters :
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc UrbanX::Load_TEBParams { params_csv } {
+
+   global  Param
+
+   Log::Print INFO  "Reading the TEB parameters LUT in CSV (exported from the TEB-Params_LUT.xls) : $params_csv"
+
+   set csvfile [open $params_csv r]
+
+   vector create CSVTEBPARAMS
+   gets $csvfile head ;# Setting the dimension of the vector
+   set head [split $head ,]
+   vector dim CSVTEBPARAMS $head
+
+   while { ![eof $csvfile] } {
+      gets $csvfile line
+      if { $line!="" } {
+         set line [split $line ,]
+         vector append CSVTEBPARAMS $line
+      }
+   }
+   close $csvfile
+
+   set  nb [vector length CSVTEBPARAMS]
+
+   set has_class22  0
+   set has_class0   0
+   set line35 {}
+
+   for {set i 0} {$i < $nb} {incr i} {
+      set class [vector get CSVTEBPARAMS.CULUC_Class $i]
+      set class [expr int($class)]
+      switch $class {
+      35 {
+         set  line35 [vector get CSVTEBPARAMS $i]
+         }
+      22 {
+         set has_class22  1
+         }
+      0 {
+        set has_class0  1
+        }
+      }
+   }
+
+   # create class 0
+   set  pos [lsearch $head QEIN]
+   set  len [llength $head]
+   set  line0 {0}
+   for {set i 1} {$i < $len} {incr i} {
+      if { $i <= $pos } {
+         lappend line0 -9999.0
+      } else {
+         lappend line0 0.0
+      }
+   }
+
+   if { $has_class22 == 0 } {
+      if { [llength $line35] > 0 } {
+         Log::Print INFO "Adding class 22 using class 35"
+	 set  line22 {22.0}
+	 eval lappend line22 [lrange $line35 1 end]
+         vector append CSVTEBPARAMS $line22
+         Log::Print INFO "Added CULUC_Class $line22"
+      } else {
+         Log::Print WARNING "Will not add Class 22, Class 35 not found"
+      }
+   } else {
+      Log::Print WARNING "Will not add Class 22, already exist"
+   }
+   if { $has_class0 == 0 } {
+      vector append CSVTEBPARAMS $line0
+      puts "** $line0"
+      Log::Print INFO "Added CULUC_Class $line0"
+   } else {
+      Log::Print WARNING "Will not add Class 0, already exist"
+   }
+}
 
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::TEB2FSTD>
@@ -1554,31 +1648,12 @@ proc UrbanX::TEB2FSTD { Grid } {
    GenX::Procs
    Log::Print INFO "Computing TEB parameters on the target RPN fstd grid: $GenX::Param(GridFile)"
 
-   Log::Print DEBUG "Reading the TEB parameters LUT in csv exported from the TEB-Params_LUT.xls file"
-
-   set csvfile [open $Param(TEBParamsLUTCSVFile) r]
-
-   vector create CSVTEBPARAMS
-   gets $csvfile head ;# Setting the dimension of the vector
-   set head [split $head ,]
-   vector dim CSVTEBPARAMS $head
-
-   while { ![eof $csvfile] } {
-      gets $csvfile line
-      if { $line!="" } {
-         set line [split $line ,]
-         vector append CSVTEBPARAMS $line
-      }
-   }
-   close $csvfile
+   UrbanX::Load_TEBParams $Param(TEBParamsLUTCSVFile)
 
    fstdfield stats $Grid -nodata 0 ;# Required to avoid NaN in the gridinterp AVERAGE over nodata-only values
 
 # concatanate NTS and US UTM Sheets together
    set all_sheets  "$Param(WTSSheets) $Param(NTSSheets)"
-#TEST
-#   set all_sheets   "040p01 040p08 040p09"
-#   set all_sheets   "040p01"
 
    set tmpdir $GenX::Param(TMPDIR)
 
@@ -1590,47 +1665,11 @@ proc UrbanX::TEB2FSTD { Grid } {
       set   ip1     [lindex $nomvar 1]
       set   nomvar  [lindex $nomvar 0]
 
-# check if the result was done already, then we can skip to next
-      if { $nomvar == "VF"} {
-         set fields [fstdfield find GPXOUTFILE -1 "" $ip1 -1 -1 "" "$nomvar"]
-#         if { [llength $fields] > 0 } {
-#            Log::Print INFO "$nomvar $ip1: found existing record, will not redo"
-#            continue
-#         }
-      } else {
-         set fields [fstdfield find GPXAUXFILE -1 "" $ip1 -1 -1 "" "$nomvar"]
-#         if { [llength $fields] > 0 } {
-#            if { $nomvar != "BLDH" && $nomvar != "BLDF" } {
-#               continue
-#            }
-#            Log::Print INFO "$nomvar $ip1: found existing record, will not redo"
-#               continue
-#            if { $nomvar != "QETR" && $nomvar != "QHTR" } {
-#            }
-#         }
-      }
-
       lappend tebparams_list $tebparam
 
-      if { [llength $fields] > 0 } {
-         if { $nomvar == "PAVF" || $nomvar == "BLDF" || $nomvar == "VEGF" || $nomvar == "BLDH"} {
-            set LoadedField($tebparam)  False
-            fstdfield copy $Grid.$tebparam $Grid
-            GenX::GridClear $Grid.$tebparam 0.0
-         } else {
-            Log::Print INFO "Loading $nomvar $ip1 existing record"
-            if { $nomvar == "VF"} {
-               fstdfield read $Grid.$tebparam GPXOUTFILE -1 "" $ip1 -1 -1 "" "$nomvar"
-            } else {
-               fstdfield read $Grid.$tebparam GPXAUXFILE -1 "" $ip1 -1 -1 "" "$nomvar"
-            }
-            set LoadedField($tebparam)  True
-         }
-      } else {
-         fstdfield copy $Grid.$tebparam $Grid
-         GenX::GridClear $Grid.$tebparam 0.0
-         set LoadedField($tebparam)  False
-      }
+      fstdfield copy $Grid.$tebparam $Grid
+      GenX::GridClear $Grid.$tebparam 0.0
+      set LoadedField($tebparam)  False
 
       # pour NATF,BLDF,PAVF seulement
       switch $nomvar {
@@ -1646,9 +1685,6 @@ proc UrbanX::TEB2FSTD { Grid } {
 
 # TEST
     puts $tebparams_list
-
-#    set tebparams_list {BLDH}
-#   set tebparams_list {BLDF PAVF BLDH NATF}
 
 # see if option HMIN, HMAX and HVAR are requested and already exist
    if { $Param(OptionalTEBParams) } {
@@ -1730,7 +1766,8 @@ if { $NeedProcessSheets } {
          Log::End 1;
       }
       Log::Print INFO "Loaded $culucfilename"
-         vexpr RCULUC ifelse(RCULUC==22, 35, RCULUC)
+# SAFE some time by copying the RCULUC=35 line as 22 in CSVTEBPARAMS
+#         vexpr RCULUC ifelse(RCULUC==22, 35, RCULUC)
          set Param(Width)  [gdalfile width  FCULUC]
          set Param(Height) [gdalfile height FCULUC]
          set georef [gdalfile georef FCULUC]
@@ -1770,9 +1807,10 @@ if { $NeedProcessSheets } {
 
          if { $LoadedField($tebparam)  == False } {
             Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
-	         vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+	    vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
             # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
-            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
+# SAFE some time by doing this above in lut() by adding a line mapping 0 to -9999
+#            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
             gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
 
 	 # Don't waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
@@ -1796,16 +1834,20 @@ if { $NeedProcessSheets } {
                   Log::Print INFO "Using Buildings Height Shapefile(s): $Param(BuildingsShapefile)"
                   UrbanX::BuildingHeights2Raster  $Param(BuildingsShapefile) ;# Rasterizes building heights
                }
-            }
-            if { [file exist $bld_height_file] } {
-               Log::Print INFO "Adjusting BLDH with Buildings Height Raster"
+           }
+
+           if { [file exist $bld_height_file] } {
+               Log::Print INFO "Loading saved Buildings Height Raster: $bld_height_file"
                gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $bld_height_file]
+               gdalfile close FHAUTEURBLD
+            }
+            if { [gdalband is RHAUTEURBLD] } {
+               Log::Print INFO "Adjusting BLDH with Buildings Height Raster"
                gdalband stats RHAUTEURBLD -nodata 0;# memory fault if this comes after the gdalband write
                vexpr RHAUTEURBLD "ifelse(RHAUTEURBLD>0 && RHAUTEURBLD < 4.5,4.5,RHAUTEURBLD)"
 
                fstdfield fromband $Grid.B3DH RHAUTEURBLD IJCULUC AVERAGE
                gdalband free RHAUTEURBLD
-               gdalfile close FHAUTEURBLD
             } else {
                Log::Print WARNING "Buildings Height Raster file not found: $bld_height_file"
             }
@@ -1925,7 +1967,7 @@ if { 0 } {
 
             Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
             vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
-            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
+#            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
             gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
 
             Log::Print INFO "Computing Building Height Variance HVAR (IP1=0) values over $Param(NTSSheet) (RAM needed: $memoryrequired)"
@@ -2069,13 +2111,16 @@ proc UrbanX::BuildingHeights2Raster { {shpfiles ""} } {
    set bld_height_file "$GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif"
    set bld_height_file "$Param(BLDH_PATH)/$Param(NTSSheet)_Building-heights.tif"
 
-   file delete -force $bld_height_file
-   gdalfile open FILEOUT write $bld_height_file GeoTiff
-   gdalband write RHAUTEURBLD FILEOUT
-   gdalfile close FILEOUT
-   Log::Print INFO "The file $bld_height_file has been generated"
-
-   gdalband free RHAUTEURBLD
+   if { $Param(SAVE_BLDH_RASTER) } {
+      file delete -force $bld_height_file
+      gdalfile open FILEOUT write $bld_height_file GeoTiff
+      gdalband write RHAUTEURBLD FILEOUT
+      gdalfile close FILEOUT
+      Log::Print INFO "The file $bld_height_file has been generated"
+      gdalband free RHAUTEURBLD
+   } else {
+      Log::Print INFO "Will not Save BLDH Raster"
+   }
 }
 
 #----------------------------------------------------------------------------
@@ -3373,9 +3418,7 @@ proc UrbanX::Process { Coverage Grid } {
 	 # OLD WAY FOR GRID - set Param(Files) [GenX::CANVECFindFiles $Param(Lat0) $Param(Lon0) $Param(Lat1) $Param(Lon1) $Param(Entities)]
          # Path structure for CanVec-7.0: set Param(NTSSheetPath)  $GenX::Param(DBase)/$GenX::Path(CANVEC)/$s250/$sl/$s250$sl$s50
          # Path structure for CanVec-9.0
-         Log::Print WARNING "TEMPORARILY FORCING USING CanVec-9.0"
-         set Param(NTSSheetPath) /cnfs/dev/cmdd/afsm/lib/geo/CanVec-9.0/$s250/$sl
-#         set Param(NTSSheetPath)  $GenX::Param(DBase)/$GenX::Path(CANVEC)/$s250/$sl
+         set Param(NTSSheetPath)  $GenX::Param(DBase)/$GenX::Path(CANVEC)/$s250/$sl
          Log::Print DEBUG "Using CanVec files from  $GenX::Param(DBase)/$GenX::Path(CANVEC)"
 	 foreach ntslayer $Param(Entities) {
 	     if { [llength [set lst [glob -nocomplain $Param(NTSSheetPath)/$ntssheet*$ntslayer*.shp]]] } {

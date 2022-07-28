@@ -1051,10 +1051,11 @@ if { ! $Opt(SlopOnly) } {
                      gdalband read GMTEDTILE { { GMTEDFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
                      gdalband stats GMTEDTILE -celldim $GenX::Param(Cell)
                      gdalband gridinterp DEMTILE2 GMTEDTILE NEAREST
+		     vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata0,DEMTILE2,DEMTILE)"
                   }
                }
                set data True
-               vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata,DEMTILE2,DEMTILE)"
+               #vexpr DEMTILE  "ifelse(DEMTILE2!=$nodata,DEMTILE2,DEMTILE)"
                gdalband clear DEMTILE2
             }
             gdalfile close GMTEDFILE
