@@ -46,6 +46,7 @@ package require TclGeoPhy
 package require TclSystem
 package require MetData
 package require Logger
+package require Thread
 
 set Log::Param(SPI)       8.0.0
 set Log::Param(Level)     INFO
@@ -107,7 +108,7 @@ namespace eval GenX { } {
    set Param(Interpolation)  ""               ;#Interpolation mode to use by default
    set Param(ETIKET)    "GENPHYSX"            ;#Default ETIKET to use for output fields
 
-   set Param(Topos)     { USGS SRTM SRTM30 SRTM90 CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM }
+   set Param(Topos)     { USGS SRTM SRTM30 SRTM90 CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM FABDEM }
    set Param(Aspects)   { SRTM SRTM30 SRTM90 CDED250 CDED50 CDEM GTOPO30 USGS GMTED30 GMTED15 GMTED75 }
    set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC CCILC2015-ECO2017 CCILC2015-1 CCILC2015 CCILC2010 USGS_R NALCMS }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS SLC SOILGRIDS }
@@ -173,6 +174,7 @@ namespace eval GenX { } {
    set Path(Grad)       RPN/data_grad
    set Path(HWSD)       HWSD
    set Path(SRTM)       SRTM
+   set Path(FABDEM)     FABDEM/granules
    set Path(SRTM30)     SRTM30
    set Path(SRTM90)     SRTMv4
    set Path(CDED)       CDED
@@ -2138,7 +2140,6 @@ proc GenX::FindFiles { indexfile Grid } {
    variable Param
 
    set  files {}
-   set  rejected {}
    if { ![file exist $indexfile] } {
       Log::Print INFO "Index file not found: $indexfile"
       return $files
@@ -2160,17 +2161,16 @@ proc GenX::FindFiles { indexfile Grid } {
       set  geom [ogrgeometry define $Geom -geometry]
       if { [GeomIntersectGrid $Grid $geom] || 
            [ogrgeometry stats $Geom -intersect $poly] } {
-         Log::Print DEBUG "Will use file: $path"
+         Log::Print INFO "Will use file: $path"
          lappend files $path
          incr cnt
       } else {
          Log::Print DEBUG "Skip file: $path"
-         lappend rejected $path
       }
    }
    ogrfile close UTSINDEXFILE
 
-   Log::Print DEBUG "Using $cnt of $nb files"
+   Log::Print INFO "Using $cnt of $nb files"
 
    ogrgeometry free $poly
    return $files
