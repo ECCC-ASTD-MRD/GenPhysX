@@ -1600,11 +1600,7 @@ proc UrbanX::Load_TEBParams { params_csv } {
    set  len [llength $head]
    set  line0 {0}
    for {set i 1} {$i < $len} {incr i} {
-      if { $i <= $pos } {
-         lappend line0 -9999.0
-      } else {
-         lappend line0 0.0
-      }
+      lappend line0 -9999.0
    }
 
    if { $has_class22 == 0 } {
