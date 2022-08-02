@@ -266,6 +266,7 @@ proc GeoPhysX::AverageTopo { Grid } {
          "GMTED15"   { GeoPhysX::AverageTopoGMTED2010 GPXME 15  ;#----- GMTED2010 topograhy averaging method (Global  450m) }
          "GMTED75"   { GeoPhysX::AverageTopoGMTED2010 GPXME 75  ;#----- GMTED2010 topograhy averaging method (Global  225m) }
          "CDEM"      { GeoPhysX::AverageTopoCDEM      GPXME     ;#----- CDEM topograhy averaging method (Canada 25m) }
+         "FABDEM"    { GeoPhysX::AverageTopoFABDEM    GPXME     ;#----- FABDEM topograhy averaging method (Global 30m) }
       }
    }
 
@@ -809,6 +810,88 @@ proc GeoPhysX::AverageTopoGMTED2010 { Grid {Res 30} } {
    }
    fstdfield gridinterp GPXRMS - ACCUM
    vexpr GPXRES ifelse((GPXTSK && GPXRMS),$d,GPXRES)
+   #----- Use accumulator to figure out coverage in destination
+   #----- But remove border of coverage since it will not be full
+   #----- Apply coverage mask for next resolution
+   fstdfield gridinterp $Grid - ACCUM
+   vexpr GPXTSK !fpeel($Grid)
+   fstdfield stats $Grid -mask GPXTSK
+   fstdfield stats GPXRMS -mask GPXTSK
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageTopoFABDEM>
+# Creation : July 2022 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the topography using FABDEM
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the vegetation
+#
+# Return:
+#
+# Remarks :  Only partial coverage on southern part of Canada
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageTopoFABDEM { Grid } {
+   variable Param
+   variable Const
+   variable Opt
+
+   GenX::Procs FABDEM
+   Log::Print INFO "Averaging topography using FABDEM database"
+
+   set limits [georef limit [fstdfield define $Grid -georef]]
+   set lat0 [lindex $limits 0]
+   set lon0 [lindex $limits 1]
+   set lat1 [lindex $limits 2]
+   set lon1 [lindex $limits 3]
+
+   set dbdir  $GenX::Param(DBase)/$GenX::Path(FABDEM)
+   set files [GenX::FindFiles $dbdir/Index/Index.shp $Grid]
+
+   #----- Loop over files
+   if { [set nb [llength $files]] } {
+
+      foreach file $files {
+         Log::Print DEBUG "   Processing file ([incr n]/$nb) $dbdir/$file"
+
+         gdalband read FABDEMTILE [gdalfile open FABDEMFILE read $dbdir/$file]
+
+         gdalband stats FABDEMTILE -celldim $GenX::Param(Cell)
+
+         if { $Opt(LegacyMode) } {
+            vexpr  (Float64)WEIGHTTILE  "cos(dlat(FABDEMTILE)*$Const(Deg2Rad))*$Const(ResoUSGS)*$Const(ResoUSGS)"
+            # avoid missing values -9999 found in the data
+            vexpr  (Float64)WTOPOTILE   "ifelse(FABDEMTILE!=-9999.0,FABDEMTILE*WEIGHTTILE,0.0)"
+            fstdfield gridinterp GPXMESUM WTOPOTILE  SUM
+            fstdfield gridinterp GPXWESUM WEIGHTTILE SUM
+            fstdfield free WTOPOTILE WEIGHTTILE
+         } else {
+            fstdfield gridinterp $Grid FABDEMTILE AVERAGE False
+         }
+
+         if { ($GenX::Param(Sub)=="LEGACY") || ($GenX::Param(Z0Topo)=="LEGACY") } {
+            fstdfield gridinterp $Grid FABDEMTILE SUBLINEAR 11
+         }
+      
+         fstdfield gridinterp GPXRMS FABDEMTILE AVERAGE_SQUARE False
+
+      # Compute tile derivatives on request
+         if { $Opt(SubSplit) } {
+            GeoPhysX::AverageDerivTile $Grid SRTMTILE
+         }
+         gdalfile close FABDEMFILE
+      }
+   } else {
+      Log::Print WARNING "The grid is not within FABDEM limits"
+   }
+   gdalband free FABDEMTILE
+
+   #----- Create source resolution used in destination
+   fstdfield gridinterp GPXRMS - ACCUM
+   vexpr GPXRES ifelse((GPXTSK && GPXRMS),30,GPXRES)
+
    #----- Use accumulator to figure out coverage in destination
    #----- But remove border of coverage since it will not be full
    #----- Apply coverage mask for next resolution
