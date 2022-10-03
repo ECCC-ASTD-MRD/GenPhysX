@@ -879,7 +879,7 @@ proc GeoPhysX::AverageTopoFABDEM { Grid } {
 
       # Compute tile derivatives on request
          if { $Opt(SubSplit) } {
-            GeoPhysX::AverageDerivTile $Grid SRTMTILE
+            GeoPhysX::AverageDerivTile $Grid FABDEMTILE
          }
          gdalfile close FABDEMFILE
       }
