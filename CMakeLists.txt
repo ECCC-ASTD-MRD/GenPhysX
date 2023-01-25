@@ -64,6 +64,7 @@ if(${CMAKE_SYSTEM_PROCESSOR} EQUAL x86_64)
 endif()
 
 add_compile_definitions(_${CMAKE_SYSTEM_NAME}_ TCL_THREADS _GNU_SOURCE _DEFAULT_SOURCE)
+link_libraries("-Wl,--disable-new-dtags")
 
 add_subdirectory(src src)
 
