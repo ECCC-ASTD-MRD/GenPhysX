@@ -31,6 +31,7 @@
  *=========================================================
  */
 #include "GeoPhy.h"
+#include <rmn/rpnmacros.h>
 
 /*----------------------------------------------------------------------------
  * Nom      : <GeoPhy_SubTranspose>
@@ -78,7 +79,7 @@ int GeoPhy_SubTranspose(TData *Topo,int I,int J,float *Sub) {
 }
 
 /*----------------------------------------------------------------------------
- * Nom      : <GGeoPhy_GridPointResolution>
+ * Nom      : <GeoPhy_GridPointResolution>
  * Creation : Aout 2013 - J.P. Gauthier - CMC/CMOE
  *
  * But      : Get teh grid resolutiopn in X and Y in meters
