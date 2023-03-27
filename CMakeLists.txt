@@ -61,7 +61,17 @@ if(${CMAKE_SYSTEM_PROCESSOR} EQUAL x86_64)
 endif()
 
 add_compile_definitions(_${CMAKE_SYSTEM_NAME}_ TCL_THREADS _GNU_SOURCE _DEFAULT_SOURCE)
-link_libraries("-Wl,--disable-new-dtags")
+
+#----- Make sure RPATH is set at install step
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+# when building, don't use the install RPATH already
+# (but later on when installing)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 
 add_subdirectory(src src)
 

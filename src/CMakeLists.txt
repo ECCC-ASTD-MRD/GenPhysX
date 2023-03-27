@@ -24,9 +24,6 @@ ec_target_link_library_if(${NAME} GDAL_FOUND             GDAL::GDAL)
 
 target_link_libraries(${NAME} TCL::TCL)
 
-#----- RPATH handling
-ec_target_rpath_from_libs(${NAME})
-
 install(TARGETS ${NAME}
    LIBRARY DESTINATION TCL/lib/${NAME}${VERSION}
    PUBLIC_HEADER DESTINATION TCL/include)
