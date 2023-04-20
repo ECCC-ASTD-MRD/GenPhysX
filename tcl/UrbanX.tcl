@@ -25,6 +25,7 @@ namespace eval UrbanX { } {
    variable Meta
    variable Path
    variable GeoRef
+   variable Threads
 
    set Param(Version)       	 0.95   ;# UrbanX version number
    set Param(CULUCVersion)       0.9.2  ;# CULUC version number
@@ -50,11 +51,33 @@ namespace eval UrbanX { } {
    set Param(BuildingsHgtField)  ""     ;# Name of the height attribute of the 2.5D buildings shapefile
    set Param(SAVE_BLDH_RASTER)    0     ;# with Saving of BLDH raster to BLDH_PATH or Not, seems to be faster without
 
+   set Param(OMP_Threads)         0     ;# No threads By default
+   set Param(NbThreads)           0     ;# No threads By default
+   set Param(NPROCS)              0     ;# No threads By default
+   set err [catch { exec nproc --all } Param(NPROCS)]
+   array set  Threads            {}     ;# empty array
    # Optional TEB parameters - they are not computed by default in order to reduce processing time
    # According to Sylvie and Maria, optional TEB parameters are: SUMF DPBH Z0H BLDW HVAR HMIN HMAX
    # There's only BLDW that is still computed since required by WHOR param
    set Param(OptionalTEBParams) 0          ;# By default, we don't process optional TEB parameters
 
+   if { [info exists env(GPX_NUM_THREADS)] } {
+      if { [scan $env(GPX_NUM_THREADS) "%d" Param(NbThreads)] <= 0 } {
+         set Param(NbThreads) 0
+      }
+   }
+
+   # set default NbThreads to 2 if OMP_NUM_THREADS is below half number of processors per node
+   if { [info exists env(OMP_NUM_THREADS)] } {
+      Log::Print INFO "OpenMP  OMP_NUM_THREADS is $env(OMP_NUM_THREADS)"
+      if { [scan $env(OMP_NUM_THREADS) "%d" Param(OMP_Threads)] > 0 } {
+         if { $Param(OMP_Threads) <= [expr $Param(NPROCS)/2] } {
+            if { $Param(NbThreads) <= 0 } {
+               set Param(NbThreads) 2
+            }
+         }
+      }
+   }
 
    # added at Serge's request ;-) will use the CULUC_PATH provided by the user if any
    if { [info exists env(CULUC_PATH)] } {
@@ -1482,10 +1505,9 @@ proc UrbanX::GetULUCFilename { sheet } {
    return $filename
 }
 
-proc UrbanX::GetBldHgtShpfile { Tile } {
-   variable Param
+proc UrbanX::GetBldHgtShpfile { Tile BuildingsHgtShpDir } {
 
-   if { ($Param(BuildingsHgtShpDir)!="") } {
+   if { ($BuildingsHgtShpDir!="") } {
       set limits [georef limit [gdalband define $Tile -georef]]
       set la0 [lindex $limits 0]
       set lo0 [lindex $limits 1]
@@ -1493,11 +1515,15 @@ proc UrbanX::GetBldHgtShpfile { Tile } {
       set lo1 [lindex $limits 3]
       puts "$la0 $lo0 $la1 $lo1"
 
-      set  indexfile $Param(BuildingsHgtShpDir)/Index/Index.shp
-      set items [GenX::Fetch_Shpfile_Index $indexfile $la0 $lo0 $la1 $lo1]
+      set  indexfile $BuildingsHgtShpDir/Index/Index.shp
+#      if { [info procs Fetch_Shpfile_Index] != "" } {
+#         set items [Fetch_Shpfile_Index $indexfile $la0 $lo0 $la1 $lo1]
+#      } else {
+         set items [GenX::Fetch_Shpfile_Index $indexfile $la0 $lo0 $la1 $lo1]
+#      }
       set files {}
       foreach item $items {
-         lappend files "$Param(BuildingsHgtShpDir)/${item}"
+         lappend files "$BuildingsHgtShpDir/${item}"
       }
       return $files
    }
@@ -1625,6 +1651,125 @@ proc UrbanX::Load_TEBParams { params_csv } {
    }
 }
 
+proc UrbanX::Process_BLDH { tid Grid nomvar } {
+   variable Param
+
+   Log::Print DEBUG "Thread $tid Process_BLDH $nomvar for $UrbanX::Param(NTSSheet)"
+
+   if { $nomvar != "BLDH" } {
+      return
+   }
+   if { $Param(BuildingsHgtShpDir) !="" } {
+      Log::Print INFO "Looking for Buildings Height Shapefiles in: $Param(BuildingsHgtShpDir)"
+      set shpfiles  [GetBldHgtShpfile RCULUC $Param(BuildingsHgtShpDir)]
+      BuildingHeights2Raster  $shpfiles
+   } elseif { $Param(BuildingsShapefile) != "" } {
+      BuildingHeights2Raster  $Param(BuildingsShapefile)
+   }
+
+   if { [gdalband is RHAUTEURBLD] } {
+      Log::Print INFO "Adjusting BLDH with Buildings Height Raster"
+      gdalband stats RHAUTEURBLD -nodata 0;# memory fault if this comes after the gdalband write
+      vexpr RHAUTEURBLD "ifelse(RHAUTEURBLD>0 && RHAUTEURBLD < 4.5,4.5,RHAUTEURBLD)"
+
+      fstdfield fromband $Grid.B3DH RHAUTEURBLD IJCULUC AVERAGE
+      gdalband free RHAUTEURBLD
+   } else {
+      Log::Print WARNING "Buildings Height Raster not found for $Param(NTSSheet)"
+   }
+   if { $Param(OptionalTEBParams) } {
+      #----- Building height min computation
+      Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over $Param(NTSSheet)"
+      fstdfield fromband $Grid.HMIN RHAUTEURBLD IJCULUC MINIMUM
+
+      #----- Building height max computation
+      Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
+      fstdfield fromband $Grid.HMAX RHAUTEURBLD IJCULUC MAXIMUM
+   }
+}
+
+proc  UrbanX::Process_TEBParam { tid Grid tebparam nomvar params values } {
+   variable  Param
+
+# must initialize values first
+   foreach  name $params value $values {
+      Log::Print DEBUG "Thread $tid : Setting values UrbanX::Param($name) = $value"
+      set UrbanX::Param($name)  $value
+   }
+
+   Log::Print DEBUG "Thread $tid Process_TEBParam $tebparam for $UrbanX::Param(NTSSheet)"
+
+   if { $nomvar == "BLDH" } {
+      UrbanX::Process_BLDH $tid $Grid $nomvar
+   } else { 
+      Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $UrbanX::Param(NTSSheet)"
+      # Name of RTEBPARAM need to be thread safe
+      set  RTEBPARAM  "RTEBPARAM.$tebparam"
+      vexpr (Float32)$RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+      gdalband stats $RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
+      fstdfield fromband $Grid.$tebparam $RTEBPARAM IJCULUC AVERAGE
+      gdalband free $RTEBPARAM
+   }
+   Log::Print DEBUG "Thread $tid has completed $tebparam for $UrbanX::Param(NTSSheet)"
+   return $tid
+}
+
+proc UrbanX::Initialize_Threads {} {
+   variable Param
+   variable Threads
+
+   GenX::Procs
+   Log::Print INFO "Initializing $Param(NbThreads) Threads to generate TEB parameters"
+
+# make a copy of only necessary context into thread's interp as needed to run
+   set procsdef ""
+   foreach  procname {Process_BLDH Process_TEBParam GetBldHgtShpfile BuildingHeights2Raster} {
+      append  procsdef "proc UrbanX::$procname {[info args $procname]} {\n[info body $procname]\n}\n"
+   }
+
+   set  UrbanX_Param {BuildingsHgtShpDir BuildingsShapefile OptionalTEBParams Mode BuildingsHgtField BLDH_PATH SAVE_BLDH_RASTER}
+   foreach n  $UrbanX_Param {
+      eval "set value  \$Param($n)"
+      append  procsdef "set  UrbanX::Param($n) {$value}\n"
+   }
+
+#  partial copy of GenX namespace
+   foreach procname {Fetch_Shpfile_Index Procs} {
+      append  procsdef "\nproc GenX::$procname {[info args GenX::$procname]} {\n[info body GenX::$procname]\n}\n"
+   }
+
+   set GenX_variables { Meta(Databases) Meta(Procs) Param(TMPDIR) }
+   foreach var $GenX_variables {
+      eval "set value  \$GenX::$var"
+      append  procsdef "set  GenX::$var { $value }\n"
+   }
+   
+   set thread_script "\n
+   package require TclData;\n
+   package require TclGeoPhy;\n
+   package require TclSystem;\n
+   package require MetData;\n
+   package require Logger;\n
+
+   namespace eval GenX { } {\n
+      gdalfile error QUIET\n
+   }
+
+   namespace eval UrbanX { } {\n
+      gdalfile error QUIET\n
+   }
+
+   set Log::Param(Level)     INFO;\n$procsdef"
+
+   Log::Print DEBUG "Threads script is: \n${thread_script}"
+
+   for {set i 0} {$i < $Param(NbThreads)} {incr i} {
+      set tid  [thread::create "${thread_script}\n   thread::wait;"]
+      set Threads($i)  $tid
+      Log::Print DEBUG "Threads created : $tid"
+   }
+}
+
 #----------------------------------------------------------------------------
 # Name     : <UrbanX::TEB2FSTD>
 # Creation : Circa 2006 - Alexandre Leroux - CMC/CMOE
@@ -1640,9 +1785,22 @@ proc UrbanX::Load_TEBParams { params_csv } {
 #----------------------------------------------------------------------------
 proc UrbanX::TEB2FSTD { Grid } {
    variable Param
+   variable Threads
+   global   available_thread
 
    GenX::Procs
    Log::Print INFO "Computing TEB parameters on the target RPN fstd grid: $GenX::Param(GridFile)"
+
+   Log::Print INFO "Number of Processors : $Param(NPROCS)"
+   Log::Print INFO "Number of Threads    : $Param(NbThreads)"
+   Log::Print INFO "Number of OMP Threads: $Param(OMP_Threads)"
+
+   if { $Param(SAVE_BLDH_RASTER) } {
+      Log::Print WARNING "Param(SAVE_BLDH_RASTER) is set as $Param(SAVE_BLDH_RASTER)"
+      Log::Print WARNING "Will be saving BLDH Raster to disk (slower)"
+   } else {
+      Log::Print INFO "Will not Save BLDH Raster (faster)"
+   }
 
    UrbanX::Load_TEBParams $Param(TEBParamsLUTCSVFile)
 
@@ -1684,50 +1842,14 @@ proc UrbanX::TEB2FSTD { Grid } {
 
 # see if option HMIN, HMAX and HVAR are requested and already exist
    if { $Param(OptionalTEBParams) } {
-      set need_opt_tebparams ""
-      foreach nomvar { HMIN HMAX BLDH HVAR } {
-         set fields [fstdfield find GPXAUXFILE -1 "" $ip1 -1 -1 "" "$nomvar"]
-         if { [llength $fields] > 0 } {
-            Log::Print INFO "$nomvar $ip1: found existing record, will not redo"
-         } else {
-            lappend need_opt_tebparams $nomvar
-         }
-      }
-      set  NeedBLDH 0
-      if { [lsearch $need_opt_tebparams "HMIN"]>=0 } {
-         Log::Print INFO "Creating storage for HMIN"
-         fstdfield copy $Grid.HMIN $Grid
-         GenX::GridClear $Grid.HMIN 0.0
-         set NeedHMIN 1
-         set NeedBLDH 1
-      } else {
-         set NeedHMIN 0
-      }
-      if { [lsearch $need_opt_tebparams "HMAX"]>=0 } {
-         Log::Print INFO "Creating storage for HMAX"
-         fstdfield copy $Grid.HMAX $Grid
-         GenX::GridClear $Grid.HMAX 0.0
-         set NeedHMAX 1
-         set NeedBLDH 1
-      } else {
-         set NeedHMAX 0
-      }
-      if { [lsearch $need_opt_tebparams "BLDH"]>=0 } {
-         set  HasBLDH  0
-      } else {
-         set  HasBLDH  1
-      }
-      if { [lsearch $need_opt_tebparams "HVAR"]>=0 } {
-         set NeedHVAR 1
-         if { $HasBLDH == 0 } {
-# BLDH field is needed to compute HVAR
-            set NeedBLDH 1
-         }
-      } else {
-         set NeedHVAR 0
+      set need_opt_tebparams { HMIN HMAX HVAR }
+      foreach nomvar $need_opt_tebparams {
+         Log::Print INFO "Creating storage for $nomvar"
+         fstdfield copy $Grid.$nomvar $Grid
+         GenX::GridClear $Grid.$nomvar 0.0
       }
 # BLDH is essential to computation of HMIN HMAX HVAR
-      if { $NeedBLDH && ([lsearch $tebparams_list "BLDH"]<0) } {
+      if { [lsearch $tebparams_list "BLDH"]<0 } {
          lappend tebparams_list BLDH
          fstdfield copy $Grid.BLDH $Grid
          GenX::GridClear $Grid.BLDH 0.0
@@ -1746,6 +1868,11 @@ proc UrbanX::TEB2FSTD { Grid } {
       GenX::GridClear $Grid.B3DH 0.0
    }
 
+# initialize Threads if requested
+   if { $Param(NbThreads) > 0 } {
+      UrbanX::Initialize_Threads
+   }
+
 # Load all NTS sheets only once or twice by moving it to outside loop
 if { $NeedProcessSheets } {
    foreach sheet $all_sheets {
@@ -1756,12 +1883,15 @@ if { $NeedProcessSheets } {
       if { [file exists $culucfilename] } {
       Log::Print INFO "Loading $culucfilename"
       set bands [gdalfile open FCULUC read $culucfilename]
-      if { [catch { gdalband read RCULUC $bands }] } {
-         gdalfile close FCULUC
-         Log::Print ERROR "ERROR: Can't read: $culucfilename"
-         Log::End 1;
-      }
-      Log::Print INFO "Loaded $culucfilename"
+
+# moved to later after confirming it is inside grid
+#      if { [catch { gdalband read RCULUC $bands }] } {
+#         gdalfile close FCULUC
+#         Log::Print ERROR "ERROR: Can't read: $culucfilename"
+#         Log::End 1;
+#      }
+#      Log::Print INFO "Loaded $culucfilename"
+
 # SAFE some time by copying the RCULUC=35 line as 22 in CSVTEBPARAMS
 #         vexpr RCULUC ifelse(RCULUC==22, 35, RCULUC)
          set Param(Width)  [gdalfile width  FCULUC]
@@ -1795,76 +1925,61 @@ if { $NeedProcessSheets } {
          }
       }
 
+      if { [catch { gdalband read RCULUC $bands }] } {
+         gdalfile close FCULUC
+         Log::Print ERROR "ERROR: Can't read: $culucfilename"
+         Log::End 1;
+      }
+      Log::Print INFO "Loaded $culucfilename"
+
+      if { $Param(NbThreads) > 0 } {
+         set Threads_searchid [array startsearch Threads]
+      }
+
+      set main_tid [thread::id]
       foreach tebparam $tebparams_list {
 
          set   nomvar [tebparam2nomvarip1 $tebparam]
          set   ip1     [lindex $nomvar 1]
          set   nomvar  [lindex $nomvar 0]
 
-         if { $LoadedField($tebparam)  == False } {
-            Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $Param(NTSSheet)"
-	    vexpr (Float32)RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
-            # Transfert the RCULUC nodata to the same nodata value in RTEBPARAM (-9999 from the csv file, can't be 0)
-# SAFE some time by doing this above in lut() by adding a line mapping 0 to -9999
-#            vexpr RTEBPARAM ifelse(RCULUC==0, -9999, RTEBPARAM)
-            gdalband stats RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
-
-	 # Don't waste time averaging VF21, must leave it as 0.0, it is available as BLDF+PAVF
-            if { $tebparam != "VF21" } {
-               Log::Print INFO "Averaging TEB parameter $tebparam (IP1=$ip1) values over $Param(NTSSheet)"
-               fstdfield fromband $Grid.$tebparam RTEBPARAM IJCULUC AVERAGE
-            }
+         if { $tebparam == "VF21" } {
+            continue
          }
 
-         if { $nomvar == "BLDH" } {
-#            set bld_height_file "$GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif"
-            set bld_height_file "$Param(BLDH_PATH)/$Param(NTSSheet)_Building-heights.tif"
-            Log::Print INFO "Need Buildings Height Raster file: $bld_height_file"
-            if { ![file exist $bld_height_file] } {
-               if { $Param(BuildingsHgtShpDir)!="" } {
-                  Log::Print INFO "Looking for Buildings Height Shapefiles in: $Param(BuildingsHgtShpDir)"
-                  set shpfiles  [UrbanX::GetBldHgtShpfile RCULUC]
-                  Log::Print INFO "Using Buildings Height Shapefile(s): $shpfiles"
-                  UrbanX::BuildingHeights2Raster  $shpfiles  ;# Rasterizes building heights
-               } elseif { $Param(BuildingsShapefile)!="" } {
-                  Log::Print INFO "Using Buildings Height Shapefile(s): $Param(BuildingsShapefile)"
-                  UrbanX::BuildingHeights2Raster  $Param(BuildingsShapefile) ;# Rasterizes building heights
-               }
-           }
-
-           if { [file exist $bld_height_file] } {
-               Log::Print INFO "Loading saved Buildings Height Raster: $bld_height_file"
-               gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $bld_height_file]
-               gdalfile close FHAUTEURBLD
-            }
-            if { [gdalband is RHAUTEURBLD] } {
-               Log::Print INFO "Adjusting BLDH with Buildings Height Raster"
-               gdalband stats RHAUTEURBLD -nodata 0;# memory fault if this comes after the gdalband write
-               vexpr RHAUTEURBLD "ifelse(RHAUTEURBLD>0 && RHAUTEURBLD < 4.5,4.5,RHAUTEURBLD)"
-
-               fstdfield fromband $Grid.B3DH RHAUTEURBLD IJCULUC AVERAGE
-               gdalband free RHAUTEURBLD
+         set update_params  {NTSSheet Width Height SheetGeoRef} 
+         set update_values  "\"$Param(NTSSheet)\" $Param(Width) $Param(Height) \"$Param(SheetGeoRef)\""
+         set param_args  "$Grid \"$tebparam\" \"$nomvar\""
+	 # available_thread  must be in global scope
+         if { $Param(NbThreads) > 0 } {
+            if { [array anymore Threads $Threads_searchid] } {
+               set tname  [array next Threads $Threads_searchid]
+	       set thread_id    $Threads($tname)
+	       set working_threads($thread_id)  1
+               Log::Print DEBUG "Send task to thread : $thread_id"
+               thread::send -async $thread_id  "UrbanX::Process_TEBParam $thread_id $param_args {$update_params} {$update_values}" available_thread
             } else {
-               Log::Print WARNING "Buildings Height Raster file not found: $bld_height_file"
-            }
+               vwait available_thread
+               Log::Print DEBUG "vwait returned available_thread : $available_thread"
+               thread::send -async $available_thread  "UrbanX::Process_TEBParam $available_thread $param_args {$update_params} {$update_values}" available_thread
+	    }
+	 } else {
+            eval "UrbanX::Process_TEBParam $main_tid $param_args {$update_params} {$update_values}"
          }
-         if { $nomvar == "BLDH" && $Param(OptionalTEBParams) } {
-            if  { $NeedHMIN } {
-               #----- Building height min computation
-               Log::Print INFO "Computing Building Height Minimum HMIN (IP1=0) values over $Param(NTSSheet)"
-               fstdfield fromband $Grid.HMIN RTEBPARAM IJCULUC MINIMUM
-
-            }
-
-            if  { $NeedHMAX } {
-               #----- Building height max computation
-               Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
-               fstdfield fromband $Grid.HMAX RTEBPARAM IJCULUC MAXIMUM
-            }
-         }
-
-         gdalband free RTEBPARAM
       }
+
+# wait for all threads to finish before next sheet
+      if { $Param(NbThreads) > 0 } {
+         set nb_threads [llength [array names working_threads]]
+         Log::Print DEBUG "Current working threads list ($nb_threads): [array names working_threads]"
+         for {set i 0} {$i < $nb_threads} {incr i} {
+            vwait available_thread
+            Log::Print DEBUG "Thread ($available_thread) has finish"
+            array unset working_threads $available_thread
+         }
+         Log::Print DEBUG "Still working threads list: [array names working_threads]"
+      }
+
       gdalband free RCULUC IJCULUC
       gdalfile close FCULUC
    }
@@ -1913,13 +2028,7 @@ if { 0 } {
    }
 
    if { $Param(OptionalTEBParams) } {
-      set  list {}
-      if  { $NeedHMIN } {
-         lappend list HMIN
-      }
-      if  { $NeedHMAX } {
-         lappend list HMAX
-      }
+      set list { HMIN HMAX }
       foreach  tebparam $list {
          set   ip1     0
          set   nomvar  $tebparam
@@ -1933,7 +2042,7 @@ if { 0 } {
    }
 
 # HVAR calculation, we can't do it in the same foreach NTSSheet because of a gridinterp False conflict
-   if { $Param(OptionalTEBParams) && $NeedHVAR } {
+   if { $Param(OptionalTEBParams) } {
       # Building height variance computation
       # the factor 5x is for the internal buffers of the AVERAGE_VARIANCE fct... is this formulae right?
       set memoryrequired [expr 5*$Param(Width)*$Param(Height)*8/(1024*1024)] ;
@@ -2059,6 +2168,14 @@ if { 0 } {
    }
    fstdfield free BLDHFIELD BLDWFIELD BLDFFIELD NATFFIELD WHORFIELD REZ SURFTILE Z0RDFIELD Z0RFFIELD PAVFFIELD WHOR2FIELD WHOR3FIELD Z0ZH DISPBLDH DISPH
 
+# terminate all threads created for TEB params
+   if { $Param(NbThreads) > 0 } {
+      Log::Print INFO "Releasing $Param(NbThreads) threads created for TEB"
+      foreach i [array names Threads] {
+         thread::release $Threads($i)
+      }
+   }
+
    Log::Print INFO "The file $GenX::Param(OutFile)_aux.fst has been updated with TEB parameters"
 }
 
@@ -2079,11 +2196,19 @@ proc UrbanX::BuildingHeights2Raster { {shpfiles ""} } {
    variable Param
 
    GenX::Procs
-   Log::Print INFO "Converting 2.5D buildings shapefile to raster"
-   Log::Print INFO "Shapefiles: $shpfiles"
+
+   set tid [thread::id]
+   Log::Print INFO "$tid : Converting 2.5D buildings shapefile to raster"
+   Log::Print INFO "$tid : Shapefiles: $shpfiles"
 
    if { $shpfiles == "" } {
       set shpfiles $Param(BuildingsShapefile)
+   }
+
+   if { $shpfiles == "" } {
+      Log::Print INFO "$tid : Will not create RHAUTEURBLD, no Shapefiles"
+      Log::Print INFO "$tid : Width=$Param(Width) Height=$Param(Height)"
+      return
    }
 
    gdalband create RHAUTEURBLD $Param(Width) $Param(Height) 1 Float32
@@ -2115,7 +2240,7 @@ proc UrbanX::BuildingHeights2Raster { {shpfiles ""} } {
       Log::Print INFO "The file $bld_height_file has been generated"
       gdalband free RHAUTEURBLD
    } else {
-      Log::Print INFO "Will not Save BLDH Raster"
+      Log::Print INFO "Will Not Save $bld_height_file"
    }
 }
 

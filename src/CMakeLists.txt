@@ -18,14 +18,11 @@ add_dependencies(${NAME} GenPhysX_build_info)
 target_link_libraries(${NAME} eerUtils::eerUtils)
 
 #----- Optional libs
-ec_target_link_library_if(${NAME} RMN_FOUND              rmn)
-ec_target_link_library_if(${NAME} VGRID_FOUND            vgrid)
+ec_target_link_library_if(${NAME} rmn_FOUND              rmn::rmn)
+ec_target_link_library_if(${NAME} vgrid_FOUND            vgrid::vgrid)
 ec_target_link_library_if(${NAME} GDAL_FOUND             GDAL::GDAL)
 
 target_link_libraries(${NAME} TCL::TCL)
-
-#----- RPATH handling
-ec_target_rpath_from_libs(${NAME})
 
 install(TARGETS ${NAME}
    LIBRARY DESTINATION TCL/lib/${NAME}${VERSION}

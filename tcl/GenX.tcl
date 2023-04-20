@@ -2139,7 +2139,7 @@ proc GenX::FindFiles { indexfile Grid } {
 
    set  files {}
    if { ![file exist $indexfile] } {
-      Log::Print INFO "Index file not found: $indexfile"
+      Log::Print WARNING "Index file not found: $indexfile"
       return $files
    }
 
@@ -2159,7 +2159,7 @@ proc GenX::FindFiles { indexfile Grid } {
       set  geom [ogrgeometry define $Geom -geometry]
       if { [GeomIntersectGrid $Grid $geom] || 
            [ogrgeometry stats $Geom -intersect $poly] } {
-         Log::Print INFO "Will use file: $path"
+         Log::Print DEBUG "Will use file: $path"
          lappend files $path
          incr cnt
       } else {
@@ -2168,7 +2168,7 @@ proc GenX::FindFiles { indexfile Grid } {
    }
    ogrfile close UTSINDEXFILE
 
-   Log::Print INFO "Using $cnt of $nb files"
+   Log::Print DEBUG "Using $cnt of $nb files"
 
    ogrgeometry free $poly
    return $files
