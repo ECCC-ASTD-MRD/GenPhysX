@@ -1762,8 +1762,6 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
    if { $GenX::Param(Mask) != $GenX::Param(Vege) } {
       fstdfield copy GPXVF1MG  $Grid
       GenX::GridClear GPXVF1MG 0.0
-      fstdfield copy GPXVF21MG  $Grid
-      GenX::GridClear GPXVF21MG 0.0
       set has_mask_VF1 1
    } else {
       set has_mask_VF1 0
@@ -1795,8 +1793,6 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
             if { $has_mask_VF1 } {
                vexpr VFTILE ifelse(CCITILE==211,1.0,0.0)
                fstdfield gridinterp GPXVF1MG VFTILE AVERAGE False
-               vexpr VFTILE ifelse(CCITILE==190,1.0,0.0)
-               fstdfield gridinterp GPXVF21MG VFTILE AVERAGE False
             }
             vexpr CCITILE ifelse((CCITILE==210)||(CCITILE==211),0.0,1.0)
             gdalband stats CCITILE -nodata 255 -celldim $GenX::Param(Cell)
@@ -1815,14 +1811,6 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
          fstdfield define GPXVF1MG -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 1199 -DATYP $GenX::Param(Datyp)
          fstdfield write GPXVF1MG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
          fstdfield free GPXVF1MG
-         fstdfield gridinterp GPXVF21MG - NOP True
-         fstdfield define GPXVF21MG -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 1179 -DATYP $GenX::Param(Datyp)
-         fstdfield write GPXVF21MG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
-         fstdfield free GPXVF21MG
-         fstdfield gridinterp GPXVF3MG - NOP True
-         fstdfield define GPXVF3MG -NOMVAR VF -ETIKET $GenX::Param(ETIKET) -IP1 1197 -DATYP $GenX::Param(Datyp)
-         fstdfield write GPXVF3MG GPXOUTFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
-         fstdfield free GPXVF3MG
       }
       gdalband free CCITILE
    }
