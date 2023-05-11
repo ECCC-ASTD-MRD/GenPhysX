@@ -1667,6 +1667,12 @@ proc UrbanX::Process_BLDH { tid Grid nomvar } {
       BuildingHeights2Raster  $Param(BuildingsShapefile)
    }
 
+   if { ! [gdalband is RHAUTEURBLD] } {
+      set bld_height_file "$Param(BLDH_PATH)/$Param(NTSSheet)_Building-heights.tif"
+      if { [file exist $bld_height_file] } {
+         gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $bld_height_file]
+      }
+   }
    if { [gdalband is RHAUTEURBLD] } {
       Log::Print INFO "Adjusting BLDH with Buildings Height Raster"
       gdalband stats RHAUTEURBLD -nodata 0;# memory fault if this comes after the gdalband write
@@ -2229,10 +2235,12 @@ proc UrbanX::BuildingHeights2Raster { {shpfiles ""} } {
       ogrfile close SHAPE
    }
 
-   set bld_height_file "$GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif"
-   set bld_height_file "$Param(BLDH_PATH)/$Param(NTSSheet)_Building-heights.tif"
-
    if { $Param(SAVE_BLDH_RASTER) } {
+      if { [file writable $Param(BLDH_PATH)] } {
+         set bld_height_file "$Param(BLDH_PATH)/$Param(NTSSheet)_Building-heights.tif"
+      } else {
+         set bld_height_file "$GenX::Param(TMPDIR)/$Param(NTSSheet)_Building-heights.tif"
+      }
       file delete -force $bld_height_file
       gdalfile open FILEOUT write $bld_height_file GeoTiff
       gdalband write RHAUTEURBLD FILEOUT
