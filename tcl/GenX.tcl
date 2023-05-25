@@ -48,7 +48,7 @@ package require MetData
 package require Logger
 package require Thread
 
-set Log::Param(SPI)       8.0.0
+set Log::Param(SPI)       8.3.2
 set Log::Param(Level)     INFO
 
 namespace eval GenX { } {
@@ -59,7 +59,7 @@ namespace eval GenX { } {
    variable Meta
    variable Batch
 
-   set Param(Version)      2.6.0               ;#Application version
+   set Param(Version)      2.6.5               ;#Application version
    set Param(VersionState) ""                  ;#Application state
    
    set Param(Secs)      [clock seconds]        ;#To calculate execution time
