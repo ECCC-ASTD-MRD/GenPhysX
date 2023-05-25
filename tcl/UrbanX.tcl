@@ -1692,6 +1692,10 @@ proc UrbanX::Process_BLDH { tid Grid nomvar } {
       Log::Print INFO "Computing Building Height Maximum HMAX (IP1=0) values over $Param(NTSSheet)"
       fstdfield fromband $Grid.HMAX RHAUTEURBLD IJCULUC MAXIMUM
    }
+
+   # now we can safely free RHAUTEURBLD and close FHAUTEURBLD
+   gdalband free RHAUTEURBLD
+   gdalfile close FHAUTEURBLD
 }
 
 proc  UrbanX::Process_TEBParam { tid Grid tebparam nomvar params values } {
