@@ -1670,7 +1670,9 @@ proc UrbanX::Process_BLDH { tid Grid nomvar } {
    if { ! [gdalband is RHAUTEURBLD] } {
       set bld_height_file "$Param(BLDH_PATH)/$Param(NTSSheet)_Building-heights.tif"
       if { [file exist $bld_height_file] } {
-         gdalband read RHAUTEURBLD [gdalfile open FHAUTEURBLD read $bld_height_file]
+         gdalfile close FHAUTEURBLD
+         gdalband read RHAUTEURBLD0 [gdalfile open FHAUTEURBLD read $bld_height_file]
+         vexpr RHAUTEURBLD "ifelse(RHAUTEURBLD0<0,0,RHAUTEURBLD0)"
       }
    }
    if { [gdalband is RHAUTEURBLD] } {
@@ -1694,7 +1696,7 @@ proc UrbanX::Process_BLDH { tid Grid nomvar } {
    }
 
    # now we can safely free RHAUTEURBLD and close FHAUTEURBLD
-   gdalband free RHAUTEURBLD
+   gdalband free RHAUTEURBLD RHAUTEURBLD0
    gdalfile close FHAUTEURBLD
 }
 
