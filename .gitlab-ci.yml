@@ -16,9 +16,9 @@ build:intel-19.0.3:
       - master
       - dev
    script:
-      - source ci-env/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
-      - export SSM_DEV=/users/dor/afsr/005/links/storage/ssm
-      - export CMD_EXT_PATH=/ssm/net/cmds/ext/20210301
+      - source ${ECCI_ENV}/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
+      - export SSM_DEV=${CI_PROJECT_DIR}/ssm
+      - export CMD_EXT_PATH=/fs/ssm/eccc/cmd/cmds/ext/20220331
       - . ssmuse-sh -x $CMD_EXT_PATH
       - mkdir build_intel-19.0.3
       - cd build_intel-19.0.3
@@ -35,9 +35,9 @@ build:gnu-7.4.0:
       - master
       - dev
    script:
-      - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
-      - export SSM_DEV=/users/dor/afsr/005/links/storage/ssm
-      - export CMD_EXT_PATH=/ssm/net/cmds/ext/20210301
+      - source ${ECCI_ENV}/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+      - export SSM_DEV=${CI_PROJECT_DIR}/ssm
+      - export CMD_EXT_PATH=/fs/ssm/eccc/cmd/cmds/ext/20220331
       - . ssmuse-sh -x $CMD_EXT_PATH
       - mkdir build_gnu-7.4.0
       - cd build_gnu-7.4.0
@@ -75,7 +75,7 @@ package:intel-19.0.3:
    environment:
       name: testing
    script:
-      - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
+      - source ${ECCI_ENV}/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
       - cd build_intel-19.0.3
       - make package
       - ~/ci-admin-bundle/bin/ci-deploy-ssm.sh package
@@ -87,7 +87,7 @@ package:gnu-7.4.0:
    environment:
       name: testing
    script:
-      - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+      - source ${ECCI_ENV}/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
       - cd build_gnu-7.4.0
       - make package
       - ~/ci-admin-bundle/bin/ci-deploy-ssm.sh package
