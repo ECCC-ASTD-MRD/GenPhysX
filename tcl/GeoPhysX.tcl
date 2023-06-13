@@ -192,7 +192,7 @@ namespace eval GeoPhysX { } {
 
    #----- New NALCMS correspondance table, very similar to MODIS
    set Const(NALCMS2RPN) { {   0 1  2 3 4 5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 }
-                           { -99 4 26 5 7 7 25 11 11 14 13 11 22 22 23 15 24 21  3  2 } }
+                           {   1 4 26 5 7 7 25 11 11 14 13 11 22 22 23 15 24 21  3  2 } }
 
    set Const(SLOP_MAX_ANGLE)    45.          ;# Max angle of Slope in computation of SLOP field
 
@@ -2020,7 +2020,7 @@ proc GeoPhysX::AverageMaskNALCMS { Grid } {
    
                   # the NALCMS raster no_data value is 0, but because we are remapping everything to 1 or 0 for water
                   # we have to change it to something else, otherwise, the averaging that follows will not be correct
-                  gdalband stats NALCMSTILE -nodata 0 -celldim $GenX::Param(Cell)
+                  gdalband stats NALCMSTILE -nodata 255 -celldim $GenX::Param(Cell)
                   vexpr NALCMSTILE ifelse(NALCMSTILE==18||NALCMSTILE==0,0.0,1.0)
                   fstdfield gridinterp GPXMASK NALCMSTILE AVERAGE False
                   gdalband free NALCMSTILE
@@ -3105,14 +3105,14 @@ proc GeoPhysX::AverageVegeNALCMS { Grid } {
             for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
                Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
                gdalband read LCTILE { { NALCMSFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
-               gdalband stats LCTILE -nodata 0 -celldim $GenX::Param(Cell)
+               gdalband stats LCTILE -nodata 255 -celldim $GenX::Param(Cell)
    
                if { $has_lut } {
                   fstdfield gridinterp $Grid LCTILE NORMALIZED_COUNT $nalcms_lut False
                } else {
                   vexpr LCTILE lut(LCTILE,FROMNALCMS,TORPN)
                # the NALCMS2RPN table change NoData value from 255 to -99
-                  gdalband stats LCTILE -nodata -99
+                  gdalband stats LCTILE -nodata 255
                   fstdfield gridinterp $Grid LCTILE NORMALIZED_COUNT $Param(VegeTypes) False
                }
             }
