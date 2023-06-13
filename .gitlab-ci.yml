@@ -10,7 +10,7 @@ before_script:
    # Force color CMake output even when output is not TTY
    - export CLICOLOR_FORCE=true
 
-build:inteloneapi-2023.0.0
+build:inteloneapi-2023.0.0:
    stage: build
    only:
       - master
