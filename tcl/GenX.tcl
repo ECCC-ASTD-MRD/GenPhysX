@@ -72,6 +72,7 @@ namespace eval GenX { } {
    set Param(SoilDBRK)   ""                    ;#Soil depth to bed rock selected, "" will default to GSRS
    set Param(Topo)       ""                    ;#Topography data selected
    set Param(Mask)       ""                    ;#Mask data selected
+   set Param(TreeCover)  ""
    set Param(GeoMask)    ""                    ;#Geographical mask data selected
    set Param(Aspect)     ""                    ;#Slope and aspect selected
    set Param(Check)      ""                    ;#Consistency checks
@@ -117,6 +118,7 @@ namespace eval GenX { } {
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD HSRN DCW }
+   set Param(TreeCovers) { TCC_2010 TCC_2010-NW TCC_2010-LO TCC_2010-VH TCC_2010-VL GFCC30TC_2015 }
    set Param(Urbans)    { True HALIFAX QUEBEC MONTREAL OTTAWA TORONTO REGINA WINNIPEG CALGARY EDMONTON VANCOUVER VICTORIA }
    set Param(SMOKES)    { TN PEI NS NB QC ON MN SK AB BC YK TNO NV }
    set Param(Checks)    { STD }
@@ -221,6 +223,13 @@ namespace eval GenX { } {
    set Path(HYDROLAKES) HydroSHEDS/Misc/HydroLakes/HydroLAKES_polys_v10-tiled
    set Path(GREATLAKES) HydroSHEDS/Misc/HydroLakes/great_lakes_shp
    set Path(OSM)        OSM/data
+   set Path(TCC)        TCC_2010/original
+   set Path(TCC_NW)     TCC_2010/no_water
+   set Path(TCC_LO)     TCC_2010/land_only
+   set Path(TCC_VL)     TCC_2010/veg_low
+   set Path(TCC_VH)     TCC_2010/veg_high
+   set Path(GFCC30TC)   GFCC30TC_2015/tree_cover
+   set Path(GFC_WM)     GFC-2019-v1.7
 
    set Path(StatCan)    $Param(DBase)/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
@@ -300,6 +309,11 @@ proc GenX::Process { Grid } {
       GeoPhysX::AverageVege $Grid
    }
 
+   #----- Tree Cover
+   if { $Param(TreeCover)!="" } {
+      GeoPhysX::AverageTreeCover $Grid
+   }
+   
    #----- Topography
    if { $Param(Topo)!="" } {
       GeoPhysX::AverageTopo $Grid
@@ -683,6 +697,7 @@ proc GenX::CommandLine { } {
       Specify databases in order of processing joined by + ex: STRM+USGS
 
       -topo     [format "%-34s : Topography method(s) among {$Param(Topos)}" (${::APP_COLOR_GREEN}[join $Param(Topo)]${::APP_COLOR_RESET})]
+      -treecover [format "%-34s : Tree Cover method, one of {$Param(TreeCovers)}" (${::APP_COLOR_GREEN}[join $Param(TCC)]${::APP_COLOR_RESET})]
       -mask     [format "%-34s : Mask method, one of {$Param(Masks)}" (${::APP_COLOR_GREEN}[join $Param(Mask)]${::APP_COLOR_RESET})]
       -geomask  [format "%-34s : Mask method, one of {$Param(GeoMasks)}" (${::APP_COLOR_GREEN}[join $Param(GeoMask)]${::APP_COLOR_RESET})]
       -vege     [format "%-34s : Vegetation method(s) among {$Param(Veges)}" (${::APP_COLOR_GREEN}[join $Param(Vege)]${::APP_COLOR_RESET})]
@@ -806,6 +821,7 @@ proc GenX::ParseCommandLine { } {
          "mask"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Mask) $GenX::Param(Masks)]; incr flags }
          "geomask"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(GeoMask) $GenX::Param(GeoMasks)]; incr flags }
          "vege"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Vege) $GenX::Param(Veges)]; incr flags }
+         "treecover" { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(TreeCover) $GenX::Param(TreeCovers)]; incr flags }
          "soil"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
          "dbrk"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(SoilDBRK) $GenX::Param(SoilDBRKs)]; incr flags }
          "bathy"     { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Bathy) $GenX::Param(Bathys)]; incr flags }
