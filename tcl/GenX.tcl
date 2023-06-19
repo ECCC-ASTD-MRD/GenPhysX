@@ -145,15 +145,13 @@ namespace eval GenX { } {
    set Batch(Path)     "\$TMPDIR/GenPhysX\$\$"
 
    #----- Various database paths
-   set Param(DBase)          "/space/hall3/sitestore/eccc/cmd/s/slib800/geo"
-   set Param(DBaseeccc-ppp3) "/space/hall3/sitestore/eccc/cmd/s/slib800/geo"
-   set Param(DBaseeccc-ppp4) "/space/hall4/sitestore/eccc/cmd/s/slib800/geo"
-   set Param(DBaseeccc-ppp5) "/space/hall5/sitestore/eccc/cmd/s/slib800/geo"
-   set Param(DBaseeccc-ppp6) "/space/hall6/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseppp5) "/space/hall5/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBaseppp6) "/space/hall6/sitestore/eccc/cmd/s/slib800/geo"
+   set Param(DBase)     $Param(DBaseppp5)
    catch { set Param(DBase) $Param(DBase$env(ORDENV_TRUEHOST)) }
    
    if { ![file isdirectory $Param(DBase)] } {
-      set Param(DBase)    "/fs/cetus3/fs3/cmd/s/afsm/lib/geo"
+      set Param(DBase)   "/fs/cetus3/fs3/cmd/s/afsm/lib/geo"
    }
 
    if  { [info exists env(GENPHYSX_DBASE)] } {
@@ -457,8 +455,8 @@ proc GenX::Submit { } {
 
    upvar #0 argv gargv
 
-   if { [catch {set host $env(ORDENV_TRUEHOST) }] } {
-      if { [catch {set host $env(TRUE_HOST) }] } {
+   if { [catch { set host $env(ORDENV_TRUEHOST) }] } {
+      if { [catch { set host $env(TRUE_HOST) }] } {
          set host $Batch(Host)
       }
    }
