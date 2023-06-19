@@ -4366,6 +4366,105 @@ proc GeoPhysX::AverageSoil_SoilGrids { Grid } {
 }
 
 #----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageTreeCover>
+# Creation : June 2023 - V. Souvanlasy - CMC/CMDS
+#
+# Goal     : Generate the Tree Cover Density
+#            using TCC_2010, GFCC30TC_2015 and GLCLU_2019 as mask
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the mask
+#
+# Return:
+#
+# Remarks :
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageTreeCover { Grid } {
+
+   variable  Param
+
+
+   GenX::Procs TreeCover
+
+   Log::Print INFO "Averaging Tree Cover using $GenX::Param(TreeCover)"
+   fstdfield copy GPXCCNW  $Grid
+   fstdfield copy GPXCCL  $Grid
+   fstdfield copy GPXCCG  $Grid
+   fstdfield copy GPXVFH  $Grid
+   GenX::GridClear GPXCCNW 0.0
+   GenX::GridClear GPXCCL 0.0
+   GenX::GridClear GPXCCG 0.0
+   GenX::GridClear GPXVFH 0.0
+
+   foreach treecover $GenX::Param(TreeCover) {
+      GenX::GridClear GPXCCG 0.0
+      switch $treecover {
+         "TCC_2010" {
+            set nomvar "CCG"
+            GeoPhysX::AverageIndexedBands  GPXCCG   $GenX::Path(TCC) "$GenX::Param(DBase)/$GenX::Path(TCC)"
+         }
+         "TCC_2010-NW" {
+            set nomvar "CCNW"
+            GeoPhysX::AverageIndexedBands  GPXCCG   $GenX::Path(TCC_NW) "$GenX::Param(DBase)/$GenX::Path(TCC_NW)"
+         }
+         "TCC_2010-LO" {
+            set nomvar "CCLO"
+            GeoPhysX::AverageIndexedBands  GPXCCG   $GenX::Path(TCC_LO) "$GenX::Param(DBase)/$GenX::Path(TCC_LO)"
+         }
+         "TCC_2010-VL" {
+            set nomvar "CCVL"
+            GeoPhysX::AverageIndexedBands  GPXCCG   $GenX::Path(TCC_VL) "$GenX::Param(DBase)/$GenX::Path(TCC_VL)"
+         }
+         "TCC_2010-VH" {
+            set nomvar "CCVH"
+            GeoPhysX::AverageIndexedBands  GPXCCG   $GenX::Path(TCC_VH) "$GenX::Param(DBase)/$GenX::Path(TCC_VH)"
+         }
+         "GFCC30TC_2015" {
+            set nomvar "CCG"
+            GeoPhysX::AverageIndexedBands  GPXCCG   $GenX::Path(GFCC30TC) "$GenX::Param(DBase)/$GenX::Path(GFCC30TC)" 255 100
+         }
+         default {
+            Log::Print WARNING "Unsupported TreeCover : treecover"
+         }
+      }
+      vexpr  GPXCCG  "GPXCCG * 0.01"
+      fstdfield define GPXCCG -NOMVAR $nomvar -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
+      fstdfield write GPXCCG GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   }
+
+   #----- check for needed fields
+   foreach type {4 5 6 7 8 9 25 26} {
+      if { ![catch { fstdfield read GPXVF GPXAUXFILE -1 "" [expr 1200-$type] -1 -1 "" "VF" }] } {
+         vexpr GPXVFH  GPXVFH+GPXVF
+      } else {
+         Log::Print WARNING "Could not find VF($type) field while processing High Vegetation field"
+      }
+   }
+
+   fstdfield read GPXVF1   GPXAUXFILE -1 ""  1199  -1 -1 "" "VF"
+   fstdfield read GPXVF2   GPXAUXFILE -1 ""  1198  -1 -1 "" "VF"
+   fstdfield read GPXVF3   GPXAUXFILE -1 ""  1197  -1 -1 "" "VF"
+   fstdfield read GPXVF21  GPXAUXFILE -1 ""  1179  -1 -1 "" "VF"
+
+   vexpr GPXVFNT  "GPXVF1+GPXVF3+GPXVF2+GPXVF21"
+
+   vexpr GPXCCL  "ifelse(GPXVFNT<1.0,GPXCCG/(1-GPXVFNT),0.0)"
+   vexpr GPXCCL  "ifelse(GPXVFH>0.0,GPXCCL,0.0)"
+
+   fstdfield define GPXCCL -NOMVAR CCL -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXCCL GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+
+   fstdfield define GPXVFNT -NOMVAR VFNT -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXVFNT GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield define GPXVFH -NOMVAR VFH -ETIKET $GenX::Param(ETIKET) -IP1 0 -DATYP $GenX::Param(Datyp)
+   fstdfield write GPXVFH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+   fstdfield free GPXCCL GPXCCG GPXCCNW GPXVFNT GPXVFH GPXVF1 GPXVF2 GPXVF3 GPXVF21
+
+}
+
+
+#----------------------------------------------------------------------------
 # Name     : <GeoPhysX::AverageGeoidHeight>
 # Creation : Aug 2017 - V. Souvanlasy - CMC/CMDS
 #
