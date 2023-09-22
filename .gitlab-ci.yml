@@ -10,43 +10,45 @@ before_script:
    # Force color CMake output even when output is not TTY
    - export CLICOLOR_FORCE=true
 
-build:intel-19.0.3:
+build:inteloneapi-2023.0.0:
    stage: build
    only:
       - master
       - dev
    script:
-      - source ci-env/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
-      - export SSM_DEV=/users/dor/afsr/005/links/storage/ssm
-      - export CMD_EXT_PATH=/ssm/net/cmds/ext/20210301
+      - source /fs/ssm/eccc/mrd/ordenv/SCIENCE/profile/latest
+      - source ${ECCI_ENV}/latest/${ORDENV_PLAT}/inteloneapi-2023.0.0.sh
+      - export SSM_DEV=${CI_PROJECT_DIR}/ssm
+      - export CMD_EXT_PATH=/fs/ssm/eccc/cmd/cmds/ext/20220331
       - . ssmuse-sh -x $CMD_EXT_PATH
-      - mkdir build_intel-19.0.3
-      - cd build_intel-19.0.3
+      - mkdir build_inteloneapi-2023.0.0
+      - cd build_inteloneapi-2023.0.0
       - cmake ../ 
       - make
    artifacts:
       expire_in: 2 hrs
       paths:
-         - build_intel-19.0.3
+         - build_inteloneapi-2023.0.0
 
-build:gnu-7.4.0:
+build:gnu-9.3.0:
    stage: build
    only:
       - master
       - dev
    script:
-      - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
-      - export SSM_DEV=/users/dor/afsr/005/links/storage/ssm
-      - export CMD_EXT_PATH=/ssm/net/cmds/ext/20210301
+      - source /fs/ssm/eccc/mrd/ordenv/SCIENCE/profile/latest
+      - source ${ECCI_ENV}/latest/${ORDENV_PLAT}/gnu-9.3.0.sh
+      - export SSM_DEV=${CI_PROJECT_DIR}/ssm
+      - export CMD_EXT_PATH=/fs/ssm/eccc/cmd/cmds/ext/20220331
       - . ssmuse-sh -x $CMD_EXT_PATH
-      - mkdir build_gnu-7.4.0
-      - cd build_gnu-7.4.0
+      - mkdir build_gnu-9.3.0
+      - cd build_gnu-9.3.0
       - cmake ../ 
       - make
    artifacts:
       expire_in: 2 hrs
       paths:
-         - build_gnu-7.4.0
+         - build_gnu-9.3.0
 
 # test:intel-19.0.3:
 #    stage: test
@@ -68,26 +70,26 @@ build:gnu-7.4.0:
 #       - cd build_gnu-7.4.0
 #       - make check
 
-package:intel-19.0.3:
+package:inteloneapi-2023.0.0:
    stage: package
    only:
       - tags
    environment:
       name: testing
    script:
-      - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
-      - cd build_intel-19.0.3
+      - source ${ECCI_ENV}/latest/${ORDENV_PLAT}/inteloneapi-2023.0.0.sh
+      - cd build_inteloneapi-2023.0.0
       - make package
-      - ~/ci-admin-bundle/bin/ci-deploy-ssm.sh package
+#      - ~/ci-admin-bundle/bin/ci-deploy-ssm.sh package
 
-package:gnu-7.4.0:
+package:gnu-9.3.0:
    stage: package
    only:
       - tags
    environment:
       name: testing
    script:
-      - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
-      - cd build_gnu-7.4.0
+      - source ${ECCI_ENV}/latest/ubuntu-18.04-amd-64/gnu-9.3.0.sh
+      - cd build_gnu-9.3.0
       - make package
-      - ~/ci-admin-bundle/bin/ci-deploy-ssm.sh package
+#      - ~/ci-admin-bundle/bin/ci-deploy-ssm.sh package
