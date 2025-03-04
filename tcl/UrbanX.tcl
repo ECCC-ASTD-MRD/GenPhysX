@@ -2254,7 +2254,7 @@ proc UrbanX::BuildingHeights2Raster { {shpfiles ""} } {
       Log::Print INFO "The file $bld_height_file has been generated"
       gdalband free RHAUTEURBLD
    } else {
-      Log::Print INFO "Will Not Save $bld_height_file"
+      Log::Print INFO "Will Not Save $Param(NTSSheet)_Building-heights.tif"
    }
 }
 
