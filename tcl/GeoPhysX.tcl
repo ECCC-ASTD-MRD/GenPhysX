@@ -1414,6 +1414,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "CCI_LC"    { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015-ECO2017" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015-1" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015-3" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2010" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
@@ -1736,6 +1737,9 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
       GenX::Procs $dbid
       }
    "CCILC2015-1" {
+      GenX::Procs $dbid
+      }
+   "CCILC2015-3" {
       GenX::Procs $dbid
       }
    "CCILC2015" {
@@ -2339,6 +2343,7 @@ proc GeoPhysX::AverageVege { Grid } {
          "CCI_LC"    { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015-ECO2017" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015-1" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015-3" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2010" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "USGS_R"    { GeoPhysX::AverageVegeUSGS_R    GPXVF ;#----- USGS global vege raster averaging method }
@@ -3155,10 +3160,10 @@ proc GeoPhysX::AverageVegeNALCMS { Grid } {
 }
 
 #----------------------------------------------------------------------------
-# Name     : <GeoPhysX::AverageGLAS>
+# Name     : <GeoPhysX::AverageVCH>
 # Creation : Janvier 2009 - J.P. Gauthier - CMC/CMOE
 #
-# Goal     : Average vegetation canopy height using GLAS database
+# Goal     : Average vegetation canopy height 
 #
 # Parameters :
 #   <Grid>   : Grid on which to generate the vegetation
@@ -3168,111 +3173,64 @@ proc GeoPhysX::AverageVegeNALCMS { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageGLAS { Grid } {
+proc GeoPhysX::AverageVCH { Grid {do_z0vh 0} } {
    variable Param
    variable Const
 
-   GenX::Procs GLAS
-   Log::Print INFO "Averaging vegetation canopy height using GLAS database"
+   GenX::Procs $GenX::Param(VCH)
+   Log::Print INFO "Averaging vegetation canopy height using $GenX::Param(VCH) database"
 
-   #----- Open the file
-   gdalfile open GLASFILE read $GenX::Param(DBase)/$GenX::Path(GLAS)/Simard_Pinto_3DGlobalVeg_JGR.tif
+   fstdfield copy GPXVCH $Grid
+   GenX::GridClear GPXVCH  0.0
 
-   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLASFILE]]]] } {
-      Log::Print WARNING "Specified grid does not intersect with GLAS database, vegetation will not be calculated"
-   } else {
-      Log::Print INFO "Grid intersection with GLAS database is { $limits }"
-      set x0 [lindex $limits 0]
-      set x1 [lindex $limits 2]
-      set y0 [lindex $limits 1]
-      set y1 [lindex $limits 3]
-
-      #----- Loop over the data by tiles since it's too big to fit in memory
-      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
-         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
-            gdalband read GLASTILE { { GLASFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
-            gdalband stats GLASTILE -nodata 255 -celldim $GenX::Param(Cell)
-
-            fstdfield gridinterp $Grid GLASTILE AVERAGE False
-         }
-      }
-
-      gdalband free GLASTILE
+   if { $do_z0vh } {
+      fstdfield copy GPXLNZ0 $Grid
+      GenX::GridClear GPXLNZ0 -99.0
    }
-   gdalfile close GLASFILE
+
+   if { $GenX::Param(VCH) == "GFCH2019" } {
+      set vchdir "$GenX::Param(DBase)/$GenX::Path(GFCH2019)"
+      if { $do_z0vh } {
+         GeoPhysX::AverageIndexedBands  GPXVCH  GFCH_2019 "$vchdir" {GPXLNZ0 LogTreeHeight} 101 101
+      } else {
+         GeoPhysX::AverageIndexedBands  GPXVCH  GFCH_2019 "$vchdir" {} 101 101
+      }
+   } elseif { $GenX::Param(VCH) == "GFCH2020" } {
+      set vchdir "$GenX::Param(DBase)/$GenX::Path(GFCH2020)"
+      if { $do_z0vh } {
+         GeoPhysX::AverageIndexedBands  GPXVCH  GFCH_2020 "$vchdir" {GPXLNZ0 LogTreeHeight} 0
+      } else {
+         GeoPhysX::AverageIndexedBands  GPXVCH  GFCH_2020 "$vchdir" {} 0
+      }
+   } elseif { $GenX::Param(VCH) == "HRCH2020" } {
+      set vchdir "$GenX::Param(DBase)/$GenX::Path(HRCH2020)"
+      if { $do_z0vh } {
+         GeoPhysX::AverageIndexedBands  GPXVCH  HRCH_2020 "$vchdir" {GPXLNZ0 LogTreeHeight} 0
+      } else {
+         GeoPhysX::AverageIndexedBands  GPXVCH  HRCH_2020 "$vchdir" {} 0
+      }
+   } else {
+      set files {}
+      lappend files "$GenX::Param(DBase)/$GenX::Path(GLAS)/Simard_Pinto_3DGlobalVeg_JGR.tif"
+      if { $do_z0vh } {
+         GeoPhysX::AverageRastersFiles2rpnGrid GPXVCH $files VCH 255 0 "$GenX::Param(ETIKET)" "Vegetation Canopy Height" 0 {GPXLNZ0 LogTreeHeight}
+      } else {
+         GeoPhysX::AverageRastersFiles2rpnGrid GPXVCH $files VCH 255 0 "$GenX::Param(ETIKET)" "Vegetation Canopy Height" 0
+      }
+   }
 
    #----- Save output
-   fstdfield gridinterp $Grid - NOP True
-   fstdfield define $Grid -NOMVAR VCH -ETIKET $GenX::Param(ETIKET) -IP1 0
-   fstdfield write $Grid GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
-}
+   fstdfield define GPXVCH -NOMVAR VCH -ETIKET $GenX::Param(ETIKET) -IP1 0
+   fstdfield write GPXVCH GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
 
-#----------------------------------------------------------------------------
-# Name     : <GeoPhysX::AverageGLAS_Z0>
-# Creation : Fevrier 2017 - Maria A. & Vanh S.
-#
-# Goal     : Average vegetation canopy height (> 0 only) using GLAS database
-#            and  Z0 of High Vegetation
-#
-# Parameters :
-#   <Grid>   : Grid on which to generate the vegetation
-#
-# Return:
-#
-# Remarks :
-#
-#----------------------------------------------------------------------------
-proc GeoPhysX::AverageGLAS_Z0 { Grid } {
-   variable Param
-   variable Const
-
-   GenX::Procs GLAS
-   Log::Print INFO "Averaging ln of vegetation height Z0 usiing GLAS database"
-
-   fstdfield copy GPXLNZ0 $Grid
-   GenX::GridClear GPXLNZ0 -99.0
-
-   #----- Open the file
-   gdalfile open GLASFILE read $GenX::Param(DBase)/$GenX::Path(GLAS)/Simard_Pinto_3DGlobalVeg_JGR-original.tif
-
-   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GLASFILE]]]] } {
-      Log::Print WARNING "Specified grid does not intersect with GLAS database, vegetation will not be calculated"
-   } else {
-      Log::Print INFO "Grid intersection with GLAS database is { $limits }"
-      set x0 [lindex $limits 0]
-      set x1 [lindex $limits 2]
-      set y0 [lindex $limits 1]
-      set y1 [lindex $limits 3]
-
-      #----- Loop over the data by tiles since it's too big to fit in memory
-      for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
-         for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-            Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
-            gdalband read GLASTILE { { GLASFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
-            gdalband stats GLASTILE -nodata 0 -celldim $GenX::Param(Cell)
-            vexpr LOGTILE "ifelse(GLASTILE>0,ln(GLASTILE/10.0),-99)"
-            gdalband stats LOGTILE -nodata -99 -celldim $GenX::Param(Cell)
-            fstdfield gridinterp $Grid GLASTILE AVERAGE False
-            fstdfield gridinterp GPXLNZ0 LOGTILE AVERAGE False
-         }
-      }
-
-      gdalband free LOGTILE
-      gdalband free GLASTILE
+   if { $do_z0vh } {
+      Log::Print INFO "Saving Z0VH to GPXAUXFILE"
+      vexpr GPXZ0VH ifelse(GPXLNZ0>-99.0,exp(GPXLNZ0),0.0)
+      fstdfield define GPXZ0VH -NOMVAR Z0VH -ETIKET $GenX::Param(ETIKET) -IP1 0 -IP2 0
+      fstdfield write GPXZ0VH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+      fstdfield free GPXZ0VH
+      fstdfield free GPXLNZ0
    }
-   gdalfile close GLASFILE
-
-   #----- Save output
-   fstdfield gridinterp $Grid - NOP True
-   fstdfield define $Grid -NOMVAR VCH -ETIKET $GenX::Param(ETIKET) -IP1 0
-   fstdfield write $Grid GPXAUXFILE -$GenX::Param(CappedNBits) True $GenX::Param(Compress)
-
-   Log::Print INFO "Saving Z0VH to GPXAUXFILE"
-   fstdfield gridinterp GPXLNZ0 - NOP True
-   vexpr GPXZ0VH ifelse(GPXLNZ0>-99.0,exp(GPXLNZ0),0.0)
-   fstdfield define GPXZ0VH -NOMVAR Z0VH -ETIKET $GenX::Param(ETIKET) -IP1 0 -IP2 0
-   fstdfield write GPXZ0VH GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
 }
 
 #----------------------------------------------------------------------------
@@ -4370,7 +4328,7 @@ proc GeoPhysX::AverageSoil_SoilGrids { Grid } {
 # Creation : June 2023 - V. Souvanlasy - CMC/CMDS
 #
 # Goal     : Generate the Tree Cover Density
-#            using TCC_2010, GFCC30TC_2015 and GLCLU_2019 as mask
+#            using TCC_2010, GFCC30TC_2015 and GFCH_2019 as mask
 #
 # Parameters :
 #   <Grid>   : Grid on which to generate the mask
@@ -4422,7 +4380,7 @@ proc GeoPhysX::AverageTreeCover { Grid } {
          }
          "GFCC30TC_2015" {
             set nomvar "CCG"
-            GeoPhysX::AverageIndexedBands  GPXCCG   $GenX::Path(GFCC30TC) "$GenX::Param(DBase)/$GenX::Path(GFCC30TC)" 255 100
+            GeoPhysX::AverageIndexedBands  GPXCCG   $GenX::Path(GFCC30TC) "$GenX::Param(DBase)/$GenX::Path(GFCC30TC)" "" 255 100
          }
          default {
             Log::Print WARNING "Unsupported TreeCover : treecover"
@@ -4599,7 +4557,7 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 
       Log::Print INFO "Averaging CHS bathymetry data"
       GenX::GridClear GPXBATHY $nodata
-      GeoPhysX::AverageIndexedBands  GPXBATHY CHS "$GenX::Param(DBase)/$GenX::Path(CHS)" $nodata
+      GeoPhysX::AverageIndexedBands  GPXBATHY CHS "$GenX::Param(DBase)/$GenX::Path(CHS)" "" $nodata
 
       vexpr  GPXDEPTH  "ifelse(GPXBATHY<$nodata,GPXBATHY,GPXDEPTH)"
    }
@@ -4609,7 +4567,7 @@ proc GeoPhysX::AverageBathymetry { Grid } {
       Log::Print INFO "Averaging NCEI Great Lakes bathymetry data"
       set ncei_nodata -9999
       GenX::GridClear GPXBATHY 0.0
-      GeoPhysX::AverageIndexedBands  GPXBATHY NCEI "$GenX::Param(DBase)/$GenX::Path(NCEI)" $ncei_nodata 0.0
+      GeoPhysX::AverageIndexedBands  GPXBATHY NCEI "$GenX::Param(DBase)/$GenX::Path(NCEI)" "" $ncei_nodata 0.0
 
       if { $Has_HL } {
          fstdfield copy GREATLAKES $Grid
@@ -4723,11 +4681,20 @@ proc GeoPhysX::AverageBathymetryGEBCO { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageIndexedBands { Grid dbname basedir {nodata ""} {maxvalue  3.4e38} } {
+proc GeoPhysX::AverageIndexedBands { Grid dbname basedir {CALLPROCFLD ""} {nodata ""} {maxvalue  3.4e38} } {
    variable Param
 
    GenX::Procs $dbname
    Log::Print INFO "Averaging field using bands from $dbname database"
+
+   set has_CallProc 0
+   if { [llength $CALLPROCFLD] == 2 } {
+      set CALLPROC [lindex $CALLPROCFLD 1]
+      set PROCFLD  [lindex $CALLPROCFLD 0]
+      if { [fstdfield is $PROCFLD] } {
+         set has_CallProc 1
+      }
+   }
 
    # choose  the right mode for interpolation
    set grid_reso [GenX::Get_Grid_Reso $Grid]
@@ -4795,6 +4762,10 @@ proc GeoPhysX::AverageIndexedBands { Grid dbname basedir {nodata ""} {maxvalue  
                   } else {
                      gdalband stats BDBTILE -celldim $GenX::Param(Cell)
                   }
+
+                  if { $has_CallProc } {
+                     $CALLPROC $PROCFLD BDBTILE $nodata
+	          }
    
                   if { [string compare $mode "AVERAGE"] == 0 } {
                      fstdfield gridinterp $Grid BDBTILE AVERAGE False
@@ -4802,6 +4773,7 @@ proc GeoPhysX::AverageIndexedBands { Grid dbname basedir {nodata ""} {maxvalue  
                      fstdfield gridinterp $Grid BDBTILE $mode
                   }
                   gdalband free BDBTILE
+
                }
             }
          }
@@ -4810,6 +4782,10 @@ proc GeoPhysX::AverageIndexedBands { Grid dbname basedir {nodata ""} {maxvalue  
       if { [string compare $mode "AVERAGE"] == 0 } {
          fstdfield gridinterp $Grid - NOP True
       }
+      if { $has_CallProc } {
+         fstdfield gridinterp $PROCFLD - NOP True
+      }
+
    } else {
       Log::Print WARNING "The grid is not within $dbname limits"
    }
@@ -4830,9 +4806,19 @@ proc GeoPhysX::AverageIndexedBands { Grid dbname basedir {nodata ""} {maxvalue  
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG etiket description } {
+proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG etiket description {write_fld 1} {CALLPROCFLD ""} } {
 
    set types {}
+
+   set has_CallProc 0
+   if { [llength $CALLPROCFLD] == 2 } {
+      set CALLPROC [lindex $CALLPROCFLD 1]
+      set PROCFLD  [lindex $CALLPROCFLD 0]
+      if { [fstdfield is $PROCFLD] } {
+         set has_CallProc 1
+      }
+   }
+
    #----- Open the files
    set fntype  1
    foreach file $files {
@@ -4862,12 +4848,21 @@ proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG et
                   Log::Print DEBUG "   Processing tile: $band $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
                   set lband [lrange $band 0 1]
                   gdalband read BFRTILE "{ $lband }" $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+
+                  if { $has_CallProc } {
+                     $CALLPROC $PROCFLD BFRTILE $nodata
+	          }
+
                   gdalband stats BFRTILE -nodata $nodata -celldim $GenX::Param(Cell)
                   fstdfield gridinterp $Grid BFRTILE AVERAGE False
                }
             }
    
             fstdfield gridinterp $Grid - NOP True
+
+            if { $has_CallProc } {
+               fstdfield gridinterp $PROCFLD - NOP True
+            }
 
             if { $has_MG } {
                vexpr  $Grid "ifelse(GPXMG>0.0, $Grid, 0.0)"
@@ -4876,8 +4871,10 @@ proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG et
    
          #----- Save output (Same for all layers)
          lappend types $type
-         fstdfield define $Grid -NOMVAR $varname -IP1 [expr 1200-$type] -ETIKET "$etiket"
-         fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+	 if { $write_fld } {
+            fstdfield define $Grid -NOMVAR $varname -IP1 [expr 1200-$type] -ETIKET "$etiket"
+            fstdfield write $Grid GPXAUXFILE -$GenX::Param(NBits) True $GenX::Param(Compress)
+         }
          gdalband free BFRTILE
 
          incr type
@@ -4886,6 +4883,27 @@ proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG et
       set fntype [expr $fntype + $nbands]
    }
    return $types
+}
+
+proc LogTreeHeight { FLD Tile nodata } {
+
+    if { $nodata != 0 } {
+      set Tile2 ${Tile}ZM
+      vexpr $Tile2 "ifelse($Tile==$nodata,0,$Tile)"
+      set Tile $Tile2
+    } else {
+      set Tile2 ""
+    }
+
+    gdalband stats $Tile -nodata 0
+    vexpr LOGTILE "ifelse($Tile>0,ln($Tile/10.0),-99)"
+    gdalband stats LOGTILE -nodata -99 -celldim $GenX::Param(Cell)
+    fstdfield gridinterp $FLD LOGTILE AVERAGE False
+    gdalband free LOGTILE
+
+    if { $Tile2 != "" } {
+       gdalband free $Tile2
+    }
 }
 
 #----------------------------------------------------------------------------

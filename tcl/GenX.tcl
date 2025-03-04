@@ -73,6 +73,7 @@ namespace eval GenX { } {
    set Param(Topo)       ""                    ;#Topography data selected
    set Param(Mask)       ""                    ;#Mask data selected
    set Param(TreeCover)  ""
+   set Param(VCH)        "GLAS"                ;#Vegetation height selected
    set Param(GeoMask)    ""                    ;#Geographical mask data selected
    set Param(Aspect)     ""                    ;#Slope and aspect selected
    set Param(Check)      ""                    ;#Consistency checks
@@ -111,10 +112,10 @@ namespace eval GenX { } {
 
    set Param(Topos)     { USGS SRTM SRTM30 SRTM90 CDED250 CDED50 ASTERGDEM GTOPO30 GMTED30 GMTED15 GMTED75 CDEM FABDEM }
    set Param(Aspects)   { SRTM SRTM30 SRTM90 CDED250 CDED50 CDEM GTOPO30 USGS GMTED30 GMTED15 GMTED75 }
-   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC CCILC2015-ECO2017 CCILC2015-1 CCILC2015 CCILC2010 USGS_R NALCMS }
+   set Param(Veges)     { USGS GLC2000 GLOBCOVER CCRS EOSD LCC2000V CORINE MCD12Q1 AAFC CCI_LC CCILC2015-ECO2017 CCILC2015-1 CCILC2015-3 CCILC2015 CCILC2010 USGS_R NALCMS }
    set Param(Soils)     { USDA AGRC FAO HWSD JPL BNU CANSIS SLC SOILGRIDS }
    set Param(SoilDBRKs) { GSRS }
-   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC CCILC2015-ECO2017 CCILC2015-1 CCILC2015 CCILC2010 USGS_R AAFC NALCMS OSM }
+   set Param(Masks)     { USNAVY USGS GLC2000 GLOBCOVER CANVEC MCD12Q1 CCI_LC CCILC2015-ECO2017 CCILC2015-1 CCILC2015-3 CCILC2015 CCILC2010 USGS_R AAFC NALCMS OSM }
    set Param(GeoMasks)  { CANADA }
    set Param(Biogenics) { BELD VF }
    set Param(Hydros)    { NHN NHD HSRN DCW }
@@ -130,6 +131,7 @@ namespace eval GenX { } {
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS-5.1 AURAMS RELWS-1.0 }   ;#Model cible
    set Param(EGMGHs)    { EGM96 EGM2008 }
    set Param(Bathys)    { CHS NCEI GEBCO HYDROLAKES }
+   set Param(VCHs)      { GLAS GFCH2019 GFCH2020 HRCH2020 }
    set Param(Interpolations) { LINEAR NEAREST CUBIC AVERAGE }
 
    set Param(FallbackMask)    ""             ;#used if Path(FallbackMask) not used
@@ -208,6 +210,7 @@ namespace eval GenX { } {
    set Path(MODIS_IGBP) MODIS/MCD12Q1/IGBP
    set Path(CCI_LC)     ESA_CCI_LC
    set Path(CCILC2015-1)  ESA_CCI_LC/2015-1
+   set Path(CCILC2015-3)  ESA_CCI_LC/2015-3
    set Path(CCILC2015-ECO2017)  ESA_CCI_LC/2015-ECO2017
    set Path(CCILC2015)  ESA_CCI_LC/2015
    set Path(CCILC2010)  ESA_CCI_LC/2010
@@ -230,6 +233,9 @@ namespace eval GenX { } {
    set Path(TCC_VH)     TCC_2010/veg_high
    set Path(GFCC30TC)   GFCC30TC_2015/tree_cover
    set Path(GFC_WM)     GFC-2019-v1.7
+   set Path(GFCH2019)   GFCH_2019/Tiled
+   set Path(GFCH2020)   GFCH_2020
+   set Path(HRCH2020)   HRCH_2020/3deg_cogs
 
    set Path(StatCan)    $Param(DBase)/StatCan2006
    set Path(FallbackMask)    ""               ;# file containing MG to complete CANVEC
@@ -358,9 +364,9 @@ proc GenX::Process { Grid } {
    #----- Vegetation canopy height
    if { $GenX::Param(Sub)!="LEGACY" } {
       if { $GenX::Param(Z0NoTopo) == "CANOPY" } {
-         GeoPhysX::AverageGLAS $Grid
+         GeoPhysX::AverageVCH $Grid
       } elseif { ($GenX::Param(Z0NoTopo) == "CANOPY_LT") || ($GenX::Param(TOPO_ZVG2_TYPE) == "CANOPY_LT") } {
-         GeoPhysX::AverageGLAS_Z0 $Grid
+         GeoPhysX::AverageVCH $Grid 1
       }
    }
 
@@ -717,6 +723,7 @@ proc GenX::CommandLine { } {
       -diag     [format "%-25s : Do diagnostics (Not implemented yet)" ""]
       -egmgh    [format "%-34s : Earth Gravitational Model database to use among {$Param(EGMGHs)}" (${::APP_COLOR_GREEN}[join $Param(EGMGH)]${::APP_COLOR_RESET})]
       -bathy    [format "%-34s : Bathymetry data to use among {$Param(Bathys)}" (${::APP_COLOR_GREEN}[join $Param(Bathy)]${::APP_COLOR_RESET})]
+      -vch      [format "%-34s : Vegetation Canopy Height database to use among {$Param(VCHs)}" (${::APP_COLOR_GREEN}[join $Param(VCH)]${::APP_COLOR_RESET})]
 
    Specific processing parameters:
       -topostag [format "%-25s : Treat multiple grids as staggered topography grids" ""]
@@ -825,6 +832,7 @@ proc GenX::ParseCommandLine { } {
          "soil"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
          "dbrk"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(SoilDBRK) $GenX::Param(SoilDBRKs)]; incr flags }
          "bathy"     { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Bathy) $GenX::Param(Bathys)]; incr flags }
+         "vch"       { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(VCH) $GenX::Param(VCHs)]; incr flags }
          "egmgh"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(EGMGH) $GenX::Param(EGMGHs)]; incr flags }
          "subgrid"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Sub)]; incr flags }
          "aspect"    { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Aspect) $GenX::Param(Aspects)]; incr flags }
