@@ -1415,6 +1415,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "CCILC2015-ECO2017" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015-1" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015-3" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015-4" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2010" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
@@ -1740,6 +1741,9 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
       GenX::Procs $dbid
       }
    "CCILC2015-3" {
+      GenX::Procs $dbid
+      }
+   "CCILC2015-4" {
       GenX::Procs $dbid
       }
    "CCILC2015" {
@@ -2344,6 +2348,7 @@ proc GeoPhysX::AverageVege { Grid } {
          "CCILC2015-ECO2017" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015-1" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015-3" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015-4" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2010" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "USGS_R"    { GeoPhysX::AverageVegeUSGS_R    GPXVF ;#----- USGS global vege raster averaging method }
