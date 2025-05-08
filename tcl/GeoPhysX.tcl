@@ -88,6 +88,7 @@ namespace eval GeoPhysX { } {
    set Param(Z0M_VegeZ0)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.1  0.15 0.15 0.35 0.25 0.10 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
 #   set Param(Z0M_VegeZ0_Eco)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.15  0.15 0.15 0.15 1.75 0.10 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
    set Param(Z0M_VegeZ0_Eco)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.15  0.15 0.15 0.15 1.75 1.75 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
+   set Param(Z0M_VegeZ0_CCILCWE) {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1 0.1 0.2 0.05 0.2 0.10 0.15 0.15 0.25 0.10 0.25 0.75 0.01 0.1 0.1 1.75 0.5}
 
    #----- Constants definitions
 
@@ -165,6 +166,9 @@ namespace eval GeoPhysX { } {
    # ajoute 151 en prevision de la version 2.0.7 et 211 pour inclusion de Ocean and Inland Water Body v4.0
    set Const(CCI_LC2RPN) { {  0 211 220 210 70 71 72 50 80 81 82 60 61 62 40 130 10 11 12 30 20 190 140 150 151 152 153 160 170 180 200 201 202 90 100 110 120 121 122 123 }
                            {-99   1   2   3  4  4  4  5  6  6  6  7  7  7 14  13 15 15 15 15 20  21  22  22  22  22  22  23  23  23  24  24  24 25  26  26  11  10  11  12 } }
+
+   set Const(CCI_LC2RPN-WE) { {  0 211 220 210 70 71 72 50 80 81 82 60 61 62 40 130 10 11 12 16 17 30 20 190 140 150 151 152 153 160 170 180 200 201 202 90 100 110 120 121 122 123 }
+                             {-99   1   2   3  4  4  4  5  6  6  6  7  7  7 14  13 15 15 15 16 17  15  20  21  22  22  22  22  22  23  23  23  24  24  24 25  26  26  11  10  11  12 } }
 
    #----- Correspondance de Douglas Chan Mai 2010 pour la conversion des classes GCL2000 vers les classes RPN
    set Const(GLC20002RPN) { { 1 2 3 4 5 6   7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22  23 200}
@@ -1415,7 +1419,7 @@ proc GeoPhysX::AverageMask { Grid } {
       "CCILC2015-ECO2017" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015-1" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015-3" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
-      "CCILC2015-4" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
+      "CCILC2015-WE" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2015" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "CCILC2010" { GeoPhysX::AverageMaskCCI_LC    $Grid $GenX::Param(Mask) }
       "AAFC"      { GeoPhysX::AverageMaskAAFC      $Grid }
@@ -1743,7 +1747,7 @@ proc GeoPhysX::AverageMaskCCI_LC { Grid  dbid } {
    "CCILC2015-3" {
       GenX::Procs $dbid
       }
-   "CCILC2015-4" {
+   "CCILC2015-WE" {
       GenX::Procs $dbid
       }
    "CCILC2015" {
@@ -2348,7 +2352,7 @@ proc GeoPhysX::AverageVege { Grid } {
          "CCILC2015-ECO2017" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015-1" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015-3" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
-         "CCILC2015-4" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
+         "CCILC2015-WE" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2015" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "CCILC2010" { GeoPhysX::AverageVegeCCI_LC    GPXVF $vege ;#----- ESA CCI CRDP Land cover }
          "USGS_R"    { GeoPhysX::AverageVegeUSGS_R    GPXVF ;#----- USGS global vege raster averaging method }
@@ -2854,18 +2858,15 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
       GenX::Procs $dbid
       Log::Print INFO "Using CCILC2015 with Ecoregions2017 already added"
       set GenX::Param(UseVegeLUT)     True
+      set CCILC_2PN $Const(CCI_LC2RPN)
       }
-   "CCILC2015-1" {
+   "CCILC2015-WE" {
       GenX::Procs $dbid
-      }
-   "CCILC2015" {
-      GenX::Procs $dbid
-      }
-   "CCILC2010" {
-      GenX::Procs $dbid
+      set CCILC_2PN $Const(CCI_LC2RPN-WE)
       }
    default  {
       GenX::Procs "CCILC${year}"
+      set CCILC_2PN $Const(CCI_LC2RPN)
       }
    }
 
@@ -2908,9 +2909,9 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
       }
  
       if { $has_lut == 0 } {
-         Log::Print INFO "Using correspondance table\n   From:[lindex $Const(CCI_LC2RPN) 0]\n   To  :[lindex $Const(CCI_LC2RPN) 1]"
-         vector create FROMCCI  [lindex $Const(CCI_LC2RPN) 0]
-         vector create TORPN    [lindex $Const(CCI_LC2RPN) 1]
+         Log::Print INFO "Using correspondance table\n   From:[lindex $CCI_LC2RPN 0]\n   To  :[lindex $CCI_LC2RPN 1]"
+         vector create FROMCCI  [lindex $CCI_LC2RPN 0]
+         vector create TORPN    [lindex $CCI_LC2RPN 1]
       }
 
       Log::Print INFO "Grid intersection with CCI_LC database is { $limits }"
@@ -5747,12 +5748,19 @@ proc GeoPhysX::SubRoughnessLength { } {
          return
       }
 
-      if { $GenX::Param(Vege) == "CCILC2015-ECO2017" } { 
+      switch $GenX::Param(Vege) {
+         "CCILC2015-ECO2017"    { 
          set VegeTree  $Param(VegeTree_Eco)
          set Z0M_VegeZ0  $Param(Z0M_VegeZ0_Eco)
-      } else {
+         }
+         "CCILC2015-WE"    { 
+         set VegeTree  $Param(VegeTree)
+         set Z0M_VegeZ0  $Param(Z0M_VegeZ0_CCILCWE)
+         }
+      default {
          set VegeTree  $Param(VegeTree)
          set Z0M_VegeZ0  $Param(Z0M_VegeZ0)
+         }
       }
 
       fstdfield copy GPXZ0V3 GPXZ0VH
