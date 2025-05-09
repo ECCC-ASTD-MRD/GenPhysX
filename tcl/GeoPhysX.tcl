@@ -1348,8 +1348,8 @@ proc GeoPhysX::AverageAspectTile { Grid Band } {
    variable Opt
 
    #----- Calculate slope and aspect for the tile
-   vexpr SLATILE dslopedeg($Band)
-   vexpr FSATILE daspect($Band)
+   vexpr (Int16)SLATILE dslopedeg($Band)
+   vexpr (Int16)FSATILE daspect($Band)
 
 if { ! $Opt(SlopOnly) } {
    #----- Define aspect ranges
