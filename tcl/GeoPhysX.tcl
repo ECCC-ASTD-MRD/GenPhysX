@@ -2858,15 +2858,15 @@ proc GeoPhysX::AverageVegeCCI_LC { Grid dbid } {
       GenX::Procs $dbid
       Log::Print INFO "Using CCILC2015 with Ecoregions2017 already added"
       set GenX::Param(UseVegeLUT)     True
-      set CCILC_2PN $Const(CCI_LC2RPN)
+      set CCI_LC2RPN $Const(CCI_LC2RPN)
       }
    "CCILC2015-WE" {
       GenX::Procs $dbid
-      set CCILC_2PN $Const(CCI_LC2RPN-WE)
+      set CCI_LC2RPN $Const(CCI_LC2RPN-WE)
       }
    default  {
       GenX::Procs "CCILC${year}"
-      set CCILC_2PN $Const(CCI_LC2RPN)
+      set CCI_LC2RPN $Const(CCI_LC2RPN)
       }
    }
 
