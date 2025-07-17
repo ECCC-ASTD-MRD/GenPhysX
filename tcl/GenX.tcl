@@ -219,7 +219,7 @@ namespace eval GenX { } {
    set Path(NALCMS)     NALCMS
    set Path(SLC)        SLC
    set Path(SOILGRIDS)  SoilGrids
-   set Path(SOILGRIDS2) SoilGrids_v2/NA
+   set Path(SOILGRIDS2) SoilGrids_v2/global
    set Path(EGM2008)    NGA/EGM2008
    set Path(EGM96)      NGA/EGM96
    set Path(CHS)        CHS/bathymetry

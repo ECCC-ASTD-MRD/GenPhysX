@@ -90,6 +90,9 @@ namespace eval GeoPhysX { } {
    set Param(Z0M_VegeZ0_Eco)  {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1  0.2  0.2  0.1  0.15  0.15 0.15 0.15 1.75 1.75 0.25 0.75  0.1  0.1  0.1  1.75 0.5}
    set Param(Z0M_VegeZ0_CCILCWE) {0.001 0.001 0.001 1.75 2.0 1.0 2.0 3.0 0.8 0.1 0.1 0.2 0.05 0.2 0.10 0.15 0.15 0.25 0.10 0.25 0.75 0.01 0.1 0.1 1.75 0.5}
 
+   set Param(SoilGridsV2_Soils)   {sand clay bdod cec cfvo soc silt ocd}
+
+
    #----- Constants definitions
 
    set Const(beta)    2.          ;# Slope of the orographic power spectrum
@@ -3619,6 +3622,8 @@ proc GeoPhysX::AverageSoil { Grid } {
       GeoPhysX::AverageSoilGriddedSLC $Grid
    } elseif { [lindex $GenX::Param(Soil) 0]=="SOILGRIDS" } {
       GeoPhysX::AverageSoil_SoilGrids $Grid
+   } elseif { [lindex $GenX::Param(Soil) 0]=="SOILGRIDS2" } {
+      GeoPhysX::AverageSoil_SoilGridsV2 $Grid
    } else {
       GeoPhysX::AverageSand $Grid
       GeoPhysX::AverageClay $Grid
@@ -4325,6 +4330,79 @@ proc GeoPhysX::AverageSoil_SoilGrids { Grid } {
 
    set files $GenX::Param(DBase)/$GenX::Path(SOILGRIDS)/BDRICM_M_250m_ll.tif
    GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files DBR 255 $has_MG "$GenX::Param(ETIKET)" "Bed Rock Depth"
+
+   fstdfield free GPXMG GPXJ
+}
+
+#----------------------------------------------------------------------------
+# Name     : <GeoPhysX::AverageSoil_SoilGridsV2>
+# Creation : July 2025 - V.Souvanlasy - CMC/CMDD
+#
+# Goal     : Generate the soil percentage through averaging based on SoilsGrid V2
+#
+# Parameters :
+#   <Grid>   : Grid on which to generate the sand percentage
+#
+# Return:
+#
+# Remarks : This database has 6 layers 
+#      layer    depth(m)
+#        1      [0    - 0.05[, 
+#        2      [0.05 - 0.15[, 
+#        3      [0.15 - 0.30[, 
+#        4      [0.30 - 0.60[, 
+#        5      [0.60 - 0.99[, 
+#        6      [1.00 - 2.00]
+#           
+#
+#----------------------------------------------------------------------------
+proc GeoPhysX::AverageSoil_SoilGridsV2 { Grid } {
+   variable Param
+
+   GenX::Procs SoilGrids
+   Log::Print INFO "Averaging Soil Texture using SoilGrids V2 database"
+
+   fstdfield copy GPXJ $Grid
+
+   #----- Force sand and clay type to 7 layers 
+   set Param(SandTypes)    { 1 2 3 4 5 6 }
+   set Param(ClayTypes)    { 1 2 3 4 5 6 }
+   set layers              { 0-5 5-15 15-30 30-60 60-100 100-200}
+   set desc(bdod)          "Bulk density"
+   set desc(sand)          "Sand"
+   set desc(clay)          "Clay"
+   set desc(cec)           "Cation exchange capacity"
+   set desc(cfvo)          "Coarse fragments"
+   set desc(soc)           "Organic carbon concentration"
+   set desc(silt)          "Silt"
+   set desc(ocd)           "Organic carbon density"
+
+   set varname(sand)       "J1"
+   set varname(clay)       "J2"
+   set varname(bdod)       "J4"
+   set varname(cec)        "CEC"
+   set varname(cfvo)       "CFVO"
+   set varname(soc)        "SOC"
+   set varname(silt)       "SILT"
+   set varname(ocd)        "OCD"
+
+   #----- Read mask
+   if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
+      fstdfield read GPXMG GPXOUTFILE $idx
+      set has_MG 1
+   } else {
+      Log::Print WARNING "Could not find mask field MG"
+      set has_MG 0
+   }
+
+   foreach prefix $Param(SoilGridsV2_Soils) {
+      set files {}
+      foreach layer $layers {
+         set sgfile "$GenX::Param(DBase)/$GenX::Path(SOILGRIDS2)/${prefix}_${layer}cm_mean.tif"
+         lappend files $sgfile
+      }
+      GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files $varname($prefix) -32768 $has_MG  "$GenX::Param(ETIKET)" "$desc($prefix) Percentage"
+   }
 
    fstdfield free GPXMG GPXJ
 }
