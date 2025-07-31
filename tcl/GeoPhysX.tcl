@@ -4401,7 +4401,7 @@ proc GeoPhysX::AverageSoil_SoilGridsV2 { Grid } {
          set sgfile "$GenX::Param(DBase)/$GenX::Path(SOILGRIDS2)/${prefix}_${layer}cm_mean.tif"
          lappend files $sgfile
       }
-      GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files $varname($prefix) -32768 $has_MG  "$GenX::Param(ETIKET)" "$desc($prefix) Percentage"
+      GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files $varname($prefix) -9999 $has_MG  "$GenX::Param(ETIKET)" "$desc($prefix) Percentage"
    }
 
    fstdfield free GPXMG GPXJ
