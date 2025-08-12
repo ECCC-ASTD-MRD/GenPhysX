@@ -92,7 +92,6 @@ namespace eval GeoPhysX { } {
 
    set Param(SoilGridsV2_Soils)   {sand clay bdod cec cfvo soc silt ocd}
 
-
    #----- Constants definitions
 
    set Const(beta)    2.          ;# Slope of the orographic power spectrum
@@ -3222,9 +3221,9 @@ proc GeoPhysX::AverageVCH { Grid {do_z0vh 0} } {
       set files {}
       lappend files "$GenX::Param(DBase)/$GenX::Path(GLAS)/Simard_Pinto_3DGlobalVeg_JGR.tif"
       if { $do_z0vh } {
-         GeoPhysX::AverageRastersFiles2rpnGrid GPXVCH $files VCH 255 0 "$GenX::Param(ETIKET)" "Vegetation Canopy Height" 0 {GPXLNZ0 LogTreeHeight}
+         GeoPhysX::AverageRastersFiles2rpnGrid GPXVCH $files VCH 1.0 255 0 "$GenX::Param(ETIKET)" "Vegetation Canopy Height" 0 {GPXLNZ0 LogTreeHeight}
       } else {
-         GeoPhysX::AverageRastersFiles2rpnGrid GPXVCH $files VCH 255 0 "$GenX::Param(ETIKET)" "Vegetation Canopy Height" 0
+         GeoPhysX::AverageRastersFiles2rpnGrid GPXVCH $files VCH 1.0 255 0 "$GenX::Param(ETIKET)" "Vegetation Canopy Height" 0
       }
    }
 
@@ -3981,27 +3980,27 @@ proc GeoPhysX::AverageSoilBNU { Grid } {
    set files  {}
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/SAND1.nc
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/SAND2.nc
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J1 -100 $has_MG  "$GenX::Param(ETIKET)" "Sand Percentage"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J1 1.0 -100 $has_MG  "$GenX::Param(ETIKET)" "Sand Percentage"
 
    set files  {}
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/CLAY1.nc
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/CLAY2.nc
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J2 -100 $has_MG  "$GenX::Param(ETIKET)" "Clay Percentage"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J2 1.0 -100 $has_MG  "$GenX::Param(ETIKET)" "Clay Percentage"
 
    set files  {}
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/GRAV1.nc
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/GRAV2.nc
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J3 -100 $has_MG  "$GenX::Param(ETIKET)" "Gravel Percentage"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J3 1.0 -100 $has_MG  "$GenX::Param(ETIKET)" "Gravel Percentage"
 
    set files  {}
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/BD1.nc
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/BD2.nc
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J4 -999 $has_MG  "$GenX::Param(ETIKET)" "Bulk Density"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J4 1.0 -999 $has_MG  "$GenX::Param(ETIKET)" "Bulk Density"
 
    set files  {}
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/OC1.tif
    lappend files $GenX::Param(DBase)/$GenX::Path(BNU)/GSDE/OC2.nc
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files SOC -999 $has_MG  "$GenX::Param(ETIKET)" "Organic Carbon"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files SOC 1.0 -999 $has_MG  "$GenX::Param(ETIKET)" "Organic Carbon"
 
    fstdfield free GPXMG GPXJ
 }
@@ -4052,7 +4051,7 @@ proc GeoPhysX::AverageSoilHydraulic { Grid } {
       foreach  level {1 2 3 4 5 6 7 8} {
          lappend  files  $GenX::Param(DBase)/$GenX::Path(BNU)/GDSHTP/${dataname}_l${level}.nc
       }
-      GeoPhysX::AverageRastersFiles2rpnGrid GPXHFLD $files $varname -9999 $has_MG  "$GenX::Param(ETIKET)" "$desc"
+      GeoPhysX::AverageRastersFiles2rpnGrid GPXHFLD $files $varname 1.0 -9999 $has_MG  "$GenX::Param(ETIKET)" "$desc"
    }
    fstdfield free GPXHFLD
 }
@@ -4100,7 +4099,7 @@ proc GeoPhysX::AverageSoilCANSIS { Grid } {
    lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_SAND1_1KM.tif
    lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_SAND2_1KM.tif
    lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_SAND3_1KM.tif
-   set types [GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J1 700 $has_MG  "$GenX::Param(ETIKET)" "Sand Percentage"]
+   set types [GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J1 1.0 700 $has_MG  "$GenX::Param(ETIKET)" "Sand Percentage"]
 # copying last bottom layer of sand (3)  to 4 and 5
    set nst [llength $Param(SandTypes)]
    set n   [expr [llength $types] + 1]
@@ -4113,7 +4112,7 @@ proc GeoPhysX::AverageSoilCANSIS { Grid } {
    lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_CLAY1_1KM.tif
    lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_CLAY2_1KM.tif
    lappend files $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_RANDOM_CLAY3_1KM.tif
-   set types [GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J2 700 $has_MG "$GenX::Param(ETIKET)" "Clay Percentage"]
+   set types [GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J2 1.0 700 $has_MG "$GenX::Param(ETIKET)" "Clay Percentage"]
 # copying last bottom layer of clay (3)  to 4 and 5
    set nct [llength $Param(ClayTypes)]
    set n   [expr [llength $types] + 1]
@@ -4124,7 +4123,7 @@ proc GeoPhysX::AverageSoilCANSIS { Grid } {
 
    set files {}
    lappend files  $GenX::Param(DBase)/$GenX::Path(CANSIS)/NA_TEXTR_DEPTH_1KM.tif
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files DBR 700 $has_MG "$GenX::Param(ETIKET)" "Bed Rock Depth"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files DBR 1.0 700 $has_MG "$GenX::Param(ETIKET)" "Bed Rock Depth"
 
    fstdfield free GPXMG GPXJ
 }
@@ -4323,13 +4322,13 @@ proc GeoPhysX::AverageSoil_SoilGrids { Grid } {
    }
 
    set files [glob  $GenX::Param(DBase)/$GenX::Path(SOILGRIDS)/SNDPPT_M_sl*_250m_ll.tif]
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J1 255 $has_MG  "$GenX::Param(ETIKET)" "Sand Percentage"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J1 1.0 255 $has_MG  "$GenX::Param(ETIKET)" "Sand Percentage"
 
    set files [glob  $GenX::Param(DBase)/$GenX::Path(SOILGRIDS)/CLYPPT_M_sl*_250m_ll.tif]
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J2 255 $has_MG  "$GenX::Param(ETIKET)" "Clay Percentage"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files J2 1.0 255 $has_MG  "$GenX::Param(ETIKET)" "Clay Percentage"
 
    set files $GenX::Param(DBase)/$GenX::Path(SOILGRIDS)/BDRICM_M_250m_ll.tif
-   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files DBR 255 $has_MG "$GenX::Param(ETIKET)" "Bed Rock Depth"
+   GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files DBR 1.0 255 $has_MG "$GenX::Param(ETIKET)" "Bed Rock Depth"
 
    fstdfield free GPXMG GPXJ
 }
@@ -4386,6 +4385,15 @@ proc GeoPhysX::AverageSoil_SoilGridsV2 { Grid } {
    set varname(silt)       "SILT"
    set varname(ocd)        "OCD"
 
+   set Scale(sand)       "0.1"
+   set Scale(clay)       "0.1"
+   set Scale(bdod)       "10.0"
+   set Scale(cec)        "1.0"
+   set Scale(cfvo)       "0.1"
+   set Scale(soc)        "0.01"
+   set Scale(silt)       "0.1"
+   set Scale(ocd)        "10.0"
+
    #----- Read mask
    if { [llength [set idx [fstdfield find GPXOUTFILE -1 "" -1 -1 -1 "" "MG"]]] } {
       fstdfield read GPXMG GPXOUTFILE $idx
@@ -4397,11 +4405,12 @@ proc GeoPhysX::AverageSoil_SoilGridsV2 { Grid } {
 
    foreach prefix $Param(SoilGridsV2_Soils) {
       set files {}
+      set scal $Scale($prefix)
       foreach layer $layers {
          set sgfile "$GenX::Param(DBase)/$GenX::Path(SOILGRIDS2)/${prefix}_${layer}cm_mean.tif"
          lappend files $sgfile
       }
-      GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files $varname($prefix) -9999 $has_MG  "$GenX::Param(ETIKET)" "$desc($prefix) Percentage"
+      GeoPhysX::AverageRastersFiles2rpnGrid GPXJ $files $varname($prefix) $scal -9999 $has_MG  "$GenX::Param(ETIKET)" "$desc($prefix) Percentage"
    }
 
    fstdfield free GPXMG GPXJ
@@ -4890,7 +4899,7 @@ proc GeoPhysX::AverageIndexedBands { Grid dbname basedir {CALLPROCFLD ""} {nodat
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG etiket description {write_fld 1} {CALLPROCFLD ""} } {
+proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname scal nodata has_MG etiket description {write_fld 1} {CALLPROCFLD ""} } {
 
    set types {}
 
@@ -4951,6 +4960,7 @@ proc GeoPhysX::AverageRastersFiles2rpnGrid { Grid files varname nodata has_MG et
             if { $has_MG } {
                vexpr  $Grid "ifelse(GPXMG>0.0, $Grid, 0.0)"
             }
+            vexpr  $Grid "$Grid * $scal"
          }
    
          #----- Save output (Same for all layers)
