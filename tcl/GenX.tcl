@@ -503,9 +503,9 @@ proc GenX::Submit { } {
 
    if { [info exist env(LOAD_SPI_ENV)] } {
       puts $f ". $env(LOAD_SPI_ENV)"
-   } else {
-      puts $f ". ssmuse-sh -x $domain"
    }
+
+   puts $f ". ssmuse-sh -x $domain"
 
    puts $f "\nexport GENPHYSX_PRIORITY=-0"
    puts $f "export GENPHYSX_BATCH=\"$gargv\"\n"
