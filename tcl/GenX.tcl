@@ -711,7 +711,7 @@ proc GenX::CommandLine { } {
       Specify databases in order of processing joined by + ex: STRM+USGS
 
       -topo     [format "%-34s : Topography method(s) among {$Param(Topos)}" (${::APP_COLOR_GREEN}[join $Param(Topo)]${::APP_COLOR_RESET})]
-      -treecover [format "%-34s : Tree Cover method, one of {$Param(TreeCovers)}" (${::APP_COLOR_GREEN}[join $Param(TCC)]${::APP_COLOR_RESET})]
+      -treecover [format "%-34s : Tree Cover method, one of {$Param(TreeCovers)}" (${::APP_COLOR_GREEN}[join $Param(TreeCover)]${::APP_COLOR_RESET})]
       -mask     [format "%-34s : Mask method, one of {$Param(Masks)}" (${::APP_COLOR_GREEN}[join $Param(Mask)]${::APP_COLOR_RESET})]
       -geomask  [format "%-34s : Mask method, one of {$Param(GeoMasks)}" (${::APP_COLOR_GREEN}[join $Param(GeoMask)]${::APP_COLOR_RESET})]
       -vege     [format "%-34s : Vegetation method(s) among {$Param(Veges)}" (${::APP_COLOR_GREEN}[join $Param(Vege)]${::APP_COLOR_RESET})]
