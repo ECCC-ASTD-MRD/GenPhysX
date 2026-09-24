@@ -1711,17 +1711,17 @@ proc  UrbanX::Process_TEBParam { tid Grid tebparam nomvar params values } {
 
    Log::Print DEBUG "Thread $tid Process_TEBParam $tebparam for $UrbanX::Param(NTSSheet)"
 
+   Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $UrbanX::Param(NTSSheet)"
+      # Name of RTEBPARAM need to be thread safe
+   set  RTEBPARAM  "RTEBPARAM.$tebparam"
+   vexpr (Float32)$RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
+   gdalband stats $RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
+   fstdfield fromband $Grid.$tebparam $RTEBPARAM IJCULUC AVERAGE
+   gdalband free $RTEBPARAM
+ 
    if { $nomvar == "BLDH" } {
       UrbanX::Process_BLDH $tid $Grid $nomvar
-   } else { 
-      Log::Print DEBUG "Copying the $tebparam values to the 5m raster with LUT over $UrbanX::Param(NTSSheet)"
-      # Name of RTEBPARAM need to be thread safe
-      set  RTEBPARAM  "RTEBPARAM.$tebparam"
-      vexpr (Float32)$RTEBPARAM lut(RCULUC,CSVTEBPARAMS.CULUC_Class,CSVTEBPARAMS.$tebparam)
-      gdalband stats $RTEBPARAM -nodata -9999 ;# memory fault if this comes after the gdalband write
-      fstdfield fromband $Grid.$tebparam $RTEBPARAM IJCULUC AVERAGE
-      gdalband free $RTEBPARAM
-   }
+   } 
    Log::Print DEBUG "Thread $tid has completed $tebparam for $UrbanX::Param(NTSSheet)"
    return $tid
 }
