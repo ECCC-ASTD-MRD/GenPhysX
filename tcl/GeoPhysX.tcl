@@ -4724,40 +4724,59 @@ proc GeoPhysX::AverageBathymetry { Grid } {
 # Remarks :
 #
 #----------------------------------------------------------------------------
-proc GeoPhysX::AverageBathymetryGEBCO { Grid } {
-   variable Param
-   variable Opt
+proc AverageBathymetryGEBCO { Grid } {
 
-   GenX::Procs GEBCO
-   Log::Print INFO "Averaging bathymetry using GEBCO database"
+   variable  Param
 
-   set file  "$GenX::Param(DBase)/$GenX::Path(GEBCO)/GEBCO_2014_1D.nc"
-   set bands [gdalfile open GEBCOFILE read $file]
-
-   if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GEBCOFILE]]]] } {
-      Log::Print WARNING "Specified grid does not intersect with GEBCO bathymetry database"
-      return
+   if {[info exists GenX::Param(Gebco)]}  {
+      set GEBCO  $GenX::Param(Gebco)
    } else {
-      Log::Print INFO "Grid intersection with GEBCO bathymetry database is { $limits }"
-      set x0 [lindex $limits 0]
-      set x1 [lindex $limits 2]
-      set y0 [lindex $limits 1]
-      set y1 [lindex $limits 3]
+      set GEBCO  "GEBCO"
    }
+
+   set Param(Interpolation)  AVERAGE
+
+   switch $GEBCO {
+      "GEBCO_2014" {
+         AverageIndexedBands  $Grid  $GEBCO "$GenX::Param(DBase)/$GenX::Path($GEBCO)" -32767
+      }
+      "GEBCO_2020" {
+         AverageIndexedBands  $Grid $GEBCO "$GenX::Param(DBase)/$GenX::Path($GEBCO)" -32767
+      }
+      "GEBCO_2026" {
+         AverageIndexedBands  $Grid $GEBCO "$GenX::Param(DBase)/$GenX::Path($GEBCO)" -32767
+      }
+      default {
+         set file  "$GenX::Param(DBase)/$GenX::Path(GEBCO)/GEBCO_2014_1D.tif"
+         Log::Print INFO "Using $GEBCO bathymetry database $file"
+         set bands [gdalfile open GEBCOFILE read $file]
+
+         if { ![llength [set limits [georef intersect [fstdfield define $Grid -georef] [gdalfile georef GEBCOFILE]]]] } {
+            Log::Print WARNING "Specified grid does not intersect with GEBCO bathymetry database"
+            return
+         } else {
+            Log::Print INFO "Grid intersection with $GEBCO bathymetry database is { $limits }"
+            set x0 [lindex $limits 0]
+            set x1 [lindex $limits 2]
+            set y0 [lindex $limits 1]
+            set y1 [lindex $limits 3]
+         }
 
    #----- Loop over the data by tiles since it's too big to fit in memory
-   for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
-      for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
-         Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
-         gdalband read GEBCOTILE { { GEBCOFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
-         gdalband stats GEBCOTILE -nodata 0 -celldim $GenX::Param(Cell)
+         for { set x $x0 } { $x<$x1 } { incr x $GenX::Param(TileSize) } {
+            for { set y $y0 } { $y<$y1 } { incr y $GenX::Param(TileSize) } {
+               Log::Print DEBUG "   Processing tile $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]"
+               gdalband read GEBCOTILE { { GEBCOFILE 1 } } $x $y [expr $x+$GenX::Param(TileSize)-1] [expr $y+$GenX::Param(TileSize)-1]
+               gdalband stats GEBCOTILE -nodata 0 -celldim $GenX::Param(Cell)
 
-         fstdfield gridinterp $Grid GEBCOTILE AVERAGE False
+               fstdfield gridinterp $Grid GEBCOTILE $Param(Interpolation) False
+            }
+         }
+
+         fstdfield gridinterp $Grid - NOP True
+         gdalfile close GEBCOFILE
       }
    }
-
-   fstdfield gridinterp $Grid - NOP True
-   gdalfile close GEBCOFILE
 }
 
 #----------------------------------------------------------------------------

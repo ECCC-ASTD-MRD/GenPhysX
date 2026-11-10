@@ -88,6 +88,7 @@ namespace eval GenX { } {
    set Param(MEFilter)   ""                 ;#Topo filter selected
    set Param(EGMGH)      ""                    ;#Earth Gravitational Model Geoid Height
    set Param(Bathy)      ""                    ;#Bathymetry
+   set Param(Gebco)      "GEBCO"               ;#GEBCO dataset selection
    set Param(MEFilterForZ0) "STD"              ;#Topo filter selected for Z0
    set Param(Vege2Mask) False                  ;#Generate Mask from Vege
    set Param(UseVegeLUT) False                 ;#Enable use of CSV LUT for vegetation
@@ -131,6 +132,7 @@ namespace eval GenX { } {
    set Param(Targets)   { LEGACY GEMMESO GEM4.4 GDPS-5.1 AURAMS RELWS-1.0 }   ;#Model cible
    set Param(EGMGHs)    { EGM96 EGM2008 }
    set Param(Bathys)    { CHS NCEI GEBCO HYDROLAKES }
+   set Param(Gebcos)    { GEBCO GEBCO_2014 GEBCO_2020 GEBCO_2026 }
    set Param(VCHs)      { GLAS GFCH2019 GFCH2020 HRCH2020 }
    set Param(Interpolations) { LINEAR NEAREST CUBIC AVERAGE }
 
@@ -225,6 +227,9 @@ namespace eval GenX { } {
    set Path(CHS)        CHS/bathymetry
    set Path(NCEI)       NOAA/NCEI/bathymetry
    set Path(GEBCO)      GEBCO_2014
+   set Path(GEBCO_2014) GEBCO_2014
+   set Path(GEBCO_2020) GEBCO_2020
+   set Path(GEBCO_2026) GEBCO_2026
    set Path(HYDROLAKES) HydroSHEDS/Misc/HydroLakes/HydroLAKES_polys_v10-tiled
    set Path(GREATLAKES) HydroSHEDS/Misc/HydroLakes/great_lakes_shp
    set Path(OSM)        OSM/data
@@ -731,6 +736,7 @@ proc GenX::CommandLine { } {
       -diag     [format "%-25s : Do diagnostics (Not implemented yet)" ""]
       -egmgh    [format "%-34s : Earth Gravitational Model database to use among {$Param(EGMGHs)}" (${::APP_COLOR_GREEN}[join $Param(EGMGH)]${::APP_COLOR_RESET})]
       -bathy    [format "%-34s : Bathymetry data to use among {$Param(Bathys)}" (${::APP_COLOR_GREEN}[join $Param(Bathy)]${::APP_COLOR_RESET})]
+      -gebco    [format "%-34s : Bathymetry data to use among {$Param(Gebcos)}" (${::APP_COLOR_GREEN}[join $Param(Gebco)]${::APP_COLOR_RESET})]
       -vch      [format "%-34s : Vegetation Canopy Height database to use among {$Param(VCHs)}" (${::APP_COLOR_GREEN}[join $Param(VCH)]${::APP_COLOR_RESET})]
 
    Specific processing parameters:
@@ -840,6 +846,7 @@ proc GenX::ParseCommandLine { } {
          "soil"      { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Soil) $GenX::Param(Soils)]; incr flags }
          "dbrk"      { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(SoilDBRK) $GenX::Param(SoilDBRKs)]; incr flags }
          "bathy"     { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(Bathy) $GenX::Param(Bathys)]; incr flags }
+         "gebco"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Gebco) $GenX::Param(Gebcos)]; incr flags }
          "vch"       { set i [Args::Parse $gargv $gargc $i LIST          GenX::Param(VCH) $GenX::Param(VCHs)]; incr flags }
          "egmgh"     { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(EGMGH) $GenX::Param(EGMGHs)]; incr flags }
          "subgrid"   { set i [Args::Parse $gargv $gargc $i VALUE         GenX::Param(Sub)]; incr flags }
