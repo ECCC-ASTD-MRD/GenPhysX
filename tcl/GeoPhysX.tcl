@@ -2213,7 +2213,7 @@ proc GeoPhysX::AverageGeoMaskCANADA { Grid } {
 
    #----- Loop over files
 
-   ogrfile open CANPROVFILE read $Path(CanadaProv)/Provinces.shp
+   ogrfile open CANPROVFILE read $GenX::Path(CanadaProv)/Provinces.shp
    ogrlayer read CANPROV CANPROVFILE 0
    fstdfield gridinterp GPXMASK CANPROV INTERSECT
    ogrfile close CANPROVFILE
